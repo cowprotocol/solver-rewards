@@ -11,10 +11,7 @@ from src.read_write import File, write_to_csv
 @dataclass
 class Transfer:
     """Total amount reimbursed for accounting period"""
-    # Block numbers for accounting period boundaries
-
     token_type: str
-    # TODO - introduce Account class for address strings
     token_address: Optional[Account]
     receiver: Account
     # safe-airdrop uses float amounts!
