@@ -7,12 +7,11 @@ from typing import Optional
 
 from requests import Session
 
-# --------- Constants --------- #
 from src.models import Network
 
+# --------- Constants --------- #
 BASE_URL = "https://dune.xyz"
 GRAPH_URL = 'https://core-hsr.duneanalytics.com/v1/graphql'
-
 
 # --------- Constants --------- #
 
@@ -226,6 +225,7 @@ class DuneAnalytics:
             raise RuntimeError("Dune API Request failed with", response_json)
         return response_json
 
+    # pylint: disable=too-many-arguments
     def query_initiate_execute_await(
             self,
             query_filepath: str,
