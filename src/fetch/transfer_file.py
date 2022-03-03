@@ -6,6 +6,7 @@ from typing import Optional
 
 from src.dune_analytics import DuneAnalytics
 from src.models import Network
+from src.read_write import File, write_to_csv
 
 
 @dataclass
@@ -77,4 +78,8 @@ if __name__ == "__main__":
         period_end=datetime.strptime(args.end, "%Y-%m-%d"),
     )
 
-    pprint(transfers)
+    outfile = File(name=f"transfers-{args.start}-to-{args.end}.csv")
+    write_to_csv(
+        data_list=transfers,
+        outfile=File(name=f"transfers-{args.start}-to-{args.end}.csv"),
+    )
