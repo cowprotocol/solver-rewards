@@ -23,14 +23,17 @@ class File:
 def write_to_csv(data_list: list, outfile: File):
     """Writes `data_list` to `filename` as csv"""
     print(f"dumping {len(data_list)} results to {outfile.name}")
-    headers = [f.name for f in fields(data_list[0])]
-    data_tuple = [astuple(x) for x in data_list]
 
     # Creates out path if it doesn't exist.
     if not os.path.exists(outfile.path):
         os.makedirs(outfile.path)
 
     with open(outfile.filename(), 'w', encoding='utf-8') as out_file:
+        if len(data_list) == 0:
+            return
+        headers = [f.name for f in fields(data_list[0])]
+        data_tuple = [astuple(x) for x in data_list]
+
         dict_writer = csv.DictWriter(out_file, headers, lineterminator='\n')
         dict_writer.writeheader()
         writer = csv.writer(out_file, lineterminator='\n')
