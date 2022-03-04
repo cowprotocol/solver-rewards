@@ -4,23 +4,23 @@ from datetime import datetime
 from typing import Optional
 
 from src.dune_analytics import DuneAnalytics
-from src.models import Network, Account
-from src.read_write import File, write_to_csv
+from src.models import Network, Address
+from src.file_io import File, write_to_csv
 
 
 @dataclass
 class Transfer:
     """Total amount reimbursed for accounting period"""
     token_type: str
-    token_address: Optional[Account]
-    receiver: Account
+    token_address: Optional[Address]
+    receiver: Address
     # safe-airdrop uses float amounts!
     amount: float
 
     def __init__(self, token_type, token_address, receiver, amount):
         self.token_type = token_type
-        self.token_address = Account(token_address) if token_address else None
-        self.receiver = Account(receiver)
+        self.token_address = Address(token_address) if token_address else None
+        self.receiver = Address(receiver)
         self.amount = float(amount)
 
 
