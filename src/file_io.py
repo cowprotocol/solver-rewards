@@ -28,13 +28,9 @@ def write_to_csv(data_list: list, outfile: File):
     if not os.path.exists(outfile.path):
         os.makedirs(outfile.path)
 
-    if len(data_list) == 0:
-        # Create an empty file
-        with open(outfile.filename(), 'w', encoding='utf-8') as _:
-            pass
-        return
-
     with open(outfile.filename(), 'w', encoding='utf-8') as out_file:
+        if len(data_list) == 0:
+            return
         headers = [f.name for f in fields(data_list[0])]
         data_tuple = [astuple(x) for x in data_list]
 
