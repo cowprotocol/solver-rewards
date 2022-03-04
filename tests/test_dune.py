@@ -5,7 +5,7 @@ from src.dune_analytics import DuneAnalytics
 from src.models import Network
 
 
-class MyTestCase(unittest.TestCase):
+class TestDuneAnalytics(unittest.TestCase):
     def test_retry(self):
         dune = DuneAnalytics('user', 'password', 0)
         dune.execute_and_await_results = MagicMock(return_value=1)
