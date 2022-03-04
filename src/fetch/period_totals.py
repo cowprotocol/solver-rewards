@@ -1,3 +1,6 @@
+"""
+Script to query and display total funds distributed for specified accounting period.
+"""
 import argparse
 from dataclasses import dataclass
 from datetime import datetime
@@ -24,6 +27,9 @@ def get_period_totals(
         period_start: datetime,
         period_end: datetime
 ) -> PeriodTotals:
+    """
+    Fetches & Returns Dune Results for accounting period totals.
+    """
     data_set = dune.fetch(
         query_filepath="./queries/period_totals.sql",
         network=Network.MAINNET,
