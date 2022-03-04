@@ -1,3 +1,5 @@
 eth-typing==3.0.0
+pylint==2.12.2
+pytest==7.0.1
 requests==2.27.1
 web3>=5.28.0

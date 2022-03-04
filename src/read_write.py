@@ -1,3 +1,4 @@
+"""Utility code for I/O related tasks"""
 import csv
 import os
 from dataclasses import fields, astuple, dataclass
@@ -21,9 +22,6 @@ class File:
 
 def write_to_csv(data_list: list, outfile: File):
     """Writes `data_list` to `filename` as csv"""
-    if len(data_list) == 0:
-        print("No data in list, skipping write")
-        return
     print(f"dumping {len(data_list)} results to {outfile.name}")
     headers = [f.name for f in fields(data_list[0])]
     data_tuple = [astuple(x) for x in data_list]

@@ -1,3 +1,6 @@
+"""
+Common location for shared resources throughout the project.
+"""
 import re
 from enum import Enum
 
@@ -5,6 +8,9 @@ from web3 import Web3
 
 
 class Network(Enum):
+    """
+    Enum for EVM network. Meant to be used everywhere instead of strings
+    """
     MAINNET = 'mainnet'
     GCHAIN = 'gchain'
 
