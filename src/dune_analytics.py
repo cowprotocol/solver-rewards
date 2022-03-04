@@ -1,19 +1,82 @@
-# Code mostly copied from: https://github.com/itzmestar/duneanalytics
+"""
+A simple framework for interacting with not officially supported DuneAnalytics API
+"""
+from __future__ import annotations
 
-"""This provides the DuneAnalytics class implementation"""
 import os
 import time
-from typing import Optional
+from datetime import datetime
+from enum import Enum
+from typing import Optional, Any
 
 from requests import Session
 
 from src.models import Network
 
-# --------- Constants --------- #
 BASE_URL = "https://dune.xyz"
 GRAPH_URL = 'https://core-hsr.duneanalytics.com/v1/graphql'
 
-# --------- Constants --------- #
+
+class ParameterType(Enum):
+    """
+    Enum of the 4 distinct dune parameter types
+    """
+    TEXT = 'text'
+    NUMBER = 'number'
+    DATE = 'datetime'
+    LIST = 'list'
+
+
+class QueryParameter:
+    """Class whose instances are Dune Compatible Query Parameters"""
+
+    def __init__(self, name: str, parameter_type: ParameterType, value: Any):
+        self.key: str = name
+        self.type: ParameterType = parameter_type
+        self.value = value
+
+    @classmethod
+    def text_type(cls, name: str, value: str):
+        """Constructs a Query parameter of type text"""
+        return cls(name, ParameterType.TEXT, value)
+
+    @classmethod
+    def number_type(cls, name: str, value: int | float):
+        """Constructs a Query parameter of type number"""
+        return cls(name, ParameterType.NUMBER, value)
+
+    @classmethod
+    def date_type(cls, name: str, value: datetime):
+        """Constructs a Query parameter of type date"""
+        return cls(name, ParameterType.DATE, value)
+
+    @classmethod
+    def list_type(cls, name: str, value: list[str]):
+        """Constructs a Query parameter of type list"""
+        return cls(name, ParameterType.LIST, value)
+
+    def _value_str(self) -> str:
+        match self.type:
+            case (ParameterType.TEXT):
+                return self.value
+            case (ParameterType.NUMBER):
+                return str(self.value)
+            case (ParameterType.LIST):
+                # List items separated by new line as (specified by Dune)
+                return "\n".join(self.value)
+            case (ParameterType.DATE):
+                # This is the postgres string format of timestamptz
+                return self.value.strftime("%Y-%m-%d %H:%M:%S")
+
+        raise TypeError(f"Type {self.type} not recognized!")
+
+    def to_dict(self) -> dict[str, str]:
+        """Converts QueryParameter into string json format accepted by Dune API"""
+        return {
+            "key": self.key,
+            "type": self.type.value,
+            "value": self._value_str(),
+        }
 
 
 class DuneAnalytics:
@@ -38,7 +101,6 @@ class DuneAnalytics:
         self.session = Session()
         headers = {
             'origin': BASE_URL,
-            # 'sec-ch-ua': '" Not A;Brand";v="99", "Chromium";v="90", "Google Chrome";v="90"',
             'sec-ch-ua-mobile': '?0',
             'sec-fetch-dest': 'empty',
             'sec-fetch-mode': 'cors',
@@ -63,7 +125,7 @@ class DuneAnalytics:
 
     def login(self):
         """
-        Try to login to duneanalytics.com & get the token
+        Try to log in to duneanalytics.com & get the token
         """
         login_url = BASE_URL + '/auth/login'
         csrf_url = BASE_URL + '/api/auth/csrf'
@@ -111,7 +173,7 @@ class DuneAnalytics:
             query: str,
             query_name: str,
             network: Network,
-            parameters: list[dict]
+            parameters: list[QueryParameter]
     ):
         """
         Initiates a new query
@@ -138,7 +200,7 @@ class DuneAnalytics:
                     "is_archived": False,
                     "is_temp": False,
                     "tags": [],
-                    "parameters": parameters,
+                    "parameters": [p.to_dict() for p in parameters],
                     "visualizations": {
                         "data": [],
                         "on_conflict": {
@@ -230,9 +292,9 @@ class DuneAnalytics:
             self,
             query_filepath: str,
             network: Network,
-            parameters: list[dict[str, str]] = None,
-            ping_frequency: int = 5,
+            parameters: Optional[list[QueryParameter]] = None,
             max_retries: int = 2,
+            ping_frequency: int = 5
     ) -> list[dict]:
         """
         Pushes new query to dune and executes, awaiting query completion
@@ -283,7 +345,7 @@ class DuneAnalytics:
             query_filepath: str,
             network: Network,
             name: str,
-            parameters: Optional[list[dict[str, str]]],
+            parameters: Optional[list[QueryParameter]],
     ) -> list[dict]:
         """
         :param query_filepath: path to sql file to execute

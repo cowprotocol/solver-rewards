@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pprint import pprint
 
-from src.dune_analytics import DuneAnalytics
+from src.dune_analytics import DuneAnalytics, QueryParameter
 from src.models import Network
 
 
@@ -35,16 +35,8 @@ def get_period_totals(
         network=Network.MAINNET,
         name="Accounting Period Totals",
         parameters=[
-            {
-                "key": "StartTime",
-                "type": "datetime",
-                "value": period_start.strftime("%Y-%m-%d %H:%M:%S"),
-            },
-            {
-                "key": "EndTime",
-                "type": "datetime",
-                "value": period_end.strftime("%Y-%m-%d %H:%M:%S"),
-            },
+            QueryParameter.date_type("StartTime", period_start),
+            QueryParameter.date_type("EndTime", period_end),
         ])
     assert len(data_set) == 1
     rec = data_set[0]
