@@ -30,7 +30,7 @@ def get_transfers(
         period_end: datetime
 ) -> list[Transfer]:
     data_set = dune.fetch(
-        query_filepath="./queries/period_transfers.sql",
+        query_str=dune.open_query("./queries/period_transfers.sql"),
         network=Network.MAINNET,
         name="Period Transfers",
         parameters=[

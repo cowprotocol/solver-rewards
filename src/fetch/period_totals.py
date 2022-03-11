@@ -31,7 +31,7 @@ def get_period_totals(
     Fetches & Returns Dune Results for accounting period totals.
     """
     data_set = dune.fetch(
-        query_filepath="./queries/period_totals.sql",
+        query_str=dune.open_query("./queries/period_totals.sql"),
         network=Network.MAINNET,
         name="Accounting Period Totals",
         parameters=[

@@ -290,7 +290,7 @@ class DuneAnalytics:
     # pylint: disable=too-many-arguments
     def query_initiate_execute_await(
             self,
-            query_filepath: str,
+            query_str: str,
             network: Network,
             parameters: Optional[list[QueryParameter]] = None,
             max_retries: int = 2,
@@ -300,7 +300,7 @@ class DuneAnalytics:
         Pushes new query to dune and executes, awaiting query completion
         """
         self.initiate_new_query(
-            query=self.open_query(query_filepath),
+            query=query_str,
             network=network,
             query_name="Auto Generated Query",
             parameters=parameters or []
@@ -342,24 +342,20 @@ class DuneAnalytics:
 
     def fetch(
             self,
-            query_filepath: str,
+            query_str: str,
             network: Network,
             name: str,
             parameters: Optional[list[QueryParameter]],
     ) -> list[dict]:
         """
-        :param query_filepath: path to sql file to execute
+        :param query_str: query string conforming to postgres syntax
         :param network: 'mainnet' or 'gchain'
         :param name: optional name of what is being fetched (for logging)
         :param parameters: optional parameters to be included in query
         :return: list of records as dictionaries
         """
         print(f"Fetching {name} on {network}...")
-        return self.query_initiate_execute_await(
-            query_filepath,
-            network,
-            parameters
-        )
+        return self.query_initiate_execute_await(query_str, network, parameters)
 
 
 def parse_dune_response(data: dict) -> list[dict]:

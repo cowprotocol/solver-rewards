@@ -14,14 +14,14 @@ class TestDuneAnalytics(unittest.TestCase):
 
         with self.assertRaises(Exception):
             dune.query_initiate_execute_await(
-                query_filepath="",
+                query_str="",
                 network=Network.MAINNET,
                 max_retries=0
             )
 
         self.assertEqual(
             dune.query_initiate_execute_await(
-                query_filepath="",
+                query_str="",
                 network=Network.MAINNET,
                 max_retries=1
             ), 1)
@@ -29,7 +29,7 @@ class TestDuneAnalytics(unittest.TestCase):
         dune.execute_and_await_results = Mock(side_effect=Exception("Max retries"))
         with self.assertRaises(Exception):
             dune.query_initiate_execute_await(
-                query_filepath="",
+                query_str="",
                 network=Network.MAINNET,
                 max_retries=2
             )
