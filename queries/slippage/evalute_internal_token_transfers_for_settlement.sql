@@ -13,4 +13,4 @@ Select
     amount_to,
     transfer_type
 from
-    incoming_and_outcoming_with_buffer_trades
+    incoming_and_outgoing_with_buffer_trades

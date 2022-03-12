@@ -31,9 +31,10 @@ def get_internal_token_transfers(
     query_str = dune.open_query("./queries/slippage/internal_token_transfers_for_settlements.sql") + \
         dune.open_query(
             "./queries/slippage/evalute_internal_token_transfers_for_settlement.sql")
-    data_set = dune.query_initiate_execute_await(
+    data_set = dune.fetch(
         query_str,
         network=Network.MAINNET,
+        name='Internal Token Transfer Accounting',
         parameters=[
             QueryParameter.text_type('TxHash', tx_hash),
             QueryParameter.date_type("StartTime", period_start),
@@ -133,7 +134,7 @@ class TestDuneAnalytics(unittest.TestCase):
         internal_buffer_trades = [
             a for a in internal_token_transfers if a.transfer_type == 'INTERNAL_TRADE']
         self.assertEqual(len(internal_buffer_trades), 0*2)
-        # We lost 58 ust dollars:
+        # We lost 58 UST dollars:
         self.assertEqual(calculate_slippage_for_token(Address(
             '0xa47c8bf37f92aBed4A126BDA807A7b7498661acD'), internal_token_transfers), -57980197374074949357)
 

@@ -9,16 +9,15 @@ from src.models import Address, InternalTokenTransfer, Network, SlippagePerSolve
 
 
 def get_slippage_accounting(
+        query_str: str,
         dune: DuneAnalytics,
         period_start: datetime,
         period_end: datetime
 ) -> list:
-    query_str = dune.open_query("./queries/slippage/internal_token_transfers_for_settlements.sql") + \
-        dune.open_query(
-            "./queries/slippage/evaluate_slippage_from_internal_token_transfers_per_tx.sql")
-    data_set = dune.query_initiate_execute_await(
+    data_set = dune.fetch(
         query_str,
         network=Network.MAINNET,
+        name='Slippage Accounting',
         parameters=[
             QueryParameter.date_type("StartTime", period_start),
             QueryParameter.date_type("EndTime", period_end),
@@ -34,8 +33,13 @@ class TestDuneAnalytics(unittest.TestCase):
             which tx are having high slippage values in dollar terms
         '''
         dune_connection = DuneAnalytics.new_from_environment()
+
+        query_str = dune_connection.open_query("./queries/slippage/internal_token_transfers_for_settlements.sql") + "," + \
+            dune_connection.open_query(
+                "./queries/slippage/evaluate_slippage_from_internal_token_transfers_per_tx.sql")
         slippage_accounting = get_slippage_accounting(
             dune=dune_connection,
+            query_str=query_str,
             period_start=datetime.strptime('2022-03-10', "%Y-%m-%d"),
             period_end=datetime.strptime('2022-03-11', "%Y-%m-%d"),
         )
