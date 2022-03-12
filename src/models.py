@@ -70,11 +70,11 @@ class InternalTokenTransfer:
 
 
 @dataclass
-class SlippagePerSolver:
+class SolverSlippage:
     """Slippage per solver"""
-    eth_slippage_wei: int
+    eth_amount_wei: int
     solver: Address
 
     def __init__(self, eth_slippage_wei, solver):
-        self.eth_slippage_wei = eth_slippage_wei
+        self.eth_amount_wei = eth_slippage_wei
         self.solver = Address(solver)

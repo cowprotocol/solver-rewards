@@ -4,8 +4,7 @@ from datetime import datetime
 
 
 from src.dune_analytics import DuneAnalytics, QueryParameter
-from src.fetch.transfer_file import Transfer
-from src.models import Address, InternalTokenTransfer, Network, SlippagePerSolver
+from src.models import Network
 
 
 def get_slippage_accounting(

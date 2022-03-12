@@ -5,7 +5,7 @@ from datetime import datetime
 
 from src.dune_analytics import DuneAnalytics, QueryParameter
 from src.fetch.transfer_file import Transfer
-from src.models import Address, InternalTokenTransfer, Network, SlippagePerSolver
+from src.models import Address, InternalTokenTransfer, Network, SolverSlippage
 from tests.e2e.test_e2e_slippage_investigation import get_slippage_accounting
 
 
