@@ -63,6 +63,7 @@ class InternalTokenTransfer:
 
     @classmethod
     def from_dict(cls, obj: dict) -> InternalTokenTransfer:
+        """Converts Dune data dict to object with types"""
         return cls(
             transfer_type=obj['transfer_type'],
             from_token=Address(obj['token_from']),
