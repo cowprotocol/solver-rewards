@@ -6,7 +6,6 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional
 
 from web3 import Web3
 
@@ -52,24 +51,38 @@ class Address:
         return match_result is not None
 
 
+class TransferType(Enum):
+    """
+    Classifications of Internal Token Transfers
+    """
+    IN_AMM = 'IN_AMM'
+    OUT_AMM = 'OUT_AMM'
+    IN_USER = 'IN_USER'
+    OUT_USER = 'OUT_USER'
+    INTERNAL_TRADE = 'INTERNAL_TRADE'
+
+    @classmethod
+    def from_str(cls, type_str: str) -> TransferType:
+        try:
+            return cls[type_str.upper()]
+        except KeyError:
+            raise ValueError(f"No TransferType {type_str}!")
+
+
 @dataclass
 class InternalTokenTransfer:
     """Total amount reimbursed for accounting period"""
-    transfer_type: str
-    from_token: Address
-    to_token: Optional[Address]
-    from_amount: int
-    to_amount: Optional[int]
+    transfer_type: TransferType
+    token: Address
+    amount: int
 
     @classmethod
     def from_dict(cls, obj: dict) -> InternalTokenTransfer:
         """Converts Dune data dict to object with types"""
         return cls(
-            transfer_type=obj['transfer_type'],
-            from_token=Address(obj['token_from']),
-            to_token=Address(obj['token_to']) if obj['token_to'] else None,
-            from_amount=int(obj['amount_from']),
-            to_amount=int(obj['amount_to']) if obj['amount_to'] else None,
+            transfer_type=TransferType.from_str(obj['transfer_type']),
+            token=Address(obj['token']),
+            amount=int(obj['amount']),
         )
 
 

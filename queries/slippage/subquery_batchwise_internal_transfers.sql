@@ -30,7 +30,7 @@ user_in as (
            contract_address as receiver,
            "sellToken"      as token,
            "sellAmount"     as amount_wei,
-           'IN User'        as transfer_type
+           'IN_USER'        as transfer_type
     from filtered_trades
 ),
 user_out as (
@@ -42,7 +42,7 @@ user_out as (
            trader_out       as receiver,
            "buyToken"       as token,
            "buyAmount"      as amount_wei,
-           'OUT User'       as transfer_type
+           'OUT_USER'       as transfer_type
     from filtered_trades
 ),
 other_transfers as (
@@ -56,9 +56,9 @@ other_transfers as (
            value              as amount_wei,
            case
                when "to" = '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' -- beta contract
-                   then 'IN AMM'
+                   then 'IN_AMM'
                when "from" = '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' -- beta contract
-                   then 'OUT AMM'
+                   then 'OUT_AMM'
                end            as transfer_type
     from erc20."ERC20_evt_Transfer" t
              inner join gnosis_protocol_v2."view_batches" b

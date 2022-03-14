@@ -11,8 +11,8 @@ def token_slippage(
         internal_trade_list: list[InternalTokenTransfer],
 ) -> int:
     return sum(
-        a.from_amount for a in internal_trade_list
-        if a.from_token == Address(token_str)
+        a.amount for a in internal_trade_list
+        if a.token == Address(token_str)
     )
 
 
