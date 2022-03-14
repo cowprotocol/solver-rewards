@@ -1,10 +1,12 @@
 """
 Common location for shared resources throughout the project.
 """
+from __future__ import annotations
+
 import re
+from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
-from dataclasses import dataclass
 
 from web3 import Web3
 
@@ -54,19 +56,20 @@ class Address:
 class InternalTokenTransfer:
     """Total amount reimbursed for accounting period"""
     transfer_type: str
-    from_token_address: Address
-    to_token_address: Optional[Address]
+    from_token: Address
+    to_token: Optional[Address]
     from_amount: int
     to_amount: Optional[int]
 
-    # pylint: disable=too-many-arguments
-    def __init__(self, transfer_type, from_token_address, to_token_address, from_amount, to_amount):
-        self.transfer_type = transfer_type
-        self.from_token_address = Address(from_token_address)
-        self.to_token_address = Address(
-            to_token_address) if to_token_address else None
-        self.from_amount = int(from_amount)
-        self.to_amount = int(to_amount) if to_amount else None
+    @classmethod
+    def from_dict(cls, obj: dict) -> InternalTokenTransfer:
+        return cls(
+            transfer_type=obj['transfer_type'],
+            from_token=Address(obj['token_from']),
+            to_token=Address(obj['token_to']) if obj['token_to'] else None,
+            from_amount=int(obj['amount_from']),
+            to_amount=int(obj['amount_to']) if obj['amount_to'] else None,
+        )
 
 
 @dataclass
