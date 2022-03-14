@@ -23,9 +23,8 @@ def get_internal_transfers(
         period_end: datetime
 ) -> list[InternalTokenTransfer]:
     path = "./queries/slippage"
-    slippage_subquery = File(path=path,
-                             name="subquery_batchwise_internal_transfers.sql")
-    select_transfers_file = File(path=path, name="select_in_out_with_buffers.sql")
+    slippage_subquery = File("subquery_batchwise_internal_transfers.sql", path)
+    select_transfers_file = File("select_in_out_with_buffers.sql", path)
     query = "\n".join(
         [
             dune.open_query(slippage_subquery.filename()),
