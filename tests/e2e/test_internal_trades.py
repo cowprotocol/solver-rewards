@@ -139,14 +139,16 @@ class TestDuneAnalytics(unittest.TestCase):
             period_start=self.period_start,
             period_end=self.period_end,
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
-        self.assertEqual(len(internal_trades), 0 * 2)
         # We lost 58 UST dollars:
         self.assertEqual(
             token_slippage(
                 '0xa47c8bf37f92aBed4A126BDA807A7b7498661acD',
                 internal_transfers
-            ), -57980197374074949357)
+            ),
+            -57980197374074949357
+        )
+        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        self.assertEqual(len(internal_trades), 0 * 2)
 
     def test_it_does_not_yet_find_the_internal_trades(self):
         """

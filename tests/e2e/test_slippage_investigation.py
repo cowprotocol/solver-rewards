@@ -3,39 +3,8 @@ from datetime import datetime
 from pprint import pprint
 
 from src.dune_analytics import DuneAnalytics, QueryParameter
-from src.file_io import File
+from src.fetch.period_slippage import slippage_query
 from src.models import Network
-
-
-def slippage_query(dune: DuneAnalytics) -> str:
-    path = "./queries/slippage"
-    slippage_subquery = File(path=path, name="subquery_batchwise_internal_transfers.sql")
-    select_slippage = File(path=path, name="select_slippage_results.sql")
-    return "\n".join(
-        [
-            dune.open_query(slippage_subquery.filename()),
-            dune.open_query(select_slippage.filename())
-        ]
-    )
-
-
-def get_slippage_accounting(
-        query_str: str,
-        dune: DuneAnalytics,
-        period_start: datetime,
-        period_end: datetime,
-) -> list:
-    return dune.fetch(
-        query_str,
-        network=Network.MAINNET,
-        name='Slippage Accounting',
-        parameters=[
-            QueryParameter.date_type("StartTime", period_start),
-            QueryParameter.date_type("EndTime", period_end),
-            QueryParameter.text_type("TxHash", '0x'),
-            QueryParameter.text_type("ResultTable", "results")
-        ]
-    )
 
 
 class TestDuneAnalytics(unittest.TestCase):

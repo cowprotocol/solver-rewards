@@ -2,8 +2,7 @@ import unittest
 from datetime import datetime
 
 from src.dune_analytics import DuneAnalytics
-from tests.e2e.test_slippage_investigation import get_slippage_accounting, \
-    slippage_query
+from src.fetch.period_slippage import get_period_slippage
 
 
 class TestDuneAnalytics(unittest.TestCase):
@@ -15,9 +14,8 @@ class TestDuneAnalytics(unittest.TestCase):
         there should be manual investigations
         """
         dune = DuneAnalytics.new_from_environment()
-        slippage_accounting = get_slippage_accounting(
+        slippage_accounting = get_period_slippage(
             dune=dune,
-            query_str=slippage_query(dune),
             period_start=datetime.strptime('2022-03-10', "%Y-%m-%d"),
             period_end=datetime.strptime('2022-03-11', "%Y-%m-%d"),
         )
