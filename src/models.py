@@ -63,10 +63,11 @@ class TransferType(Enum):
 
     @classmethod
     def from_str(cls, type_str: str) -> TransferType:
+        """Constructs Enum variant from string (case-insensitive)"""
         try:
             return cls[type_str.upper()]
-        except KeyError:
-            raise ValueError(f"No TransferType {type_str}!")
+        except KeyError as err:
+            raise ValueError(f"No TransferType {type_str}!") from err
 
 
 @dataclass
@@ -84,6 +85,22 @@ class InternalTokenTransfer:
             token=Address(obj['token']),
             amount=int(obj['amount']),
         )
+
+    @staticmethod
+    def filter_by(
+            recs: list[InternalTokenTransfer],
+            transfer_type: TransferType
+    ) -> list[InternalTokenTransfer]:
+        """Filters list of records returning only those with indicated TransferType"""
+        return list(filter(lambda r: r.transfer_type == transfer_type, recs))
+
+    @classmethod
+    def internal_trades(
+            cls,
+            recs: list[InternalTokenTransfer]
+    ) -> list[InternalTokenTransfer]:
+        """Filters records returning only Internal Trade types."""
+        return cls.filter_by(recs, TransferType.INTERNAL_TRADE)
 
 
 @dataclass
