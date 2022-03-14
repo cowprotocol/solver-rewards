@@ -105,16 +105,14 @@ incoming_and_outgoing as (
                when token = '\xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
                    then '\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
                else token
-               end                                     as token_from,
-           null :: bytea                               as token_to,
+               end                                     as token,
            case
                when receiver =
                     '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' -- beta contract
                    then amount_wei
                when sender = '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' -- beta contract
                    then -1 * amount_wei
-               end                                     as amount_from,
-           null :: numeric                             as amount_to,
+               end                                     as amount,
            transfer_type
     from batch_transfers i
              left outer join erc20.tokens t on i.token = t.contract_address
@@ -145,27 +143,27 @@ potential_buffer_trades as (
            solver_address,
            solver_name,
            symbol,
-           token_from,
-           sum(amount_from) as amount_from
+           token,
+           sum(amount) as amount
     from incoming_and_outgoing io
     group by tx_hash,
              solver_address,
              solver_name,
              symbol,
-             token_from,
+             token,
              block_time
              -- exclude 0 to prevent zero division, and exclude very small values for performance
-    having abs(sum(amount_from)) > 0.0001
+    having abs(sum(amount)) > 0.0001
 ),
 valued_potential_buffered_trades as (
     select t.*,
-           amount_from * clearing_price        as clearing_value,
-           amount_from / 10 ^ decimals * price as usd_value
+           amount * clearing_price        as clearing_value,
+           amount / 10 ^ decimals * price as usd_value
     from potential_buffer_trades t
              left outer join clearing_prices cp on t.tx_hash = cp.tx_hash
-        and t.token_from = cp.token
+        and t.token = cp.token
              left outer join prices.usd pusd
-                             on pusd.contract_address = t.token_from
+                             on pusd.contract_address = t.token
                                  and date_trunc('minute', block_time) = pusd.minute
 ),
 buffer_trades as (
@@ -174,10 +172,10 @@ buffer_trades as (
            a.solver_address,
            a.solver_name,
            a.symbol,
-           a.token_from       as token_from,
-           b.token_from       as token_to,
-           -1 * a.amount_from as amount_from,
-           -1 * b.amount_from as amount_to,
+           a.token       as token_from,
+           b.token       as token_to,
+           -1 * a.amount as amount_from,
+           -1 * b.amount as amount_to,
            'INTERNAL_TRADE'   as transfer_type
     from valued_potential_buffered_trades a
              full outer join valued_potential_buffered_trades b
@@ -206,19 +204,26 @@ incoming_and_outgoing_with_buffer_trades as (
     from incoming_and_outgoing
     union
         all
-    select *
+    select block_time,
+           tx_hash,
+           solver_address,
+           solver_name,
+           symbol,
+           token_from as token,
+           amount_from as amount,
+           transfer_type
     from buffer_trades
 ),
 final_token_balance_sheet as (
     select solver_address,
            solver_name,
-           sum(amount_from) token_imbalance_wei,
+           sum(amount) token_imbalance_wei,
            symbol,
-           token_from,
+           token,
            tx_hash
     from incoming_and_outgoing_with_buffer_trades
     group by symbol,
-             token_from,
+             token,
              solver_address,
              solver_name,
              tx_hash
@@ -236,7 +241,7 @@ results_per_tx as (
            sum(token_imbalance_wei * price / 10 ^ p.decimals) as usd_value,
            tx_hash
     from final_token_balance_sheet
-             inner join end_prices p on token_from = p.contract_address
+             inner join end_prices p on token = p.contract_address
     group by solver_address,
              solver_name,
              tx_hash
