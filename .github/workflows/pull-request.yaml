@@ -20,4 +20,11 @@ jobs:
           pylint src/
       - name: Unit Tests
         run:
-          python -m pytest tests/
+          python -m pytest tests/unit
+      - name: End to End Tests
+        env:
+          DUNE_USER: ${{ secrets.DUNE_USER }}
+          DUNE_PASSWORD: ${{ secrets.DUNE_PASSWORD }}
+          DUNE_QUERY_ID: ${{ secrets.DUNE_QUERY_ID }}
+        run:
+          python -m pytest tests/e2e

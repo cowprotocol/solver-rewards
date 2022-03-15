@@ -40,6 +40,11 @@ PeriodTotals(period_start=datetime.datetime(2022, 2, 1, 0, 0),
              realized_fees_eth=92.69632712493294)
 ```
 
+To fetch the total slippage for an accounting period, run period_slippage script as follows:
+
+```shell
+python -m src.fetch.period_slippage --start '2022-02-01' --end '2022-02-08'
+```
 # Summary of Accounting Procedure
 
 In what follows **Accounting Periods** are defined in intervals of 1 week and accounting

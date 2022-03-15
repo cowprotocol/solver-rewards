@@ -1,7 +1,10 @@
 """
 Common location for shared resources throughout the project.
 """
+from __future__ import annotations
+
 import re
+from dataclasses import dataclass
 from enum import Enum
 
 from web3 import Web3
@@ -33,6 +36,11 @@ class Address:
     def __str__(self):
         return str(self.address)
 
+    def __eq__(self, other):
+        if isinstance(other, Address):
+            return self.address == other.address
+        return False
+
     @staticmethod
     def _is_valid(address: str) -> bool:
         match_result = re.match(
@@ -41,3 +49,66 @@ class Address:
             flags=re.IGNORECASE
         )
         return match_result is not None
+
+
+class TransferType(Enum):
+    """
+    Classifications of Internal Token Transfers
+    """
+    IN_AMM = 'IN_AMM'
+    OUT_AMM = 'OUT_AMM'
+    IN_USER = 'IN_USER'
+    OUT_USER = 'OUT_USER'
+    INTERNAL_TRADE = 'INTERNAL_TRADE'
+
+    @classmethod
+    def from_str(cls, type_str: str) -> TransferType:
+        """Constructs Enum variant from string (case-insensitive)"""
+        try:
+            return cls[type_str.upper()]
+        except KeyError as err:
+            raise ValueError(f"No TransferType {type_str}!") from err
+
+
+@dataclass
+class InternalTokenTransfer:
+    """Total amount reimbursed for accounting period"""
+    transfer_type: TransferType
+    token: Address
+    amount: int
+
+    @classmethod
+    def from_dict(cls, obj: dict) -> InternalTokenTransfer:
+        """Converts Dune data dict to object with types"""
+        return cls(
+            transfer_type=TransferType.from_str(obj['transfer_type']),
+            token=Address(obj['token']),
+            amount=int(obj['amount']),
+        )
+
+    @staticmethod
+    def filter_by(
+            recs: list[InternalTokenTransfer],
+            transfer_type: TransferType
+    ) -> list[InternalTokenTransfer]:
+        """Filters list of records returning only those with indicated TransferType"""
+        return list(filter(lambda r: r.transfer_type == transfer_type, recs))
+
+    @classmethod
+    def internal_trades(
+            cls,
+            recs: list[InternalTokenTransfer]
+    ) -> list[InternalTokenTransfer]:
+        """Filters records returning only Internal Trade types."""
+        return cls.filter_by(recs, TransferType.INTERNAL_TRADE)
+
+
+@dataclass
+class SolverSlippage:
+    """Slippage per solver"""
+    eth_amount_wei: int
+    solver: Address
+
+    def __init__(self, eth_slippage_wei, solver):
+        self.eth_amount_wei = eth_slippage_wei
+        self.solver = Address(solver)
