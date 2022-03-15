@@ -16,8 +16,8 @@ class TestDuneAnalytics(unittest.TestCase):
         dune = DuneAnalytics.new_from_environment()
         slippage_accounting = get_period_slippage(
             dune=dune,
-            period_start=datetime.strptime('2022-03-10', "%Y-%m-%d"),
-            period_end=datetime.strptime('2022-03-11', "%Y-%m-%d"),
+            period_start=datetime.strptime('2022-03-01', "%Y-%m-%d"),
+            period_end=datetime.strptime('2022-03-14', "%Y-%m-%d"),
         )
         assert (len(slippage_accounting) > 0)
         for obj in slippage_accounting:
