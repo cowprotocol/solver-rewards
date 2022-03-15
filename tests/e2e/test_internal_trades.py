@@ -54,7 +54,7 @@ class TestDuneAnalytics(unittest.TestCase):
     def test_one_buffer_trade(self):
         """
         tx: 0xd6b85ada980d10a11a5b6989c72e0232015ce16e7331524b38180b85f1aea6c8
-        This transaction has 1 buffer trades wNXM for Ether
+        This transaction has 1 buffer trade wNXM for Ether
         """
         internal_transfers = get_internal_transfers(
             dune=self.dune_connection,
@@ -62,7 +62,8 @@ class TestDuneAnalytics(unittest.TestCase):
             period_start=self.period_start,
             period_end=self.period_end,
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTokenTransfer.internal_trades(
+            internal_transfers)
         self.assertEqual(len(internal_trades), 1 * 2)
         # We had 0.91 USDT positive slippage
         print(internal_trades)
@@ -71,6 +72,44 @@ class TestDuneAnalytics(unittest.TestCase):
                 '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
                 internal_transfers
             ), 916698)
+
+    def test_one_buffer_trade_with_big_deviation_from_clearing_prices(self):
+        """
+        tx: 0x9a318d1abd997bcf8afed55b2946a7b1bd919d227f094cdcc99d8d6155808d7c
+        This transaction has 1 buffer trade: 12.3 Strong for LIDO. The matchabilty check
+        - abs((a.clearing_value + b.clearing_value) /(abs(a.clearing_value) + abs(b.clearing_value))) -
+        evaluates to a high number of 0.021 
+        The positive slippage captured in WETH also scores a good matchablity to LIDO with a score of 0.026,
+        but it should not be recognized by our algorithm
+        """
+        internal_transfers = get_internal_transfers(
+            dune=self.dune_connection,
+            tx_hash='0x9a318d1abd997bcf8afed55b2946a7b1bd919d227f094cdcc99d8d6155808d7c',
+            period_start=self.period_start,
+            period_end=self.period_end,
+        )
+        internal_trades = InternalTokenTransfer.internal_trades(
+            internal_transfers)
+        self.assertEqual(len(internal_trades), 1 * 2)
+
+    def test_does_not_recognize_selling_too_much_and_buying_too_much_as_internal_trade(self):
+        """
+        tx: 0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7
+        In this transaction, the solver sells too much USDC and buys to much ETH.
+        These trades could be seen as buffer trades, but they should not:
+        These kind of trades can drain the buffers over time, as the prices of trading
+        includes the AMM fees and hence are unfavourable for the buffers. Also, they are avoidable
+        by using buyOrder on the AMMs. 
+        """
+        internal_transfers = get_internal_transfers(
+            dune=self.dune_connection,
+            tx_hash='0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7',
+            period_start=self.period_start,
+            period_end=self.period_end,
+        )
+        internal_trades = InternalTokenTransfer.internal_trades(
+            internal_transfers)
+        self.assertEqual(len(internal_trades), 0 * 2)
 
     def test_zero_buffer_trade(self):
         """
@@ -84,7 +123,8 @@ class TestDuneAnalytics(unittest.TestCase):
             period_start=self.period_start,
             period_end=self.period_end,
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTokenTransfer.internal_trades(
+            internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
 
     def test_buffer_trade_with_missing_price_from_pricesUSD(self):
@@ -98,7 +138,8 @@ class TestDuneAnalytics(unittest.TestCase):
             period_start=self.period_start,
             period_end=self.period_end,
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTokenTransfer.internal_trades(
+            internal_transfers)
 
         self.assertEqual(len(internal_trades), 1 * 2)
         self.assertEqual(
@@ -124,7 +165,8 @@ class TestDuneAnalytics(unittest.TestCase):
             period_start=self.period_start,
             period_end=self.period_end,
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTokenTransfer.internal_trades(
+            internal_transfers)
         self.assertEqual(len(internal_trades), 1 * 2)
 
     def test_it_recognizes_slippage(self):
@@ -146,7 +188,8 @@ class TestDuneAnalytics(unittest.TestCase):
             ),
             -57980197374074949357
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTokenTransfer.internal_trades(
+            internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
 
     def test_it_does_not_yet_find_the_internal_trades(self):
@@ -164,7 +207,8 @@ class TestDuneAnalytics(unittest.TestCase):
             period_start=self.period_start,
             period_end=self.period_end,
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTokenTransfer.internal_trades(
+            internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
 
 

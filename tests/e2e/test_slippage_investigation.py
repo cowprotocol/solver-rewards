@@ -14,7 +14,7 @@ class TestDuneAnalytics(unittest.TestCase):
         which tx are having high slippage values in dollar terms
         """
         dune = DuneAnalytics.new_from_environment()
-        period_start = datetime.strptime('2022-03-10', "%Y-%m-%d")
+        period_start = datetime.strptime('2022-03-01', "%Y-%m-%d")
         period_end = datetime.strptime('2022-03-11', "%Y-%m-%d")
         slippage_per_tx = dune.fetch(
             query_str=slippage_query(dune),
