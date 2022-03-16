@@ -134,13 +134,14 @@ pre_clearing_prices as (
 ),
 clearing_prices as (
     select tx_hash,
-           price   as clearing_price,
            case
                when token = '\xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee'
                    then '\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
                else token
-               end as token
+               end as token,
+           avg(price) as clearing_price
     from pre_clearing_prices
+    group by 1,2
 ),
 potential_buffer_trades as (
     select block_time,
@@ -167,6 +168,11 @@ valued_potential_buffered_trades as (
            amount * clearing_price        as clearing_value,
            amount / 10 ^ decimals * price as usd_value
     from potential_buffer_trades t
+            -- The following joins require the uniqueness of the prices per join,
+            -- otherwise duplicated internal trades will be found.
+            -- For clearing prices, it is given by construction and 
+            -- for prices.usd, one can see that the primary key of the table is 
+            -- (contract, minute) as seen here: https://dune.xyz/queries/510124
              left outer join clearing_prices cp on t.tx_hash = cp.tx_hash
         and t.token = cp.token
              left outer join prices.usd pusd

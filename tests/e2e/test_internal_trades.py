@@ -44,7 +44,7 @@ class TestDuneAnalytics(unittest.TestCase):
     def setUp(self):
         self.dune_connection = DuneAnalytics.new_from_environment()
         self.period_start = datetime.strptime("2022-03-01", "%Y-%m-%d")
-        self.period_end = datetime.strptime("2022-03-12", "%Y-%m-%d")
+        self.period_end = datetime.strptime("2022-03-15", "%Y-%m-%d")
 
     def test_one_buffer_trade(self):
         """
@@ -150,6 +150,22 @@ class TestDuneAnalytics(unittest.TestCase):
             ),
             -678305196269132000,
         )
+
+    def test_deals_with_several_clearing_prices_for_same_token(self):
+        """
+        tx: 0x0d3a6219b26a180594278beeba745444010367401c347cf79f7b2385c308b2c9
+        In some solutions, the clearing prices of the auctions are not unique, due to
+        liquidity orders. In this case, we must sure that we don't duplicate internal buffer trades,
+        due to a duplication of the rows. The upper tx is one example, where it previously happend.
+        """
+        internal_transfers = get_internal_transfers(
+            dune=self.dune_connection,
+            tx_hash="0x0d3a6219b26a180594278beeba745444010367401c347cf79f7b2385c308b2c9",
+            period_start=self.period_start,
+            period_end=self.period_end,
+        )
+        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        self.assertEqual(len(internal_trades), 1 * 2)
 
     def test_zero_buffer_trade(self):
         """
