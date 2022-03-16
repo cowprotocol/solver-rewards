@@ -151,22 +151,6 @@ class TestDuneAnalytics(unittest.TestCase):
             -678305196269132000,
         )
 
-    def test_deals_with_several_clearing_prices_for_same_token(self):
-        """
-        tx: 0x0d3a6219b26a180594278beeba745444010367401c347cf79f7b2385c308b2c9
-        In some solutions, the clearing prices of the auctions are not unique, due to
-        liquidity orders. In this case, we must sure that we don't duplicate internal buffer trades,
-        due to a duplication of the rows. The upper tx is one example, where it previously happend.
-        """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
-            tx_hash="0x0d3a6219b26a180594278beeba745444010367401c347cf79f7b2385c308b2c9",
-            period_start=self.period_start,
-            period_end=self.period_end,
-        )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
-        self.assertEqual(len(internal_trades), 1 * 2)
-
     def test_zero_buffer_trade(self):
         """
         tx: 0x31ab7acdadc65944a3f9507793ba9c3c58a1add35de338aa840ac951a24dc5bc
@@ -181,33 +165,6 @@ class TestDuneAnalytics(unittest.TestCase):
         )
         internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
-
-    def test_buffer_trade_with_missing_price_from_pricesUSD(self):
-        """
-        tx: 0x80ae1c6a5224da60a1bf188f2101bd154e29ef71d54d136bfd1f6cc529f9d7ef
-        CRVCX is not part of the price list
-        """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
-            tx_hash="0x80ae1c6a5224da60a1bf188f2101bd154e29ef71d54d136bfd1f6cc529f9d7ef",
-            period_start=self.period_start,
-            period_end=self.period_end,
-        )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
-
-        self.assertEqual(len(internal_trades), 1 * 2)
-        self.assertEqual(
-            token_slippage(
-                "0xD533a949740bb3306d119CC777fa900bA034cd52", internal_transfers
-            ),
-            0,
-        )
-        self.assertEqual(
-            token_slippage(
-                "0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7", internal_transfers
-            ),
-            0,
-        )
 
     def test_buffer_trade_without_gp_settlement_price(self):
         """
@@ -262,6 +219,31 @@ class TestDuneAnalytics(unittest.TestCase):
         )
         internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
+
+    def test_does_not_find_slippage_for_internal_only_trades(self):
+        """
+        tx: 0x007a8534959a027c81f20c32dc3572f47cb7f19043d4a8d1e44379f363cb4c0f
+        This settlement is so complicated that the query does not find the internal trades
+        But since it has 0 dex interactions, we know that there can not be any slippage
+        """
+        internal_transfers = get_internal_transfers(
+            dune=self.dune_connection,
+            tx_hash="0x007a8534959a027c81f20c32dc3572f47cb7f19043d4a8d1e44379f363cb4c0f",
+            period_start=self.period_start,
+            period_end=self.period_end,
+        )
+        self.assertEqual(
+            token_slippage(
+                "0xdAC17F958D2ee523a2206206994597C13D831ec7", internal_transfers
+            ),
+            0,
+        )
+        self.assertEqual(
+            token_slippage(
+                "0x990f341946A3fdB507aE7e52d17851B87168017c", internal_transfers
+            ),
+            0,
+        )
 
 
 if __name__ == "__main__":
