@@ -20,7 +20,7 @@ class File:
         return self.filename()
 
 
-def write_to_csv(data_list: list, outfile: File):
+def write_to_csv(data_list: list[dataclass], outfile: File):
     """Writes `data_list` to `filename` as csv"""
     print(f"dumping {len(data_list)} results to {outfile.name}")
 

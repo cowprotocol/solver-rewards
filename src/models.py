@@ -41,6 +41,14 @@ class Address:
             return self.address == other.address
         return False
 
+    def __hash__(self):
+        return self.address.__hash__()
+
+    @classmethod
+    def zero(cls) -> Address:
+        """Returns Null Ethereum Address"""
+        return cls("0x0000000000000000000000000000000000000000")
+
     @staticmethod
     def _is_valid(address: str) -> bool:
         match_result = re.match(
@@ -101,14 +109,3 @@ class InternalTokenTransfer:
     ) -> list[InternalTokenTransfer]:
         """Filters records returning only Internal Trade types."""
         return cls.filter_by(recs, TransferType.INTERNAL_TRADE)
-
-
-@dataclass
-class SolverSlippage:
-    """Slippage per solver"""
-    eth_amount_wei: int
-    solver: Address
-
-    def __init__(self, eth_slippage_wei, solver):
-        self.eth_amount_wei = eth_slippage_wei
-        self.solver = Address(solver)
