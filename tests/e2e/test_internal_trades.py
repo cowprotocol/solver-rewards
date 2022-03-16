@@ -114,6 +114,29 @@ class TestDuneAnalytics(unittest.TestCase):
             internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
 
+    def test_does_filter_out_SOR_internal_trades_with_amm_interactions(self):
+        """
+        tx: 0x0ae4775b0a352f7ba61f5ec301aa6ac4de19b43f90d8a8674b6e5c8116eda96b
+        In this transaction, the solver sells too much XFT and buys to much DAI. Usually
+        this would be seen as a internal buffer trade, as the amounts match perfectly and DAI is in the allowed buffer token list.
+        But, since the solution is coming from 0x, we know that it is not an internal buffer trade,
+        given that the settlement had also an AMM interaction.
+        """
+        internal_transfers = get_internal_transfers(
+            dune=self.dune_connection,
+            tx_hash='0x0ae4775b0a352f7ba61f5ec301aa6ac4de19b43f90d8a8674b6e5c8116eda96b',
+            period_start=self.period_start,
+            period_end=self.period_end,
+        )
+        internal_trades = InternalTokenTransfer.internal_trades(
+            internal_transfers)
+        self.assertEqual(len(internal_trades), 0 * 2)
+        self.assertEqual(
+            token_slippage(
+                '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+                internal_transfers
+            ), 4494166090057377749)
+
     def test_does_recognize_slippage_due_to_buffer_token_list(self):
         """
         tx: 0x0bd527494e8efbf4c3013d1e355976ed90fa4e3b79d1f2c2a2690b02baae4abe

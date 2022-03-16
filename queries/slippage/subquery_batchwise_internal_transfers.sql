@@ -3,6 +3,7 @@ with
 filtered_trades as (
     select t.block_time,
            t.tx_hash,
+           dex_swaps,
            solver_name,
            solver_address,
            trader                                                as trader_in,
@@ -24,6 +25,7 @@ filtered_trades as (
 user_in as (
     select block_time,
            tx_hash,
+           dex_swaps,
            solver_address,
            solver_name,
            trader_in        as sender,
@@ -36,6 +38,7 @@ user_in as (
 user_out as (
     select block_time,
            tx_hash,
+           dex_swaps,
            solver_address,
            solver_name,
            contract_address as sender,
@@ -48,6 +51,7 @@ user_out as (
 other_transfers as (
     select block_time,
            tx_hash,
+           dex_swaps,
            solver_address,
            solver_name,
            "from"                sender,
@@ -94,6 +98,7 @@ batch_transfers as (
 incoming_and_outgoing as (
     SELECT block_time,
            tx_hash,
+           dex_swaps,
            CONCAT('0x', ENCODE(solver_address, 'hex')) as solver_address,
            solver_name,
            case
@@ -140,6 +145,7 @@ clearing_prices as (
 potential_buffer_trades as (
     select block_time,
            tx_hash,
+           dex_swaps,
            solver_address,
            solver_name,
            symbol,
@@ -147,6 +153,7 @@ potential_buffer_trades as (
            sum(amount) as amount
     from incoming_and_outgoing io
     group by tx_hash,
+             dex_swaps,
              solver_address,
              solver_name,
              symbol,
@@ -165,6 +172,17 @@ valued_potential_buffered_trades as (
              left outer join prices.usd pusd
                              on pusd.contract_address = t.token
                                  and date_trunc('minute', block_time) = pusd.minute
+),
+internal_buffer_trader_solvers as (
+    Select 
+    CONCAT('0x', ENCODE(address, 'hex')) 
+    from gnosis_protocol_v2."view_solvers" 
+    where 
+        name = 'DexCowAgg' or
+        name = 'CowDexAg' or 
+        name = 'MIP' or
+        name = 'Quasimodo' or
+        name = 'QuasiModo'
 ),
 buffer_trades as (
     Select date(a.block_time) as block_time,
@@ -185,8 +203,15 @@ buffer_trades as (
     where (
             case 
                 -- in order to classify as buffer trade, the postive surplus must be in an allow_listed token
-                when (a.amount > 0 and b.amount < 0 and a.token in (Select * from allow_listed_tokens)) 
-                    or (b.amount > 0 and a.amount < 0 and b.token in (Select * from allow_listed_tokens))
+                when ((a.amount > 0 and b.amount < 0 and a.token in (Select * from allow_listed_tokens)) 
+                    or (b.amount > 0 and a.amount < 0 and b.token in (Select * from allow_listed_tokens)))
+                    and
+                        -- We know that settlements have internal buffer trades if 
+                        -- either no amm interations are made 
+                        -- or the solution must come from a internal_buffer_trader_solvers solver
+                        -- Hence, in order to classify as buffer trade, also the following constraint must hold:
+                        (a.solver_address in (select * from internal_buffer_trader_solvers) 
+                        or a.dex_swaps = 0)
                 then
                     case
                         when a.clearing_value is not null and
@@ -234,7 +259,14 @@ buffer_trades as (
             )
 ),
 incoming_and_outgoing_with_buffer_trades as (
-    select *
+    select block_time,
+           tx_hash,
+           solver_address,
+           solver_name,
+           symbol,
+           token as token,
+           amount as amount,
+           transfer_type
     from incoming_and_outgoing
     union
         all
