@@ -14,8 +14,9 @@ class Network(Enum):
     """
     Enum for EVM network. Meant to be used everywhere instead of strings
     """
-    MAINNET = 'mainnet'
-    GCHAIN = 'gchain'
+
+    MAINNET = "mainnet"
+    GCHAIN = "gchain"
 
 
 # pylint: disable=too-few-public-methods
@@ -52,9 +53,7 @@ class Address:
     @staticmethod
     def _is_valid(address: str) -> bool:
         match_result = re.match(
-            pattern=r'^(0x)?[0-9a-f]{40}$',
-            string=address,
-            flags=re.IGNORECASE
+            pattern=r"^(0x)?[0-9a-f]{40}$", string=address, flags=re.IGNORECASE
         )
         return match_result is not None
 
@@ -63,11 +62,12 @@ class TransferType(Enum):
     """
     Classifications of Internal Token Transfers
     """
-    IN_AMM = 'IN_AMM'
-    OUT_AMM = 'OUT_AMM'
-    IN_USER = 'IN_USER'
-    OUT_USER = 'OUT_USER'
-    INTERNAL_TRADE = 'INTERNAL_TRADE'
+
+    IN_AMM = "IN_AMM"
+    OUT_AMM = "OUT_AMM"
+    IN_USER = "IN_USER"
+    OUT_USER = "OUT_USER"
+    INTERNAL_TRADE = "INTERNAL_TRADE"
 
     @classmethod
     def from_str(cls, type_str: str) -> TransferType:
@@ -81,6 +81,7 @@ class TransferType(Enum):
 @dataclass
 class InternalTokenTransfer:
     """Total amount reimbursed for accounting period"""
+
     transfer_type: TransferType
     token: Address
     amount: int
@@ -89,23 +90,21 @@ class InternalTokenTransfer:
     def from_dict(cls, obj: dict) -> InternalTokenTransfer:
         """Converts Dune data dict to object with types"""
         return cls(
-            transfer_type=TransferType.from_str(obj['transfer_type']),
-            token=Address(obj['token']),
-            amount=int(obj['amount']),
+            transfer_type=TransferType.from_str(obj["transfer_type"]),
+            token=Address(obj["token"]),
+            amount=int(obj["amount"]),
         )
 
     @staticmethod
     def filter_by(
-            recs: list[InternalTokenTransfer],
-            transfer_type: TransferType
+        recs: list[InternalTokenTransfer], transfer_type: TransferType
     ) -> list[InternalTokenTransfer]:
         """Filters list of records returning only those with indicated TransferType"""
         return list(filter(lambda r: r.transfer_type == transfer_type, recs))
 
     @classmethod
     def internal_trades(
-            cls,
-            recs: list[InternalTokenTransfer]
+        cls, recs: list[InternalTokenTransfer]
     ) -> list[InternalTokenTransfer]:
         """Filters records returning only Internal Trade types."""
         return cls.filter_by(recs, TransferType.INTERNAL_TRADE)

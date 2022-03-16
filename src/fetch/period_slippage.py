@@ -33,28 +33,28 @@ def add_token_list_table_to_query(original_sub_query: str) -> str:
     """Inserts the token_list table right after the WITH statement into the sql query"""
     token_list = get_trusted_tokens_from_url(ALLOWED_TOKEN_LIST_URL)
     sql_query_for_allowed_token_list = generate_sql_query_for_allowed_token_list(
-        token_list)
-    return prepend_to_sub_query(original_sub_query,
-                                sql_query_for_allowed_token_list)
+        token_list
+    )
+    return prepend_to_sub_query(original_sub_query, sql_query_for_allowed_token_list)
 
 
 def slippage_query(dune: DuneAnalytics) -> str:
     path = "./queries/slippage"
     slippage_sub_query = dune.open_query(
-        File("subquery_batchwise_internal_transfers.sql", path).filename())
+        File("subquery_batchwise_internal_transfers.sql", path).filename()
+    )
     select_slippage_query = dune.open_query(
-        File("select_slippage_results.sql", path).filename())
+        File("select_slippage_results.sql", path).filename()
+    )
     return "\n".join(
-        [
-            add_token_list_table_to_query(slippage_sub_query),
-            select_slippage_query
-        ]
+        [add_token_list_table_to_query(slippage_sub_query), select_slippage_query]
     )
 
 
 @dataclass
 class SolverSlippage:
     """Total amount reimbursed for accounting period"""
+
     solver_address: Address
     solver_name: str
     # ETH amount (in WEI) to be deducted from Solver reimbursement
@@ -64,15 +64,16 @@ class SolverSlippage:
     def from_dict(cls, obj: dict) -> SolverSlippage:
         """Converts Dune data dict to object with types"""
         return cls(
-            solver_address=Address(obj['solver_address']),
-            solver_name=obj['solver_name'],
-            amount_wei=int(obj['eth_slippage_wei'])
+            solver_address=Address(obj["solver_address"]),
+            solver_name=obj["solver_name"],
+            amount_wei=int(obj["eth_slippage_wei"]),
         )
 
 
 @dataclass
 class SplitSlippages:
     """Basic class to store the output of slippage fetching"""
+
     negative: list[SolverSlippage]
     positive: list[SolverSlippage]
 
@@ -98,20 +99,20 @@ class SplitSlippages:
 
 
 def get_period_slippage(
-        dune: DuneAnalytics,
-        period_start: datetime,
-        period_end: datetime
+    dune: DuneAnalytics,
+    period_start: datetime,
+    period_end: datetime,
 ) -> SplitSlippages:
     data_set = dune.fetch(
         query_str=slippage_query(dune),
         network=Network.MAINNET,
-        name='Slippage Accounting',
+        name="Slippage Accounting",
         parameters=[
             QueryParameter.date_type("StartTime", period_start),
             QueryParameter.date_type("EndTime", period_end),
-            QueryParameter.text_type("TxHash", '0x'),
-            QueryParameter.text_type("ResultTable", "results")
-        ]
+            QueryParameter.text_type("TxHash", "0x"),
+            QueryParameter.text_type("ResultTable", "results"),
+        ],
     )
     results = SplitSlippages()
     for row in data_set:
@@ -121,20 +122,11 @@ def get_period_slippage(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(
-        description="Fetch Accounting Period Totals")
+    parser = argparse.ArgumentParser(description="Fetch Accounting Period Totals")
     parser.add_argument(
-        "--start",
-        type=str,
-        help="Accounting Period Start",
-        required=True
+        "--start", type=str, help="Accounting Period Start", required=True
     )
-    parser.add_argument(
-        "--end",
-        type=str,
-        help="Accounting Period End",
-        required=True
-    )
+    parser.add_argument("--end", type=str, help="Accounting Period End", required=True)
     args = parser.parse_args()
 
     dune_connection = DuneAnalytics.new_from_environment()

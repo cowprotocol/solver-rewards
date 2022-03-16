@@ -15,30 +15,25 @@ class MyTestCase(unittest.TestCase):
         data_set = [
             DummyDataClass(1, "a"),
             DummyDataClass(2, "b"),
-            DummyDataClass(3, "b")
+            DummyDataClass(3, "b"),
         ]
-        expected = {
-            1: data_set[0],
-            2: data_set[1],
-            3: data_set[2]
-        }
-        self.assertEqual(index_by(data_set, 'x'), expected)
+        expected = {1: data_set[0], 2: data_set[1], 3: data_set[2]}
+        self.assertEqual(index_by(data_set, "x"), expected)
 
         with self.assertRaises(IndexError) as err:
-            index_by(data_set, 'y')
+            index_by(data_set, "y")
 
         self.assertEqual(
-            str(err.exception),
-            "Attempting to index by non-unique index key \"b\""
+            str(err.exception), 'Attempting to index by non-unique index key "b"'
         )
-        bad_field = 'xxx'
+        bad_field = "xxx"
         with self.assertRaises(AssertionError) as err:
             index_by(data_set, bad_field)
         self.assertEqual(
             str(err.exception),
-            f"<class \'test_data_utils.DummyDataClass\'> has no field \"{bad_field}\""
+            f"<class 'test_data_utils.DummyDataClass'> has no field \"{bad_field}\"",
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

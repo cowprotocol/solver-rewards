@@ -3,12 +3,13 @@ import csv
 import os
 from dataclasses import fields, astuple, dataclass
 
-FILE_OUT_PATH = os.environ.get('FILE_OUT_PATH', './out')
+FILE_OUT_PATH = os.environ.get("FILE_OUT_PATH", "./out")
 
 
 @dataclass
 class File:
     """Simple structure for declaring and passing around filenames"""
+
     name: str
     path: str = FILE_OUT_PATH
 
@@ -28,13 +29,13 @@ def write_to_csv(data_list: list[dataclass], outfile: File):
     if not os.path.exists(outfile.path):
         os.makedirs(outfile.path)
 
-    with open(outfile.filename(), 'w', encoding='utf-8') as out_file:
+    with open(outfile.filename(), "w", encoding="utf-8") as out_file:
         if len(data_list) == 0:
             return
         headers = [f.name for f in fields(data_list[0])]
         data_tuple = [astuple(x) for x in data_list]
 
-        dict_writer = csv.DictWriter(out_file, headers, lineterminator='\n')
+        dict_writer = csv.DictWriter(out_file, headers, lineterminator="\n")
         dict_writer.writeheader()
-        writer = csv.writer(out_file, lineterminator='\n')
+        writer = csv.writer(out_file, lineterminator="\n")
         writer.writerows(data_tuple)

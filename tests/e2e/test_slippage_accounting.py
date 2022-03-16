@@ -16,14 +16,14 @@ class TestDuneAnalytics(unittest.TestCase):
         dune = DuneAnalytics.new_from_environment()
         solver_slippages = get_period_slippage(
             dune=dune,
-            period_start=datetime.strptime('2022-03-01', "%Y-%m-%d"),
-            period_end=datetime.strptime('2022-03-02', "%Y-%m-%d"),
+            period_start=datetime.strptime("2022-03-01", "%Y-%m-%d"),
+            period_end=datetime.strptime("2022-03-02", "%Y-%m-%d"),
         )
         self.assertLess(
             solver_slippages.sum_positive() - solver_slippages.sum_negative(),
-            2 * 10 ** 18
+            2 * 10**18,
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

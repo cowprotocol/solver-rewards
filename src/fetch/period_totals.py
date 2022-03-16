@@ -13,6 +13,7 @@ from src.models import Network
 @dataclass
 class PeriodTotals:
     """Total amount reimbursed for accounting period"""
+
     # Block numbers for accounting period boundaries
     # TODO - introduce AccountingPeriod class (data class)
     period_start: datetime
@@ -23,9 +24,7 @@ class PeriodTotals:
 
 
 def get_period_totals(
-        dune: DuneAnalytics,
-        period_start: datetime,
-        period_end: datetime
+    dune: DuneAnalytics, period_start: datetime, period_end: datetime
 ) -> PeriodTotals:
     """
     Fetches & Returns Dune Results for accounting period totals.
@@ -37,32 +36,25 @@ def get_period_totals(
         parameters=[
             QueryParameter.date_type("StartTime", period_start),
             QueryParameter.date_type("EndTime", period_end),
-        ])
+        ],
+    )
     assert len(data_set) == 1
     rec = data_set[0]
     return PeriodTotals(
         period_start=period_start,
         period_end=period_end,
-        execution_cost_eth=rec['execution_cost_eth'],
-        cow_rewards=rec['cow_rewards'],
-        realized_fees_eth=rec['realized_fees_eth'],
+        execution_cost_eth=rec["execution_cost_eth"],
+        cow_rewards=rec["cow_rewards"],
+        realized_fees_eth=rec["realized_fees_eth"],
     )
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fetch Accounting Period Totals")
     parser.add_argument(
-        "--start",
-        type=str,
-        help="Accounting Period Start",
-        required=True
+        "--start", type=str, help="Accounting Period Start", required=True
     )
-    parser.add_argument(
-        "--end",
-        type=str,
-        help="Accounting Period End",
-        required=True
-    )
+    parser.add_argument("--end", type=str, help="Accounting Period End", required=True)
     args = parser.parse_args()
 
     dune_connection = DuneAnalytics.new_from_environment()

@@ -17,8 +17,9 @@ class TokenType(Enum):
     """
     Classifications of CSV Airdrop Transfer Types
     """
-    NATIVE = 'native'
-    ERC20 = 'erc20'
+
+    NATIVE = "native"
+    ERC20 = "erc20"
 
     # Technically the app also supports NFT transfers, but this is irrelevant here
     # NFT = 'nft'
@@ -38,6 +39,7 @@ class TokenType(Enum):
 @dataclass
 class Transfer:
     """Total amount reimbursed for accounting period"""
+
     token_type: TokenType
     # Safe airdrop uses null address for native asset transfers
     token_address: Optional[Address]
@@ -48,8 +50,8 @@ class Transfer:
     @classmethod
     def from_dict(cls, obj: dict) -> Transfer:
         """Converts Dune data dict to object with types"""
-        token_type = TokenType.from_str(obj['token_type'])
-        token_address = obj['token_address']
+        token_type = TokenType.from_str(obj["token_type"])
+        token_address = obj["token_address"]
         if token_type == TokenType.NATIVE and token_address is not None:
             raise ValueError("Native transfers must have null token_address")
         if token_type == TokenType.ERC20 and token_address is None:
@@ -57,17 +59,18 @@ class Transfer:
 
         return cls(
             token_type=token_type,
-            token_address=Address(
-                token_address) if token_type != TokenType.NATIVE else None,
-            receiver=Address(obj['receiver']),
-            amount=float(obj['amount'])
+            token_address=Address(token_address)
+            if token_type != TokenType.NATIVE
+            else None,
+            receiver=Address(obj["receiver"]),
+            amount=float(obj["amount"]),
         )
 
     def add_slippage(self, slippage: Optional[SolverSlippage]):
         if slippage is None:
             return
         assert self.receiver == slippage.solver_address, "receiver != solver"
-        adjustment = slippage.amount_wei / 10 ** 18
+        adjustment = slippage.amount_wei / 10**18
         print(
             f"Adjusting {self.receiver}({slippage.solver_name}) "
             f"transfer by {adjustment:.5f} (slippage)"
@@ -79,9 +82,7 @@ class Transfer:
 
 
 def get_transfers(
-        dune: DuneAnalytics,
-        period_start: datetime,
-        period_end: datetime
+    dune: DuneAnalytics, period_start: datetime, period_end: datetime
 ) -> list[Transfer]:
     reimbursements_and_rewards = dune.fetch(
         query_str=dune.open_query("./queries/period_transfers.sql"),
@@ -90,10 +91,11 @@ def get_transfers(
         parameters=[
             QueryParameter.date_type("StartTime", period_start),
             QueryParameter.date_type("EndTime", period_end),
-        ])
+        ],
+    )
 
     negative_slippage = get_period_slippage(dune, period_start, period_end).negative
-    indexed_slippage = index_by(negative_slippage, 'solver_address')
+    indexed_slippage = index_by(negative_slippage, "solver_address")
 
     results = []
     for row in reimbursements_and_rewards:
@@ -118,17 +120,9 @@ def get_transfers(
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Fetch Accounting Period Totals")
     parser.add_argument(
-        "--start",
-        type=str,
-        help="Accounting Period Start",
-        required=True
+        "--start", type=str, help="Accounting Period Start", required=True
     )
-    parser.add_argument(
-        "--end",
-        type=str,
-        help="Accounting Period End",
-        required=True
-    )
+    parser.add_argument("--end", type=str, help="Accounting Period End", required=True)
     args = parser.parse_args()
 
     dune_connection = DuneAnalytics.new_from_environment()

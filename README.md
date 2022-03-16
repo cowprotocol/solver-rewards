@@ -1,5 +1,7 @@
 # CoW Protocol: Solver Reimbursement & Rewards Distributor
 
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+
 ## Installation & Usage
 
 ```shell
@@ -45,6 +47,7 @@ To fetch the total slippage for an accounting period, run period_slippage script
 ```shell
 python -m src.fetch.period_slippage --start '2022-02-01' --end '2022-02-08'
 ```
+
 # Summary of Accounting Procedure
 
 In what follows **Accounting Periods** are defined in intervals of 1 week and accounting
@@ -54,19 +57,39 @@ is performed on the time interval
 StartTime <= block_time < EndTime
 ```
 
+# Testing & Contributing
+
+To run the, unit, end to end and full test suite run any of
+
+```py
+python -m pytest tests/unit/
+python -m pytest tests/e2e/
+python -m pytest tests/
+```
+
+This project conforms to [Black](https://github.com/psf/black) code style.
+You can auto format the project with the following command:
+
+```py
+black ./
+```
+
+However, many IDEs can be configured to auto format on save.
+
 ## Proposed Reimbursement Work Flow
 
-The proposed workflow is to be automated and run on a schedule of once per *accounting
-period* at N hours past the end of the accounting period. Note that we must wait some
+The proposed workflow is to be automated and run on a schedule of once per _accounting
+period_ at N hours past the end of the accounting period. Note that we must wait some
 time after the period has ended for some data to finalize (e.g. `dex.trades`
 , `ethereum.transactions` our event data, etc...).
 
 1. Run the Reimbursement & Rewards Query
 
 2. Compute Solver Imbalances (i.e. penalties)
-    - Purely Internal Balances are cross-checked with accepted internally traded tokens
-      list
-    - Slippage Imbalances
+
+   - Purely Internal Balances are cross-checked with accepted internally traded tokens
+     list
+   - Slippage Imbalances
 
 3. Run the Fee Withdraw and Convert Service (if ETH is needed)
 
