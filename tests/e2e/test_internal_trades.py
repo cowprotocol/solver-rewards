@@ -116,18 +116,18 @@ class TestDuneAnalytics(unittest.TestCase):
         """
         internal_transfers = get_internal_transfers(
             dune=self.dune_connection,
-            tx_hash='0x0ae4775b0a352f7ba61f5ec301aa6ac4de19b43f90d8a8674b6e5c8116eda96b',
+            tx_hash="0x0ae4775b0a352f7ba61f5ec301aa6ac4de19b43f90d8a8674b6e5c8116eda96b",
             period_start=self.period_start,
             period_end=self.period_end,
         )
-        internal_trades = InternalTokenTransfer.internal_trades(
-            internal_transfers)
+        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
         self.assertEqual(
             token_slippage(
-                '0x6B175474E89094C44Da98b954EedeAC495271d0F',
-                internal_transfers
-            ), 4494166090057377749)
+                "0x6B175474E89094C44Da98b954EedeAC495271d0F", internal_transfers
+            ),
+            4494166090057377749,
+        )
 
     def test_does_recognize_slippage_due_to_buffer_token_list(self):
         """
