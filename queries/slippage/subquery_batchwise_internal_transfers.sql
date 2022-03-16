@@ -183,45 +183,55 @@ buffer_trades as (
              full outer join valued_potential_buffered_trades b
                              on a.tx_hash = b.tx_hash
     where (
-              case
-                  when a.clearing_value is not null and
-                       b.clearing_value is not null
-                      -- If clearing prices are use, the price of internal trades are usually pretty close to
-                      -- the clearing prices. But they don't have to be the same, as internal trades are usually settled 
-                      -- at the effective rate of an AMM. One example with deviating prices, is the tx:
-                      -- 0x9a318d1abd997bcf8afed55b2946a7b1bd919d227f094cdcc99d8d6155808d7c. It 
-                      -- scores a matchablity of 0.021. 
-                      -- Another example is xd2e1eeef702d562491d6b68683772fec1b119df18e338b50f45ed4751c89e406 with a
-                      -- matchablity of 0.02 for USDC to ETH trade
-                      -- But for higher values, one more commonly find examples, where solvers sell a little bit too much
-                      -- of the selling token and hence also receive a little bit too much of the buying token
-                      -- One could see this as an internal buffer trade, but since this is not good for the protocol's buffers
-                      -- we will not evalute this as buffer trade, but rather as positive and negative slippage at the same time:
-                      -- One example is: 0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7 with a matchablity of 0.26
-                      -- selling too much usdc and receiving too much eth
-                      then (abs((a.clearing_value + b.clearing_value) /
-                               (abs(a.clearing_value) + abs(b.clearing_value))) <
-                           0.025 
-                           and a.token != b.token)
-                  else case
-                           when a.usd_value is not null and b.usd_value is not null
-                                -- If prices from the prices.usd dune table are used, the prices can also be off from time to time.
-                                -- On the one hand side, we don't wanna allow to high deviations. E.g. for
-                                -- 0x9a318d1abd997bcf8afed55b2946a7b1bd919d227f094cdcc99d8d6155808d7c a matchability of 0.26 is calculated
-                                -- for a slippage of WETH and the LDO deficit. (In this example the internal trade is only STRONG -> LDO)
-                                -- On the other hand side, real internal trades like the CRV to USDT internal trade of 0xc15dda7c10eb317c0ad177316020ec4baa13babb0713b73480feef14045603f4
-                                -- also score a matchablilty of 0.027
-                                -- As a compromise 0.025 was chosen
-                               then (abs((a.usd_value + b.usd_value) /
-                                        (abs(a.usd_value) + abs(b.usd_value))) <
-                                    0.025 
-                                    and a.token != b.token
-                                    and abs(a.usd_value) > 10 -- we don't want small slippage values to be recognized as internal swaps
-                                    )
-                           else false
-                      end
-                  end
-              )
+            case 
+                -- in order to classify as buffer trade, the postive surplus must be in an allow_listed token
+                when (a.amount > 0 and b.amount < 0 and a.token in (Select * from allow_listed_tokens)) 
+                    or (b.amount > 0 and a.amount < 0 and b.token in (Select * from allow_listed_tokens))
+                then
+                    case
+                        when a.clearing_value is not null and
+                            b.clearing_value is not null
+                            -- If clearing prices are use, the price of internal trades are usually pretty close to
+                            -- the clearing prices. But they don't have to be the same, as internal trades are usually settled 
+                            -- at the effective rate of an AMM. One example with deviating prices, is the tx:
+                            -- 0x9a318d1abd997bcf8afed55b2946a7b1bd919d227f094cdcc99d8d6155808d7c. It 
+                            -- scores a matchablity of 0.021.
+                            -- Another example is xd2e1eeef702d562491d6b68683772fec1b119df18e338b50f45ed4751c89e406 with a
+                            -- matchablity of 0.02 for USDC to ETH trade
+                            -- But for higher values, one more commonly find examples, where solvers sell a little bit too much
+                            -- of the selling token and hence also receive a little bit too much of the buying token
+                            -- One could see this as an internal buffer trade, but since this is not good for the protocol's buffers
+                            -- we will not evalute this as buffer trade, but rather as positive and negative slippage at the same time:
+                            -- One example is: 0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7 with a matchablity of 0.26
+                            -- selling too much usdc and receiving too much eth
+                            then (abs((a.clearing_value + b.clearing_value) /
+                                    (abs(a.clearing_value) + abs(b.clearing_value))) <
+                                0.025
+                                and a.token != b.token)
+                        else 
+                            case
+                                when a.usd_value is not null and b.usd_value is not null
+                                        -- If prices from the prices.usd dune table are used, the prices can also be off from time to time.
+                                        -- On the one hand side, we don't wanna allow to high deviations. E.g. for
+                                        -- 0x9a318d1abd997bcf8afed55b2946a7b1bd919d227f094cdcc99d8d6155808d7c a matchability of 0.26 is calculated
+                                        -- for a slippage of WETH and the LDO deficit. (In this example the internal trade is only STRONG -> LDO)
+                                        -- On the other hand side, real internal trades like the CRV to USDT internal trade of 0xc15dda7c10eb317c0ad177316020ec4baa13babb0713b73480feef14045603f4
+                                        -- also score a matchablilty of 0.027
+                                        -- As a compromise 0.025 was chosen
+                                    then (abs((a.usd_value + b.usd_value) /
+                                                (abs(a.usd_value) + abs(b.usd_value))) <
+                                            0.025
+                                            and a.token != b.token
+                                            and abs(a.usd_value) > 10 -- we don't want small slippage values to be recognized as internal swaps
+                                            )
+                                else 
+                                false
+                            end
+                        end
+                    else
+                        false
+                end
+            )
 ),
 incoming_and_outgoing_with_buffer_trades as (
     select *
