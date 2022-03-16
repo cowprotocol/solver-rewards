@@ -13,6 +13,12 @@ from src.models import Network, Address
 from src.utils.dataset import index_by
 
 
+def safe_url() -> str:
+    safe_address = Address("0xA03be496e67Ec29bC62F01a428683D7F9c204930")
+    app_hash = "Qme49gESuwpSvwANmEqo34yfCkzyQehooJ5yL7aHmKJnpZ"
+    return f"https://gnosis-safe.io/app/eth:{safe_address}/apps?appUrl=https://cloudflare-ipfs.com/ipfs/{app_hash}/"
+
+
 class TokenType(Enum):
     """
     Classifications of CSV Airdrop Transfer Types
@@ -138,3 +144,9 @@ if __name__ == "__main__":
         data_list=transfers,
         outfile=File(name=f"transfers-{args.start}-to-{args.end}.csv"),
     )
+    eth_total = sum(t.amount for t in transfers if t.token_type == TokenType.NATIVE)
+    print(f"Total ETH Funds needed: {eth_total}")
+    cow_total = sum(t.amount for t in transfers if t.token_type == TokenType.ERC20)
+    print(f"Total COW Funds needed: {cow_total}")
+    print(f"For solver payouts, paste the transfer file CSV Airdrop at:")
+    print(f"{safe_url()}")
