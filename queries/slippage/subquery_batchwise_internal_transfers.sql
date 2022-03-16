@@ -121,6 +121,7 @@ incoming_and_outgoing as (
            transfer_type
     from batch_transfers i
              left outer join erc20.tokens t on i.token = t.contract_address
+        where dex_swaps > 0
 ),
 pre_clearing_prices as (
     select call_tx_hash             as tx_hash,
@@ -212,12 +213,9 @@ buffer_trades as (
                 when ((a.amount > 0 and b.amount < 0 and a.token in (Select * from allow_listed_tokens)) 
                     or (b.amount > 0 and a.amount < 0 and b.token in (Select * from allow_listed_tokens)))
                     and
-                        -- We know that settlements have internal buffer trades if 
-                        -- either no amm interations are made 
-                        -- or the solution must come from a internal_buffer_trader_solvers solver
-                        -- Hence, in order to classify as buffer trade, also the following constraint must hold:
-                        (a.solver_address in (select * from internal_buffer_trader_solvers) 
-                        or a.dex_swaps = 0)
+                        -- We know that settlements - with at least one amm interaction - have internal buffer trades only if 
+                        -- the solution must come from a internal_buffer_trader_solvers solver
+                        a.solver_address in (select * from internal_buffer_trader_solvers) 
                 then
                     case
                         when a.clearing_value is not null and
