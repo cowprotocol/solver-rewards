@@ -1,13 +1,13 @@
 """
 Script to query and display total funds distributed for specified accounting period.
 """
-import argparse
 from dataclasses import dataclass
 from datetime import datetime
 from pprint import pprint
 
 from src.dune_analytics import DuneAnalytics, QueryParameter
 from src.models import Network
+from src.utils.script_args import generic_script_init
 
 
 @dataclass
@@ -50,14 +50,9 @@ def get_period_totals(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Fetch Accounting Period Totals")
-    parser.add_argument(
-        "--start", type=str, help="Accounting Period Start", required=True
+    dune_connection, args = generic_script_init(
+        description="Fetch Accounting Period Totals"
     )
-    parser.add_argument("--end", type=str, help="Accounting Period End", required=True)
-    args = parser.parse_args()
-
-    dune_connection = DuneAnalytics.new_from_environment()
 
     total_for_period = get_period_totals(
         dune=dune_connection,

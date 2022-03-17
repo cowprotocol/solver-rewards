@@ -7,7 +7,7 @@ import os
 import time
 from datetime import datetime
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Collection, Optional
 
 from requests import Session
 
@@ -37,29 +37,29 @@ class QueryParameter:
         self.value = value
 
     @classmethod
-    def text_type(cls, name: str, value: str):
+    def text_type(cls, name: str, value: str) -> QueryParameter:
         """Constructs a Query parameter of type text"""
         return cls(name, ParameterType.TEXT, value)
 
     @classmethod
-    def number_type(cls, name: str, value: int | float):
+    def number_type(cls, name: str, value: int | float) -> QueryParameter:
         """Constructs a Query parameter of type number"""
         return cls(name, ParameterType.NUMBER, value)
 
     @classmethod
-    def date_type(cls, name: str, value: datetime):
+    def date_type(cls, name: str, value: datetime) -> QueryParameter:
         """Constructs a Query parameter of type date"""
         return cls(name, ParameterType.DATE, value)
 
     @classmethod
-    def list_type(cls, name: str, value: list[str]):
+    def list_type(cls, name: str, value: list[str]) -> QueryParameter:
         """Constructs a Query parameter of type list"""
         return cls(name, ParameterType.LIST, value)
 
     def _value_str(self) -> str:
         match self.type:
             case (ParameterType.TEXT):
-                return self.value
+                return str(self.value)
             case (ParameterType.NUMBER):
                 return str(self.value)
             case (ParameterType.LIST):
@@ -67,7 +67,7 @@ class QueryParameter:
                 return "\n".join(self.value)
             case (ParameterType.DATE):
                 # This is the postgres string format of timestamptz
-                return self.value.strftime("%Y-%m-%d %H:%M:%S")
+                return str(self.value.strftime("%Y-%m-%d %H:%M:%S"))
 
         raise TypeError(f"Type {self.type} not recognized!")
 
@@ -111,7 +111,7 @@ class DuneAnalytics:
         self.session.headers.update(headers)
 
     @staticmethod
-    def new_from_environment():
+    def new_from_environment() -> DuneAnalytics:
         """
         Initialize and authenticate a Dune client from the current environment.
         """
@@ -124,7 +124,7 @@ class DuneAnalytics:
         dune.fetch_auth_token()
         return dune
 
-    def login(self):
+    def login(self) -> None:
         """
         Try to log in to duneanalytics.com & get the token
         """
@@ -151,7 +151,7 @@ class DuneAnalytics:
         self.session.post(auth_url, data=form_data)
         self.auth_refresh = self.session.cookies.get("auth-refresh")
 
-    def fetch_auth_token(self):
+    def fetch_auth_token(self) -> None:
         """
         Fetch authorization token for the user
         """
@@ -163,7 +163,7 @@ class DuneAnalytics:
         else:
             print(response.text)
 
-    def login_and_fetch_auth(self):
+    def login_and_fetch_auth(self) -> None:
         """combines both of `login` and `fetch_auth_token`"""
         # It seems login does both anyway.
         self.login()
@@ -175,7 +175,7 @@ class DuneAnalytics:
         query_name: str,
         network: Network,
         parameters: list[QueryParameter],
-    ):
+    ) -> None:
         """
         Initiates a new query
         """
@@ -228,7 +228,7 @@ class DuneAnalytics:
         }
         self.handle_dune_request(query_data)
 
-    def execute_query(self):
+    def execute_query(self) -> None:
         """
         Executes query according to the given id.
         """
@@ -241,7 +241,7 @@ class DuneAnalytics:
         }
         self.handle_dune_request(query_data)
 
-    def query_result_id(self):
+    def query_result_id(self) -> Optional[str]:
         """
         Fetch the query result id for a query
         :return: result_id
@@ -256,16 +256,16 @@ class DuneAnalytics:
 
         data = self.handle_dune_request(query_data)
         result_id = data.get("data").get("get_result").get("result_id")
-        return result_id
+        return str(result_id) if result_id else None
 
-    def query_result(self, result_id):
+    def query_result(self, result_id: str):  # type: ignore
         """
         Fetch the result for a query
         :param result_id: result id of the query
         """
         query_data = {
             "operationName": "FindResultDataByResult",
-            "variables": {"result_id": result_id},
+            "variables": {"result_id": str(result_id)},
             "query": "query FindResultDataByResult($result_id: uuid!) "
             "{\n  query_results(where: {id: {_eq: $result_id}}) "
             "{\n    id\n    job_id\n    error\n    runtime\n    "
@@ -276,7 +276,7 @@ class DuneAnalytics:
 
         return self.handle_dune_request(query_data)
 
-    def handle_dune_request(self, query):
+    def handle_dune_request(self, query: dict[str, Collection[str]]):  # type: ignore
         """
         Parses response for errors by key and raises runtime error if they exist.
         Successful responses will be printed to std-out and response json returned
@@ -319,7 +319,7 @@ class DuneAnalytics:
                 self.login_and_fetch_auth()
         raise Exception(f"Maximum retries ({max_retries}) exceeded")
 
-    def execute_and_await_results(self, sleep_time) -> list[dict]:
+    def execute_and_await_results(self, sleep_time: int) -> list[dict]:
         """
         Executes query by ID and awaits completion.
         Since queries take some time to complete we include a sleep parameter

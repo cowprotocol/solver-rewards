@@ -34,15 +34,15 @@ class Address:
         else:
             raise ValueError(f"Invalid Ethereum Address {address}")
 
-    def __str__(self):
+    def __str__(self) -> str:
         return str(self.address)
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Address):
             return self.address == other.address
         return False
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return self.address.__hash__()
 
     @classmethod
@@ -87,7 +87,7 @@ class InternalTokenTransfer:
     amount: int
 
     @classmethod
-    def from_dict(cls, obj: dict) -> InternalTokenTransfer:
+    def from_dict(cls, obj: dict[str, str]) -> InternalTokenTransfer:
         """Converts Dune data dict to object with types"""
         return cls(
             transfer_type=TransferType.from_str(obj["transfer_type"]),

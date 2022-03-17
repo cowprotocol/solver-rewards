@@ -1,7 +1,7 @@
 import unittest
 from src.fetch.period_slippage import (
     prepend_to_sub_query,
-    generate_sql_query_for_allowed_token_list,
+    allowed_token_list_query,
 )
 
 
@@ -12,7 +12,7 @@ class TestQueryBuilding(unittest.TestCase):
             "0x111119bc25d806ad9ddcbe246c4b5e5505645718",
         ]
         expected_query = "allow_listed_tokens as (select * from (VALUES ('\\xde1c59bc25d806ad9ddcbe246c4b5e5505645718' :: bytea),('\\x111119bc25d806ad9ddcbe246c4b5e5505645718' :: bytea)) AS t (token)),"
-        query = generate_sql_query_for_allowed_token_list(list)
+        query = allowed_token_list_query(list)
         self.assertEqual(query, expected_query)
 
     def test_adds_table_after_with_statement(self):

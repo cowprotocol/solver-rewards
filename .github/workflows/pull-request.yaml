@@ -21,6 +21,8 @@ jobs:
       - name: Black
         run:
           black --check ./
+      - name: Type Check (mypy)
+        run: mypy src --strict
       - name: Unit Tests
         run:
           python -m pytest tests/unit

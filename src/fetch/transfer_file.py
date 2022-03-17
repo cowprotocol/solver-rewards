@@ -1,28 +1,31 @@
+"""Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Period"""
 from __future__ import annotations
 
-import argparse
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
 from typing import Optional
 
 from src.dune_analytics import DuneAnalytics, QueryParameter
-from src.fetch.period_slippage import get_period_slippage, SolverSlippage
+from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.file_io import File, write_to_csv
-from src.models import Network, Address
+from src.models import Address, Network
 from src.utils.dataset import index_by
+from src.utils.script_args import generic_script_init
 
 
 def safe_url() -> str:
+    """URL to CSV Airdrop App in CoW DAO Team Safe"""
     safe_address = Address("0xA03be496e67Ec29bC62F01a428683D7F9c204930")
     app_hash = "Qme49gESuwpSvwANmEqo34yfCkzyQehooJ5yL7aHmKJnpZ"
-    return f"https://gnosis-safe.io/app/eth:{safe_address}/apps?appUrl=https://cloudflare-ipfs.com/ipfs/{app_hash}/"
+    return (
+        f"https://gnosis-safe.io/app/eth:{safe_address}"
+        f"/apps?appUrl=https://cloudflare-ipfs.com/ipfs/{app_hash}/"
+    )
 
 
 class TokenType(Enum):
-    """
-    Classifications of CSV Airdrop Transfer Types
-    """
+    """Classifications of CSV Airdrop Transfer Types"""
 
     NATIVE = "native"
     ERC20 = "erc20"
@@ -38,7 +41,7 @@ class TokenType(Enum):
         except KeyError as err:
             raise ValueError(f"No TransferType {type_str}!") from err
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.value
 
 
@@ -54,7 +57,7 @@ class Transfer:
     amount: float
 
     @classmethod
-    def from_dict(cls, obj: dict) -> Transfer:
+    def from_dict(cls, obj: dict[str, str]) -> Transfer:
         """Converts Dune data dict to object with types"""
         token_type = TokenType.from_str(obj["token_type"])
         token_address = obj["token_address"]
@@ -72,7 +75,8 @@ class Transfer:
             amount=float(obj["amount"]),
         )
 
-    def add_slippage(self, slippage: Optional[SolverSlippage]):
+    def add_slippage(self, slippage: Optional[SolverSlippage]) -> None:
+        """Adds Adjusts Transfer amount by Slippage amount"""
         if slippage is None:
             return
         assert self.receiver == slippage.solver_address, "receiver != solver"
@@ -90,6 +94,7 @@ class Transfer:
 def get_transfers(
     dune: DuneAnalytics, period_start: datetime, period_end: datetime
 ) -> list[Transfer]:
+    """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
     reimbursements_and_rewards = dune.fetch(
         query_str=dune.open_query("./queries/period_transfers.sql"),
         network=Network.MAINNET,
@@ -107,7 +112,9 @@ def get_transfers(
     for row in reimbursements_and_rewards:
         transfer = Transfer.from_dict(row)
         if transfer.token_type == TokenType.NATIVE:
-            slippage: SolverSlippage = indexed_slippage.get(transfer.receiver)
+            slippage: SolverSlippage = indexed_slippage.get(
+                transfer.receiver, SolverSlippage(transfer.receiver, "Unknown", 0)
+            )
             try:
                 transfer.add_slippage(slippage)
             except ValueError as err:
@@ -124,29 +131,24 @@ def get_transfers(
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Fetch Accounting Period Totals")
-    parser.add_argument(
-        "--start", type=str, help="Accounting Period Start", required=True
+    dune_connection, args = generic_script_init(
+        description="Fetch Complete Reimbursement"
     )
-    parser.add_argument("--end", type=str, help="Accounting Period End", required=True)
-    args = parser.parse_args()
-
-    dune_connection = DuneAnalytics.new_from_environment()
-
     transfers = get_transfers(
         dune=dune_connection,
         period_start=datetime.strptime(args.start, "%Y-%m-%d"),
         period_end=datetime.strptime(args.end, "%Y-%m-%d"),
     )
 
-    outfile = File(name=f"transfers-{args.start}-to-{args.end}.csv")
     write_to_csv(
         data_list=transfers,
         outfile=File(name=f"transfers-{args.start}-to-{args.end}.csv"),
     )
     eth_total = sum(t.amount for t in transfers if t.token_type == TokenType.NATIVE)
-    print(f"Total ETH Funds needed: {eth_total}")
     cow_total = sum(t.amount for t in transfers if t.token_type == TokenType.ERC20)
-    print(f"Total COW Funds needed: {cow_total}")
-    print(f"For solver payouts, paste the transfer file CSV Airdrop at:")
-    print(f"{safe_url()}")
+    print(
+        f"Total ETH Funds needed: {eth_total}\n"
+        f"Total COW Funds needed: {cow_total}\n"
+        f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
+        f"{safe_url()}"
+    )

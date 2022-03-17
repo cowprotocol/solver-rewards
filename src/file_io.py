@@ -1,7 +1,8 @@
 """Utility code for I/O related tasks"""
 import csv
 import os
-from dataclasses import fields, astuple, dataclass
+from dataclasses import fields, astuple, dataclass, is_dataclass
+from typing import Any
 
 FILE_OUT_PATH = os.environ.get("FILE_OUT_PATH", "./out")
 
@@ -17,11 +18,11 @@ class File:
         """Returns the complete path to file"""
         return os.path.join(self.path, self.name)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return self.filename()
 
 
-def write_to_csv(data_list: list[dataclass], outfile: File):
+def write_to_csv(data_list: list[Any], outfile: File) -> None:
     """Writes `data_list` to `filename` as csv"""
     print(f"dumping {len(data_list)} results to {outfile.name}")
 
@@ -32,7 +33,9 @@ def write_to_csv(data_list: list[dataclass], outfile: File):
     with open(outfile.filename(), "w", encoding="utf-8") as out_file:
         if len(data_list) == 0:
             return
-        headers = [f.name for f in fields(data_list[0])]
+        sample = data_list[0]
+        assert is_dataclass(sample), "Method only accepts lists of type dataclass"
+        headers = [f.name for f in fields(sample)]
         data_tuple = [astuple(x) for x in data_list]
 
         dict_writer = csv.DictWriter(out_file, headers, lineterminator="\n")
