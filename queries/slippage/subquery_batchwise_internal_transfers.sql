@@ -95,6 +95,14 @@ batch_transfers as (
     select *
     from other_transfers
 ),
+-- These batches involve a token AXS (Old)
+-- whose transfer function doesn't align with the emitted transfer event.
+exluded_batches as (
+    select tx_hash
+    from filtered_trades
+    where '\xf5d669627376ebd411e34b98f19c868c8aba5ada'
+              in ("buyToken", "sellToken")
+),
 incoming_and_outgoing as (
     SELECT block_time,
            tx_hash,
@@ -122,6 +130,7 @@ incoming_and_outgoing as (
     from batch_transfers i
              left outer join erc20.tokens t on i.token = t.contract_address
         where dex_swaps > 0
+    and tx_hash not in (select tx_hash from exluded_batches)
 ),
 pre_clearing_prices as (
     select call_tx_hash             as tx_hash,

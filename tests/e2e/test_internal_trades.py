@@ -93,7 +93,7 @@ class TestDuneAnalytics(unittest.TestCase):
         tx: 0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7
         In this transaction, the solver sells too much USDC and buys to much ETH.
         These trades could be seen as buffer trades, but they should not:
-        These kind of trades can drain the buffers over time, as the prices of trading
+        These kinds of trades can drain the buffers over time, as the prices of trading
         includes the AMM fees and hence are unfavourable for the buffers. Also, they are avoidable
         by using buyOrder on the AMMs.
         """
@@ -109,10 +109,10 @@ class TestDuneAnalytics(unittest.TestCase):
     def test_does_filter_out_SOR_internal_trades_with_amm_interactions(self):
         """
         tx: 0x0ae4775b0a352f7ba61f5ec301aa6ac4de19b43f90d8a8674b6e5c8116eda96b
-        In this transaction, the solver sells too much XFT and buys to much DAI. Usually
-        this would be seen as a internal buffer trade, as the amounts match perfectly and DAI is in the allowed buffer token list.
-        But, since the solution is coming from 0x, we know that it is not an internal buffer trade,
-        given that the settlement had also an AMM interaction.
+        In this transaction, the solver sells too much XFT and buys too much DAI. Usually
+        this would be seen as an internal buffer trade, as the amounts match perfectly and DAI
+        is in the allowed buffer token list. However, since the solution is coming from 0x,
+        it cannot be and internal buffer trade, given that the settlement had also an AMM interaction.
         """
         internal_transfers = get_internal_transfers(
             dune=self.dune_connection,
@@ -132,9 +132,9 @@ class TestDuneAnalytics(unittest.TestCase):
     def test_does_recognize_slippage_due_to_buffer_token_list(self):
         """
         tx: 0x0bd527494e8efbf4c3013d1e355976ed90fa4e3b79d1f2c2a2690b02baae4abe
-        This tx has a internal trade between pickle and eth. As pickle is not in the allow-list,
+        This tx has an internal trade between pickle and eth. As pickle is not in the allow-list,
         the internal trade was not allowed.
-        Our queries should recognized these kind of trades as slippage and not as a internal trades.
+        Our queries should recognize these kinds of trades as slippage and not as a internal trades.
         """
         internal_transfers = get_internal_transfers(
             dune=self.dune_connection,
@@ -243,6 +243,21 @@ class TestDuneAnalytics(unittest.TestCase):
                 "0x990f341946A3fdB507aE7e52d17851B87168017c", internal_transfers
             ),
             0,
+        )
+
+    def test_excludes_batches_involving_axs_old(self):
+        """
+        tx: 0x5d74fde18840e02a0ca49cd3caff37b4c9b4b20c254692a629d75d93b5d69f89
+        We do not expect to get any internal accounting data returned for this batch
+        """
+        self.assertEqual(
+            get_internal_transfers(
+                dune=self.dune_connection,
+                tx_hash="0x5d74fde18840e02a0ca49cd3caff37b4c9b4b20c254692a629d75d93b5d69f89",
+                period_start=self.period_start,
+                period_end=self.period_end,
+            ),
+            [],
         )
 
 
