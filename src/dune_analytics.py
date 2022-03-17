@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import os
 import time
-from datetime import datetime
+from datetime import date
 from enum import Enum
 from typing import Any, Collection, Optional
 
@@ -47,7 +47,7 @@ class QueryParameter:
         return cls(name, ParameterType.NUMBER, value)
 
     @classmethod
-    def date_type(cls, name: str, value: datetime) -> QueryParameter:
+    def date_type(cls, name: str, value: date) -> QueryParameter:
         """Constructs a Query parameter of type date"""
         return cls(name, ParameterType.DATE, value)
 

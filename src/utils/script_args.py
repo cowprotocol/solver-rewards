@@ -2,9 +2,10 @@
 import argparse
 
 from src.dune_analytics import DuneAnalytics
+from src.models import AccountingPeriod
 
 
-def generic_script_init(description: str) -> tuple[DuneAnalytics, argparse.Namespace]:
+def generic_script_init(description: str) -> tuple[DuneAnalytics, AccountingPeriod]:
     """
     1. parses parses command line arguments,
     2. establishes dune connection
@@ -14,6 +15,6 @@ def generic_script_init(description: str) -> tuple[DuneAnalytics, argparse.Names
     parser.add_argument(
         "--start", type=str, help="Accounting Period Start", required=True
     )
-    parser.add_argument("--end", type=str, help="Accounting Period End", required=True)
+    args = parser.parse_args()
 
-    return DuneAnalytics.new_from_environment(), parser.parse_args()
+    return DuneAnalytics.new_from_environment(), AccountingPeriod(args.start)

@@ -2,14 +2,13 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from enum import Enum
 from typing import Optional
 
 from src.dune_analytics import DuneAnalytics, QueryParameter
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.file_io import File, write_to_csv
-from src.models import Address, Network
+from src.models import AccountingPeriod, Address, Network
 from src.utils.dataset import index_by
 from src.utils.script_args import generic_script_init
 
@@ -91,21 +90,19 @@ class Transfer:
         self.amount = new_amount
 
 
-def get_transfers(
-    dune: DuneAnalytics, period_start: datetime, period_end: datetime
-) -> list[Transfer]:
+def get_transfers(dune: DuneAnalytics, period: AccountingPeriod) -> list[Transfer]:
     """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
     reimbursements_and_rewards = dune.fetch(
         query_str=dune.open_query("./queries/period_transfers.sql"),
         network=Network.MAINNET,
         name="ETH Reimbursement & COW Rewards",
         parameters=[
-            QueryParameter.date_type("StartTime", period_start),
-            QueryParameter.date_type("EndTime", period_end),
+            QueryParameter.date_type("StartTime", period.start),
+            QueryParameter.date_type("EndTime", period.end),
         ],
     )
 
-    negative_slippage = get_period_slippage(dune, period_start, period_end).negative
+    negative_slippage = get_period_slippage(dune, period).negative
     indexed_slippage = index_by(negative_slippage, "solver_address")
 
     results = []
@@ -131,18 +128,17 @@ def get_transfers(
 
 
 if __name__ == "__main__":
-    dune_connection, args = generic_script_init(
+    dune_connection, accounting_period = generic_script_init(
         description="Fetch Complete Reimbursement"
     )
     transfers = get_transfers(
         dune=dune_connection,
-        period_start=datetime.strptime(args.start, "%Y-%m-%d"),
-        period_end=datetime.strptime(args.end, "%Y-%m-%d"),
+        period=accounting_period,
     )
 
     write_to_csv(
         data_list=transfers,
-        outfile=File(name=f"transfers-{args.start}-to-{args.end}.csv"),
+        outfile=File(name=f"transfers-{accounting_period}.csv"),
     )
     eth_total = sum(t.amount for t in transfers if t.token_type == TokenType.NATIVE)
     cow_total = sum(t.amount for t in transfers if t.token_type == TokenType.ERC20)

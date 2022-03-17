@@ -2,12 +2,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from pprint import pprint
 
 from src.dune_analytics import DuneAnalytics, QueryParameter
 from src.file_io import File
-from src.models import Address, Network
+from src.models import AccountingPeriod, Address, Network
 from src.token_list import ALLOWED_TOKEN_LIST_URL, get_trusted_tokens_from_url
 from src.utils.script_args import generic_script_init
 
@@ -98,8 +97,7 @@ class SplitSlippages:
 
 def get_period_slippage(
     dune: DuneAnalytics,
-    period_start: datetime,
-    period_end: datetime,
+    period: AccountingPeriod,
 ) -> SplitSlippages:
     """
     Executes & Fetches results of slippage query per solver for specified accounting period.
@@ -110,8 +108,8 @@ def get_period_slippage(
         network=Network.MAINNET,
         name="Slippage Accounting",
         parameters=[
-            QueryParameter.date_type("StartTime", period_start),
-            QueryParameter.date_type("EndTime", period_end),
+            QueryParameter.date_type("StartTime", period.start),
+            QueryParameter.date_type("EndTime", period.end),
             QueryParameter.text_type("TxHash", "0x"),
             QueryParameter.text_type("ResultTable", "results"),
         ],
@@ -124,12 +122,10 @@ def get_period_slippage(
 
 
 if __name__ == "__main__":
-    dune_connection, args = generic_script_init(
+    dune_connection, accounting_period = generic_script_init(
         description="Fetch Accounting Period Totals"
     )
     slippage_for_period = get_period_slippage(
-        dune=dune_connection,
-        period_start=datetime.strptime(args.start, "%Y-%m-%d"),
-        period_end=datetime.strptime(args.end, "%Y-%m-%d"),
+        dune=dune_connection, period=accounting_period
     )
     pprint(slippage_for_period)

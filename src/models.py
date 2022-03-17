@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from enum import Enum
 
 from web3 import Web3
@@ -108,3 +109,16 @@ class InternalTokenTransfer:
     ) -> list[InternalTokenTransfer]:
         """Filters records returning only Internal Trade types."""
         return cls.filter_by(recs, TransferType.INTERNAL_TRADE)
+
+
+class AccountingPeriod:
+    """Class handling the date arithmetic and string conversions for date intervals"""
+
+    def __init__(self, start: str, length_days: int = 7):
+        self.start = datetime.strptime(start, "%Y-%m-%d").date()
+        self.end = self.start + timedelta(days=length_days)
+
+    def __str__(self) -> str:
+        return "-to-".join(
+            [self.start.strftime("%Y-%m-%d"), self.end.strftime("%Y-%m-%d")]
+        )

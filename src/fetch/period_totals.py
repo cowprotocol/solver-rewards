@@ -2,11 +2,10 @@
 Script to query and display total funds distributed for specified accounting period.
 """
 from dataclasses import dataclass
-from datetime import datetime
 from pprint import pprint
 
 from src.dune_analytics import DuneAnalytics, QueryParameter
-from src.models import Network
+from src.models import AccountingPeriod, Network
 from src.utils.script_args import generic_script_init
 
 
@@ -14,18 +13,13 @@ from src.utils.script_args import generic_script_init
 class PeriodTotals:
     """Total amount reimbursed for accounting period"""
 
-    # Block numbers for accounting period boundaries
-    # TODO - introduce AccountingPeriod class (data class)
-    period_start: datetime
-    period_end: datetime
+    period: AccountingPeriod
     execution_cost_eth: int
     cow_rewards: int
     realized_fees_eth: int
 
 
-def get_period_totals(
-    dune: DuneAnalytics, period_start: datetime, period_end: datetime
-) -> PeriodTotals:
+def get_period_totals(dune: DuneAnalytics, period: AccountingPeriod) -> PeriodTotals:
     """
     Fetches & Returns Dune Results for accounting period totals.
     """
@@ -34,15 +28,14 @@ def get_period_totals(
         network=Network.MAINNET,
         name="Accounting Period Totals",
         parameters=[
-            QueryParameter.date_type("StartTime", period_start),
-            QueryParameter.date_type("EndTime", period_end),
+            QueryParameter.date_type("StartTime", period.start),
+            QueryParameter.date_type("EndTime", period.end),
         ],
     )
     assert len(data_set) == 1
     rec = data_set[0]
     return PeriodTotals(
-        period_start=period_start,
-        period_end=period_end,
+        period=period,
         execution_cost_eth=rec["execution_cost_eth"],
         cow_rewards=rec["cow_rewards"],
         realized_fees_eth=rec["realized_fees_eth"],
@@ -50,14 +43,10 @@ def get_period_totals(
 
 
 if __name__ == "__main__":
-    dune_connection, args = generic_script_init(
+    dune_connection, accounting_period = generic_script_init(
         description="Fetch Accounting Period Totals"
     )
 
-    total_for_period = get_period_totals(
-        dune=dune_connection,
-        period_start=datetime.strptime(args.start, "%Y-%m-%d"),
-        period_end=datetime.strptime(args.end, "%Y-%m-%d"),
-    )
+    total_for_period = get_period_totals(dune=dune_connection, period=accounting_period)
 
     pprint(total_for_period)

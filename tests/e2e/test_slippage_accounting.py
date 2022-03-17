@@ -1,8 +1,8 @@
 import unittest
-from datetime import datetime
 
 from src.dune_analytics import DuneAnalytics
 from src.fetch.period_slippage import get_period_slippage
+from src.models import AccountingPeriod
 
 
 class TestDuneAnalytics(unittest.TestCase):
@@ -15,9 +15,7 @@ class TestDuneAnalytics(unittest.TestCase):
         """
         dune = DuneAnalytics.new_from_environment()
         solver_slippages = get_period_slippage(
-            dune=dune,
-            period_start=datetime.strptime("2022-03-01", "%Y-%m-%d"),
-            period_end=datetime.strptime("2022-03-02", "%Y-%m-%d"),
+            dune=dune, period=AccountingPeriod("2022-03-01", 1)
         )
         self.assertLess(
             solver_slippages.sum_positive() - solver_slippages.sum_negative(),

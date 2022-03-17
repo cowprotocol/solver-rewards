@@ -1,8 +1,8 @@
 import unittest
 
 from src.fetch.period_slippage import SolverSlippage
-from src.fetch.transfer_file import Transfer, TokenType
-from src.models import Address, TransferType
+from src.fetch.transfer_file import TokenType, Transfer
+from src.models import AccountingPeriod, Address, TransferType
 
 ONE_ADDRESS = Address("0x1111111111111111111111111111111111111111")
 TWO_ADDRESS = Address("0x2222222222222222222222222222222222222222")
@@ -140,6 +140,26 @@ class TestTransfer(unittest.TestCase):
             )
         self.assertEqual(
             str(err.exception), "Native transfers must have null token_address"
+        )
+
+
+class TestAccountingPeriod(unittest.TestCase):
+    def test_str(self):
+        self.assertEqual(
+            "2022-01-01-to-2022-01-08", str(AccountingPeriod("2022-01-01"))
+        )
+        self.assertEqual(
+            "2022-01-01-to-2022-01-07", str(AccountingPeriod("2022-01-01", 6))
+        )
+
+    def test_invalid(self):
+        bad_date_string = "Invalid date string"
+        with self.assertRaises(ValueError) as err:
+            AccountingPeriod(bad_date_string)
+
+        self.assertEqual(
+            f"time data '{bad_date_string}' does not match format '%Y-%m-%d'",
+            str(err.exception),
         )
 
 
