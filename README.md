@@ -78,27 +78,32 @@ However, many IDEs can be configured to auto format on save.
 
 ## Proposed Reimbursement Work Flow
 
-The proposed workflow is to be automated and run on a schedule of once per _accounting
-period_ at N hours past the end of the accounting period. Note that we must wait some
-time after the period has ended for some data to finalize (e.g. `dex.trades`
-, `ethereum.transactions` our event data, etc...).
+The solver reimbursements are to be executed each Tuesday with the accounting period of the last 7 days. If the payout can not be done on Tuesdays, its okay to execute them later, but still the accounting period should always be from 00:00 between Monday and Tuesday to 00:00 between Monday and Tuesday
 
-1. Run the Reimbursement & Rewards Query
+In order to do the payout, run the following scripts:
+```
+source .env
+rm -r out/
+python -m src.fetch.transfer_file --start '2022-MM-DD'
+```
+Here, the start should specify the Tuesday of the start of the accounting period. The next Tuesday - the end date of the accounting period - will be calculated automatically by the script.
+I.e. for the first payout, we would run:
+`python -m src.fetch.transfer_file --start '2022-03-01'`
+and for the next one:
+`python -m src.fetch.transfer_file --start '2022-03-08'`
 
-2. Compute Solver Imbalances (i.e. penalties)
+Please double check that the payout is reasonable. That means the eth sent should be between 30-80 ETH, depending on gas prices from last week. Also the amount of cow send should reflect 100x the amount of batches. Reasonable COW totals are around 300000-500000, that means 500-700 batches a day.
 
-   - Purely Internal Balances are cross-checked with accepted internally traded tokens
-     list
-   - Slippage Imbalances
+Also, it might happen that the slippage of a solver is bigger than the ETH payout. In this case, please do not proceed with the payout, until the root cause is known. Feel free to reach out the project maintainers to do the investigation.
 
-3. Run the Fee Withdraw and Convert Service (if ETH is needed)
+Note that we must wait some time after the period has ended for some data to finalize (e.g. `prices.usd`
+, `ethereum.transactions` our event data, etc...). Hence, the scripts should not be executed immediately after the accounting period has ended.
 
-4. Run the Disbursement Script This script fetches Reimbursement & Rewards table in the
-   form of a CSV Airdrop Transfer file then initiates/proposes a multi-send Transaction
-   to CoW DAO Safe. The only manual interaction then needed here is to sign and execute
-   the automatically proposed reimbursement transaction.
+After generating the transfer file and double-checking the results, please create the multi-send transaction with the link provided in the console.
 
-In what follows below the Execution Costs and Reimbursements (displayed above and to the
-right) are currently a work in progress on accounting for individual solver's internal (
-Settlement Contract) balances. This can be made accurate on a per-token basis, but USD
-valuations are rely on third party price feeds.
+Inform the team of this proposed transaction in the #dev-multisig Slack channel and follow through to ensure execution. It is preferred that the transaction be executed by the proposer account(eth:0xd8Ca5FE380b68171155C7069B8df166db28befdd).
+
+
+
+
+
