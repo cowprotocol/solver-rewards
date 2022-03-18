@@ -196,6 +196,7 @@ class TestDuneAnalytics(unittest.TestCase):
         """
         tx: 0x1b4a299bfd2bb97e2289260495f566b750b9b62856b061f31d5186ae3b5ddce7
         This tx has an illegal internal buffer trade, it was not allowed to sell UBI
+        to the contract
         """
         internal_transfers = get_internal_transfers(
             dune=self.dune_connection,
@@ -211,6 +212,12 @@ class TestDuneAnalytics(unittest.TestCase):
                 "0xDd1Ad9A21Ce722C151A836373baBe42c868cE9a4", internal_transfers
             ),
             3262425415624260124672,
+        )
+        self.assertEqual(
+            token_slippage(
+                "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", internal_transfers
+            ),
+            -61150200744955688,
         )
 
     def test_buffer_trade_without_gp_settlement_price(self):
