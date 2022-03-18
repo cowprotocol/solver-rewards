@@ -74,10 +74,8 @@ class Transfer:
             amount=float(obj["amount"]),
         )
 
-    def add_slippage(self, slippage: Optional[SolverSlippage]) -> None:
+    def add_slippage(self, slippage: SolverSlippage) -> None:
         """Adds Adjusts Transfer amount by Slippage amount"""
-        if slippage is None:
-            return
         assert self.receiver == slippage.solver_address, "receiver != solver"
         adjustment = slippage.amount_wei / 10**18
         print(
@@ -108,10 +106,8 @@ def get_transfers(dune: DuneAnalytics, period: AccountingPeriod) -> list[Transfe
     results = []
     for row in reimbursements_and_rewards:
         transfer = Transfer.from_dict(row)
-        if transfer.token_type == TokenType.NATIVE:
-            slippage: SolverSlippage = indexed_slippage.get(
-                transfer.receiver, SolverSlippage(transfer.receiver, "Unknown", 0)
-            )
+        slippage = indexed_slippage.get(transfer.receiver)
+        if transfer.token_type == TokenType.NATIVE and slippage is not None:
             try:
                 transfer.add_slippage(slippage)
             except ValueError as err:
