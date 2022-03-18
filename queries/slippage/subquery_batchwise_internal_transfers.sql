@@ -4,6 +4,7 @@ filtered_trades as (
     select t.block_time,
            t.tx_hash,
            dex_swaps,
+           num_trades,
            solver_name,
            solver_address,
            trader                                                as trader_in,
@@ -26,6 +27,7 @@ user_in as (
     select block_time,
            tx_hash,
            dex_swaps,
+           num_trades,
            solver_address,
            solver_name,
            trader_in        as sender,
@@ -39,6 +41,7 @@ user_out as (
     select block_time,
            tx_hash,
            dex_swaps,
+           num_trades,
            solver_address,
            solver_name,
            contract_address as sender,
@@ -52,6 +55,7 @@ other_transfers as (
     select block_time,
            tx_hash,
            dex_swaps,
+           num_trades,
            solver_address,
            solver_name,
            "from"                sender,
@@ -129,7 +133,13 @@ incoming_and_outgoing as (
            transfer_type
     from batch_transfers i
              left outer join erc20.tokens t on i.token = t.contract_address
-        where dex_swaps > 0
+        where 
+         -- We exclude settlements that have zero AMM interactions and settle several trades,
+         -- as our query is not good enough to handle these cases accurately.
+         -- Settlements with dex_swaps = 0 and num_trades = 0 can be handled in the following
+         -- and we want to consider them in order to filter out illegal behaviour
+          (dex_swaps = 0 and num_trades < 2) or dex_swaps > 0
+            
     and tx_hash not in (select tx_hash from exluded_batches)
 ),
 pre_clearing_prices as (
@@ -224,7 +234,8 @@ buffer_trades as (
                     and
                         -- We know that settlements - with at least one amm interaction - have internal buffer trades only if 
                         -- the solution must come from a internal_buffer_trader_solvers solver
-                        a.solver_address in (select * from internal_buffer_trader_solvers) 
+                        (a.solver_address in (select * from internal_buffer_trader_solvers) 
+                        or a.dex_swaps = 0)
                 then
                     case
                         when a.clearing_value is not null and
