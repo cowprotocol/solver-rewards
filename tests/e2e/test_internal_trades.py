@@ -60,7 +60,6 @@ class TestDuneAnalytics(unittest.TestCase):
         internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 1 * 2)
         # We had 0.91 USDT positive slippage
-        print(internal_trades)
         self.assertEqual(
             token_slippage(
                 "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", internal_transfers
@@ -165,6 +164,54 @@ class TestDuneAnalytics(unittest.TestCase):
         )
         internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
+
+    def test_buffer_trade_with_missing_price_from_pricesUSD(self):
+        """
+        tx: 0x80ae1c6a5224da60a1bf188f2101bd154e29ef71d54d136bfd1f6cc529f9d7ef
+        CRVCX is not part of the priceUSD list from dune, still we are finding the internal trade
+        """
+        internal_transfers = get_internal_transfers(
+            dune=self.dune_connection,
+            tx_hash="0x80ae1c6a5224da60a1bf188f2101bd154e29ef71d54d136bfd1f6cc529f9d7ef",
+            period_start=self.period_start,
+            period_end=self.period_end,
+        )
+        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+
+        self.assertEqual(len(internal_trades), 1 * 2)
+        self.assertEqual(
+            token_slippage(
+                "0xD533a949740bb3306d119CC777fa900bA034cd52", internal_transfers
+            ),
+            0,
+        )
+        self.assertEqual(
+            token_slippage(
+                "0x62B9c7356A2Dc64a1969e19C23e4f579F9810Aa7", internal_transfers
+            ),
+            0,
+        )
+
+    def test_buffer_trade_with_missing_price_from_pricesUSD(self):
+        """
+        tx: 0x1b4a299bfd2bb97e2289260495f566b750b9b62856b061f31d5186ae3b5ddce7
+        This tx has an illegal internal buffer trade, it was not allowed to sell UBI
+        """
+        internal_transfers = get_internal_transfers(
+            dune=self.dune_connection,
+            tx_hash="0x1b4a299bfd2bb97e2289260495f566b750b9b62856b061f31d5186ae3b5ddce7",
+            period_start=self.period_start,
+            period_end=self.period_end,
+        )
+        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+
+        self.assertEqual(len(internal_trades), 0 * 2)
+        self.assertEqual(
+            token_slippage(
+                "0xDd1Ad9A21Ce722C151A836373baBe42c868cE9a4", internal_transfers
+            ),
+            3262425415624260124672,
+        )
 
     def test_buffer_trade_without_gp_settlement_price(self):
         """
