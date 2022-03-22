@@ -3,7 +3,7 @@ from datetime import datetime
 from pprint import pprint
 
 from src.dune_analytics import DuneAnalytics, QueryParameter
-from src.fetch.period_slippage import slippage_query
+from src.fetch.period_slippage import QueryType, slippage_query
 from src.models import Network
 
 
@@ -17,14 +17,13 @@ class TestDuneAnalytics(unittest.TestCase):
         period_start = datetime.strptime("2022-03-10", "%Y-%m-%d")
         period_end = datetime.strptime("2022-03-11", "%Y-%m-%d")
         slippage_per_tx = dune.fetch(
-            query_str=slippage_query(dune),
+            query_str=slippage_query(QueryType.PER_TX),
             network=Network.MAINNET,
             name="Slippage Accounting",
             parameters=[
                 QueryParameter.date_type("StartTime", period_start),
                 QueryParameter.date_type("EndTime", period_end),
                 QueryParameter.text_type("TxHash", "0x"),
-                QueryParameter.text_type("ResultTable", "results_per_tx"),
             ],
         )
         slippage_per_tx.sort(key=lambda t: int(t["eth_slippage_wei"]))

@@ -38,7 +38,7 @@ class TokenType(Enum):
         try:
             return cls[type_str.upper()]
         except KeyError as err:
-            raise ValueError(f"No TransferType {type_str}!") from err
+            raise ValueError(f"No TokenType {type_str}!") from err
 
     def __str__(self) -> str:
         return self.value

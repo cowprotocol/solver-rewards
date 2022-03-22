@@ -1,63 +1,110 @@
+from __future__ import annotations
+
 import unittest
-from datetime import datetime
+from dataclasses import dataclass
+from enum import Enum
 
 from src.dune_analytics import DuneAnalytics, QueryParameter
 from src.fetch.period_slippage import add_token_list_table_to_query
-from src.file_io import File
-from src.models import Address, InternalTokenTransfer, Network
+from src.models import AccountingPeriod, Address, Network
+
+
+class TransferType(Enum):
+    """
+    Classifications of Internal Token Transfers
+    """
+
+    IN_AMM = "IN_AMM"
+    OUT_AMM = "OUT_AMM"
+    IN_USER = "IN_USER"
+    OUT_USER = "OUT_USER"
+    INTERNAL_TRADE = "INTERNAL_TRADE"
+
+    @classmethod
+    def from_str(cls, type_str: str) -> TransferType:
+        """Constructs Enum variant from string (case-insensitive)"""
+        try:
+            return cls[type_str.upper()]
+        except KeyError as err:
+            raise ValueError(f"No TransferType {type_str}!") from err
+
+
+@dataclass
+class InternalTransfer:
+    """Total amount reimbursed for accounting period"""
+
+    transfer_type: TransferType
+    token: Address
+    amount: int
+
+    @classmethod
+    def from_dict(cls, obj: dict[str, str]) -> InternalTransfer:
+        """Converts Dune data dict to object with types"""
+        return cls(
+            transfer_type=TransferType.from_str(obj["transfer_type"]),
+            token=Address(obj["token"]),
+            amount=int(obj["amount"]),
+        )
+
+    @staticmethod
+    def filter_by_type(
+        recs: list[InternalTransfer], transfer_type: TransferType
+    ) -> list[InternalTransfer]:
+        """Filters list of records returning only those with indicated TransferType"""
+        return list(filter(lambda r: r.transfer_type == transfer_type, recs))
+
+    @classmethod
+    def internal_trades(cls, recs: list[InternalTransfer]) -> list[InternalTransfer]:
+        """Filters records returning only Internal Trade types."""
+        return cls.filter_by_type(recs, TransferType.INTERNAL_TRADE)
 
 
 def token_slippage(
     token_str: str,
-    internal_trade_list: list[InternalTokenTransfer],
+    internal_trade_list: list[InternalTransfer],
 ) -> int:
     return sum(a.amount for a in internal_trade_list if a.token == Address(token_str))
 
 
-def get_internal_transfers(
-    dune: DuneAnalytics, tx_hash: str, period_start: datetime, period_end: datetime
-) -> list[InternalTokenTransfer]:
-    path = "./queries/slippage"
-    select_transfers_query = dune.open_query(
-        File("select_in_out_with_buffers.sql", path).filename()
-    )
-    slippage_sub_query = dune.open_query(
-        File("subquery_batchwise_internal_transfers.sql", path).filename()
-    )
-    query = "\n".join(
-        [add_token_list_table_to_query(slippage_sub_query), select_transfers_query]
-    )
-    data_set = dune.fetch(
-        query_str=query,
-        network=Network.MAINNET,
-        name="Internal Token Transfer Accounting",
-        parameters=[
-            QueryParameter.text_type("TxHash", tx_hash),
-            QueryParameter.date_type("StartTime", period_start),
-            QueryParameter.date_type("EndTime", period_end),
-        ],
-    )
-    return [InternalTokenTransfer.from_dict(row) for row in data_set]
-
-
 class TestDuneAnalytics(unittest.TestCase):
     def setUp(self):
-        self.dune_connection = DuneAnalytics.new_from_environment()
-        self.period_start = datetime.strptime("2022-03-01", "%Y-%m-%d")
-        self.period_end = datetime.strptime("2022-03-15", "%Y-%m-%d")
+        self.dune = DuneAnalytics.new_from_environment()
+        self.period = AccountingPeriod("2022-03-01", length_days=14)
+
+    def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
+        slippage_sub_query = self.dune.open_query("./queries/period_slippage.sql")
+        select_transfers_query = self.dune.open_query(
+            "./tests/queries/select_internal_transfers.sql"
+        )
+
+        query = "\n".join(
+            [add_token_list_table_to_query(slippage_sub_query), select_transfers_query]
+        )
+        data_set = self.dune.fetch(
+            query_str=query,
+            network=Network.MAINNET,
+            name="Internal Token Transfer Accounting",
+            parameters=[
+                QueryParameter.text_type("TxHash", tx_hash),
+                QueryParameter.date_type("StartTime", self.period.start),
+                QueryParameter.date_type("EndTime", self.period.end),
+            ],
+        )
+        return [InternalTransfer.from_dict(row) for row in data_set]
+
+    def internal_trades_for_tx(self, tx_hash: str) -> list[InternalTransfer]:
+        internal_transfers = self.get_internal_transfers(tx_hash)
+        return InternalTransfer.internal_trades(internal_transfers)
 
     def test_one_buffer_trade(self):
         """
         tx: 0xd6b85ada980d10a11a5b6989c72e0232015ce16e7331524b38180b85f1aea6c8
         This transaction has 1 buffer trade wNXM for Ether
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
-            tx_hash="0xd6b85ada980d10a11a5b6989c72e0232015ce16e7331524b38180b85f1aea6c8",
-            period_start=self.period_start,
-            period_end=self.period_end,
+        internal_transfers = self.get_internal_transfers(
+            "0xd6b85ada980d10a11a5b6989c72e0232015ce16e7331524b38180b85f1aea6c8"
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 1 * 2)
         # We had 0.91 USDT positive slippage
         self.assertEqual(
@@ -76,13 +123,9 @@ class TestDuneAnalytics(unittest.TestCase):
         The positive slippage captured in WETH also scores a good matchablity to LIDO with a score of 0.026,
         but it should not be recognized by our algorithm
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
-            tx_hash="0x9a318d1abd997bcf8afed55b2946a7b1bd919d227f094cdcc99d8d6155808d7c",
-            period_start=self.period_start,
-            period_end=self.period_end,
+        internal_trades = self.internal_trades_for_tx(
+            "0x9a318d1abd997bcf8afed55b2946a7b1bd919d227f094cdcc99d8d6155808d7c",
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 1 * 2)
 
     def test_does_not_recognize_selling_too_much_and_buying_too_much_as_internal_trade(
@@ -96,13 +139,9 @@ class TestDuneAnalytics(unittest.TestCase):
         includes the AMM fees and hence are unfavourable for the buffers. Also, they are avoidable
         by using buyOrder on the AMMs.
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
-            tx_hash="0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7",
-            period_start=self.period_start,
-            period_end=self.period_end,
+        internal_trades = self.internal_trades_for_tx(
+            "0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7"
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
 
     def test_does_filter_out_SOR_internal_trades_with_amm_interactions(self):
@@ -113,13 +152,10 @@ class TestDuneAnalytics(unittest.TestCase):
         is in the allowed buffer token list. However, since the solution is coming from 0x,
         it cannot be and internal buffer trade, given that the settlement had also an AMM interaction.
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
-            tx_hash="0x0ae4775b0a352f7ba61f5ec301aa6ac4de19b43f90d8a8674b6e5c8116eda96b",
-            period_start=self.period_start,
-            period_end=self.period_end,
+        internal_transfers = self.get_internal_transfers(
+            "0x0ae4775b0a352f7ba61f5ec301aa6ac4de19b43f90d8a8674b6e5c8116eda96b",
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
         self.assertEqual(
             token_slippage(
@@ -135,13 +171,10 @@ class TestDuneAnalytics(unittest.TestCase):
         the internal trade was not allowed.
         Our queries should recognize these kinds of trades as slippage and not as a internal trades.
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
-            tx_hash="0x0bd527494e8efbf4c3013d1e355976ed90fa4e3b79d1f2c2a2690b02baae4abe",
-            period_start=self.period_start,
-            period_end=self.period_end,
+        internal_transfers = self.get_internal_transfers(
+            "0x0bd527494e8efbf4c3013d1e355976ed90fa4e3b79d1f2c2a2690b02baae4abe",
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
         self.assertEqual(
             token_slippage(
@@ -156,13 +189,9 @@ class TestDuneAnalytics(unittest.TestCase):
         Although there are two quite similar trades TOKE for ETH,
         the script should **not** detect a buffer trade
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
-            tx_hash="0x31ab7acdadc65944a3f9507793ba9c3c58a1add35de338aa840ac951a24dc5bc",
-            period_start=self.period_start,
-            period_end=self.period_end,
+        internal_trades = self.internal_trades_for_tx(
+            "0x31ab7acdadc65944a3f9507793ba9c3c58a1add35de338aa840ac951a24dc5bc",
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
 
     def test_buffer_trade_with_missing_price_from_pricesUSD(self):
@@ -170,13 +199,10 @@ class TestDuneAnalytics(unittest.TestCase):
         tx: 0x80ae1c6a5224da60a1bf188f2101bd154e29ef71d54d136bfd1f6cc529f9d7ef
         CRVCX is not part of the priceUSD list from dune, still we are finding the internal trade
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
+        internal_transfers = self.get_internal_transfers(
             tx_hash="0x80ae1c6a5224da60a1bf188f2101bd154e29ef71d54d136bfd1f6cc529f9d7ef",
-            period_start=self.period_start,
-            period_end=self.period_end,
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTransfer.internal_trades(internal_transfers)
 
         self.assertEqual(len(internal_trades), 1 * 2)
         self.assertEqual(
@@ -198,13 +224,10 @@ class TestDuneAnalytics(unittest.TestCase):
         This tx has an illegal internal buffer trade, it was not allowed to sell UBI
         to the contract
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
+        internal_transfers = self.get_internal_transfers(
             tx_hash="0x1b4a299bfd2bb97e2289260495f566b750b9b62856b061f31d5186ae3b5ddce7",
-            period_start=self.period_start,
-            period_end=self.period_end,
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTransfer.internal_trades(internal_transfers)
 
         self.assertEqual(len(internal_trades), 0 * 2)
         self.assertEqual(
@@ -226,13 +249,9 @@ class TestDuneAnalytics(unittest.TestCase):
         This settlement has an internal tx between WETH and FOLD,
         but there are no settlement prices for WETH in the call data
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
-            tx_hash="0x20ae31d11dba93d372ecf9d0cb387ea446e88572ce2d3d8e3d410871cfe6ec49",
-            period_start=self.period_start,
-            period_end=self.period_end,
+        internal_trades = self.internal_trades_for_tx(
+            "0x20ae31d11dba93d372ecf9d0cb387ea446e88572ce2d3d8e3d410871cfe6ec49",
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 1 * 2)
 
     def test_it_recognizes_slippage(self):
@@ -240,11 +259,8 @@ class TestDuneAnalytics(unittest.TestCase):
         tx: 0x703474ed43faadc35364254e4f9448e275c7cfe9cf60beddbdd68a462bf7f433
         Paraswap returns to little UST, but our buffers make up for it
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
+        internal_transfers = self.get_internal_transfers(
             tx_hash="0x703474ed43faadc35364254e4f9448e275c7cfe9cf60beddbdd68a462bf7f433",
-            period_start=self.period_start,
-            period_end=self.period_end,
         )
         # We lost 58 UST dollars:
         self.assertEqual(
@@ -253,7 +269,7 @@ class TestDuneAnalytics(unittest.TestCase):
             ),
             -57980197374074949357,
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
+        internal_trades = InternalTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
 
     def test_it_does_not_yet_find_the_internal_trades(self):
@@ -265,13 +281,9 @@ class TestDuneAnalytics(unittest.TestCase):
          But then we no longer find a good solution for testcase
          0x31ab7acdadc65944a3f9507793ba9c3c58a1add35de338aa840ac951a24dc5bc
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
-            tx_hash="0x07e91a80955eac0ea2292efe13fa694aea9ba5ae575ced8532e61d5e4806e8b4",
-            period_start=self.period_start,
-            period_end=self.period_end,
+        internal_trades = self.internal_trades_for_tx(
+            "0x07e91a80955eac0ea2292efe13fa694aea9ba5ae575ced8532e61d5e4806e8b4",
         )
-        internal_trades = InternalTokenTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
 
     def test_does_not_find_slippage_for_internal_only_trades(self):
@@ -280,11 +292,8 @@ class TestDuneAnalytics(unittest.TestCase):
         This settlement is so complicated that the query does not find the internal trades
         But since it has 0 dex interactions, we know that there can not be any slippage
         """
-        internal_transfers = get_internal_transfers(
-            dune=self.dune_connection,
+        internal_transfers = self.get_internal_transfers(
             tx_hash="0x007a8534959a027c81f20c32dc3572f47cb7f19043d4a8d1e44379f363cb4c0f",
-            period_start=self.period_start,
-            period_end=self.period_end,
         )
         self.assertEqual(
             token_slippage(
@@ -305,11 +314,8 @@ class TestDuneAnalytics(unittest.TestCase):
         We do not expect to get any internal accounting data returned for this batch
         """
         self.assertEqual(
-            get_internal_transfers(
-                dune=self.dune_connection,
-                tx_hash="0x5d74fde18840e02a0ca49cd3caff37b4c9b4b20c254692a629d75d93b5d69f89",
-                period_start=self.period_start,
-                period_end=self.period_end,
+            self.get_internal_transfers(
+                "0x5d74fde18840e02a0ca49cd3caff37b4c9b4b20c254692a629d75d93b5d69f89",
             ),
             [],
         )
