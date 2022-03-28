@@ -5,10 +5,13 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
 
-from src.dune_analytics import DuneAnalytics, QueryParameter
+from duneapi.api import DuneAPI
+from duneapi.types import DuneQuery, QueryParameter, Network
+from duneapi.util import open_query
+
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.file_io import File, write_to_csv
-from src.models import AccountingPeriod, Address, Network
+from src.models import AccountingPeriod, Address
 from src.utils.dataset import index_by
 from src.utils.script_args import generic_script_init
 
@@ -88,10 +91,10 @@ class Transfer:
         self.amount = new_amount
 
 
-def get_transfers(dune: DuneAnalytics, period: AccountingPeriod) -> list[Transfer]:
+def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
-    reimbursements_and_rewards = dune.fetch(
-        query_str=dune.open_query("./queries/period_transfers.sql"),
+    query = DuneQuery.from_environment(
+        raw_sql=open_query("./queries/period_transfers.sql"),
         network=Network.MAINNET,
         name="ETH Reimbursement & COW Rewards",
         parameters=[
@@ -99,6 +102,7 @@ def get_transfers(dune: DuneAnalytics, period: AccountingPeriod) -> list[Transfe
             QueryParameter.date_type("EndTime", period.end),
         ],
     )
+    reimbursements_and_rewards = dune.fetch(query)
 
     negative_slippage = get_period_slippage(dune, period).negative
     indexed_slippage = index_by(negative_slippage, "solver_address")

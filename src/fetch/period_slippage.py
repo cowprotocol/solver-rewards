@@ -5,8 +5,11 @@ from dataclasses import dataclass
 from enum import Enum
 from pprint import pprint
 
-from src.dune_analytics import DuneAnalytics, QueryParameter
-from src.models import AccountingPeriod, Address, Network
+from duneapi.api import DuneAPI
+from duneapi.types import QueryParameter, DuneQuery, Network
+from duneapi.util import open_query
+
+from src.models import AccountingPeriod, Address
 from src.token_list import fetch_trusted_tokens
 from src.utils.script_args import generic_script_init
 
@@ -55,7 +58,7 @@ def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
     per transaction results for testing
     """
 
-    slippage_sub_query = DuneAnalytics.open_query("./queries/period_slippage.sql")
+    slippage_sub_query = open_query("./queries/period_slippage.sql")
     select_statement = f"""
     select *, 
         usd_value / (select price from eth_price) * 10 ^ 18 as eth_slippage_wei 
@@ -120,15 +123,15 @@ class SplitSlippages:
 
 
 def get_period_slippage(
-    dune: DuneAnalytics,
+    dune: DuneAPI,
     period: AccountingPeriod,
 ) -> SplitSlippages:
     """
     Executes & Fetches results of slippage query per solver for specified accounting period.
     Returns a class representation of the results as two lists (positive & negative).
     """
-    data_set = dune.fetch(
-        query_str=slippage_query(),
+    query = DuneQuery.from_environment(
+        raw_sql=slippage_query(),
         network=Network.MAINNET,
         name="Slippage Accounting",
         parameters=[
@@ -137,6 +140,7 @@ def get_period_slippage(
             QueryParameter.text_type("TxHash", "0x"),
         ],
     )
+    data_set = dune.fetch(query)
     results = SplitSlippages()
     for row in data_set:
         results.append(slippage=SolverSlippage.from_dict(row))

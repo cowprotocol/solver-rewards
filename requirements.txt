@@ -1,7 +1,7 @@
 black==22.1.0
+duneapi==2.0.4
 mypy==0.941
 pylint==2.12.2
-pytest==7.0.1
-requests==2.27.1
-types-requests==2.27.13
+pytest==7.1.1
+types-requests==2.27.14
 web3>=5.28.0

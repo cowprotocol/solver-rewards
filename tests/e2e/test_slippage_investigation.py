@@ -2,9 +2,10 @@ import unittest
 from datetime import datetime
 from pprint import pprint
 
-from src.dune_analytics import DuneAnalytics, QueryParameter
+from duneapi.api import DuneAPI
+from duneapi.types import DuneQuery, QueryParameter, Network
+
 from src.fetch.period_slippage import QueryType, slippage_query
-from src.models import Network
 
 
 class TestDuneAnalytics(unittest.TestCase):
@@ -13,18 +14,20 @@ class TestDuneAnalytics(unittest.TestCase):
         If numbers do not seem correct, the following script allows us to investigate
         which tx are having high slippage values in dollar terms
         """
-        dune = DuneAnalytics.new_from_environment()
+        dune = DuneAPI.new_from_environment()
         period_start = datetime.strptime("2022-03-10", "%Y-%m-%d")
         period_end = datetime.strptime("2022-03-11", "%Y-%m-%d")
         slippage_per_tx = dune.fetch(
-            query_str=slippage_query(QueryType.PER_TX),
-            network=Network.MAINNET,
-            name="Slippage Accounting",
-            parameters=[
-                QueryParameter.date_type("StartTime", period_start),
-                QueryParameter.date_type("EndTime", period_end),
-                QueryParameter.text_type("TxHash", "0x"),
-            ],
+            DuneQuery.from_environment(
+                raw_sql=slippage_query(QueryType.PER_TX),
+                network=Network.MAINNET,
+                name="Slippage Accounting",
+                parameters=[
+                    QueryParameter.date_type("StartTime", period_start),
+                    QueryParameter.date_type("EndTime", period_end),
+                    QueryParameter.text_type("TxHash", "0x"),
+                ],
+            )
         )
         slippage_per_tx.sort(key=lambda t: int(t["eth_slippage_wei"]))
 

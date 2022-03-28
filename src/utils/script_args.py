@@ -1,11 +1,12 @@
 """Common method for initializing setup for scripts"""
 import argparse
 
-from src.dune_analytics import DuneAnalytics
+from duneapi.api import DuneAPI
+
 from src.models import AccountingPeriod
 
 
-def generic_script_init(description: str) -> tuple[DuneAnalytics, AccountingPeriod]:
+def generic_script_init(description: str) -> tuple[DuneAPI, AccountingPeriod]:
     """
     1. parses parses command line arguments,
     2. establishes dune connection
@@ -17,4 +18,4 @@ def generic_script_init(description: str) -> tuple[DuneAnalytics, AccountingPeri
     )
     args = parser.parse_args()
 
-    return DuneAnalytics.new_from_environment(), AccountingPeriod(args.start)
+    return DuneAPI.new_from_environment(), AccountingPeriod(args.start)

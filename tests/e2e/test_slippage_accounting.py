@@ -1,6 +1,7 @@
 import unittest
 
-from src.dune_analytics import DuneAnalytics
+from duneapi.api import DuneAPI
+
 from src.fetch.period_slippage import get_period_slippage
 from src.models import AccountingPeriod
 
@@ -13,7 +14,7 @@ class TestDuneAnalytics(unittest.TestCase):
         I could happen that a solver has higher slippage than 2 ETH. In this case,
         there should be manual investigations
         """
-        dune = DuneAnalytics.new_from_environment()
+        dune = DuneAPI.new_from_environment()
         solver_slippages = get_period_slippage(
             dune=dune, period=AccountingPeriod("2022-03-01", 1)
         )

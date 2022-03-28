@@ -4,9 +4,12 @@ import unittest
 from dataclasses import dataclass
 from enum import Enum
 
-from src.dune_analytics import DuneAnalytics, QueryParameter
+from duneapi.api import DuneAPI
+from duneapi.types import DuneQuery, QueryParameter, Network
+from duneapi.util import open_query
+
 from src.fetch.period_slippage import add_token_list_table_to_query
-from src.models import AccountingPeriod, Address, Network
+from src.models import AccountingPeriod, Address
 
 
 class TransferType(Enum):
@@ -68,20 +71,20 @@ def token_slippage(
 
 class TestDuneAnalytics(unittest.TestCase):
     def setUp(self):
-        self.dune = DuneAnalytics.new_from_environment()
+        self.dune = DuneAPI.new_from_environment()
         self.period = AccountingPeriod("2022-03-01", length_days=14)
 
     def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
-        slippage_sub_query = self.dune.open_query("./queries/period_slippage.sql")
-        select_transfers_query = self.dune.open_query(
+        slippage_sub_query = open_query("./queries/period_slippage.sql")
+        select_transfers_query = open_query(
             "./tests/queries/select_internal_transfers.sql"
         )
 
-        query = "\n".join(
+        raw_sql = "\n".join(
             [add_token_list_table_to_query(slippage_sub_query), select_transfers_query]
         )
-        data_set = self.dune.fetch(
-            query_str=query,
+        query = DuneQuery.from_environment(
+            raw_sql=raw_sql,
             network=Network.MAINNET,
             name="Internal Token Transfer Accounting",
             parameters=[
@@ -90,6 +93,7 @@ class TestDuneAnalytics(unittest.TestCase):
                 QueryParameter.date_type("EndTime", self.period.end),
             ],
         )
+        data_set = self.dune.fetch(query)
         return [InternalTransfer.from_dict(row) for row in data_set]
 
     def internal_trades_for_tx(self, tx_hash: str) -> list[InternalTransfer]:

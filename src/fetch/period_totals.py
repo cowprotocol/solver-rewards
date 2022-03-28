@@ -4,8 +4,11 @@ Script to query and display total funds distributed for specified accounting per
 from dataclasses import dataclass
 from pprint import pprint
 
-from src.dune_analytics import DuneAnalytics, QueryParameter
-from src.models import AccountingPeriod, Network
+from duneapi.api import DuneAPI
+from duneapi.types import QueryParameter, DuneQuery, Network
+from duneapi.util import open_query
+
+from src.models import AccountingPeriod
 from src.utils.script_args import generic_script_init
 
 
@@ -19,12 +22,12 @@ class PeriodTotals:
     realized_fees_eth: int
 
 
-def get_period_totals(dune: DuneAnalytics, period: AccountingPeriod) -> PeriodTotals:
+def get_period_totals(dune: DuneAPI, period: AccountingPeriod) -> PeriodTotals:
     """
     Fetches & Returns Dune Results for accounting period totals.
     """
-    data_set = dune.fetch(
-        query_str=dune.open_query("./queries/period_totals.sql"),
+    query = DuneQuery.from_environment(
+        raw_sql=open_query("./queries/period_totals.sql"),
         network=Network.MAINNET,
         name="Accounting Period Totals",
         parameters=[
@@ -32,13 +35,14 @@ def get_period_totals(dune: DuneAnalytics, period: AccountingPeriod) -> PeriodTo
             QueryParameter.date_type("EndTime", period.end),
         ],
     )
+    data_set = dune.fetch(query)
     assert len(data_set) == 1
     rec = data_set[0]
     return PeriodTotals(
         period=period,
-        execution_cost_eth=rec["execution_cost_eth"],
-        cow_rewards=rec["cow_rewards"],
-        realized_fees_eth=rec["realized_fees_eth"],
+        execution_cost_eth=int(rec["execution_cost_eth"]),
+        cow_rewards=int(rec["cow_rewards"]),
+        realized_fees_eth=int(rec["realized_fees_eth"]),
     )
 
 

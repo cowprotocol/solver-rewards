@@ -5,18 +5,8 @@ from __future__ import annotations
 
 import re
 from datetime import datetime, timedelta
-from enum import Enum
 
 from web3 import Web3
-
-
-class Network(Enum):
-    """
-    Enum for EVM network. Meant to be used everywhere instead of strings
-    """
-
-    MAINNET = "mainnet"
-    GCHAIN = "gchain"
 
 
 # pylint: disable=too-few-public-methods
@@ -62,7 +52,7 @@ class AccountingPeriod:
     """Class handling the date arithmetic and string conversions for date intervals"""
 
     def __init__(self, start: str, length_days: int = 7):
-        self.start = datetime.strptime(start, "%Y-%m-%d").date()
+        self.start = datetime.strptime(start, "%Y-%m-%d")
         self.end = self.start + timedelta(days=length_days)
 
     def __str__(self) -> str:
