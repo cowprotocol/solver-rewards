@@ -115,7 +115,7 @@ docker pull ghcr.io/cowprotocol/solver-rewards
 # Prepare environment variables
 cp .env.sample .env  # Fill in your Dune Credentials
 # Run
-docker run -it --rm --env-file .env -v $(PWD):/app/out solver-rewards --start 'YYYY-MM-DD'
+docker run -it --rm --env-file .env -v $(PWD):/app/out ghcr.io/cowprotocol/solver-rewards --start 'YYYY-MM-DD'
 ```
 
 and (usually after about 30 seconds) find the transfer file written to your current working directory.
