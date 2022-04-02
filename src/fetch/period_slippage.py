@@ -1,6 +1,7 @@
 """A standalone script for fetching Solver Slippage for Accounting Period"""
 from __future__ import annotations
 
+import logging.config
 from dataclasses import dataclass
 from enum import Enum
 from pprint import pprint
@@ -12,6 +13,9 @@ from duneapi.util import open_query
 from src.models import AccountingPeriod, Address
 from src.token_list import fetch_trusted_tokens
 from src.utils.script_args import generic_script_init
+
+log = logging.getLogger(__name__)
+logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
 
 
 def allowed_token_list_query(token_list: list[str]) -> str:
@@ -123,8 +127,8 @@ class SplitSlippages:
 
 
 def get_period_slippage(
-    dune: DuneAPI,
-    period: AccountingPeriod,
+        dune: DuneAPI,
+        period: AccountingPeriod,
 ) -> SplitSlippages:
     """
     Executes & Fetches results of slippage query per solver for specified accounting period.

@@ -8,8 +8,7 @@
 python3 -m venv env
 source ./env/bin/activate
 pip install -r requirements.txt
-cp .env.sample .env
-source .env
+cp .env.sample .env    <----- Copy your Dune credentials here!
 ```
 
 Fill out your Dune credentials in the `.env` file. The Dune user and password are
@@ -79,7 +78,6 @@ The solver reimbursements are to be executed each Tuesday with the accounting pe
 
 In order to do the payout, run the following scripts:
 ```shell
-source .env
 rm -r out/
 python -m src.fetch.transfer_file --start '2022-MM-DD'
 ```
