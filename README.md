@@ -27,25 +27,22 @@ To fetch the total eth spent, realized fees and cow rewards for an accounting pe
 the period totals script as follows
 
 ```shell
-python -m src.fetch.period_totals --start '2022-02-01' --end '2022-02-08'
+python -m src.fetch.period_totals --start '2022-02-01'
 ```
 
 This will result in the following console logs:
 
 ```
-Fetching Accounting Period Totals on Network.MAINNET...
-got 1 records from last query
-PeriodTotals(period_start=datetime.datetime(2022, 2, 1, 0, 0),
-             period_end=datetime.datetime(2022, 2, 8, 0, 0),
-             execution_cost_eth=148.2367050858087,
+PeriodTotals(period=<src.models.AccountingPeriod object at 0x7f21bd9ad600>,
+             execution_cost_eth=148,
              cow_rewards=423400,
-             realized_fees_eth=92.69632712493294)
+             realized_fees_eth=92)
 ```
 
 To fetch the total slippage for an accounting period, run period_slippage script as follows:
 
 ```shell
-python -m src.fetch.period_slippage --start '2022-02-01' --end '2022-02-08'
+python -m src.fetch.period_slippage --start '2022-02-01'
 ```
 
 # Summary of Accounting Procedure
@@ -59,9 +56,9 @@ StartTime <= block_time < EndTime
 
 # Testing & Contributing
 
-To run the, unit, end to end and full test suite run any of
+To run the unit, end to end and full test suite run any of
 
-```py
+```shell
 python -m pytest tests/unit/
 python -m pytest tests/e2e/
 python -m pytest tests/
@@ -70,7 +67,7 @@ python -m pytest tests/
 This project conforms to [Black](https://github.com/psf/black) code style.
 You can auto format the project with the following command:
 
-```py
+```shell
 black ./
 ```
 
@@ -81,29 +78,44 @@ However, many IDEs can be configured to auto format on save.
 The solver reimbursements are to be executed each Tuesday with the accounting period of the last 7 days. If the payout can not be done on Tuesdays, its okay to execute them later, but still the accounting period should always be from 00:00 between Monday and Tuesday to 00:00 between Monday and Tuesday
 
 In order to do the payout, run the following scripts:
-```
+```shell
 source .env
 rm -r out/
 python -m src.fetch.transfer_file --start '2022-MM-DD'
 ```
 Here, the start should specify the Tuesday of the start of the accounting period. The next Tuesday - the end date of the accounting period - will be calculated automatically by the script.
 I.e. for the first payout, we would run:
-`python -m src.fetch.transfer_file --start '2022-03-01'`
+```shell
+python -m src.fetch.transfer_file --start '2022-03-01'
+```
 and for the next one:
-`python -m src.fetch.transfer_file --start '2022-03-08'`
+```shell
+python -m src.fetch.transfer_file --start '2022-03-08'
+```
 
-Please double check that the payout is reasonable. That means the eth sent should be between 30-80 ETH, depending on gas prices from last week. Also the amount of cow send should reflect 100x the amount of batches. Reasonable COW totals are around 300000-500000, that means 500-700 batches a day.
+
+Please double-check that the payout is reasonable. That means the eth sent should be between 30-80 ETH, depending on gas prices from last week. Also the amount of cow send should reflect 100x the amount of batches. Reasonable COW totals are around 300000-500000, that means 500-700 batches a day.
 
 Also, it might happen that the slippage of a solver is bigger than the ETH payout. In this case, please do not proceed with the payout, until the root cause is known. Feel free to reach out the project maintainers to do the investigation.
 
-Note that we must wait some time after the period has ended for some data to finalize (e.g. `prices.usd`
-, `ethereum.transactions` our event data, etc...). Hence, the scripts should not be executed immediately after the accounting period has ended.
+Note that we must wait some time after the period has ended for some data to finalize (e.g. `prices.usd`, `ethereum.transactions` our event data, etc...). Hence, the scripts should not be executed immediately after the accounting period has ended.
 
 After generating the transfer file and double-checking the results, please create the multi-send transaction with the link provided in the console.
 
 Inform the team of this proposed transaction in the #dev-multisig Slack channel and follow through to ensure execution. It is preferred that the transaction be executed by the proposer account(eth:0xd8Ca5FE380b68171155C7069B8df166db28befdd).
 
 
+## Docker
 
+This project has a strict requirement of python >= 3.10 which may not be common version for most operating systems. 
+In order to make the reimbursement effort seamless, we have prepared the following docker container.
 
+```shell
+docker pull ghcr.io/cowprotocol/solver-rewards
+# Prepare environment variables
+cp .env.sample .env  # Fill in your Dune Credentials
+# Run
+docker run -it --rm --env-file .env -v $(PWD):/app/out solver-rewards --start 'YYYY-MM-DD'
+```
 
+and (usually after about 30 seconds) find the transfer file written to your current working directory.

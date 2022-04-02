@@ -1,4 +1,4 @@
-black==22.1.0
+black==22.3.0
 duneapi==2.0.4
 mypy==0.941
 pylint==2.12.2
