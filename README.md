@@ -109,7 +109,7 @@ This project has a strict requirement of python >= 3.10 which may not be common 
 In order to make the reimbursement effort seamless, we have prepared the following docker container.
 
 ```shell
-docker pull ghcr.io/cowprotocol/solver-rewards
+docker pull ghcr.io/cowprotocol/solver-rewards:main
 # Prepare environment variables
 cp .env.sample .env  # Fill in your Dune Credentials
 # Run
