@@ -98,8 +98,8 @@ class SplitSlippages:
 
 
 def get_period_slippage(
-        dune: DuneAPI,
-        period: AccountingPeriod,
+    dune: DuneAPI,
+    period: AccountingPeriod,
 ) -> SplitSlippages:
     """
     Executes & Fetches results of slippage query per solver for specified accounting period.
