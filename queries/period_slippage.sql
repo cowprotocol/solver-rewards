@@ -262,7 +262,7 @@ buffer_trades as (
                     -- One could see this as an internal buffer trade, but since this is not good for the protocol's buffers
                     -- we will not evalute this as buffer trade, but rather as positive and negative slippage at the same time:
                     -- One example is: 0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7 with a matchablity of 0.26
-                    -- selling too much usdc and receiving too much eth
+                    -- selling too much USDC and receiving too much ETH
                     then (
                         abs(
                             (a.clearing_value + b.clearing_value) / (abs(a.clearing_value) + abs(b.clearing_value))
@@ -274,10 +274,8 @@ buffer_trades as (
                         and b.usd_value is not null -- If prices from the prices.usd dune table are used, the prices can also be off from time to time.
                         -- On the one hand side, we don't wanna allow to high deviations. E.g. for
                         -- 0x9a318d1abd997bcf8afed55b2946a7b1bd919d227f094cdcc99d8d6155808d7c a matchability of 0.26 is calculated
-                        - - for a slippage of WETH
-                        and the LDO deficit.(
-                            In this example the internal trade is only STRONG->LDO
-                        ) -- On the other hand side, real internal trades like the CRV to USDT internal trade of 0xc15dda7c10eb317c0ad177316020ec4baa13babb0713b73480feef14045603f4
+                        -- for a slippage of WETH and the LDO deficit. In this example the internal trade is only STRONG->LDO
+                        -- On the other hand, real internal trades like the CRV to USDT internal trade of 0xc15dda7c10eb317c0ad177316020ec4baa13babb0713b73480feef14045603f4
                         -- also score a matchablilty of 0.027
                         -- As a compromise 0.025 was chosen
                         then (
