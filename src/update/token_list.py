@@ -1,4 +1,4 @@
-"""Tool fetching Trusted Token list and pushing the data to a dune user generated view."""
+"""Standalone script for fetching Trusted Token list and pushing the data to a dune user generated view."""
 from __future__ import annotations
 
 import logging.config
@@ -6,6 +6,9 @@ import logging.config
 from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, Network
 from duneapi.util import open_query
+
+from src.token_list import fetch_trusted_tokens
+from src.utils.script_args import generic_script_init
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
@@ -20,3 +23,8 @@ def update_token_list(dune: DuneAPI, token_list: list[str]) -> list[dict[str, st
     query = DuneQuery.from_environment(raw_sql=raw_sql, network=Network.MAINNET)
     # We return the fetched list (for testing), but we really only care that the data has been pushed and updated
     return dune.fetch(query)
+
+
+if __name__ == "__main__":
+    dune_connection, _ = generic_script_init(description="Update Token List")
+    update_token_list(dune_connection, fetch_trusted_tokens())
