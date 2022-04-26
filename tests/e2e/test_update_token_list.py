@@ -2,19 +2,21 @@ import unittest
 
 from duneapi.api import DuneAPI
 
+from src.token_list import fetch_trusted_tokens
 from src.update.token_list import update_token_list
 
 
 class TestTokenList(unittest.TestCase):
-    def test_no_solver_has_huge_slippage_values(self):
-        """
-        This test makes sure that no solver had big slippage (bigger than 2 ETH).
-        High slippage indicates that something significant is missing, but for sure
-        I could happen that a solver has higher slippage than 2 ETH. In this case,
-        there should be manual investigations
-        """
+    def test_token_list_update(self):
         dune = DuneAPI.new_from_environment()
-        update_token_list(dune)
+        fetched_tokens = fetch_trusted_tokens()
+        dune_list = update_token_list(dune, fetched_tokens)
+        self.assertEqual(len(dune_list), len(fetched_tokens))
+
+    def test_empty_token_list_update(self):
+        dune = DuneAPI.new_from_environment()
+        dune_list = update_token_list(dune, [])
+        self.assertEqual(len(dune_list), 0)
 
 
 if __name__ == "__main__":

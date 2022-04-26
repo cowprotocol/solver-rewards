@@ -13,6 +13,7 @@ from duneapi.util import open_query
 from src.models import AccountingPeriod, Address
 from src.update.token_list import update_token_list
 from src.utils.script_args import generic_script_init
+from src.token_list import fetch_trusted_tokens
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
@@ -97,14 +98,14 @@ class SplitSlippages:
 
 
 def get_period_slippage(
-    dune: DuneAPI,
-    period: AccountingPeriod,
+        dune: DuneAPI,
+        period: AccountingPeriod,
 ) -> SplitSlippages:
     """
     Executes & Fetches results of slippage query per solver for specified accounting period.
     Returns a class representation of the results as two lists (positive & negative).
     """
-    update_token_list()
+    update_token_list(dune, fetch_trusted_tokens())
     query = DuneQuery.from_environment(
         raw_sql=slippage_query(),
         network=Network.MAINNET,
