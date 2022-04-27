@@ -8,7 +8,6 @@ from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, QueryParameter, Network
 from duneapi.util import open_query
 
-from src.fetch.period_slippage import add_token_list_table_to_query
 from src.models import AccountingPeriod, Address
 
 
@@ -75,13 +74,11 @@ class TestDuneAnalytics(unittest.TestCase):
         self.period = AccountingPeriod("2022-03-01", length_days=14)
 
     def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
-        slippage_sub_query = open_query("./queries/period_slippage.sql")
-        select_transfers_query = open_query(
-            "./tests/queries/select_internal_transfers.sql"
-        )
-
         raw_sql = "\n".join(
-            [add_token_list_table_to_query(slippage_sub_query), select_transfers_query]
+            [
+                open_query("./queries/period_slippage.sql"),
+                open_query("./tests/queries/select_internal_transfers.sql"),
+            ]
         )
         query = DuneQuery.from_environment(
             raw_sql=raw_sql,

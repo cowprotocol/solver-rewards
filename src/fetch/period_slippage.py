@@ -11,35 +11,12 @@ from duneapi.types import QueryParameter, DuneQuery, Network
 from duneapi.util import open_query
 
 from src.models import AccountingPeriod, Address
-from src.token_list import fetch_trusted_tokens
+from src.update.token_list import update_token_list
 from src.utils.script_args import generic_script_init
+from src.token_list import fetch_trusted_tokens
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
-
-
-def allowed_token_list_query(token_list: list[str]) -> str:
-    """Constructs sub query for allowed tokens"""
-    if len(token_list) == 0:
-        raise ValueError("Cannot build query for empty token list")
-
-    values = ",".join(f"('\\{address[1:]}' :: bytea)" for address in token_list)
-    query = f"allow_listed_tokens as (select * from (VALUES {values}) AS t (token)),"
-    return query
-
-
-def prepend_to_sub_query(query: str, table_to_add: str) -> str:
-    """prepends query with table immediately after with statement"""
-    if query[0:4].lower() != "with":
-        raise ValueError(f"Type {query} does not start with 'with'!")
-    return "\n".join([query[0:4], table_to_add, query[5:]])
-
-
-def add_token_list_table_to_query(original_sub_query: str) -> str:
-    """Inserts the token_list table right after the WITH statement into the sql query"""
-    token_list = fetch_trusted_tokens()
-    allowed_tokens_query = allowed_token_list_query(token_list)
-    return prepend_to_sub_query(original_sub_query, allowed_tokens_query)
 
 
 class QueryType(Enum):
@@ -62,19 +39,13 @@ def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
     per transaction results for testing
     """
 
-    slippage_sub_query = open_query("./queries/period_slippage.sql")
     select_statement = f"""
     select *, 
         usd_value / (select price from eth_price) * 10 ^ 18 as eth_slippage_wei 
     from {query_type}
     """.strip()
 
-    return "\n".join(
-        [
-            add_token_list_table_to_query(slippage_sub_query),
-            select_statement,
-        ]
-    )
+    return "\n".join([open_query("./queries/period_slippage.sql"), select_statement])
 
 
 @dataclass
@@ -134,6 +105,7 @@ def get_period_slippage(
     Executes & Fetches results of slippage query per solver for specified accounting period.
     Returns a class representation of the results as two lists (positive & negative).
     """
+    update_token_list(dune, fetch_trusted_tokens())
     query = DuneQuery.from_environment(
         raw_sql=slippage_query(),
         network=Network.MAINNET,

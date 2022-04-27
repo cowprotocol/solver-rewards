@@ -15,7 +15,9 @@ def parse_token_list(token_list_json: str) -> list[str]:
         # TODO - raise properly here!
         print("Could not parse JSON data!")
         raise
-    return [token["address"].lower() for token in token_list["tokens"]]
+    return [
+        f"('\\{token['address'].lower()[1:]}'::bytea)" for token in token_list["tokens"]
+    ]
 
 
 def fetch_trusted_tokens() -> list[str]:
