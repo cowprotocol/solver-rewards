@@ -26,7 +26,10 @@ def update_token_list(dune: DuneAPI, token_list: list[str]) -> list[dict[str, st
     query = DuneQuery.from_environment(raw_sql=raw_sql, network=Network.MAINNET)
     # We return the fetched list (for testing),
     # but we really only care that the data has been pushed and updated
-    return dune.fetch(query)
+    results = dune.fetch(query)
+    # This assertion ensures that the token list was successfully updated.
+    assert len(results) == len(token_list), "Query Failed to push token list"
+    return results
 
 
 if __name__ == "__main__":
