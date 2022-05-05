@@ -10,16 +10,11 @@ with valid_tokens as (
 -- Gnosis: 0x8353713b6D2F728Ed763a04B886B16aAD2b16eBD
 -- CoW Services: 0x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6
 recognized_bonding_pools (pool, name) as (
-  SELECT *
+  select *
   from (
-      values (
-          replace('0x8353713b6D2F728Ed763a04B886B16aAD2b16eBD', '0x', '\x')::bytea,
-          'Gnosis'
-        ),
-        (
-          replace('0x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6', '0x', '\x')::bytea,
-          'CoW Services'
-        )
+    values
+        (replace('0x8353713b6D2F728Ed763a04B886B16aAD2b16eBD', '0x', '\x')::bytea, 'Gnosis'),
+        (replace('0x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6', '0x', '\x')::bytea, 'CoW Services')
     ) as _
 ),
 -- TODO: Make initial funders front-running resistant.
@@ -32,10 +27,7 @@ initial_funders as (
       select "from"
       from erc20."ERC20_evt_Transfer"
       where "to" = pool
-        and contract_address in (
-          select contract_address
-          from valid_tokens
-        )
+        and contract_address in (select contract_address from valid_tokens)
       order by evt_block_number,
         evt_index
       limit 1
@@ -45,17 +37,15 @@ initial_funders as (
         select count(distinct "from")
         from erc20."ERC20_evt_Transfer"
         where "to" = pool
-          and contract_address in (
-            select contract_address
-            from valid_tokens
-          )
+          and contract_address in (select contract_address from valid_tokens)
       ) = 1 then True
       else False
     end as unique_depositor
   from recognized_bonding_pools
 ),
 vouches as (
-  select evt_block_time,
+  select
+    evt_block_time,
     evt_index,
     solver,
     "cowRewardTarget" as reward_target,
@@ -63,31 +53,31 @@ vouches as (
     sender,
     True as active
   from cow_protocol."VouchRegister_evt_Vouch"
-    join initial_funders on pool = "bondingPool"
-    and sender = initial_funder
+    join initial_funders
+        on pool = "bondingPool"
+        and sender = initial_funder
 ),
 invalidations as (
-  select evt_block_time,
+  select
+    evt_block_time,
     evt_index,
     solver,
-    Null::bytea as reward_target,
+    Null::bytea as reward_target,  -- This is just ot align with vouches to take a union
     pool,
     sender,
     False as active
   from cow_protocol."VouchRegister_evt_InvalidateVouch"
-    join initial_funders on pool = "bondingPool"
-    and sender = initial_funder
+    join initial_funders
+        on pool = "bondingPool"
+        and sender = initial_funder
 ),
 -- At this point we have excluded all arbitrary vouches (i.e. those not from initial funders of recognized pools)
 -- This ranks (solver, pool, sender) by most recent (vouch or invalidation) 
 -- and yields as rank 1, the current "active" status of the triplet.
 ranked_vouches as (
   select rank() over (
-      partition by solver,
-      pool,
-      sender
-      order by evt_block_time desc,
-        evt_index desc
+      partition by solver, pool, sender
+      order by evt_block_time desc, evt_index desc
     ) as rk,
     *
   from (
@@ -104,8 +94,7 @@ ranked_vouches as (
 current_active_vouches as (
   select rank() over (
       partition by solver
-      order by evt_block_time,
-        evt_index
+      order by evt_block_time, evt_index
     ) as time_rank,
     *
   from ranked_vouches
@@ -115,7 +104,8 @@ current_active_vouches as (
 -- To filter for the case of "same solver, different pool",
 -- rank the current_active vouches and choose the earliest
 valid_vouches as (
-  select solver,
+  select
+    solver,
     reward_target,
     pool
   from current_active_vouches
