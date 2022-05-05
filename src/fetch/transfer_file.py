@@ -113,8 +113,8 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
 
     results = []
     for row in reimbursements_and_rewards:
-        solver = transfer.receiver
         transfer = Transfer.from_dict(row)
+        solver = transfer.receiver
         slippage = indexed_slippage.get(solver)
         if transfer.token_type == TokenType.NATIVE and slippage is not None:
             try:
@@ -128,7 +128,7 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
                 continue
         elif transfer.token_address == COW_TOKEN and solver in cow_redirects:
             # Redirect COW rewards to reward target specific by VouchRegistry
-            redirect_address = cow_redirects.get(solver).reward_target
+            redirect_address = cow_redirects[solver].reward_target
             print(f"Redirecting solver {solver} COW tokens to {redirect_address}")
             transfer.receiver = redirect_address
 
