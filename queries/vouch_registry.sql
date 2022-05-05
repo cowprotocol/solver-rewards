@@ -1,43 +1,13 @@
-with valid_tokens as (
-  select *
-  from erc20.tokens
-  where contract_address in (
-      '\xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB', -- COW Token
-      '\x39AA39c021dfbaE8faC545936693aC917d5E7563' -- cUSDC
-    )
-),
-recognized_bonding_pools (pool, name) as (
+with
+-- Find permanent version of this query at: https://dune.com/queries/674947
+recognized_bonding_pools (pool, name, initial_funder) as (
   select *
   from (
     values
-        (replace('0x8353713b6D2F728Ed763a04B886B16aAD2b16eBD', '0x', '\x')::bytea, 'Gnosis'),
-        (replace('0x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6', '0x', '\x')::bytea, 'CoW Services')
+        -- This Pool has not yet been funded.
+        -- ('\x8353713b6D2F728Ed763a04B886B16aAD2b16eBD'::bytea, 'Gnosis'),
+        ('\x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6'::bytea, 'CoW Services', '\x423cec87f19f0778f549846e0801ee267a917935'::bytea)
     ) as _
-),
--- TODO: Make initial funders front-running resistant.
---       This would involve detecting the magnitude of the deposits 
---       and choosing the first sender with "substantial" deposit
-initial_funders as (
-  select name,
-    pool,
-    (
-      select "from"
-      from erc20."ERC20_evt_Transfer"
-      where "to" = pool
-        and contract_address in (select contract_address from valid_tokens)
-      order by evt_block_number, evt_index
-      limit 1
-    ) as initial_funder,
-    case
-      when (
-        select count(distinct "from")
-        from erc20."ERC20_evt_Transfer"
-        where "to" = pool
-          and contract_address in (select contract_address from valid_tokens)
-      ) = 1 then True
-      else False
-    end as unique_depositor
-  from recognized_bonding_pools
 ),
 vouches as (
   select
@@ -49,7 +19,7 @@ vouches as (
     sender,
     True as active
   from cow_protocol."VouchRegister_evt_Vouch"
-    join initial_funders
+    join recognized_bonding_pools
         on pool = "bondingPool"
         and sender = initial_funder
 ),
@@ -63,7 +33,7 @@ invalidations as (
     sender,
     False as active
   from cow_protocol."VouchRegister_evt_InvalidateVouch"
-    join initial_funders
+    join recognized_bonding_pools
         on pool = "bondingPool"
         and sender = initial_funder
 ),
