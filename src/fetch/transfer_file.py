@@ -18,6 +18,7 @@ from src.utils.script_args import generic_script_init
 
 COW_TOKEN = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
 
+
 def safe_url() -> str:
     """URL to CSV Airdrop App in CoW DAO Team Safe"""
     safe_address = Address("0xA03be496e67Ec29bC62F01a428683D7F9c204930")
@@ -112,9 +113,9 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
 
     results = []
     for row in reimbursements_and_rewards:
-        solver_account = transfer.receiver
+        solver = transfer.receiver
         transfer = Transfer.from_dict(row)
-        slippage = indexed_slippage.get(solver_account)
+        slippage = indexed_slippage.get(solver)
         if transfer.token_type == TokenType.NATIVE and slippage is not None:
             try:
                 transfer.add_slippage(slippage)
@@ -125,9 +126,11 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
                     f"{slippage.solver_address}({slippage.solver_name})"
                 )
                 continue
-        elif transfer.token_address == COW_TOKEN and solver_account in cow_redirects:
+        elif transfer.token_address == COW_TOKEN and solver in cow_redirects:
             # Redirect COW rewards to reward target specific by VouchRegistry
-            transfer.receiver = cow_redirects.get(solver_account).reward_target
+            redirect_address = cow_redirects.get(solver).reward_target
+            print(f"Redirecting solver {solver} COW tokens to {redirect_address}")
+            transfer.receiver = redirect_address
 
         results.append(transfer)
 
