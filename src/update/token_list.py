@@ -23,7 +23,9 @@ def update_token_list(dune: DuneAPI, token_list: list[str]) -> list[dict[str, st
         "'{{TokenList}}'",
         ",\n             ".join(token_list),
     )
-    query = DuneQuery.from_environment(raw_sql=raw_sql, network=Network.MAINNET)
+    query = DuneQuery.from_environment(
+        raw_sql=raw_sql, name="Updated Token List", network=Network.MAINNET
+    )
     # We return the fetched list (for testing),
     # but we really only care that the data has been pushed and updated
     results = dune.fetch(query)

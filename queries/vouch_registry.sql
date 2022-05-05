@@ -1,5 +1,7 @@
 with
 -- Find permanent version of this query at: https://dune.com/queries/674947
+-- Contract events queried here are from the VouchRegister verified at
+-- https://etherscan.io/address/0xb422f2520b0b7fd86f7da61b32cc631a59ed7e8f#code
 recognized_bonding_pools (pool, name, initial_funder) as (
   select *
   from (
