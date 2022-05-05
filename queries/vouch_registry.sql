@@ -6,9 +6,6 @@ with valid_tokens as (
       '\x39AA39c021dfbaE8faC545936693aC917d5E7563' -- cUSDC
     )
 ),
--- Bonding Pool Addresses
--- Gnosis: 0x8353713b6D2F728Ed763a04B886B16aAD2b16eBD
--- CoW Services: 0x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6
 recognized_bonding_pools (pool, name) as (
   select *
   from (
@@ -28,8 +25,7 @@ initial_funders as (
       from erc20."ERC20_evt_Transfer"
       where "to" = pool
         and contract_address in (select contract_address from valid_tokens)
-      order by evt_block_number,
-        evt_index
+      order by evt_block_number, evt_index
       limit 1
     ) as initial_funder,
     case
@@ -81,11 +77,9 @@ ranked_vouches as (
     ) as rk,
     *
   from (
-      select *
-      from vouches
+      select * from vouches
       union
-      select *
-      from invalidations
+      select * from invalidations
     ) as _
 ),
 -- This will contain all latest active vouches,
