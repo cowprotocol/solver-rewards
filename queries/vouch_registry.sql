@@ -2,50 +2,7 @@ with
 -- Find permanent version of this query at: https://dune.com/queries/674947
 -- Contract events queried here are from the VouchRegister verified at
 -- https://etherscan.io/address/0xb422f2520b0b7fd86f7da61b32cc631a59ed7e8f#code
-test_bonding_pools (pool, name, initial_funder) as (
-  select *
-  from (
-    values
-        ('\xb0'::bytea, 'Pool 0', '\xf0'::bytea),
-        ('\xb1'::bytea, 'Pool 1', '\xf1'::bytea),
-        ('\xb2'::bytea, 'Pool 2', '\xf2'::bytea),
-        ('\xb3'::bytea, 'Pool 3', '\xf3'::bytea),
-        ('\xb4'::bytea, 'Pool 4', '\xf4'::bytea),
-        ('\xb5'::bytea, 'Pool 5', '\xf5'::bytea)
-    ) as _
-),
-test_vouch_events (evt_block_number, evt_index, solver, "cowRewardTarget", "bondingPool", sender) as (
-    select * from (
-        values
-            -- Test Case 0: vouch for same solver, two different pools then invalidate the first
-            (0, 0, '\x50'::bytea, '\xc1'::bytea, '\xb0'::bytea, '\xf0'::bytea), -- vouch(solver0, pool0)
-            (1, 0, '\x50'::bytea, '\xc1'::bytea, '\xb1'::bytea, '\xf1'::bytea),  -- vouch(solver0, pool1)
-            -- Test Case 1: Invalidation before Vouch
-            (1, 0, '\x51'::bytea, '\xc1'::bytea, '\xb0'::bytea, '\xf0'::bytea),  -- vouch(solver1, pool0)
-            -- Test Case 2: Vouch with wrong sender
-            (1, 0, '\x52'::bytea, '\xc1'::bytea, '\xb0'::bytea, '\xf1'::bytea),  -- vouch(solver2, pool0, sender1)
-            -- Test Case 3: Valid Vouch
-            (1, 0, '\x53'::bytea, '\xc1'::bytea, '\xb2'::bytea, '\xf2'::bytea),  -- vouch(solver3, pool2, sender2)
-            -- Test Case 4: Update Cow Reward Target
-            (1, 0, '\x54'::bytea, '\xc1'::bytea, '\xb2'::bytea, '\xf2'::bytea),  -- vouch(solver4, pool2, reward_target1)
-            (1, 1, '\x54'::bytea, '\xc2'::bytea, '\xb2'::bytea, '\xf2'::bytea),  -- vouch(solver4, pool2, reward_target2)
-            (2, 0, '\x54'::bytea, '\xc3'::bytea, '\xb2'::bytea, '\xf2'::bytea),  -- vouch(solver4, pool2, reward_target3)
-            -- Last dummy Row
-            (99999, 0, '\xff'::bytea, '\xff'::bytea, '\xff'::bytea, '\xff'::bytea)
-    ) as _
-),
-test_invalidation_events (evt_block_number, evt_index, solver, "bondingPool", sender) as (
-    select * from (
-        values
-            -- Test Case 0: vouch for same solver, two different pools then invalidate the first
-            (3, 0, '\x50'::bytea, '\xb0'::bytea, '\xf0'::bytea), -- invalidate(solver0, pool0)
-            -- Test Case 1: Invalidation before Vouch
-            (0, 0, '\x51'::bytea, '\xb0'::bytea, '\xf0'::bytea), -- invalidate(solver1, pool0)
-            -- Last dummy Row: here so that we can comment out the above entries
-            (99999, 0, '\xff'::bytea, '\xff'::bytea, '\xff'::bytea)
-    ) as _
-),
-real_bonding_pools (pool, name, initial_funder) as (
+bonding_pools (pool, name, initial_funder) as (
   select *
   from (
     values
@@ -53,11 +10,11 @@ real_bonding_pools (pool, name, initial_funder) as (
         ('\x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6'::bytea, 'CoW Services', '\x423cec87f19f0778f549846e0801ee267a917935'::bytea)
     ) as _
 ),
-real_vouch_events as (
+vouch_events as (
     select evt_block_number, evt_index, solver, "cowRewardTarget", "bondingPool", sender
     from cow_protocol."VouchRegister_evt_Vouch"
 ),
-real_invalidation_events as (
+invalidation_events as (
     select evt_block_number, evt_index, solver, "bondingPool", sender
     from cow_protocol."VouchRegister_evt_InvalidateVouch"
 ),
@@ -72,8 +29,8 @@ vouches as (
     pool,
     sender,
     True as active
-  from {{Scenario}}_vouch_events
-    join {{Scenario}}_bonding_pools
+  from vouch_events
+    join bonding_pools
         on pool = "bondingPool"
         and sender = initial_funder
 ),
@@ -86,8 +43,8 @@ invalidations as (
     pool,
     sender,
     False as active
-  from {{Scenario}}_invalidation_events
-    join {{Scenario}}_bonding_pools
+  from invalidation_events
+    join bonding_pools
         on pool = "bondingPool"
         and sender = initial_funder
 ),
