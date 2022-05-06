@@ -131,7 +131,7 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
 
     negative_slippage = get_period_slippage(dune, period).negative
     indexed_slippage = index_by(negative_slippage, "solver_address")
-    cow_redirects = get_vouches(dune)
+    cow_redirects = get_vouches(dune, period.end)
 
     results = []
     for row in reimbursements_and_rewards:
