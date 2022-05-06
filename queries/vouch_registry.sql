@@ -14,6 +14,11 @@ invalidation_events (evt_block_number, evt_index, solver, "bondingPool", sender)
 {{InvalidationEvents}}
 ),
 
+last_block_before_timestamp as (
+    select max("number") from ethereum.blocks
+    where time < '{{EndTime}}'
+),
+
 -- Query Logic Begins here!
 vouches as (
   select
@@ -28,6 +33,7 @@ vouches as (
     join bonding_pools
         on pool = "bondingPool"
         and sender = initial_funder
+  where evt_block_number <= (select * from last_block_before_timestamp)
 ),
 invalidations as (
   select
@@ -42,6 +48,7 @@ invalidations as (
     join bonding_pools
         on pool = "bondingPool"
         and sender = initial_funder
+  where evt_block_number <= (select * from last_block_before_timestamp)
 ),
 -- At this point we have excluded all arbitrary vouches (i.e. those not from initial funders of recognized pools)
 -- This ranks (solver, pool, sender) by most recent (vouch or invalidation)
