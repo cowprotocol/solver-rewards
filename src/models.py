@@ -19,6 +19,10 @@ class Address:
     """
 
     def __init__(self, address: str):
+        # Dune uses \x instead of 0x (i.e. bytea instead of hex string)
+        # This is just a courtesy to query writers,
+        # so they don't have to convert all addresses to hex strings manually
+        address = address.replace("\\x", "0x")
         if Address._is_valid(address):
             self.address: str = Web3.toChecksumAddress(address)
         else:
