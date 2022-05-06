@@ -1,7 +1,7 @@
 import unittest
 
 from src.fetch.period_slippage import SolverSlippage
-from src.fetch.transfer_file import TokenType, Transfer
+from src.fetch.transfer_file import TokenType, Transfer, consolidate_transfers
 from src.models import AccountingPeriod, Address
 from tests.e2e.test_internal_trades import TransferType
 
@@ -89,6 +89,196 @@ class TestTransfer(unittest.TestCase):
             str(err.exception),
             f"Invalid adjustment {transfer} by {overdraft_slippage.amount_wei / 10 ** 18}",
         )
+
+    def test_merge(self):
+        receiver = Address.zero()
+        # Native Transfer Merge
+        native_transfer1 = Transfer(
+            token_type=TokenType.NATIVE,
+            token_address=None,
+            receiver=receiver,
+            amount=1.0,
+        )
+        native_transfer2 = Transfer(
+            token_type=TokenType.NATIVE,
+            token_address=None,
+            receiver=receiver,
+            amount=1.0,
+        )
+        self.assertEqual(
+            native_transfer1.merge(native_transfer2),
+            Transfer(
+                token_type=TokenType.NATIVE,
+                token_address=None,
+                receiver=receiver,
+                amount=2.0,
+            ),
+        )
+        token = ONE_ADDRESS
+        # ERC20 Transfer Merge
+        erc20_transfer1 = Transfer(
+            token_type=TokenType.ERC20,
+            token_address=token,
+            receiver=receiver,
+            amount=1.0,
+        )
+        erc20_transfer2 = Transfer(
+            token_type=TokenType.ERC20,
+            token_address=token,
+            receiver=receiver,
+            amount=1.0,
+        )
+        self.assertEqual(
+            erc20_transfer1.merge(erc20_transfer2),
+            Transfer(
+                token_type=TokenType.ERC20,
+                token_address=token,
+                receiver=receiver,
+                amount=2.0,
+            ),
+        )
+
+        with self.assertRaises(ValueError) as err:
+            native_transfer1.merge(erc20_transfer1)
+        self.assertEqual(
+            f"Can't merge tokens {native_transfer1}, {erc20_transfer1}. "
+            f"Failing Requirements [True, False, False]",
+            str(err.exception),
+        )
+
+        with self.assertRaises(ValueError) as err:
+            # Different recipients
+            t1 = Transfer(
+                token_type=TokenType.ERC20,
+                token_address=token,
+                receiver=ONE_ADDRESS,
+                amount=2.0,
+            )
+            t2 = Transfer(
+                token_type=TokenType.ERC20,
+                token_address=token,
+                receiver=TWO_ADDRESS,
+                amount=2.0,
+            )
+            t1.merge(t2)
+        self.assertEqual(
+            f"Can't merge tokens {t1}, {t2}. Failing Requirements [False, True, True]",
+            str(err.exception),
+        )
+
+        with self.assertRaises(ValueError) as err:
+            # Different Token Addresses
+            t1 = Transfer(
+                token_type=TokenType.ERC20,
+                token_address=ONE_ADDRESS,
+                receiver=receiver,
+                amount=2.0,
+            )
+            t2 = Transfer(
+                token_type=TokenType.ERC20,
+                token_address=TWO_ADDRESS,
+                receiver=receiver,
+                amount=2.0,
+            )
+            t1.merge(t2)
+        self.assertEqual(
+            f"Can't merge tokens {t1}, {t2}. Failing Requirements [True, True, False]",
+            str(err.exception),
+        )
+
+    def test_consolidation(self):
+        recipients = [
+            Address.from_int(0),
+            Address.from_int(1),
+        ]
+        tokens = [
+            Address.from_int(2),
+            Address.from_int(3),
+        ]
+        transfer_list = [
+            Transfer(
+                token_type=TokenType.ERC20,
+                token_address=tokens[0],
+                receiver=recipients[0],
+                amount=1.0,
+            ),
+            Transfer(
+                token_type=TokenType.ERC20,
+                token_address=tokens[0],
+                receiver=recipients[0],
+                amount=2.0,
+            ),
+            Transfer(
+                token_type=TokenType.ERC20,
+                token_address=tokens[1],
+                receiver=recipients[0],
+                amount=3.0,
+            ),
+            Transfer(
+                token_type=TokenType.ERC20,
+                token_address=tokens[0],
+                receiver=recipients[1],
+                amount=4.0,
+            ),
+            Transfer(
+                token_type=TokenType.NATIVE,
+                token_address=None,
+                receiver=recipients[0],
+                amount=5.0,
+            ),
+            Transfer(
+                token_type=TokenType.NATIVE,
+                token_address=None,
+                receiver=recipients[0],
+                amount=6.0,
+            ),
+            Transfer(
+                token_type=TokenType.NATIVE,
+                token_address=None,
+                receiver=recipients[1],
+                amount=7.0,
+            ),
+            Transfer(
+                token_type=TokenType.NATIVE,
+                token_address=None,
+                receiver=recipients[1],
+                amount=8.0,
+            ),
+        ]
+
+        expected = [
+            Transfer(
+                token_type=TokenType.NATIVE,
+                token_address=None,
+                receiver=recipients[1],
+                amount=15.0,
+            ),
+            Transfer(
+                token_type=TokenType.NATIVE,
+                token_address=None,
+                receiver=recipients[0],
+                amount=11.0,
+            ),
+            Transfer(
+                token_type=TokenType.ERC20,
+                token_address=tokens[0],
+                receiver=recipients[1],
+                amount=4.0,
+            ),
+            Transfer(
+                token_type=TokenType.ERC20,
+                token_address=tokens[0],
+                receiver=recipients[0],
+                amount=3.0,
+            ),
+            Transfer(
+                token_type=TokenType.ERC20,
+                token_address=tokens[1],
+                receiver=recipients[0],
+                amount=3.0,
+            ),
+        ]
+        self.assertEqual(expected, consolidate_transfers(transfer_list))
 
     def test_receiver_error(self):
         transfer = Transfer(

@@ -93,6 +93,28 @@ class Transfer:
             raise ValueError(f"Invalid adjustment {self} by {adjustment}")
         self.amount = new_amount
 
+    def merge(self, other: Transfer) -> Transfer:
+        """
+        Merge two transfers (acts like addition)
+        if all fields except amount are equal, returns a transfer who amount is the sum
+        """
+        merge_requirements = [
+            self.receiver == other.receiver,
+            self.token_type == other.token_type,
+            self.token_address == other.token_address,
+        ]
+        if all(merge_requirements):
+            return Transfer(
+                token_type=self.token_type,
+                token_address=self.token_address,
+                receiver=self.receiver,
+                amount=self.amount + other.amount,
+            )
+        raise ValueError(
+            f"Can't merge tokens {self}, {other}. "
+            f"Failing Requirements {merge_requirements}"
+        )
+
 
 def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
@@ -135,6 +157,26 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
         results.append(transfer)
 
     return results
+
+
+def consolidate_transfers(transfer_list: list[Transfer]) -> list[Transfer]:
+    """
+    Removes redundancy of a transfer list by consolidating _duplicate transfers_.
+    Duplicates defined as transferring the same token to one recipient multiple times.
+    This optimizes gas cost of multiple transfers.
+    """
+
+    transfer_dict: dict[tuple, Transfer] = {}
+    for transfer in transfer_list:
+        key = (transfer.receiver, transfer.token_type, transfer.token_address)
+        if key in transfer_dict:
+            transfer_dict[key] = transfer_dict[key].merge(transfer)
+        else:
+            transfer_dict[key] = transfer
+    return sorted(
+        transfer_dict.values(),
+        key=lambda t: (-t.amount, t.receiver, t.token_address),
+    )
 
 
 if __name__ == "__main__":
