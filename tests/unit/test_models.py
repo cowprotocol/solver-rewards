@@ -142,7 +142,7 @@ class TestTransfer(unittest.TestCase):
             native_transfer1.merge(erc20_transfer1)
         self.assertEqual(
             f"Can't merge tokens {native_transfer1}, {erc20_transfer1}. "
-            f"Failing Requirements [True, False, False]",
+            f"Requirements met [True, False, False]",
             str(err.exception),
         )
 
@@ -162,7 +162,7 @@ class TestTransfer(unittest.TestCase):
             )
             t1.merge(t2)
         self.assertEqual(
-            f"Can't merge tokens {t1}, {t2}. Failing Requirements [False, True, True]",
+            f"Can't merge tokens {t1}, {t2}. Requirements met [False, True, True]",
             str(err.exception),
         )
 
@@ -182,7 +182,7 @@ class TestTransfer(unittest.TestCase):
             )
             t1.merge(t2)
         self.assertEqual(
-            f"Can't merge tokens {t1}, {t2}. Failing Requirements [True, True, False]",
+            f"Can't merge tokens {t1}, {t2}. Requirements met [True, True, False]",
             str(err.exception),
         )
 

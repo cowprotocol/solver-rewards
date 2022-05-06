@@ -112,7 +112,7 @@ class Transfer:
             )
         raise ValueError(
             f"Can't merge tokens {self}, {other}. "
-            f"Failing Requirements {merge_requirements}"
+            f"Requirements met {merge_requirements}"
         )
 
 
