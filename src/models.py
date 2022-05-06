@@ -36,6 +36,11 @@ class Address:
             return self.address == other.address
         return False
 
+    def __lt__(self, other: object) -> bool:
+        if isinstance(other, Address):
+            return self.address < self.address
+        return False
+
     def __hash__(self) -> int:
         return self.address.__hash__()
 
@@ -43,6 +48,14 @@ class Address:
     def zero(cls) -> Address:
         """Returns Null Ethereum Address"""
         return cls("0x0000000000000000000000000000000000000000")
+
+    @classmethod
+    def from_int(cls, num: int) -> Address:
+        """
+        Construct an address from int.
+        Used for testing, so that 123 -> "0x0000000000000000000000000000000000000123"
+        """
+        return cls(f"0x{str(num).rjust(40, '0')}")
 
     @staticmethod
     def _is_valid(address: str) -> bool:
