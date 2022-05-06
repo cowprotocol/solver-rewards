@@ -9,7 +9,7 @@ from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, Network, QueryParameter
 from duneapi.util import open_query
 
-from src.models import Address, AccountingPeriod
+from src.models import Address
 from src.utils.dataset import index_by
 
 # pylint: disable=line-too-long
