@@ -33,6 +33,7 @@ def event_str(events: list[str]) -> str:
 
 
 def mock_vouch_events(events: list[str]) -> str:
+    # We have put one dummy invalid record to account for empty lists
     events.append(
         "(99999, 0, '\\xff'::bytea, '\\xff'::bytea, '\\xff'::bytea, '\\xff'::bytea)"
     )
@@ -40,6 +41,7 @@ def mock_vouch_events(events: list[str]) -> str:
 
 
 def mock_invalidation_events(events: list[str]) -> str:
+    # We have put one dummy invalid record to account for empty lists
     events.append("(99999, 0, '\\xff'::bytea, '\\xff'::bytea, '\\xff'::bytea)")
     return event_str(events)
 
@@ -47,24 +49,17 @@ def mock_invalidation_events(events: list[str]) -> str:
 def vouch(
     block: int,
     evt_index: int,
-    solver: int,
-    pool: int,
-    reward_target: int,
-    sender: int,
+    solver: str,
+    pool: str,
+    target: str,
+    sender: str,
 ) -> str:
-    solver = solver_from(solver)
-    target = target_from(reward_target)
-    pool = pool_from(pool)
-    sender = sender_from(sender)
     return f"({block}, {evt_index}, '{solver}'::bytea, '{target}'::bytea, '{pool}'::bytea, '{sender}'::bytea)"
 
 
 def invalidate_vouch(
-    block: int, evt_index: int, solver: int, pool: int, sender: int
+    block: int, evt_index: int, solver: str, pool: str, sender: str
 ) -> str:
-    solver = solver_from(solver)
-    pool = pool_from(pool)
-    sender = sender_from(sender)
     return (
         f"({block}, {evt_index}, '{solver}'::bytea, '{pool}'::bytea, '{sender}'::bytea)"
     )
@@ -81,12 +76,20 @@ def vouch_query_from(vouches, invalidations) -> str:
 class TestVouchRegistry(unittest.TestCase):
     def setUp(self) -> None:
         self.dune = DuneAPI.new_from_environment()
+        self.solvers = list(map(lambda t: solver_from(t), range(5)))
+        self.pools = list(map(lambda t: pool_from(t), range(5)))
+        self.targets = list(map(lambda t: target_from(t), range(5)))
+        self.senders = list(map(lambda t: sender_from(t), range(5)))
 
     def test_vouch_for_same_solver_in_different_pools(self):
         # vouch for same solver, two different pools then invalidate the first
+        solver = self.solvers[0]
+        pool0, pool1 = self.pools[:2]
+        target0, target1 = self.targets[:2]
+        sender0, sender1 = self.senders[:2]
         vouches = [
-            vouch(0, 1, solver=0, pool=0, reward_target=0, sender=0),
-            vouch(1, 1, solver=0, pool=1, reward_target=1, sender=1),
+            vouch(0, 1, solver, pool0, target0, sender0),
+            vouch(1, 1, solver, pool1, target1, sender1),
         ]
         fetched_records = get_raw_vouches(
             self.dune, raw_query=vouch_query_from(vouches, [])
@@ -96,14 +99,14 @@ class TestVouchRegistry(unittest.TestCase):
             fetched_records[0],
             # First Vouch is the valid one!
             {
-                "pool": pool_from(0),
-                "reward_target": target_from(0),
-                "solver": solver_from(0),
+                "pool": pool0,
+                "reward_target": target0,
+                "solver": solver,
             },
         )
 
         # Now we add the invalidation of the first pool
-        invalidations = [invalidate_vouch(3, 0, 0, 0, 0)]
+        invalidations = [invalidate_vouch(3, 0, solver, pool0, sender0)]
 
         fetched_records = get_raw_vouches(
             self.dune, raw_query=vouch_query_from(vouches, invalidations)
@@ -114,15 +117,17 @@ class TestVouchRegistry(unittest.TestCase):
             fetched_records[0],
             # Now the second vouch is the valid one!
             {
-                "pool": pool_from(1),
-                "reward_target": target_from(1),
-                "solver": solver_from(0),
+                "pool": pool1,
+                "reward_target": target1,
+                "solver": solver,
             },
         )
 
     def test_invalidation_before_vouch(self):
         # Invalidation before Vouch
-        invalidations = [invalidate_vouch(0, 0, solver=0, pool=0, sender=0)]
+        solver, sender, pool = self.solvers[0], self.senders[0], self.pools[0]
+        target = self.targets[1]
+        invalidations = [invalidate_vouch(0, 0, solver, pool, sender)]
 
         fetched_records = get_raw_vouches(
             self.dune, raw_query=vouch_query_from([], invalidations)
@@ -131,7 +136,7 @@ class TestVouchRegistry(unittest.TestCase):
         self.assertEqual(len(fetched_records), 0)
 
         vouches = [
-            vouch(1, 0, solver=0, pool=0, reward_target=1, sender=0),
+            vouch(1, 0, solver, pool, target, sender),
         ]
         fetched_records = get_raw_vouches(
             self.dune, raw_query=vouch_query_from(vouches, invalidations)
@@ -141,18 +146,20 @@ class TestVouchRegistry(unittest.TestCase):
         self.assertEqual(
             fetched_records[0],
             {
-                "pool": pool_from(0),
-                "reward_target": target_from(1),
-                "solver": solver_from(0),
+                "pool": pool,
+                "reward_target": target,
+                "solver": solver,
             },
         )
 
     def test_vouch_from_invalid_sender(self):
         # Vouch from invalid sender:
+        solver, pool, target = self.solvers[0], self.pools[0], self.targets[0]
+        invalid_sender = self.senders[1]
         fetched_records = get_raw_vouches(
             self.dune,
             raw_query=vouch_query_from(
-                vouches=[vouch(0, 0, solver=0, pool=0, reward_target=0, sender=1)],
+                vouches=[vouch(0, 0, solver, pool, target, invalid_sender)],
                 invalidations=[],
             ),
         )
@@ -160,12 +167,14 @@ class TestVouchRegistry(unittest.TestCase):
 
     def test_update_cow_reward_target(self):
         # Vouch from invalid sender:
+        solver, pool, sender = self.solvers[0], self.pools[0], self.senders[0]
+        target0, target1 = self.targets[:2]
         fetched_records = get_raw_vouches(
             self.dune,
             raw_query=vouch_query_from(
                 vouches=[
-                    vouch(0, 0, solver=0, pool=0, reward_target=0, sender=0),
-                    vouch(0, 1, solver=0, pool=0, reward_target=1, sender=0),
+                    vouch(0, 0, solver, pool, target0, sender),
+                    vouch(0, 1, solver, pool, target1, sender),
                 ],
                 invalidations=[],
             ),
@@ -174,9 +183,9 @@ class TestVouchRegistry(unittest.TestCase):
         self.assertEqual(
             fetched_records[0],
             {
-                "pool": pool_from(0),
-                "reward_target": target_from(1),
-                "solver": solver_from(0),
+                "pool": pool,
+                "reward_target": target1,
+                "solver": solver,
             },
         )
 
