@@ -183,11 +183,12 @@ if __name__ == "__main__":
     dune_connection, accounting_period = generic_script_init(
         description="Fetch Complete Reimbursement"
     )
-    transfers = get_transfers(
-        dune=dune_connection,
-        period=accounting_period,
+    transfers = consolidate_transfers(
+        get_transfers(
+            dune=dune_connection,
+            period=accounting_period,
+        )
     )
-
     write_to_csv(
         data_list=transfers,
         outfile=File(name=f"transfers-{accounting_period}.csv"),
