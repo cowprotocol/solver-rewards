@@ -1,8 +1,10 @@
 import unittest
+from datetime import datetime
 
 from duneapi.api import DuneAPI
 
-from src.fetch.reward_targets import get_raw_vouches, vouch_query
+from src.fetch.reward_targets import get_raw_vouches, vouch_query, get_vouches, Vouch
+from src.models import Address
 
 
 def solver_from(num: int) -> str:
@@ -80,6 +82,31 @@ class TestVouchRegistry(unittest.TestCase):
         self.pools = list(map(lambda t: pool_from(t), range(5)))
         self.targets = list(map(lambda t: target_from(t), range(5)))
         self.senders = list(map(lambda t: sender_from(t), range(5)))
+
+    def test_real_data(self):
+        may_fifth = datetime.strptime("2022-05-05", "%Y-%m-%d")
+        fetched_records = get_vouches(self.dune, end_time=may_fifth)
+        solvers = [
+            Address("\\x109bf9e0287cc95cc623fbe7380dd841d4bdeb03"),
+            Address("\\x6fa201c3aff9f1e4897ed14c7326cf27548d9c35"),
+        ]
+        reward_target = Address("\\x84dbae2549d67caf00f65c355de3d6f4df59a32c")
+        bonding_pool = Address("\\x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6")
+        self.assertEqual(
+            list(fetched_records.values()),
+            [
+                Vouch(
+                    solver=solvers[0],
+                    bonding_pool=bonding_pool,
+                    reward_target=reward_target,
+                ),
+                Vouch(
+                    solver=solvers[1],
+                    bonding_pool=bonding_pool,
+                    reward_target=reward_target,
+                ),
+            ],
+        )
 
     def test_vouch_for_same_solver_in_different_pools(self):
         # vouch for same solver, two different pools then invalidate the first
