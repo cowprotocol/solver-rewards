@@ -3,20 +3,15 @@ with
 -- Contract events queried here are from the VouchRegister verified at
 -- https://etherscan.io/address/0xb422f2520b0b7fd86f7da61b32cc631a59ed7e8f#code
 bonding_pools (pool, name, initial_funder) as (
-  select *
-  from (
-    values
-        ('\x8353713b6D2F728Ed763a04B886B16aAD2b16eBD'::bytea, 'Gnosis', '\x6c642cafcbd9d8383250bb25f67ae409147f78b2'::bytea),
-        ('\x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6'::bytea, 'CoW Services', '\x423cec87f19f0778f549846e0801ee267a917935'::bytea)
-    ) as _
+  select * from (
+    values {{BondingPoolData}}
+  ) as _
 ),
-vouch_events as (
-    select evt_block_number, evt_index, solver, "cowRewardTarget", "bondingPool", sender
-    from cow_protocol."VouchRegister_evt_Vouch"
+vouch_events (evt_block_number, evt_index, solver, "cowRewardTarget", "bondingPool", sender) as (
+{{VouchEvents}}
 ),
-invalidation_events as (
-    select evt_block_number, evt_index, solver, "bondingPool", sender
-    from cow_protocol."VouchRegister_evt_InvalidateVouch"
+invalidation_events (evt_block_number, evt_index, solver, "bondingPool", sender) as (
+{{InvalidationEvents}}
 ),
 
 -- Query Logic Begins here!
