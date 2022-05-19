@@ -71,7 +71,7 @@ def token_slippage(
 class TestDuneAnalytics(unittest.TestCase):
     def setUp(self):
         self.dune = DuneAPI.new_from_environment()
-        self.period = AccountingPeriod("2022-03-01", length_days=14)
+        self.period = AccountingPeriod("2022-03-01", length_days=10)
 
     def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
         raw_sql = "\n".join(
