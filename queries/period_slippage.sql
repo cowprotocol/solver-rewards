@@ -15,7 +15,7 @@ filtered_trades as (
            atoms_bought                                          as "buyAmount",
            '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' :: bytea as contract_address
     from gnosis_protocol_v2."trades" t
-             join gnosis_protocol_v2."view_batches" b on t.tx_hash = b.tx_hash
+             join gnosis_protocol_v2."batches" b on t.tx_hash = b.tx_hash
     where b.block_time between '{{StartTime}}'
         and '{{EndTime}}'
       and case
@@ -69,7 +69,7 @@ other_transfers as (
                    then 'OUT_AMM'
                end            as transfer_type
     from erc20."ERC20_evt_Transfer" t
-             inner join gnosis_protocol_v2."view_batches" b
+             inner join gnosis_protocol_v2."batches" b
                         on evt_tx_hash = tx_hash
     where b.block_time between '{{StartTime}}'
         and '{{EndTime}}'

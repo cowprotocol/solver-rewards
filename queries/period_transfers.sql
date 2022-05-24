@@ -4,7 +4,7 @@ relevant_batch_info as (
     select concat('0x', encode(solver_address, 'hex')) as solver,
            sum(gas_price_gwei * gas_used) / 10 ^ 9     as eth_spent,
            count(*) * 100                              as cow_reward
-    from gnosis_protocol_v2."view_batches"
+    from gnosis_protocol_v2."batches"
     where block_time >= '{{StartTime}}'
       and block_time < '{{EndTime}}'
     group by solver
