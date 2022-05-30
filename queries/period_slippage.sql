@@ -320,10 +320,11 @@ final_token_balance_sheet as (
 ),
 end_prices as (
     select median_price as price,
-           p_complete.contract_address,
+           contract_address,
            decimals
-    from prices.prices_from_dex_data p_complete
-    where p_complete.hour = '{{EndTime}}'
+    from prices.prices_from_dex_data
+    where hour = '{{EndTime}}'
+    and sample_size > 0
 ),
 results_per_tx as (
     select solver_address,
