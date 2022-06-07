@@ -319,12 +319,16 @@ final_token_balance_sheet as (
              tx_hash
 ),
 end_prices as (
-    select median_price as price,
-           contract_address,
-           decimals
-    from prices.prices_from_dex_data
-    where hour = '{{EndTime}}'
-    and sample_size > 0
+    select
+        contract_address,
+        decimals,
+        percentile_cont(0.5) within group (order by median_price) as price
+    from prices.prices_from_dex_data p
+    where hour > '{{EndTime}}'::timestamptz - interval '1 day'
+    and date(hour) = '{{EndTime}}'::timestamptz - interval '1 day'
+    and contract_address in (select token from final_token_balance_sheet)
+    group by contract_address, decimals
+    having sum(sample_size) > 0
 ),
 results_per_tx as (
     select solver_address,
