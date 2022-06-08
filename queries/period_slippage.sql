@@ -318,17 +318,35 @@ final_token_balance_sheet as (
              solver_name,
              tx_hash
 ),
-end_prices as (
+
+exact_prices as (
+    select
+        token as contract_address,
+        decimals,
+        price
+    from final_token_balance_sheet
+    left join prices.usd
+        on contract_address = token
+        and minute = '{{EndTime}}'
+),
+-- The approximate prices are based on the hourly median prices over the past day.
+approximate_prices as (
     select
         contract_address,
         decimals,
-        percentile_cont(0.5) within group (order by median_price) as price
+        percentile_cont(0.5) WITHIN group (order by median_price) as price
     from prices.prices_from_dex_data p
     where hour > '{{EndTime}}'::timestamptz - interval '1 day'
     and date(hour) = '{{EndTime}}'::timestamptz - interval '1 day'
-    and contract_address in (select token from final_token_balance_sheet)
+      -- Getting approximate prices only for tokens we do not have an exact price for.
+    and contract_address IN (select contract_address from exact_prices where price is null)
     group by contract_address, decimals
     having sum(sample_size) > 0
+),
+end_prices as (
+    select * from exact_prices where price is not null
+    union
+    select * from approximate_prices
 ),
 results_per_tx as (
     select solver_address,
