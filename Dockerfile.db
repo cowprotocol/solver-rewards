@@ -5,7 +5,8 @@
 # Run: 
 #   docker run -d --name testDB -p 5432:5432 test_db
 # Test:
-#   python -m pytest tests/db 
+#   python -m pytest tests/db
+
 FROM postgres
 ENV POSTGRES_PASSWORD postgres
 ENV POSTGRES_DB postgres
