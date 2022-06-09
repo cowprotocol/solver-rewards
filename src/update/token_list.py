@@ -19,6 +19,8 @@ logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
 
 def update_token_list(dune: DuneAPI, token_list: list[str]) -> list[dict[str, str]]:
     """Fetches current trusted token list and builds a user generated view from it"""
+    if not token_list:
+        raise ValueError("Can't update and empty token list")
     raw_sql = open_query("./queries/token_list.sql").replace(
         "'{{TokenList}}'",
         ",\n             ".join(token_list),

@@ -15,8 +15,10 @@ class TestTokenList(unittest.TestCase):
 
     def test_empty_token_list_update(self):
         dune = DuneAPI.new_from_environment()
-        dune_list = update_token_list(dune, [])
-        self.assertEqual(len(dune_list), 0)
+        with self.assertRaises(ValueError) as err:
+            update_token_list(dune, [])
+
+        self.assertEqual(str(err.exception), "Can't update and empty token list")
 
 
 if __name__ == "__main__":
