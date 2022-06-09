@@ -6,13 +6,14 @@ from enum import Enum
 from typing import Optional
 
 from duneapi.api import DuneAPI
-from duneapi.types import DuneQuery, QueryParameter, Network
+from duneapi.file_io import File, write_to_csv
+from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches
-from src.file_io import File, write_to_csv
-from src.models import AccountingPeriod, Address
+
+from src.models import AccountingPeriod
 from src.utils.dataset import index_by
 from src.utils.script_args import generic_script_init
 

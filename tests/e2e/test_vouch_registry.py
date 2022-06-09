@@ -2,9 +2,9 @@ import unittest
 from datetime import datetime
 
 from duneapi.api import DuneAPI
+from duneapi.types import Address
 
 from src.fetch.reward_targets import get_raw_vouches, vouch_query, get_vouches, Vouch
-from src.models import Address
 
 
 def solver_from(num: int) -> str:
