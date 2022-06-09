@@ -5,6 +5,10 @@ from tests.db.pg_client import connect
 
 class TestMockDB(unittest.TestCase):
     def test_db_connect(self):
+        """
+        This is just an example test demonstrating that we have connection
+        with read and write access to the test database
+        """
         db_conn = connect()
         cur = db_conn.cursor()
 
@@ -19,11 +23,11 @@ class TestMockDB(unittest.TestCase):
             )
         """
         values = [
-            "Ben",
-            "Smith",
+            "Farm",
+            "Face",
             37,
-            "Berlin, Germany",
-            "bh2smith@gmail.com",
+            "Farmville",
+            "farm@fa.ce",
         ]
 
         insert = """
@@ -42,6 +46,10 @@ class TestMockDB(unittest.TestCase):
         self.assertEqual(1, len(x))
 
     def test_db_pre_populated(self):
+        """
+        Here we want to ensure that the DB has been prepopulated with expected data.
+        TODO - make this test more general
+        """
         db_conn = connect()
         cur = db_conn.cursor()
 
@@ -49,7 +57,7 @@ class TestMockDB(unittest.TestCase):
         #     populate_query = file.read()
 
         # cur.execute(populate_query)
-        cur.execute("SELECT * FROM erc20.\"ERC20_evt_Transfer\" LIMIT 100")
+        cur.execute('SELECT * FROM erc20."ERC20_evt_Transfer" LIMIT 100')
         x = cur.fetchall()
         self.assertEqual(100, len(x))
 
