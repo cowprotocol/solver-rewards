@@ -45,7 +45,7 @@ class TestMockDB(unittest.TestCase):
         x = cur.fetchall()
         self.assertEqual(1, len(x))
 
-    def test_db_pre_populated(self):
+    def test_db_can_populate_db(self):
         """
         Here we want to ensure that the DB has been prepopulated with expected data.
         TODO - make this test more general
@@ -53,10 +53,10 @@ class TestMockDB(unittest.TestCase):
         db_conn = connect()
         cur = db_conn.cursor()
 
-        # with open("tests/populate_db.sql", "r", encoding="utf-8") as file:
-        #     populate_query = file.read()
+        with open("./populate_db.sql", "r", encoding="utf-8") as file:
+            populate_query = file.read()
 
-        # cur.execute(populate_query)
+        cur.execute(populate_query)
         cur.execute('SELECT * FROM erc20."ERC20_evt_Transfer" LIMIT 100')
         x = cur.fetchall()
         self.assertEqual(100, len(x))
