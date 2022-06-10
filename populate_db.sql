@@ -48,7 +48,7 @@ CREATE SCHEMA erc20;
 CREATE SCHEMA prices;
 CREATE SCHEMA gnosis_protocol_v2;
 
--- Shemas for each table were defined from dune more or less as follows:
+-- Schemas for each table were defined from dune more or less as follows:
 -- select 
 --     column_name, 
 --     data_type,
