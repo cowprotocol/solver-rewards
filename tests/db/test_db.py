@@ -39,7 +39,7 @@ class TestMockDB(unittest.TestCase):
 
         cur.execute(table)
         cur.execute(insert, values)
-        # Its weird the way values is used twice here!
+        # Its weird the way `values` is used twice here!
 
         cur.execute("SELECT * FROM student")
         x = cur.fetchall()
@@ -54,9 +54,8 @@ class TestMockDB(unittest.TestCase):
         cur = db_conn.cursor()
 
         with open("./populate_db.sql", "r", encoding="utf-8") as file:
-            populate_query = file.read()
+            cur.execute(file.read())
 
-        cur.execute(populate_query)
         cur.execute('SELECT * FROM erc20."ERC20_evt_Transfer" LIMIT 100')
         x = cur.fetchall()
         self.assertEqual(100, len(x))
