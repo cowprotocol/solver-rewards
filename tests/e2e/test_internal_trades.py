@@ -5,10 +5,10 @@ from dataclasses import dataclass
 from enum import Enum
 
 from duneapi.api import DuneAPI
-from duneapi.types import DuneQuery, QueryParameter, Network
+from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
-from src.models import AccountingPeriod, Address
+from src.models import AccountingPeriod
 
 
 class TransferType(Enum):
