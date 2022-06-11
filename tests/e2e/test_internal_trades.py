@@ -9,6 +9,7 @@ from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
 from src.models import AccountingPeriod
+from tests.db.pg_client import connect, execute_dune_query
 
 
 class TransferType(Enum):
@@ -40,12 +41,12 @@ class InternalTransfer:
     amount: int
 
     @classmethod
-    def from_dict(cls, obj: dict[str, str]) -> InternalTransfer:
+    def from_dict(cls, obj: tuple) -> InternalTransfer:
         """Converts Dune data dict to object with types"""
         return cls(
-            transfer_type=TransferType.from_str(obj["transfer_type"]),
-            token=Address(obj["token"]),
-            amount=int(obj["amount"]),
+            transfer_type=TransferType.from_str(obj[6]),
+            token=Address(obj[4]),
+            amount=int(obj[5]),
         )
 
     @staticmethod
@@ -67,6 +68,13 @@ def token_slippage(
 ) -> int:
     return sum(a.amount for a in internal_trade_list if a.token == Address(token_str))
 
+
+db = connect()
+cur = db.cursor()
+# Populate DB with sample data
+with open("./populate_db.sql", "r", encoding="utf-8") as file:
+    cur.execute(file.read())
+    print("DB Populated!")
 
 class TestDuneAnalytics(unittest.TestCase):
     def setUp(self):
@@ -90,7 +98,8 @@ class TestDuneAnalytics(unittest.TestCase):
                 QueryParameter.date_type("EndTime", self.period.end),
             ],
         )
-        data_set = self.dune.fetch(query)
+        data_set = execute_dune_query(query, cur)
+        # dune_data = self.dune.fetch(query)
         return [InternalTransfer.from_dict(row) for row in data_set]
 
     def internal_trades_for_tx(self, tx_hash: str) -> list[InternalTransfer]:
@@ -205,7 +214,7 @@ class TestDuneAnalytics(unittest.TestCase):
         )
         internal_trades = InternalTransfer.internal_trades(internal_transfers)
 
-        self.assertEqual(len(internal_trades), 1 * 2)
+        self.assertEqual(1 * 2, len(internal_trades))
         self.assertEqual(
             token_slippage(
                 "0xD533a949740bb3306d119CC777fa900bA034cd52", internal_transfers
@@ -219,7 +228,7 @@ class TestDuneAnalytics(unittest.TestCase):
             0,
         )
 
-    def test_buffer_trade_with_missing_price_from_pricesUSD(self):
+    def test_buffer_trade_with_missing_price_from_pricesUSD_2(self):
         """
         tx: 0x1b4a299bfd2bb97e2289260495f566b750b9b62856b061f31d5186ae3b5ddce7
         This tx has an illegal internal buffer trade, it was not allowed to sell UBI

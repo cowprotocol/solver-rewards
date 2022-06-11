@@ -44,9 +44,10 @@
 
 
 -- Create Schemas:
-CREATE SCHEMA erc20;
-CREATE SCHEMA prices;
-CREATE SCHEMA gnosis_protocol_v2;
+CREATE SCHEMA IF NOT EXISTS erc20;
+CREATE SCHEMA IF NOT EXISTS prices;
+CREATE SCHEMA IF NOT EXISTS gnosis_protocol_v2;
+CREATE SCHEMA IF NOT EXISTS dune_user_generated;
 
 -- Schemas for each table were defined from dune more or less as follows:
 -- select 
@@ -60,7 +61,7 @@ CREATE SCHEMA gnosis_protocol_v2;
 -- Create Tables
 
 -- Tokens:
-CREATE TABLE erc20.tokens (
+CREATE TABLE IF NOT EXISTS erc20.tokens (
    contract_address bytea UNIQUE,
    symbol text,
    decimals integer
@@ -68,7 +69,7 @@ CREATE TABLE erc20.tokens (
 CREATE INDEX IF NOT EXISTS tokens_contract_address_decimals_idx ON erc20.tokens USING btree (contract_address) INCLUDE (decimals);
 CREATE INDEX IF NOT EXISTS tokens_symbol_decimals_idx ON erc20.tokens USING btree (symbol) INCLUDE (decimals);
 
-CREATE TABLE erc20."ERC20_evt_Transfer" (
+CREATE TABLE IF NOT EXISTS erc20."ERC20_evt_Transfer" (
    "from" bytea,
    "to" bytea,
    value numeric,
@@ -80,19 +81,19 @@ CREATE TABLE erc20."ERC20_evt_Transfer" (
 );
 
 -- Prices:
-CREATE TABLE prices.usd (
+CREATE TABLE IF NOT EXISTS prices.usd (
    minute timestamptz not NULL,
    price double precision not NULL,
    decimals smallint not NULL,
    contract_address bytea not NULL,
    symbol text not NULL
 );
-CREATE TABLE prices.layer1_usd_eth (
+CREATE TABLE IF NOT EXISTS prices.layer1_usd_eth (
    minute timestamptz not NULL,
    price double precision not NULL,
    symbol text not NULL
 );
-CREATE TABLE prices.prices_from_dex_data (
+CREATE TABLE IF NOT EXISTS prices.prices_from_dex_data (
    contract_address bytea not NULL,
    hour timestamptz not NULL,
    median_price numeric,
@@ -104,7 +105,7 @@ CREATE TABLE prices.prices_from_dex_data (
 -- Protocol
 
 -- Batches:
-CREATE TABLE gnosis_protocol_v2.batches
+CREATE TABLE IF NOT EXISTS gnosis_protocol_v2.batches
 (
     block_time      timestamptz NOT NULL,
     num_trades      int8        NOT NULL,
@@ -124,13 +125,13 @@ CREATE TABLE gnosis_protocol_v2.batches
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS batches_id ON gnosis_protocol_v2.batches (tx_hash);
-CREATE INDEX batches_idx_1 ON gnosis_protocol_v2.batches (block_time);
-CREATE INDEX batches_idx_2 ON gnosis_protocol_v2.batches (solver_address);
-CREATE INDEX batches_idx_3 ON gnosis_protocol_v2.batches (num_trades);
+CREATE INDEX IF NOT EXISTS batches_idx_1 ON gnosis_protocol_v2.batches (block_time);
+CREATE INDEX IF NOT EXISTS batches_idx_2 ON gnosis_protocol_v2.batches (solver_address);
+CREATE INDEX IF NOT EXISTS batches_idx_3 ON gnosis_protocol_v2.batches (num_trades);
 
 
 -- Trades
-CREATE TABLE gnosis_protocol_v2.trades
+CREATE TABLE IF NOT EXISTS gnosis_protocol_v2.trades
 (
     app_data           text,
     atoms_bought       numeric     NOT NULL,
@@ -157,20 +158,44 @@ CREATE TABLE gnosis_protocol_v2.trades
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS trades_id ON gnosis_protocol_v2.trades (order_uid, tx_hash);
-CREATE INDEX trades_idx_1 ON gnosis_protocol_v2.trades (block_time);
-CREATE INDEX trades_idx_2 ON gnosis_protocol_v2.trades (sell_token_address);
-CREATE INDEX trades_idx_3 ON gnosis_protocol_v2.trades (buy_token_address);
-CREATE INDEX trades_idx_4 ON gnosis_protocol_v2.trades (trader);
-CREATE INDEX trades_idx_5 ON gnosis_protocol_v2.trades (app_data);
-CREATE INDEX trades_idx_6 ON gnosis_protocol_v2.trades (tx_hash);
+CREATE INDEX IF NOT EXISTS trades_idx_1 ON gnosis_protocol_v2.trades (block_time);
+CREATE INDEX IF NOT EXISTS trades_idx_2 ON gnosis_protocol_v2.trades (sell_token_address);
+CREATE INDEX IF NOT EXISTS trades_idx_3 ON gnosis_protocol_v2.trades (buy_token_address);
+CREATE INDEX IF NOT EXISTS trades_idx_4 ON gnosis_protocol_v2.trades (trader);
+CREATE INDEX IF NOT EXISTS trades_idx_5 ON gnosis_protocol_v2.trades (app_data);
+CREATE INDEX IF NOT EXISTS trades_idx_6 ON gnosis_protocol_v2.trades (tx_hash);
 
 -- Solvers
-CREATE TABLE gnosis_protocol_v2.view_solvers (
+CREATE TABLE IF NOT EXISTS gnosis_protocol_v2.view_solvers (
    address bytea NOT NULL,
    environment text NOT NULL,
    name text NOT NULL,
    active bool NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS gnosis_protocol_v2."GPv2Settlement_call_settle" (
+    call_block_number bigint NOT NULL,
+    call_block_time timestamptz NOT NULL,
+    call_success boolean NOT NULL,
+    call_tx_hash bytea NOT NULL,
+    "clearingPrices" numeric[],
+    contract_address bytea NOT NULL,
+    tokens bytea[]
+);
+
+CREATE TABLE IF NOT EXISTS dune_user_generated.cow_trusted_tokens (
+    address bytea NOT NULL
+);
+
+TRUNCATE erc20.tokens;
+TRUNCATE erc20."ERC20_evt_Transfer";
+TRUNCATE prices.usd;
+TRUNCATE prices.prices_from_dex_data;
+TRUNCATE prices.layer1_usd_eth;
+TRUNCATE gnosis_protocol_v2.trades;
+TRUNCATE gnosis_protocol_v2.batches;
+TRUNCATE gnosis_protocol_v2.view_solvers;
+TRUNCATE gnosis_protocol_v2."GPv2Settlement_call_settle";
 
 -- Copy CSV data into tables
 COPY erc20.tokens(contract_address, symbol, decimals)
@@ -212,5 +237,10 @@ CSV HEADER;
 
 COPY gnosis_protocol_v2.view_solvers
 FROM '/repo/tests/data/gnosis_protocol_v2.view_solvers.csv'
+DELIMITER ','
+CSV HEADER;
+
+COPY gnosis_protocol_v2."GPv2Settlement_call_settle"
+FROM '/repo/tests/data/gnosis_protocol_v2.GPv2Settlement_call_settle.csv'
 DELIMITER ','
 CSV HEADER;
