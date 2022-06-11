@@ -1,5 +1,5 @@
 FROM python:alpine
-RUN apk add --update gcc libc-dev linux-headers
+RUN apk add --update gcc libc-dev linux-headers postgresql-dev
 
 WORKDIR /app
 
