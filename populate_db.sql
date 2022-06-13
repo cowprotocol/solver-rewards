@@ -51,8 +51,8 @@ CREATE SCHEMA IF NOT EXISTS gnosis_protocol_v2;
 CREATE SCHEMA IF NOT EXISTS dune_user_generated;
 
 -- Schemas for each table were defined from dune more or less as follows:
--- select 
---     column_name, 
+-- select
+--     column_name,
 --     data_type,
 --     is_nullable
 -- from information_schema.columns
