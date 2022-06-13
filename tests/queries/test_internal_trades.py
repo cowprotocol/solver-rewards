@@ -24,6 +24,7 @@ select block_time,
 from incoming_and_outgoing_with_buffer_trades
 """
 
+
 class TransferType(Enum):
     """
     Classifications of Internal Token Transfers
@@ -54,7 +55,7 @@ class InternalTransfer:
 
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> InternalTransfer:
-        """Converts Dune data tuple to object with types"""
+        """Converts Dune data dict to object with types"""
         return cls(
             transfer_type=TransferType.from_str(obj["transfer_type"]),
             token=Address(obj["token"]),
@@ -82,7 +83,6 @@ def token_slippage(
 
 
 class TestInternalTrades(unittest.TestCase):
-
     def setUp(self) -> None:
         self.connection, self.cursor = populate_db()
         self.period = AccountingPeriod("2022-03-01", length_days=10)
@@ -130,7 +130,7 @@ class TestInternalTrades(unittest.TestCase):
             "0xd6b85ada980d10a11a5b6989c72e0232015ce16e7331524b38180b85f1aea6c8"
         )
         internal_trades = InternalTransfer.internal_trades(internal_transfers)
-        self.assertEqual(len(internal_trades), 1 * 2)
+        self.assertEqual(1 * 2, len(internal_trades))
         # We had 0.91 USDT positive slippage
         self.assertEqual(
             token_slippage(
