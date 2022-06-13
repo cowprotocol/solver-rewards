@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import unittest
 from dataclasses import dataclass
 from enum import Enum
@@ -9,8 +10,19 @@ from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
 from src.models import AccountingPeriod
-from tests.db.pg_client import connect, execute_dune_query
+from tests.db.pg_client import connect, execute_dune_query, populate_db
 
+
+SELECT_INTERNAL_TRANSFERS = """
+select block_time,
+       CONCAT('0x', ENCODE(tx_hash, 'hex')) as tx_hash,
+       solver_address,
+       solver_name,
+       CONCAT('0x', ENCODE(token, 'hex'))   as token,
+       amount,
+       transfer_type
+from incoming_and_outgoing_with_buffer_trades
+"""
 
 class TransferType(Enum):
     """
@@ -41,12 +53,12 @@ class InternalTransfer:
     amount: int
 
     @classmethod
-    def from_dict(cls, obj: tuple) -> InternalTransfer:
-        """Converts Dune data dict to object with types"""
+    def from_dict(cls, obj: dict[str, str]) -> InternalTransfer:
+        """Converts Dune data tuple to object with types"""
         return cls(
-            transfer_type=TransferType.from_str(obj[6]),
-            token=Address(obj[4]),
-            amount=int(obj[5]),
+            transfer_type=TransferType.from_str(obj["transfer_type"]),
+            token=Address(obj["token"]),
+            amount=int(obj["amount"]),
         )
 
     @staticmethod
@@ -69,25 +81,27 @@ def token_slippage(
     return sum(a.amount for a in internal_trade_list if a.token == Address(token_str))
 
 
-db = connect()
-cur = db.cursor()
-# Populate DB with sample data
-with open("./populate_db.sql", "r", encoding="utf-8") as file:
-    cur.execute(file.read())
+class TestInternalTrades(unittest.TestCase):
 
-class TestDuneAnalytics(unittest.TestCase):
-    def setUp(self):
-        self.dune = DuneAPI.new_from_environment()
+    def setUp(self) -> None:
+        self.connection, self.cursor = populate_db()
         self.period = AccountingPeriod("2022-03-01", length_days=10)
+
+    def tearDown(self) -> None:
+        self.connection.close()
 
     def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
         raw_sql = "\n".join(
             [
                 open_query("./queries/period_slippage.sql"),
-                open_query("./tests/queries/select_internal_transfers.sql"),
+                SELECT_INTERNAL_TRANSFERS,
             ]
         )
-        query = DuneQuery.from_environment(
+        query = DuneQuery(
+            # TODO - this field should be renamed to `query_template`.
+            #  `raw_sql` should be constructed from template and parameters
+            #  as in `fill_parameterized_query`. This is a task for duneapi:
+            # https://github.com/bh2smith/duneapi/issues/46
             raw_sql=raw_sql,
             network=Network.MAINNET,
             name="Internal Token Transfer Accounting",
@@ -96,9 +110,11 @@ class TestDuneAnalytics(unittest.TestCase):
                 QueryParameter.date_type("StartTime", self.period.start),
                 QueryParameter.date_type("EndTime", self.period.end),
             ],
+            # These are irrelevant here.
+            description="",
+            query_id=-1,
         )
-        data_set = execute_dune_query(query, cur)
-        # dune_data = self.dune.fetch(query)
+        data_set = execute_dune_query(query, self.cursor)
         return [InternalTransfer.from_dict(row) for row in data_set]
 
     def internal_trades_for_tx(self, tx_hash: str) -> list[InternalTransfer]:

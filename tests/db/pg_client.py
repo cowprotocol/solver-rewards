@@ -1,7 +1,8 @@
 from dotenv import load_dotenv
 import psycopg2
-from psycopg2._psycopg import cursor
+from psycopg2._psycopg import cursor, connection
 from duneapi.types import DuneQuery
+from psycopg2.extras import RealDictCursor
 
 
 def connect():
@@ -14,6 +15,15 @@ def connect():
         password="postgres",
     )
     return conn
+
+
+def populate_db() -> tuple[connection, cursor]:
+    conn = connect()
+    cur = conn.cursor(cursor_factory=RealDictCursor)
+    # Populate DB with sample data
+    with open("./populate_db.sql", "r", encoding="utf-8") as file:
+        cur.execute(file.read())
+    return conn, cur
 
 
 def fill_parameterized_query(dune_query: DuneQuery):
