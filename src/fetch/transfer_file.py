@@ -18,6 +18,8 @@ from src.utils.dataset import index_by
 from src.utils.script_args import generic_script_init
 
 COW_TOKEN = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
+COW_PER_BATCH = 50
+COW_PER_TRADE = 35
 
 
 def safe_url() -> str:
@@ -126,6 +128,8 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
         parameters=[
             QueryParameter.date_type("StartTime", period.start),
             QueryParameter.date_type("EndTime", period.end),
+            QueryParameter.number_type("PerBatchReward", COW_PER_BATCH),
+            QueryParameter.number_type("PerTradeReward", COW_PER_TRADE),
         ],
     )
     reimbursements_and_rewards = dune.fetch(query)
