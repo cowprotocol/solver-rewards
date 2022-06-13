@@ -10,22 +10,23 @@
 
 -- with
 -- token_times as (
---     select 
+--     select
 --         date_trunc('hour', evt_block_time) as hour,
---         date_trunc('minute', evt_block_time) as minute, 
---         contract_address 
+--         date_trunc('minute', evt_block_time) as minute,
+--         contract_address
 --     from erc20."ERC20_evt_Transfer"
 --     where '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' in ("to", "from")
 --     and evt_block_time between '2022-03-01' and '2022-03-11'
+--     group by hour, minute, contract_address
 -- )
 
--- prices.usd
+-- -- prices.usd
 -- select pusd.* from prices.usd pusd
 -- inner join token_times tt
 -- on pusd.minute = tt.minute
 -- and pusd.contract_address = tt.contract_address
 
--- prices_from_dex_data
+-- -- prices_from_dex_data
 -- select p.* from prices.prices_from_dex_data p
 -- inner join token_times tt
 -- on p.hour = tt.hour
@@ -189,13 +190,17 @@ CREATE TABLE IF NOT EXISTS dune_user_generated.cow_trusted_tokens (
 
 TRUNCATE erc20.tokens;
 TRUNCATE erc20."ERC20_evt_Transfer";
+
 TRUNCATE prices.usd;
 TRUNCATE prices.prices_from_dex_data;
 TRUNCATE prices.layer1_usd_eth;
+
 TRUNCATE gnosis_protocol_v2.trades;
 TRUNCATE gnosis_protocol_v2.batches;
 TRUNCATE gnosis_protocol_v2.view_solvers;
 TRUNCATE gnosis_protocol_v2."GPv2Settlement_call_settle";
+
+TRUNCATE dune_user_generated.cow_trusted_tokens;
 
 -- Copy CSV data into tables
 COPY erc20.tokens(contract_address, symbol, decimals)
@@ -242,5 +247,10 @@ CSV HEADER;
 
 COPY gnosis_protocol_v2."GPv2Settlement_call_settle"
 FROM '/repo/tests/data/gnosis_protocol_v2.GPv2Settlement_call_settle.csv'
+DELIMITER ','
+CSV HEADER;
+
+COPY dune_user_generated.cow_trusted_tokens
+FROM '/repo/tests/data/dune_user_generated.cow_trusted_tokens.csv'
 DELIMITER ','
 CSV HEADER;

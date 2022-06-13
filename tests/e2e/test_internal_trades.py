@@ -74,7 +74,6 @@ cur = db.cursor()
 # Populate DB with sample data
 with open("./populate_db.sql", "r", encoding="utf-8") as file:
     cur.execute(file.read())
-    print("DB Populated!")
 
 class TestDuneAnalytics(unittest.TestCase):
     def setUp(self):
