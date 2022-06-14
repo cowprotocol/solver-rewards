@@ -200,6 +200,7 @@ valued_potential_buffered_trades as (
                                  and date_trunc('minute', block_time) = pusd.minute
 ),
 internal_buffer_trader_solvers as (
+    -- See the resulting list at: https://dune.com/queries/908642
     select
         CONCAT('0x', ENCODE(address, 'hex'))
     from gnosis_protocol_v2."view_solvers"
