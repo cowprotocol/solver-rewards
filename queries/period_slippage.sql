@@ -310,70 +310,114 @@ incoming_and_outgoing_with_buffer_trades as (
     from buffer_trades
 ),
 final_token_balance_sheet as (
-    select solver_address,
-           solver_name,
-           sum(amount) token_imbalance_wei,
-           symbol,
-           token,
-           tx_hash
-    from incoming_and_outgoing_with_buffer_trades
-    group by symbol,
-             token,
-             solver_address,
-             solver_name,
-             tx_hash
-),
-
-exact_prices as (
     select
-        token as contract_address,
-        decimals,
-        price
-    from final_token_balance_sheet
-    left join prices.usd
-        on contract_address = token
-        and minute = '{{EndTime}}'
+        solver_address,
+        solver_name,
+        sum(amount) token_imbalance_wei,
+        symbol,
+        token,
+        tx_hash,
+        date_trunc('minute', block_time) as minute
+    from
+        incoming_and_outgoing_with_buffer_trades
+    group by
+        symbol,
+        token,
+        solver_address,
+        solver_name,
+        tx_hash,
+        block_time
+    having
+        sum(amount) != 0
 ),
--- The approximate prices are based on the hourly median prices over the past day.
-approximate_prices as (
+token_times as (
     select
-        contract_address,
-        decimals,
-        percentile_cont(0.5) WITHIN group (order by median_price) as price
-    from prices.prices_from_dex_data p
-    where hour > '{{EndTime}}'::timestamptz - interval '1 day'
-    and date(hour) = '{{EndTime}}'::timestamptz - interval '1 day'
-      -- Getting approximate prices only for tokens we do not have an exact price for.
-    and contract_address IN (select contract_address from exact_prices where price is null)
-    group by contract_address, decimals
-    having sum(sample_size) > 0
+        date_trunc('hour', minute) as hour,
+        minute,
+        token
+    from
+        final_token_balance_sheet
+    group by
+        hour,
+        minute,
+        token
 ),
-end_prices as (
-    select * from exact_prices where price is not null
-    union
-    select * from approximate_prices
+token_times_hour as (
+    select
+        hour,
+        token
+    from
+        token_times
+    group by
+        hour,
+        token
+),
+precise_prices as (
+    select
+        pusd.*
+    from
+        prices.usd pusd
+        inner join token_times tt on pusd.minute = tt.minute
+        and contract_address = token
+),
+median_prices as (
+    select
+        musd.*
+    from
+        prices.prices_from_dex_data musd
+        inner join token_times_hour tt on musd.hour = tt.hour
+        and contract_address = token
+),
+prices as (
+    select
+        minute,
+        COALESCE(
+            precise.contract_address,
+            median.contract_address
+        ) as contract_address,
+        COALESCE(precise.decimals, median.decimals) as decimals,
+        case
+            when price is not null then price
+            else median_price
+        end as price
+    from
+        precise_prices precise
+        left join median_prices median on date_trunc('hour', minute) = hour
+        and precise.contract_address = median.contract_address
 ),
 results_per_tx as (
-    select solver_address,
-           solver_name,
-           sum(token_imbalance_wei * price / 10 ^ p.decimals) as usd_value,
-           tx_hash
-    from final_token_balance_sheet
-             inner join end_prices p on token = p.contract_address
-    group by solver_address,
-             solver_name,
-             tx_hash
-    having sum(token_imbalance_wei) != 0
+    select
+        solver_address,
+        solver_name,
+        sum(token_imbalance_wei * price / 10 ^ p.decimals) as usd_value,
+        tx_hash
+    from
+        final_token_balance_sheet ftbs
+        left join prices p on token = p.contract_address
+        and p.minute = ftbs.minute
+    group by
+        solver_address,
+        solver_name,
+        tx_hash
+    having
+        bool_and(price is not null)
 ),
 results as (
-    select solver_address,
-           solver_name,
-           sum(usd_value) as usd_value
-    from results_per_tx
-    group by solver_address, solver_name
+    select
+        solver_address,
+        solver_name,
+        sum(usd_value) as usd_value
+    from
+        results_per_tx
+    group by
+        solver_address,
+        solver_name
 ),
 eth_price as (
-    select price
-    from prices."layer1_usd_eth"
-    where minute = '{{EndTime}}'
+    select
+        price
+    from
+        prices."layer1_usd_eth"
+    where
+        minute = '{{EndTime}}'
 )
