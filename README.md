@@ -113,7 +113,13 @@ docker pull ghcr.io/cowprotocol/solver-rewards:main
 # Prepare environment variables
 cp .env.sample .env  # Fill in your Dune Credentials
 # Run
-docker run -it --rm --env-file .env -v $(PWD):/app/out ghcr.io/cowprotocol/solver-rewards --start 'YYYY-MM-DD'
+docker run -it --rm --env-file .env -v $PWD:/app/out ghcr.io/cowprotocol/solver-rewards:main --start 'YYYY-MM-DD'
 ```
 
 and (usually after about 30 seconds) find the transfer file written to your current working directory.
+
+For a one-liner that makes sure that the latest version of the code is the one being used, you can run Docker with:
+
+```sh
+docker run --pull=always -it --rm --env-file .env -v $PWD:/app/out ghcr.io/cowprotocol/solver-rewards:main --start 'YYYY-MM-DD'
+```
