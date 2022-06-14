@@ -330,7 +330,7 @@ final_token_balance_sheet as (
     having
         sum(amount) != 0
 ),
-token_times as (
+token_and_time_of_trading as (
     select
         date_trunc('hour', minute) as hour,
         minute,
@@ -342,12 +342,12 @@ token_times as (
         minute,
         token
 ),
-token_times_hour as (
+token_and_time_of_trading_hourly as (
     select
         hour,
         token
     from
-        token_times
+        token_and_time_of_trading
     group by
         hour,
         token
@@ -357,7 +357,7 @@ precise_prices as (
         pusd.*
     from
         prices.usd pusd
-        inner join token_times tt on pusd.minute = tt.minute
+        inner join token_and_time_of_trading tt on pusd.minute = tt.minute
         and contract_address = token
 ),
 median_prices as (
@@ -365,7 +365,7 @@ median_prices as (
         musd.*
     from
         prices.prices_from_dex_data musd
-        inner join token_times_hour tt on musd.hour = tt.hour
+        inner join token_and_time_of_trading_hourly tt on musd.hour = tt.hour
         and contract_address = token
 ),
 prices as (
@@ -376,13 +376,10 @@ prices as (
             median.contract_address
         ) as contract_address,
         COALESCE(precise.decimals, median.decimals) as decimals,
-        case
-            when price is not null then price
-            else median_price
-        end as price
+        COALESCE(price, median_price) as price
     from
         precise_prices precise
-        left join median_prices median on date_trunc('hour', minute) = hour
+        full outer join median_prices median on date_trunc('hour', minute) = hour
         and precise.contract_address = median.contract_address
 ),
 results_per_tx as (
