@@ -200,15 +200,19 @@ valued_potential_buffered_trades as (
                                  and date_trunc('minute', block_time) = pusd.minute
 ),
 internal_buffer_trader_solvers as (
-    Select
+    select
         CONCAT('0x', ENCODE(address, 'hex'))
     from gnosis_protocol_v2."view_solvers"
-    where
-            name = 'DexCowAgg' or
-            name = 'CowDexAg' or
-            name = 'MIP' or
-            name = 'Quasimodo' or
-            name = 'QuasiModo'
+    -- Exclude Single Order Solvers
+    where name not in (
+        '1inch',
+        '0x',
+        'ParaSwap',
+        'Baseline',
+        'BalancerSOR'
+    )
+    -- Exclude services and test solvers
+    and environment not in ('service', 'test')
 ),
 buffer_trades as (
     Select date(a.block_time) as block_time,
