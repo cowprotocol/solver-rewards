@@ -216,7 +216,7 @@ internal_buffer_trader_solvers as (
     and environment not in ('service', 'test')
 ),
 buffer_trades as (
-    Select date(a.block_time) as block_time,
+    Select a.block_time as block_time,
            a.tx_hash,
            a.solver_address,
            a.solver_name,
