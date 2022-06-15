@@ -349,7 +349,7 @@ precise_prices as (
     from
         prices.usd pusd
     inner join token_times tt
-        on minute between date(hour) and date(hour) + interval '1 day' 
+        on minute between date(hour) and date(hour) + interval '1 day' -- query execution speed optimization since minute is indexed
         and date_trunc('hour', minute) = hour
         and contract_address = token
     group by
