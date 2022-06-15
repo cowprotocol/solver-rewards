@@ -1,6 +1,6 @@
 import psycopg2
 from duneapi.types import DuneQuery
-from psycopg2 import connection, cursor
+from psycopg2._psycopg import connection, cursor
 from psycopg2.extras import RealDictCursor
 
 
