@@ -16,7 +16,9 @@ def parse_token_list(token_list_json: str) -> list[str]:
         print("Could not parse JSON data!")
         raise
     return [
-        f"('\\{token['address'].lower()[1:]}'::bytea)" for token in token_list["tokens"]
+        f"('\\{token['address'].lower()[1:]}'::bytea)"
+        for token in token_list["tokens"]
+        if token["chainId"] == 1
     ]
 
 
