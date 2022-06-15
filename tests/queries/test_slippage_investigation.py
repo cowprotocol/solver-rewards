@@ -21,7 +21,7 @@ class TestDuneAnalytics(unittest.TestCase):
         If numbers do not seem correct, the following script allows us to investigate
         which tx are having high slippage values in dollar terms
         """
-        period = AccountingPeriod("2022-03-10", 1)
+        period = AccountingPeriod("2022-06-08", 1)
         slippage_per_tx = execute_dune_query(
             DuneQuery(
                 raw_sql=slippage_query(QueryType.PER_TX),
