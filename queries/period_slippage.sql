@@ -342,6 +342,8 @@ token_and_time_of_trading as (
         minute,
         token
 ),
+-- There is a need for a second hourly table, in order to avoid double entries with the same hour,
+-- but different minutes
 token_and_time_of_trading_hourly as (
     select
         hour,
@@ -362,11 +364,23 @@ precise_prices as (
 ),
 median_prices as (
     select
-        musd.*
-    from
-        prices.prices_from_dex_data musd
-        inner join token_and_time_of_trading_hourly tt on musd.hour = tt.hour
-        and contract_address = token
+        token as contract_address,
+        hour, 
+        (Select percentile_cont(0.5) WITHIN group (order by median_price) as median_price
+            from prices.prices_from_dex_data p
+            where p.contract_address = token
+            -- Averaging prices over the last 6 hours to have reasonable prices and be secure against outliers.
+            and tt.hour > p.hour - interval '6 hours'
+            and tt.hour <= p.hour
+            -- Getting approximate prices only for tokens we do not have an exact price for.
+            and contract_address IN (select contract_address from precise_prices where price is null)
+            group by contract_address, decimals
+            having sum(sample_size) > 0),
+        (Select decimals
+            from prices.prices_from_dex_data p
+            where p.contract_address = token
+            limit 1)
+        from token_and_time_of_trading_hourly tt
 ),
 prices as (
     select
