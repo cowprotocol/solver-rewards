@@ -333,85 +333,48 @@ final_token_balance_sheet as (
 token_and_time_of_trading as (
     select
         date_trunc('hour', minute) as hour,
-        minute,
         token
     from
         final_token_balance_sheet
     group by
         hour,
-        minute,
         token
-),
--- There is a need for a second hourly table, in order to avoid double entries with the same hour,
--- but different minutes
-token_and_time_of_trading_hourly as (
-    select
-        hour,
-        token
-    from
-        token_and_time_of_trading
-    group by
-        hour,
-        token
-),
-precise_prices as (
-    select
-        pusd.*
-    from
-        prices.usd pusd
-        inner join token_and_time_of_trading tt on pusd.minute = tt.minute
-        and contract_address = token
-),
-median_prices as (
-    select
-        token as contract_address,
-        hour, 
-        (Select percentile_cont(0.5) WITHIN group (order by median_price) as median_price
-            from prices.prices_from_dex_data p
-            where p.contract_address = token
-            -- Averaging prices over the last 6 hours to have reasonable prices and be secure against outliers.
-            and tt.hour > p.hour - interval '6 hours'
-            and tt.hour <= p.hour
-            -- Getting approximate prices only for tokens we do not have an exact price for.
-            and contract_address IN (select contract_address from precise_prices where price is null)
-            group by contract_address, decimals
-            having sum(sample_size) > 0),
-        (Select decimals
-            from prices.prices_from_dex_data p
-            where p.contract_address = token
-            limit 1)
-        from token_and_time_of_trading_hourly tt
 ),
 prices as (
     select
-        minute,
+        tt.token,
+        hour,
         COALESCE(
-            precise.contract_address,
-            median.contract_address
-        ) as contract_address,
-        COALESCE(precise.decimals, median.decimals) as decimals,
-        COALESCE(price, median_price) as price
+            (select  avg(price) as price
+                from prices."usd" p
+                where  minute between hour and hour + interval '1 hour'
+                and p.contract_address = tt.token
+            ),
+            (select  avg(median_price) as price
+                from prices.prices_from_dex_data p
+                where  tt.hour > p.hour - interval '6 hours'
+                    and tt.hour <= p.hour and p.contract_address = tt.token
+            )
+        ) as price,
+        (Select decimals
+            from prices.prices_from_dex_data p
+            where p.contract_address = token
+            limit 1
+        )
     from
-        precise_prices precise
-        full outer join median_prices median on date_trunc('hour', minute) = hour
-        and precise.contract_address = median.contract_address
+         token_and_time_of_trading tt
 ),
 results_per_tx as (
-    select
-        solver_address,
-        solver_name,
-        sum(token_imbalance_wei * price / 10 ^ p.decimals) as usd_value,
-        tx_hash
-    from
-        final_token_balance_sheet ftbs
-        left join prices p on token = p.contract_address
-        and p.minute = ftbs.minute
-    group by
-        solver_address,
-        solver_name,
-        tx_hash
-    having
-        bool_and(price is not null)
+    select solver_address,
+           solver_name,
+           sum(token_imbalance_wei * price / 10 ^ p.decimals) as usd_value,
+           tx_hash
+    from final_token_balance_sheet ftbs
+             left join prices p on ftbs.token = p.token and p.hour = date_trunc('hour', ftbs.minute)
+    group by solver_address,
+             solver_name,
+             tx_hash
+    having bool_and(price is not null)
 ),
 results as (
     select
