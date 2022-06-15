@@ -1,4 +1,3 @@
-from dotenv import load_dotenv
 import psycopg2
 from psycopg2._psycopg import cursor, connection
 from duneapi.types import DuneQuery
@@ -6,7 +5,6 @@ from psycopg2.extras import RealDictCursor
 
 
 def connect():
-    load_dotenv()
     conn = psycopg2.connect(
         host="localhost",
         port=5432,
