@@ -317,7 +317,7 @@ final_token_balance_sheet as (
         symbol,
         token,
         tx_hash,
-        date_trunc('minute', block_time) as minute
+        date_trunc('hour', block_time) as hour
     from
         incoming_and_outgoing_with_buffer_trades
     group by
@@ -330,57 +330,85 @@ final_token_balance_sheet as (
     having
         sum(amount) != 0
 ),
-token_and_time_of_trading as (
+token_times as (
     select
-        date_trunc('hour', minute) as hour,
-        minute,
+        hour,
         token
     from
         final_token_balance_sheet
-    group by
-        hour,
-        minute,
-        token
-),
-token_and_time_of_trading_hourly as (
-    select
-        hour,
-        token
-    from
-        token_and_time_of_trading
     group by
         hour,
         token
 ),
 precise_prices as (
     select
-        pusd.*
+        contract_address,
+        decimals,
+        date_trunc('hour', minute) as hour,
+        avg(price) as price
     from
         prices.usd pusd
-        inner join token_and_time_of_trading tt on pusd.minute = tt.minute
+    inner join token_times tt
+        on minute between date(hour) and date(hour) + interval '1 day' 
+        and date_trunc('hour', minute) = hour
         and contract_address = token
+    group by
+        contract_address,
+        decimals,
+        date_trunc('hour', minute) 
 ),
 median_prices as (
     select
-        musd.*
+        contract_address,
+        decimals,
+        tt.hour,
+        median_price
     from
         prices.prices_from_dex_data musd
-        inner join token_and_time_of_trading_hourly tt on musd.hour = tt.hour
+        inner join token_times tt on musd.hour = tt.hour
         and contract_address = token
+),
+intrinsic_prices as (
+    select 
+        contract_address,
+        decimals,
+        hour,
+        AVG(price) as price
+    from (
+        select
+            buy_token_address as contract_address,
+            ROUND(LOG(10, atoms_bought / units_bought)) as decimals,
+            date_trunc('hour', block_time) as hour,
+            trade_value_usd / units_bought as price
+        FROM gnosis_protocol_v2."trades"
+        WHERE units_bought > 0
+    UNION
+        select
+            sell_token_address as contract_address,
+            ROUND(LOG(10, atoms_sold / units_sold)) as decimals,
+            date_trunc('hour', block_time) as hour,
+            trade_value_usd / units_sold as price
+        FROM gnosis_protocol_v2."trades"
+        WHERE units_sold > 0
+    ) as combined
+    GROUP BY hour, contract_address, decimals
 ),
 prices as (
     select
-        minute,
-        COALESCE(
-            precise.contract_address,
-            median.contract_address
-        ) as contract_address,
-        COALESCE(precise.decimals, median.decimals) as decimals,
-        COALESCE(price, median_price) as price
-    from
-        precise_prices precise
-        full outer join median_prices median on date_trunc('hour', minute) = hour
-        and precise.contract_address = median.contract_address
+        tt.hour as hour,
+        tt.token as contract_address,
+        COALESCE(precise.decimals, median.decimals, intrinsic.decimals) as decimals,
+        COALESCE(precise.price, median_price, intrinsic.price) as price
+    from token_times tt
+    LEFT JOIN precise_prices precise
+        ON precise.hour = tt.hour
+        AND precise.contract_address = token
+    LEFT JOIN prices.prices_from_dex_data median
+        ON median.hour = tt.hour
+        and median.contract_address = token
+    LEFT JOIN intrinsic_prices intrinsic
+        ON intrinsic.hour = tt.hour
+        and intrinsic.contract_address = token
 ),
 results_per_tx as (
     select
@@ -391,7 +419,7 @@ results_per_tx as (
     from
         final_token_balance_sheet ftbs
         left join prices p on token = p.contract_address
-        and p.minute = ftbs.minute
+        and p.hour = ftbs.hour
     group by
         solver_address,
         solver_name,
