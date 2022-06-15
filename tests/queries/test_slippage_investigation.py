@@ -6,12 +6,12 @@ from duneapi.types import DuneQuery, QueryParameter, Network
 
 from src.fetch.period_slippage import QueryType, slippage_query
 from src.models import AccountingPeriod
-from tests.db.pg_client import execute_dune_query, populate_db
+from tests.db.pg_client import execute_dune_query, connect_and_populate_db
 
 
 class TestDuneAnalytics(unittest.TestCase):
     def setUp(self) -> None:
-        self.connection, self.cursor = populate_db()
+        self.connection, self.cursor = connect_and_populate_db()
 
     def tearDown(self) -> None:
         self.connection.close()

@@ -1,16 +1,14 @@
 from __future__ import annotations
 
-import logging
 import unittest
 from dataclasses import dataclass
 from enum import Enum
 
-from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
 from src.models import AccountingPeriod
-from tests.db.pg_client import connect, execute_dune_query, populate_db
+from tests.db.pg_client import execute_dune_query, connect_and_populate_db
 
 
 SELECT_INTERNAL_TRANSFERS = """
@@ -84,7 +82,7 @@ def token_slippage(
 
 class TestInternalTrades(unittest.TestCase):
     def setUp(self) -> None:
-        self.connection, self.cursor = populate_db()
+        self.connection, self.cursor = connect_and_populate_db()
         self.period = AccountingPeriod("2022-03-01", length_days=10)
 
     def tearDown(self) -> None:

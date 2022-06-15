@@ -1,21 +1,20 @@
 import psycopg2
-from psycopg2._psycopg import cursor, connection
 from duneapi.types import DuneQuery
+from psycopg2 import connection, cursor
 from psycopg2.extras import RealDictCursor
 
 
-def connect():
-    conn = psycopg2.connect(
+def connect() -> connection:
+    return psycopg2.connect(
         host="localhost",
         port=5432,
         database="postgres",
         user="postgres",
         password="postgres",
     )
-    return conn
 
 
-def populate_db() -> tuple[connection, cursor]:
+def connect_and_populate_db() -> tuple[connection, cursor]:
     conn = connect()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     # Populate DB with sample data
