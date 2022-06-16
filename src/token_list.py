@@ -4,7 +4,7 @@ import json
 import requests
 
 # pylint: disable=line-too-long
-ALLOWED_TOKEN_LIST_URL = "https://token-list.cow.eth.limo/"
+ALLOWED_TOKEN_LIST_URL = "https://token-list.cow.eth.link/"
 
 
 def parse_token_list(token_list_json: str) -> list[str]:
