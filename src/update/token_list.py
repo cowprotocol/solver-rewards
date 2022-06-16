@@ -32,7 +32,11 @@ def update_token_list(dune: DuneAPI, token_list: list[str]) -> list[dict[str, st
     # but we really only care that the data has been pushed and updated
     results = dune.fetch(query)
     # This assertion ensures that the token list was successfully updated.
-    assert len(results) == len(token_list), "Query Failed to push token list"
+    assert len(results) == len(token_list), (
+        f"Query Failed to push token list with results "
+        f"{len(results)}!={len(token_list)}. This is likely due to missing ERC20 Tokens "
+        f"(cf. https://dune.com/queries/236085)"
+    )
     return results
 
 
