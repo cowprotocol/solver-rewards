@@ -34,7 +34,7 @@ class DBRouter:
         if self.route == ConnectionType.LOCAL:
             self.conn.close()
         elif self.route == ConnectionType.REMOTE:
-            # Here we could logout, but duneapi doesn't have such a feature.
+            # Here we could log out, but duneapi doesn't have such a feature.
             # Could also delete the dune connection..
             pass
 

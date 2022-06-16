@@ -1,23 +1,22 @@
 import unittest
 
-from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, Network, QueryParameter
 
 from src.fetch.period_slippage import (
-    fetch_dune_slippage,
     SplitSlippages,
     slippage_query,
 )
 from src.models import AccountingPeriod
-from tests.db.pg_client import execute_dune_query, connect_and_populate_db
+from tests.db.pg_client import ConnectionType, DBRouter
 
 
 class TestDuneAnalytics(unittest.TestCase):
     def setUp(self) -> None:
-        self.connection, self.cursor = connect_and_populate_db()
+        self.dune = DBRouter(ConnectionType.LOCAL)
+        self.period = AccountingPeriod("2022-03-01", length_days=10)
 
     def tearDown(self) -> None:
-        self.connection.close()
+        self.dune.close()
 
     def test_no_solver_has_huge_slippage_values(self):
         """
@@ -39,7 +38,7 @@ class TestDuneAnalytics(unittest.TestCase):
             description="",
             query_id=-1,
         )
-        local_query_results = execute_dune_query(query, self.cursor)
+        local_query_results = self.dune.fetch(query)
         solver_slippages = SplitSlippages.from_data_set(data_set=local_query_results)
         self.assertLess(
             solver_slippages.sum_positive() - solver_slippages.sum_negative(),
