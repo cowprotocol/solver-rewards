@@ -8,13 +8,13 @@ from src.fetch.period_slippage import QueryType, slippage_query
 from src.models import AccountingPeriod
 from tests.db.pg_client import (
     ConnectionType,
-    DuneRouter,
+    DBRouter,
 )
 
 
 class TestDuneAnalytics(unittest.TestCase):
     def setUp(self) -> None:
-        self.dune = DuneRouter(ConnectionType.LOCAL)
+        self.dune = DBRouter(ConnectionType.LOCAL)
 
     def tearDown(self) -> None:
         self.dune.close()

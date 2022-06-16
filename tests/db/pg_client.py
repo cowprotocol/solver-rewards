@@ -12,7 +12,7 @@ class ConnectionType(Enum):
     REMOTE = "remote"
 
 
-class DuneRouter:
+class DBRouter:
     def __init__(self, connection_type: ConnectionType) -> None:
         self.route = connection_type
         self.conn, self.cur, self.dune = None, None, None
