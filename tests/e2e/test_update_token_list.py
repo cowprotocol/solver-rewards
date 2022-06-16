@@ -14,7 +14,7 @@ class TestTokenList(unittest.TestCase):
         self.assertEqual(len(dune_list), len(fetched_tokens))
 
     def test_empty_token_list_update(self):
-        dune = DuneAPI.new_from_environment()
+        dune = DuneAPI("user", "password")
         with self.assertRaises(ValueError) as err:
             update_token_list(dune, [])
 
