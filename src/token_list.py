@@ -3,7 +3,6 @@ import json
 
 import requests
 
-# pylint: disable=line-too-long
 ALLOWED_TOKEN_LIST_URL = "https://token-list.cow.eth.link/"
 
 
