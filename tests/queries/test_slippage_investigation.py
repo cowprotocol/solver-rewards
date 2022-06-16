@@ -2,23 +2,31 @@ import unittest
 
 from pprint import pprint
 
-from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, QueryParameter, Network
 
 from src.fetch.period_slippage import QueryType, slippage_query
 from src.models import AccountingPeriod
+from tests.db.pg_client import (
+    ConnectionType,
+    DBRouter,
+)
 
 
 class TestDuneAnalytics(unittest.TestCase):
+    def setUp(self) -> None:
+        self.dune = DBRouter(ConnectionType.LOCAL)
+
+    def tearDown(self) -> None:
+        self.dune.close()
+
     def test_no_outrageous_slippage(self):
         """
         If numbers do not seem correct, the following script allows us to investigate
         which tx are having high slippage values in dollar terms
         """
-        dune = DuneAPI.new_from_environment()
         period = AccountingPeriod("2022-06-08", 1)
-        slippage_per_tx = dune.fetch(
-            DuneQuery.from_environment(
+        slippage_per_tx = self.dune.fetch(
+            DuneQuery(
                 raw_sql=slippage_query(QueryType.PER_TX),
                 network=Network.MAINNET,
                 name="Slippage Accounting",
@@ -27,8 +35,11 @@ class TestDuneAnalytics(unittest.TestCase):
                     QueryParameter.date_type("EndTime", period.end),
                     QueryParameter.text_type("TxHash", "0x"),
                 ],
-            )
+                description="",
+                query_id=-1,
+            ),
         )
+        print(slippage_per_tx)
         slippage_per_tx.sort(key=lambda t: int(t["eth_slippage_wei"]))
 
         top_five_negative = slippage_per_tx[:5]

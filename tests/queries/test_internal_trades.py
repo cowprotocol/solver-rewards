@@ -4,11 +4,23 @@ import unittest
 from dataclasses import dataclass
 from enum import Enum
 
-from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
 from src.models import AccountingPeriod
+from tests.db.pg_client import ConnectionType, DBRouter
+
+
+SELECT_INTERNAL_TRANSFERS = """
+select block_time,
+       CONCAT('0x', ENCODE(tx_hash, 'hex')) as tx_hash,
+       solver_address,
+       solver_name,
+       CONCAT('0x', ENCODE(token, 'hex'))   as token,
+       amount,
+       transfer_type
+from incoming_and_outgoing_with_buffer_trades
+"""
 
 
 class TransferType(Enum):
@@ -68,19 +80,26 @@ def token_slippage(
     return sum(a.amount for a in internal_trade_list if a.token == Address(token_str))
 
 
-class TestDuneAnalytics(unittest.TestCase):
-    def setUp(self):
-        self.dune = DuneAPI.new_from_environment()
+class TestInternalTrades(unittest.TestCase):
+    def setUp(self) -> None:
+        self.dune = DBRouter(ConnectionType.LOCAL)
         self.period = AccountingPeriod("2022-03-01", length_days=10)
+
+    def tearDown(self) -> None:
+        self.dune.close()
 
     def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
         raw_sql = "\n".join(
             [
                 open_query("./queries/period_slippage.sql"),
-                open_query("./tests/queries/select_internal_transfers.sql"),
+                SELECT_INTERNAL_TRANSFERS,
             ]
         )
-        query = DuneQuery.from_environment(
+        query = DuneQuery(
+            # TODO - this field should be renamed to `query_template`.
+            #  `raw_sql` should be constructed from template and parameters
+            #  as in `fill_parameterized_query`. This is a task for duneapi:
+            # https://github.com/bh2smith/duneapi/issues/46
             raw_sql=raw_sql,
             network=Network.MAINNET,
             name="Internal Token Transfer Accounting",
@@ -89,6 +108,9 @@ class TestDuneAnalytics(unittest.TestCase):
                 QueryParameter.date_type("StartTime", self.period.start),
                 QueryParameter.date_type("EndTime", self.period.end),
             ],
+            # These are irrelevant here.
+            description="",
+            query_id=-1,
         )
         data_set = self.dune.fetch(query)
         return [InternalTransfer.from_dict(row) for row in data_set]
@@ -106,7 +128,7 @@ class TestDuneAnalytics(unittest.TestCase):
             "0xd6b85ada980d10a11a5b6989c72e0232015ce16e7331524b38180b85f1aea6c8"
         )
         internal_trades = InternalTransfer.internal_trades(internal_transfers)
-        self.assertEqual(len(internal_trades), 1 * 2)
+        self.assertEqual(1 * 2, len(internal_trades))
         # We had 0.91 USDT positive slippage
         self.assertEqual(
             token_slippage(
@@ -205,7 +227,7 @@ class TestDuneAnalytics(unittest.TestCase):
         )
         internal_trades = InternalTransfer.internal_trades(internal_transfers)
 
-        self.assertEqual(len(internal_trades), 1 * 2)
+        self.assertEqual(1 * 2, len(internal_trades))
         self.assertEqual(
             token_slippage(
                 "0xD533a949740bb3306d119CC777fa900bA034cd52", internal_transfers
@@ -219,7 +241,7 @@ class TestDuneAnalytics(unittest.TestCase):
             0,
         )
 
-    def test_buffer_trade_with_missing_price_from_pricesUSD(self):
+    def test_buffer_trade_with_missing_price_from_pricesUSD_2(self):
         """
         tx: 0x1b4a299bfd2bb97e2289260495f566b750b9b62856b061f31d5186ae3b5ddce7
         This tx has an illegal internal buffer trade, it was not allowed to sell UBI
