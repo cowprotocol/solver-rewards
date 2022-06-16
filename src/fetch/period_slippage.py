@@ -7,7 +7,7 @@ from enum import Enum
 from pprint import pprint
 
 from duneapi.api import DuneAPI
-from duneapi.types import QueryParameter, DuneQuery, Network, Address
+from duneapi.types import QueryParameter, DuneQuery, Network, Address, DuneRecord
 from duneapi.util import open_query
 
 from src.models import AccountingPeriod
@@ -78,6 +78,14 @@ class SplitSlippages:
         self.negative = []
         self.positive = []
 
+    @classmethod
+    def from_data_set(cls, data_set: list[dict[str, str]]) -> SplitSlippages:
+        """Constructs an object based on provided dataset"""
+        results = cls()
+        for row in data_set:
+            results.append(slippage=SolverSlippage.from_dict(row))
+        return results
+
     def append(self, slippage: SolverSlippage) -> None:
         """Appends the Slippage to the appropriate half based on signature of amount"""
         if slippage.amount_wei < 0:
@@ -97,15 +105,11 @@ class SplitSlippages:
         return sum(pos.amount_wei for pos in self.positive)
 
 
-def get_period_slippage(
+def fetch_dune_slippage(
     dune: DuneAPI,
     period: AccountingPeriod,
-) -> SplitSlippages:
-    """
-    Executes & Fetches results of slippage query per solver for specified accounting period.
-    Returns a class representation of the results as two lists (positive & negative).
-    """
-    update_token_list(dune, fetch_trusted_tokens())
+) -> list[DuneRecord]:
+    """Constructs query and fetches results for solver slippage"""
     query = DuneQuery.from_environment(
         raw_sql=slippage_query(),
         network=Network.MAINNET,
@@ -116,12 +120,20 @@ def get_period_slippage(
             QueryParameter.text_type("TxHash", "0x"),
         ],
     )
-    data_set = dune.fetch(query)
-    results = SplitSlippages()
-    for row in data_set:
-        results.append(slippage=SolverSlippage.from_dict(row))
+    return dune.fetch(query)
 
-    return results
+
+def get_period_slippage(
+    dune: DuneAPI,
+    period: AccountingPeriod,
+) -> SplitSlippages:
+    """
+    Executes & Fetches results of slippage query per solver for specified accounting period.
+    Returns a class representation of the results as two lists (positive & negative).
+    """
+    update_token_list(dune, fetch_trusted_tokens())
+    data_set = fetch_dune_slippage(dune, period)
+    return SplitSlippages.from_data_set(data_set)
 
 
 if __name__ == "__main__":
