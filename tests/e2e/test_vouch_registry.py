@@ -1,4 +1,5 @@
 import unittest
+from dataclasses import dataclass
 from datetime import datetime
 
 from duneapi.api import DuneAPI
@@ -29,9 +30,49 @@ TEST_BONDING_POOLS = [
 ]
 
 
+@dataclass
+class MetaData:
+    schema: str
+    table: str
+    fields: list[str]
+
+
+# TODO - this can be part of the ORM i.e. the data classes modeling table records
+VOUCH_META = MetaData(
+    schema="cow_protocol",
+    table="VouchRegister_evt_Vouch",
+    fields=[
+        "solver",
+        '"bondingPool"',
+        '"cowRewardTarget"',
+        "sender",
+        "evt_index",
+        "evt_block_number",
+    ],
+)
+INVALIDATION_META = MetaData(
+    schema="cow_protocol",
+    table="VouchRegister_evt_InvalidateVouch",
+    fields=[
+        "solver",
+        '"bondingPool"',
+        "sender",
+        "evt_index",
+        "evt_block_number",
+    ],
+)
+
+
 def event_str(events: list[str]) -> str:
     event_string = ",\n        ".join(events)
     return f"select * from (values {event_string}) as _"
+
+
+def insert_query(meta: MetaData, events: list[str]) -> str:
+    # TODO - pass in list[ProperTypes] instead of strings.
+    values = ",".join(events)
+    fields = f'({",".join(meta.fields)})'
+    return f'INSERT INTO {meta.schema}."{meta.table}"{fields} (values {values}) as _'
 
 
 def mock_vouch_events(events: list[str]) -> str:
