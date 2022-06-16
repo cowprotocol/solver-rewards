@@ -6,7 +6,6 @@ from src.update.token_list import update_token_list
 
 
 class TestTokenList(unittest.TestCase):
-
     def test_empty_token_list_update(self):
         dune = DuneAPI("user", "password")
         with self.assertRaises(ValueError) as err:
