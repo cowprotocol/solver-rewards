@@ -1,7 +1,42 @@
+from enum import Enum
+
 import psycopg2
+from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery
 from psycopg2._psycopg import connection, cursor
 from psycopg2.extras import RealDictCursor
+
+
+class ConnectionType(Enum):
+    LOCAL = "local"
+    REMOTE = "remote"
+
+
+class DuneRouter:
+    def __init__(self, connection_type: ConnectionType) -> None:
+        self.route = connection_type
+        self.conn, self.cur, self.dune = None, None, None
+
+        if self.route == ConnectionType.LOCAL:
+            self.conn, self.cur = connect_and_populate_db()
+        elif self.route == ConnectionType.REMOTE:
+            self.dune = DuneAPI.new_from_environment()
+        else:
+            raise ValueError("Must provide valid connection type")
+
+    def fetch(self, query: DuneQuery) -> list[dict[str, str]]:
+        if self.route == ConnectionType.LOCAL:
+            return execute_dune_query(query, self.cur)
+        elif self.route == ConnectionType.REMOTE:
+            return self.dune.fetch(query)
+
+    def close(self):
+        if self.route == ConnectionType.LOCAL:
+            self.conn.close()
+        elif self.route == ConnectionType.REMOTE:
+            # Here we could logout, but duneapi doesn't have such a feature.
+            # Could also delete the dune connection..
+            pass
 
 
 def connect() -> connection:

@@ -6,15 +6,18 @@ from duneapi.types import DuneQuery, QueryParameter, Network
 
 from src.fetch.period_slippage import QueryType, slippage_query
 from src.models import AccountingPeriod
-from tests.db.pg_client import execute_dune_query, connect_and_populate_db
+from tests.db.pg_client import (
+    ConnectionType,
+    DuneRouter,
+)
 
 
 class TestDuneAnalytics(unittest.TestCase):
     def setUp(self) -> None:
-        self.connection, self.cursor = connect_and_populate_db()
+        self.dune = DuneRouter(ConnectionType.LOCAL)
 
     def tearDown(self) -> None:
-        self.connection.close()
+        self.dune.close()
 
     def test_no_outrageous_slippage(self):
         """
@@ -22,7 +25,7 @@ class TestDuneAnalytics(unittest.TestCase):
         which tx are having high slippage values in dollar terms
         """
         period = AccountingPeriod("2022-06-08", 1)
-        slippage_per_tx = execute_dune_query(
+        slippage_per_tx = self.dune.fetch(
             DuneQuery(
                 raw_sql=slippage_query(QueryType.PER_TX),
                 network=Network.MAINNET,
@@ -35,7 +38,6 @@ class TestDuneAnalytics(unittest.TestCase):
                 description="",
                 query_id=-1,
             ),
-            self.cursor,
         )
         print(slippage_per_tx)
         slippage_per_tx.sort(key=lambda t: int(t["eth_slippage_wei"]))

@@ -8,7 +8,7 @@ from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
 from src.models import AccountingPeriod
-from tests.db.pg_client import execute_dune_query, connect_and_populate_db
+from tests.db.pg_client import ConnectionType, DuneRouter
 
 
 SELECT_INTERNAL_TRANSFERS = """
@@ -82,11 +82,11 @@ def token_slippage(
 
 class TestInternalTrades(unittest.TestCase):
     def setUp(self) -> None:
-        self.connection, self.cursor = connect_and_populate_db()
+        self.dune = DuneRouter(ConnectionType.LOCAL)
         self.period = AccountingPeriod("2022-03-01", length_days=10)
 
     def tearDown(self) -> None:
-        self.connection.close()
+        self.dune.close()
 
     def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
         raw_sql = "\n".join(
@@ -112,7 +112,7 @@ class TestInternalTrades(unittest.TestCase):
             description="",
             query_id=-1,
         )
-        data_set = execute_dune_query(query, self.cursor)
+        data_set = self.dune.fetch(query)
         return [InternalTransfer.from_dict(row) for row in data_set]
 
     def internal_trades_for_tx(self, tx_hash: str) -> list[InternalTransfer]:
