@@ -215,8 +215,8 @@ if __name__ == "__main__":
     print(
         f"Total ETH Funds needed: {eth_total}\n"
         f"Total COW Funds needed: {cow_total}\n"
+        f"The data compiled here can be visualized and validated at\n "
+        f"{dashboard_url(accounting_period)}\n"
         f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
         f"{safe_url()}"
-        f"The data compiled here can be visualized and validated at\n "
-        f"{dashboard_url(accounting_period)}"
     )
