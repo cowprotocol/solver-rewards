@@ -16,7 +16,7 @@ CREATE TABLE IF NOT EXISTS cow_protocol."VouchRegister_evt_Vouch" (
    contract_address bytea NOT NULL,
    evt_tx_hash bytea NOT NULL,
    evt_index int8 NOT NULL,
-   evt_block_time timestamptz NOT NULL,
+--    evt_block_time timestamptz NOT NULL,
    evt_block_number int8 NOT NULL
 );
 
@@ -27,6 +27,13 @@ CREATE TABLE IF NOT EXISTS cow_protocol."VouchRegister_evt_InvalidateVouch" (
    contract_address bytea NOT NULL,
    evt_tx_hash bytea NOT NULL,
    evt_index int8 NOT NULL,
-   evt_block_time timestamptz NOT NULL,
+--    evt_block_time timestamptz NOT NULL,
    evt_block_number int8 NOT NULL
 );
+
+-- We can either have this during setUp (uncommented) or manually during tearDown
+TRUNCATE cow_protocol."VouchRegister_evt_Vouch";
+TRUNCATE cow_protocol."VouchRegister_evt_InvalidateVouch";
+TRUNCATE ethereum.blocks;
+
+INSERT INTO ethereum.blocks VALUES (0, '1970-01-01');

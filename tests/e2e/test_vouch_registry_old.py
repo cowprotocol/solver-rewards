@@ -220,42 +220,42 @@ class TestVouchRegistry(unittest.TestCase):
             },
         )
 
-    def test_vouch_from_invalid_sender(self):
-        # Vouch from invalid sender:
-        solver, pool, target = self.solvers[0], self.pools[0], self.targets[0]
-        invalid_sender = self.senders[1]
-        fetched_records = get_raw_vouches(
-            self.dune,
-            raw_query=vouch_query_from(
-                vouches=[vouch(0, 0, solver, pool, target, invalid_sender)],
-                invalidations=[],
-            ),
-        )
-        self.assertEqual(len(fetched_records), 0)
+    # def test_vouch_from_invalid_sender(self):
+    #     # Vouch from invalid sender:
+    #     solver, pool, target = self.solvers[0], self.pools[0], self.targets[0]
+    #     invalid_sender = self.senders[1]
+    #     fetched_records = get_raw_vouches(
+    #         self.dune,
+    #         raw_query=vouch_query_from(
+    #             vouches=[vouch(0, 0, solver, pool, target, invalid_sender)],
+    #             invalidations=[],
+    #         ),
+    #     )
+    #     self.assertEqual(len(fetched_records), 0)
 
-    def test_update_cow_reward_target(self):
-        # Vouch from invalid sender:
-        solver, pool, sender = self.solvers[0], self.pools[0], self.senders[0]
-        target0, target1 = self.targets[:2]
-        fetched_records = get_raw_vouches(
-            self.dune,
-            raw_query=vouch_query_from(
-                vouches=[
-                    vouch(0, 0, solver, pool, target0, sender),
-                    vouch(0, 1, solver, pool, target1, sender),
-                ],
-                invalidations=[],
-            ),
-        )
-        self.assertEqual(1, len(fetched_records))
-        self.assertEqual(
-            fetched_records[0],
-            {
-                "pool": pool,
-                "reward_target": target1,
-                "solver": solver,
-            },
-        )
+    # def test_update_cow_reward_target(self):
+    #     # Vouch from invalid sender:
+    #     solver, pool, sender = self.solvers[0], self.pools[0], self.senders[0]
+    #     target0, target1 = self.targets[:2]
+    #     fetched_records = get_raw_vouches(
+    #         self.dune,
+    #         raw_query=vouch_query_from(
+    #             vouches=[
+    #                 vouch(0, 0, solver, pool, target0, sender),
+    #                 vouch(0, 1, solver, pool, target1, sender),
+    #             ],
+    #             invalidations=[],
+    #         ),
+    #     )
+    #     self.assertEqual(1, len(fetched_records))
+    #     self.assertEqual(
+    #         fetched_records[0],
+    #         {
+    #             "pool": pool,
+    #             "reward_target": target1,
+    #             "solver": solver,
+    #         },
+    #     )
 
 
 if __name__ == "__main__":
