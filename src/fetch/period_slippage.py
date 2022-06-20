@@ -39,11 +39,7 @@ def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
     per transaction results for testing
     """
 
-    select_statement = f"""
-    select *, 
-        usd_value / (select price from eth_price) * 10 ^ 18 as eth_slippage_wei 
-    from {query_type}
-    """.strip()
+    select_statement = f"select * from {query_type}"
 
     return "\n".join([open_query("./queries/period_slippage.sql"), select_statement])
 
