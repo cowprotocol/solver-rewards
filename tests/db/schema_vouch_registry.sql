@@ -38,4 +38,5 @@ TRUNCATE cow_protocol."VouchRegister_evt_Vouch";
 TRUNCATE cow_protocol."VouchRegister_evt_InvalidateVouch";
 TRUNCATE ethereum.blocks;
 
+-- This is a bit dirty, but basically just needs to contain all the block numbers used in the tests.
 INSERT INTO ethereum.blocks VALUES (0, '1970-01-01'), (1, '1971-01-01'), (2, '1972-01-01'), (3, '1973-01-01');

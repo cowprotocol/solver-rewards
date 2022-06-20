@@ -67,11 +67,6 @@ INVALIDATION_META = MetaData(
 )
 
 
-# def event_str(events: list[str]) -> str:
-#     event_string = ",\n        ".join(events)
-#     return f"select * from (values {event_string}) as _"
-
-
 def insert_query(meta: MetaData, events: list[str]) -> str:
     # TODO - pass in list[ProperTypes] instead of strings.
     values = ",".join(events)
