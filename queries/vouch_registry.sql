@@ -8,10 +8,12 @@ bonding_pools (pool, name, initial_funder) as (
   ) as _
 ),
 vouch_events (evt_block_number, evt_index, solver, "cowRewardTarget", "bondingPool", sender) as (
-{{VouchEvents}}
+select evt_block_number, evt_index, solver, "cowRewardTarget", "bondingPool", sender
+    from cow_protocol."VouchRegister_evt_Vouch"
 ),
 invalidation_events (evt_block_number, evt_index, solver, "bondingPool", sender) as (
-{{InvalidationEvents}}
+select evt_block_number, evt_index, solver, "bondingPool", sender
+    from cow_protocol."VouchRegister_evt_InvalidateVouch"
 ),
 
 last_block_before_timestamp as (
