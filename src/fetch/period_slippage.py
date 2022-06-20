@@ -30,8 +30,8 @@ select
 from results_per_tx rpt
 join gnosis_protocol_v2."batches" b
     on rpt.tx_hash = b.tx_hash
-where -1 * usd_value > '{{SignificantValue}}'
-and -100 * usd_value / batch_value > '{{RelativeTolerance}}'
+where abs(usd_value) > '{{SignificantValue}}'
+and 100.0 * abs(usd_value) / batch_value > '{{RelativeTolerance}}'
 order by relative_slippage"""
 
 
