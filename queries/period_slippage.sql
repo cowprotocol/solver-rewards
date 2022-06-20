@@ -111,7 +111,7 @@ incoming_and_outgoing as (
     SELECT block_time,
            tx_hash,
            dex_swaps,
-           CONCAT('0x', ENCODE(solver_address, 'hex')) as solver_address,
+           solver_address,
            solver_name,
            case
                when t.symbol = 'ETH' then 'WETH'
@@ -150,6 +150,10 @@ pre_clearing_prices as (
     where call_success = true
       and call_block_time between '{{StartTime}}'
         and '{{EndTime}}'
+      and case
+          when '{{TxHash}}' = '0x' then true
+          else replace('{{TxHash}}', '0x', '\x') :: bytea = call_tx_hash
+        end
     order by call_block_number desc
 ),
 clearing_prices as (
@@ -202,7 +206,7 @@ valued_potential_buffered_trades as (
 internal_buffer_trader_solvers as (
     -- See the resulting list at: https://dune.com/queries/908642
     select
-        CONCAT('0x', ENCODE(address, 'hex'))
+        address
     from gnosis_protocol_v2."view_solvers"
     -- Exclude Single Order Solvers
     where name not in (
@@ -423,7 +427,7 @@ eth_prices as (
 results_per_tx as (
     select
         ftbs.hour,
-        solver_address,
+        concat('0x', encode(solver_address, 'hex')) as solver_address,
         solver_name,
         sum(token_imbalance_wei * price / 10 ^ p.decimals) as usd_value,
         sum(token_imbalance_wei * price / 10 ^ p.decimals / eth_price) * 10^18 as eth_slippage_wei,
