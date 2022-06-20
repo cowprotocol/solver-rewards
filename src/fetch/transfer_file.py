@@ -197,7 +197,10 @@ if __name__ == "__main__":
     dune_connection, accounting_period = generic_script_init(
         description="Fetch Complete Reimbursement"
     )
-    print(dashboard_url(accounting_period))
+    print(
+        f"While you are waiting, The data being compiled here can be visualized at\n "
+        f"{dashboard_url(accounting_period)}\n"
+    )
     detect_unusual_slippage(dune=dune_connection, period=accounting_period)
     transfers = consolidate_transfers(
         get_transfers(
@@ -215,8 +218,7 @@ if __name__ == "__main__":
     print(
         f"Total ETH Funds needed: {eth_total}\n"
         f"Total COW Funds needed: {cow_total}\n"
-        f"The data compiled here can be visualized and validated at\n "
-        f"{dashboard_url(accounting_period)}\n"
+        f"Please cross check these results with the dashboard linked above.\n "
         f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
         f"{safe_url()}"
     )
