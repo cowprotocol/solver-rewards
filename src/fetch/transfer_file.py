@@ -198,7 +198,7 @@ if __name__ == "__main__":
         description="Fetch Complete Reimbursement"
     )
     print(
-        f"While you are waiting, The data being compiled here can be visualized at\n "
+        f"While you are waiting, The data being compiled here can be visualized at\n"
         f"{dashboard_url(accounting_period)}\n"
     )
     detect_unusual_slippage(dune=dune_connection, period=accounting_period)
