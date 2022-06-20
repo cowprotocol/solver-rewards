@@ -1,6 +1,7 @@
 """Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Period"""
 from __future__ import annotations
 
+import urllib.parse
 from dataclasses import dataclass
 from enum import Enum
 from typing import Optional
@@ -10,7 +11,11 @@ from duneapi.file_io import File, write_to_csv
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
-from src.fetch.period_slippage import SolverSlippage, get_period_slippage
+from src.fetch.period_slippage import (
+    SolverSlippage,
+    get_period_slippage,
+    detect_unusual_slippage,
+)
 from src.fetch.reward_targets import get_vouches
 
 from src.models import AccountingPeriod
@@ -180,10 +185,20 @@ def consolidate_transfers(transfer_list: list[Transfer]) -> list[Transfer]:
     )
 
 
+def dashboard_url(period: AccountingPeriod) -> str:
+    """Constructs Solver Accounting Dashboard URL for Period"""
+    base = "https://dune.com/gnosis.protocol/"
+    slug = "CoW-Protocol:-Solver-Accounting"
+    query = f"?StartTime={period.start}&EndTime={period.end}"
+    return base + urllib.parse.quote_plus(slug + query, safe="=&?")
+
+
 if __name__ == "__main__":
     dune_connection, accounting_period = generic_script_init(
         description="Fetch Complete Reimbursement"
     )
+    print(dashboard_url(accounting_period))
+    detect_unusual_slippage(dune=dune_connection, period=accounting_period)
     transfers = consolidate_transfers(
         get_transfers(
             dune=dune_connection,
@@ -196,9 +211,12 @@ if __name__ == "__main__":
     )
     eth_total = sum(t.amount for t in transfers if t.token_type == TokenType.NATIVE)
     cow_total = sum(t.amount for t in transfers if t.token_type == TokenType.ERC20)
+
     print(
         f"Total ETH Funds needed: {eth_total}\n"
         f"Total COW Funds needed: {cow_total}\n"
         f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
         f"{safe_url()}"
+        f"The data compiled here can be visualized and validated at\n "
+        f"{dashboard_url(accounting_period)}"
     )

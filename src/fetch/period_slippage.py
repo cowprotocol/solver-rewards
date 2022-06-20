@@ -19,6 +19,22 @@ log = logging.getLogger(__name__)
 logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
 
 
+SELECT_UNUSUAL_SLIPPAGE = """
+select
+    block_time,
+    rpt.solver_name,
+    concat('0x', encode(rpt.tx_hash, 'hex')) as tx_hash,
+    usd_value,
+    batch_value,
+    100 * usd_value / batch_value as relative_slippage
+from results_per_tx rpt
+join gnosis_protocol_v2."batches" b
+    on rpt.tx_hash = b.tx_hash
+where -1 * usd_value > '{{SignificantValue}}'
+and -100 * usd_value / batch_value > '{{RelativeTolerance}}'
+order by relative_slippage"""
+
+
 class QueryType(Enum):
     """
     Determines type of slippage data to be fetched.
@@ -27,9 +43,19 @@ class QueryType(Enum):
 
     PER_TX = "results_per_tx"
     TOTAL = "results"
+    UNUSUAL = "outliers"
 
     def __str__(self) -> str:
         return self.value
+
+    def select_statement(self) -> str:
+        """Returns select statement to be used in slippage query."""
+        if self in (QueryType.PER_TX, QueryType.TOTAL):
+            return f"select * from {self}"
+        if self == QueryType.UNUSUAL:
+            return SELECT_UNUSUAL_SLIPPAGE
+        # Can only happen if types are added to the enum and not accounted for.
+        raise ValueError(f"Invalid Query Type! {self}")
 
 
 def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
@@ -38,10 +64,9 @@ def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
     Default query type input it total, but we can request
     per transaction results for testing
     """
-
-    select_statement = f"select * from {query_type}"
-
-    return "\n".join([open_query("./queries/period_slippage.sql"), select_statement])
+    return "\n".join(
+        [open_query("./queries/period_slippage.sql"), query_type.select_statement()]
+    )
 
 
 @dataclass
@@ -101,6 +126,34 @@ class SplitSlippages:
         return sum(pos.amount_wei for pos in self.positive)
 
 
+def detect_unusual_slippage(
+    dune: DuneAPI,
+    period: AccountingPeriod,
+) -> None:
+    """Constructs query and fetches results for unusual solver"""
+    query = DuneQuery.from_environment(
+        raw_sql=slippage_query(QueryType.UNUSUAL),
+        network=Network.MAINNET,
+        name="Unusual Slippage",
+        parameters=[
+            QueryParameter.date_type("StartTime", period.start),
+            QueryParameter.date_type("EndTime", period.end),
+            QueryParameter.text_type("TxHash", "0x"),
+            QueryParameter.number_type("RelativeTolerance", 0.3),
+            QueryParameter.number_type("SignificantValue", 100),
+        ],
+    )
+    unusual_slippage = dune.fetch(query)
+    if unusual_slippage:
+        print(f"Found {len(unusual_slippage)} batch(es) with unusual slippage!")
+        pprint(unusual_slippage)
+        print("Please double check these on etherscan or with the batch token ledger:")
+        for batch in unusual_slippage:
+            print(f"https://dune.com/queries/459494?TxHash={batch['tx_hash']}")
+    else:
+        print("No unusual slippage detected!")
+
+
 def fetch_dune_slippage(
     dune: DuneAPI,
     period: AccountingPeriod,
@@ -139,4 +192,5 @@ if __name__ == "__main__":
     slippage_for_period = get_period_slippage(
         dune=dune_connection, period=accounting_period
     )
+    detect_unusual_slippage(dune=dune_connection, period=accounting_period)
     pprint(slippage_for_period)
