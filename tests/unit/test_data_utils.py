@@ -1,6 +1,8 @@
 import unittest
 from dataclasses import dataclass
 
+from src.fetch.transfer_file import dashboard_url
+from src.models import AccountingPeriod
 from src.utils.dataset import index_by
 
 
@@ -10,7 +12,15 @@ class DummyDataClass:
     y: str
 
 
-class MyTestCase(unittest.TestCase):
+class TestDataUtils(unittest.TestCase):
+    def test_dashboard_url(self):
+        expected = "https://dune.com/gnosis.protocol/CoW-Protocol%3A-Solver-Accounting?StartTime=2022-05-31+00%3A00%3A00&EndTime=2022-06-07+00%3A00%3A00"
+        result = dashboard_url(AccountingPeriod("2022-05-31"))
+        self.assertEqual(
+            expected,
+            result,
+        )
+
     def test_index_by(self):
         data_set = [
             DummyDataClass(1, "a"),
