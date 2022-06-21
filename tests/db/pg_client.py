@@ -89,6 +89,8 @@ def execute_dune_query(dune_query: DuneQuery, cur: cursor):
     for rec in results:
         processed_record = {}
         for key, val in rec.items():
+            # The library psycopg2 returns bytea type as python class memoryview
+            # We intercept these and cast back to the format returned by Dune.
             if isinstance(val, memoryview):
                 val = f"\\x{val.hex()}"
             processed_record[key] = val
