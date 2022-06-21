@@ -13,6 +13,9 @@ filtered_trades as (
            buy_token_address                                     as "buyToken",
            atoms_sold                                            as "sellAmount",
            atoms_bought                                          as "buyAmount",
+           units_bought,
+           units_sold,
+           trade_value_usd,
            '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' :: bytea as contract_address
     from gnosis_protocol_v2."trades" t
              join gnosis_protocol_v2."batches" b on t.tx_hash = b.tx_hash
@@ -359,7 +362,7 @@ precise_prices as (
     group by
         contract_address,
         decimals,
-        date_trunc('hour', minute) 
+        date_trunc('hour', minute)
 ),
 median_prices as (
     select
@@ -373,26 +376,26 @@ median_prices as (
         and contract_address = token
 ),
 intrinsic_prices as (
-    select 
+    select
         contract_address,
         decimals,
         hour,
         AVG(price) as price
     from (
         select
-            buy_token_address as contract_address,
-            ROUND(LOG(10, atoms_bought / units_bought)) as decimals,
+            "buyToken" as contract_address,
+            ROUND(LOG(10, "buyAmount" / units_bought)) as decimals,
             date_trunc('hour', block_time) as hour,
             trade_value_usd / units_bought as price
-        FROM gnosis_protocol_v2."trades"
+        FROM filtered_trades
         WHERE units_bought > 0
     UNION
         select
-            sell_token_address as contract_address,
-            ROUND(LOG(10, atoms_sold / units_sold)) as decimals,
+            "sellToken" as contract_address,
+            ROUND(LOG(10, "sellAmount" / units_sold)) as decimals,
             date_trunc('hour', block_time) as hour,
             trade_value_usd / units_sold as price
-        FROM gnosis_protocol_v2."trades"
+        FROM filtered_trades
         WHERE units_sold > 0
     ) as combined
     GROUP BY hour, contract_address, decimals
