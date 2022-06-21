@@ -12,20 +12,12 @@ from tests.db.pg_client import (
 )
 
 
-def solver_from(num: int) -> str:
-    return f"\\x5{num}"
-
-
 def pool_from(num: int) -> str:
     return f"\\xb{num}"
 
 
 def sender_from(num: int) -> str:
     return f"\\xf{num}"
-
-
-def target_from(num: int) -> str:
-    return f"\\xc{num}"
 
 
 TEST_BONDING_POOLS = [
@@ -111,11 +103,17 @@ class TestVouchRegistry(unittest.TestCase):
     def setUp(self) -> None:
         self.dune = DBRouter(ConnectionType.LOCAL)
         populate_from(self.dune.cur, "./tests/db/schema_vouch_registry.sql")
-        self.solvers = list(map(lambda t: solver_from(t), range(5)))
+        self.solvers = list(map(lambda t: f"\\x5{t}", range(5)))
         self.pools = list(map(lambda t: pool_from(t), range(5)))
-        self.targets = list(map(lambda t: target_from(t), range(5)))
+        self.targets = list(map(lambda t: f"\\xc{t}", range(5)))
         self.senders = list(map(lambda t: sender_from(t), range(5)))
-        self.query = query_for("2022-01-01 00:00:00", TEST_BONDING_POOLS)
+        self.test_query = query_for("2022-01-01 00:00:00", TEST_BONDING_POOLS)
+
+    def insert_vouches(self, vouches: list[str]):
+        self.dune.cur.execute(insert_query(VOUCH_META, vouches))
+
+    def insert_invalidations(self, invalidations: list[str]):
+        self.dune.cur.execute(insert_query(INVALIDATION_META, invalidations))
 
     def tearDown(self) -> None:
         self.dune.close()
@@ -126,10 +124,6 @@ class TestVouchRegistry(unittest.TestCase):
         fetched_records = parse_vouches(
             self.dune.fetch(query_for(may_fifth, RECOGNIZED_BONDING_POOLS))
         )
-        solvers = [
-            Address("\\x109bf9e0287cc95cc623fbe7380dd841d4bdeb03"),
-            Address("\\x6fa201c3aff9f1e4897ed14c7326cf27548d9c35"),
-        ]
         reward_target = Address("\\x84dbae2549d67caf00f65c355de3d6f4df59a32c")
         bonding_pool = Address("\\x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6")
 
@@ -137,12 +131,12 @@ class TestVouchRegistry(unittest.TestCase):
             list(fetched_records.values()),
             [
                 Vouch(
-                    solver=solvers[0],
+                    solver=Address("\\x109bf9e0287cc95cc623fbe7380dd841d4bdeb03"),
                     bonding_pool=bonding_pool,
                     reward_target=reward_target,
                 ),
                 Vouch(
-                    solver=solvers[1],
+                    solver=Address("\\x6fa201c3aff9f1e4897ed14c7326cf27548d9c35"),
                     bonding_pool=bonding_pool,
                     reward_target=reward_target,
                 ),
@@ -152,18 +146,16 @@ class TestVouchRegistry(unittest.TestCase):
     def test_invalidation_before_vouch(self):
         solver, sender, pool = self.solvers[0], self.senders[0], self.pools[0]
         target = self.targets[1]
-        invalidations = [invalidate_vouch(0, 0, solver, pool, sender)]
 
         # Invalidation before Vouch
-        self.dune.cur.execute(insert_query(INVALIDATION_META, invalidations))
-        fetched_records = self.dune.fetch(self.query)
+        self.insert_invalidations([invalidate_vouch(0, 0, solver, pool, sender)])
+        fetched_records = self.dune.fetch(self.test_query)
 
         # No vouches yet, so no records fetched.
         self.assertEqual(len(fetched_records), 0)
 
-        vouches = [vouch(1, 0, solver, pool, target, sender)]
-        self.dune.cur.execute(insert_query(VOUCH_META, vouches))
-        fetched_records = self.dune.fetch(self.query)
+        self.insert_vouches([vouch(1, 0, solver, pool, target, sender)])
+        fetched_records = self.dune.fetch(self.test_query)
         # Vouch has come in (after the invalidation), so it is a valid vouch
         self.assertEqual(len(fetched_records), 1)
         self.assertEqual(
@@ -181,16 +173,13 @@ class TestVouchRegistry(unittest.TestCase):
         pool0, pool1 = self.pools[:2]
         target0, target1 = self.targets[:2]
         sender0, sender1 = self.senders[:2]
-        self.dune.cur.execute(
-            insert_query(
-                meta=VOUCH_META,
-                events=[
-                    vouch(0, 1, solver, pool0, target0, sender0),
-                    vouch(1, 1, solver, pool1, target1, sender1),
-                ],
-            )
+        self.insert_vouches(
+            [
+                vouch(0, 1, solver, pool0, target0, sender0),
+                vouch(1, 1, solver, pool1, target1, sender1),
+            ]
         )
-        fetched_records = self.dune.fetch(self.query)
+        fetched_records = self.dune.fetch(self.test_query)
         self.assertEqual(len(fetched_records), 1)
         self.assertEqual(
             fetched_records[0],
@@ -203,13 +192,8 @@ class TestVouchRegistry(unittest.TestCase):
         )
 
         # Now we add the invalidation of the first pool
-        self.dune.cur.execute(
-            insert_query(
-                meta=INVALIDATION_META,
-                events=[invalidate_vouch(3, 0, solver, pool0, sender0)],
-            )
-        )
-        fetched_records = self.dune.fetch(self.query)
+        self.insert_invalidations([invalidate_vouch(3, 0, solver, pool0, sender0)])
+        fetched_records = self.dune.fetch(self.test_query)
         self.assertEqual(len(fetched_records), 1)
 
         self.assertEqual(
@@ -227,28 +211,21 @@ class TestVouchRegistry(unittest.TestCase):
         solver, pool, target = self.solvers[0], self.pools[0], self.targets[0]
         invalid_sender = self.senders[1]
         # Insert Vouch Records
-        self.dune.cur.execute(
-            insert_query(
-                VOUCH_META, [vouch(0, 0, solver, pool, target, invalid_sender)]
-            )
-        )
-        fetched_records = self.dune.fetch(self.query)
+        self.insert_vouches([vouch(0, 0, solver, pool, target, invalid_sender)])
+        fetched_records = self.dune.fetch(self.test_query)
         self.assertEqual(len(fetched_records), 0)
 
     def test_update_cow_reward_target(self):
         # Vouch from invalid sender:
         solver, pool, sender = self.solvers[0], self.pools[0], self.senders[0]
         target0, target1 = self.targets[:2]
-        self.dune.cur.execute(
-            insert_query(
-                meta=VOUCH_META,
-                events=[
-                    vouch(0, 0, solver, pool, target0, sender),
-                    vouch(0, 1, solver, pool, target1, sender),
-                ],
-            )
+        self.insert_vouches(
+            [
+                vouch(0, 0, solver, pool, target0, sender),
+                vouch(0, 1, solver, pool, target1, sender),
+            ]
         )
-        fetched_records = self.dune.fetch(self.query)
+        fetched_records = self.dune.fetch(self.test_query)
         self.assertEqual(1, len(fetched_records))
         self.assertEqual(
             fetched_records[0],

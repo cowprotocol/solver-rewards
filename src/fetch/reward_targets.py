@@ -27,19 +27,6 @@ class Vouch:
     bonding_pool: Address
 
 
-# def vouch_query(bonding_pools: Optional[list[str]] = None) -> str:
-#     """
-#     Constructs a VouchRegistry Query based on the
-#     Event data queries and bonding pools provided
-#     """
-#     if bonding_pools is None:
-#         bonding_pools = RECOGNIZED_BONDING_POOLS
-#     query_template = open_query("./queries/vouch_registry.sql")
-#     pool_values = ",\n           ".join(bonding_pools)
-#     query = query_template.replace("{{BondingPoolData}}", pool_values)
-#     return query
-
-
 def parse_vouches(raw_data: list[dict[str, str]]) -> dict[Address, Vouch]:
     """Parses the Dune Response of VouchRegistry query"""
     result_list = [
