@@ -55,11 +55,23 @@ StartTime <= block_time < EndTime
 
 # Testing & Contributing
 
-To run the unit, end to end and full test suite run any of
+To run the unit tests
 
 ```shell
 python -m pytest tests/unit/
-python -m pytest tests/e2e/
+```
+
+To run the query tests, you must first have a local instance of the database running
+
+```shell
+docker build -t test_db -f Dockerfile.db .
+docker run -d --name testDB -p 5432:5432 test_db
+python -m pytest tests/queries/
+```
+
+If you have the local database running you can run the entire suite of tests with
+
+```shell
 python -m pytest tests/
 ```
 

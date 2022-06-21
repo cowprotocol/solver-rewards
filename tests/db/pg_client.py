@@ -1,10 +1,11 @@
 from enum import Enum
+from typing import Any
 
 import psycopg2
 from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery
 from psycopg2._psycopg import connection, cursor
-from psycopg2.extras import RealDictCursor
+from psycopg2.extras import RealDictCursor, RealDictRow
 
 
 class ConnectionType(Enum):
@@ -25,6 +26,7 @@ class DBRouter:
             raise ValueError("Must provide valid connection type")
 
     def fetch(self, query: DuneQuery) -> list[dict[str, str]]:
+        # TODO - make class DBQuery; using DuneQuery for REMOTE and rawSQL for LOCAL
         if self.route == ConnectionType.LOCAL:
             return execute_dune_query(query, self.cur)
         elif self.route == ConnectionType.REMOTE:
@@ -49,13 +51,20 @@ def connect() -> connection:
     )
 
 
+# TODO 1. pass populate_db script as optional parameter.
+#  2. Separate create schema and table commands
 def connect_and_populate_db() -> tuple[connection, cursor]:
     conn = connect()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     # Populate DB with sample data
-    with open("./populate_db.sql", "r", encoding="utf-8") as file:
-        cur.execute(file.read())
+    populate_from(cur, "./populate_db.sql")
     return conn, cur
+
+
+def populate_from(cur: cursor, create_filename: str):
+    # Populate DB with sample data
+    with open(create_filename, "r", encoding="utf-8") as file:
+        cur.execute(file.read())
 
 
 def fill_parameterized_query(dune_query: DuneQuery):
@@ -75,5 +84,16 @@ def execute_dune_query(dune_query: DuneQuery, cur: cursor):
     """Transforms DuneQuery into raw SQL and executes on the local database"""
     local_query = fill_parameterized_query(dune_query)
     cur.execute(local_query)
-    results = cur.fetchall()
-    return results
+    results: list[RealDictRow] = cur.fetchall()
+    parsed_results: list[dict[str, str]] = []
+    for rec in results:
+        processed_record = {}
+        for key, val in rec.items():
+            # The library psycopg2 returns bytea type as python class memoryview
+            # We intercept these and cast back to the format returned by Dune.
+            if isinstance(val, memoryview):
+                val = f"\\x{val.hex()}"
+            processed_record[key] = val
+        parsed_results.append(processed_record)
+
+    return parsed_results
