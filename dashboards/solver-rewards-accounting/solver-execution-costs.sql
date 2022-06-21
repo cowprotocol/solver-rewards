@@ -1,27 +1,41 @@
 with
--- This subquery is not executable on its own.
 
------------- Begin Vouch Registry Subquery
--- Find a permanent version of this query at: https://dune.com/queries/674947
--- Contract events queried here are from the VouchRegister verified at
--- https://etherscan.io/address/0xb422f2520b0b7fd86f7da61b32cc631a59ed7e8f#code
+solver_data as (
+    select
+        solver_address,
+        solver_name,
+        sum(gas_price_gwei * gas_used) / 10 ^ 9 as execution_cost_eth,
+        count(*) as batches_settled
+    from gnosis_protocol_v2."batches"
+    join gnosis_protocol_v2."view_solvers"
+        on solver_address = address
+    where block_time between '{{StartTime}}' and '{{StartTime}}'::timestamptz + interval '7 day'
+    group by solver_address, solver_name
+    order by execution_cost_eth desc
+),
+
+-- Get Redirect Mapping.
 bonding_pools (pool, name, initial_funder) as (
-  select * from (
-    values {{BondingPoolData}}
-  ) as _
+  select *
+  from (
+    values
+        ('\x8353713b6D2F728Ed763a04B886B16aAD2b16eBD'::bytea, 'Gnosis', '\x6c642cafcbd9d8383250bb25f67ae409147f78b2'::bytea),
+        ('\x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6'::bytea, 'CoW Services', '\x423cec87f19f0778f549846e0801ee267a917935'::bytea)
+    ) as _
 ),
-vouch_events (evt_block_number, evt_index, solver, "cowRewardTarget", "bondingPool", sender) as (
-{{VouchEvents}}
+vouch_events as (
+    select evt_block_number, evt_index, solver, "cowRewardTarget", "bondingPool", sender
+    from cow_protocol."VouchRegister_evt_Vouch"
 ),
-invalidation_events (evt_block_number, evt_index, solver, "bondingPool", sender) as (
-{{InvalidationEvents}}
+invalidation_events as (
+    select evt_block_number, evt_index, solver, "bondingPool", sender
+    from cow_protocol."VouchRegister_evt_InvalidateVouch"
 ),
 
 last_block_before_timestamp as (
     select max("number") from ethereum.blocks
-    where time < '{{EndTime}}'
+    where time < '{{StartTime}}'::timestamptz + interval '7 day'
 ),
-
 -- Query Logic Begins here!
 vouches as (
   select
@@ -91,9 +105,9 @@ valid_vouches as (
   from current_active_vouches
   where time_rank = 1
 ),
------ End Vouch Registry Subquery
 
------ Begin Slippage Query
+
+-- Get Slippage
 filtered_trades as (
     select t.block_time,
            t.tx_hash,
@@ -109,13 +123,8 @@ filtered_trades as (
            atoms_bought                                          as "buyAmount",
            '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' :: bytea as contract_address
     from gnosis_protocol_v2."trades" t
-             join gnosis_protocol_v2."batches" b on t.tx_hash = b.tx_hash
-    where b.block_time between '{{StartTime}}'
-        and '{{EndTime}}'
-      and case
-              when '{{TxHash}}' = '0x' then true
-              else replace('{{TxHash}}', '0x', '\x') :: bytea = t.tx_hash
-        end
+             join gnosis_protocol_v2.batches b on t.tx_hash = b.tx_hash
+    where b.block_time between '{{StartTime}}' and '{{StartTime}}'::timestamptz + interval '7 day'
 ),
 user_in as (
     select block_time,
@@ -163,10 +172,9 @@ other_transfers as (
                    then 'OUT_AMM'
                end            as transfer_type
     from erc20."ERC20_evt_Transfer" t
-             inner join gnosis_protocol_v2."batches" b
+             inner join gnosis_protocol_v2.batches b
                         on evt_tx_hash = tx_hash
-    where b.block_time between '{{StartTime}}'
-        and '{{EndTime}}'
+    where b.block_time between '{{StartTime}}' and '{{StartTime}}'::timestamptz + interval '7 day'
       and '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' in ("to", "from")
       and "from" not in (
         select trader_in
@@ -176,10 +184,6 @@ other_transfers as (
         select trader_out
         from filtered_trades
     )
-      and case
-              when '{{TxHash}}' = '0x' then true
-              else replace('{{TxHash}}', '0x', '\x') :: bytea = b.tx_hash
-        end
 ),
 batch_transfers as (
     select *
@@ -205,7 +209,7 @@ incoming_and_outgoing as (
     SELECT block_time,
            tx_hash,
            dex_swaps,
-           CONCAT('0x', ENCODE(solver_address, 'hex')) as solver_address,
+           solver_address,
            solver_name,
            case
                when t.symbol = 'ETH' then 'WETH'
@@ -242,8 +246,7 @@ pre_clearing_prices as (
            unnest(tokens)           as token
     from gnosis_protocol_v2."GPv2Settlement_call_settle"
     where call_success = true
-      and call_block_time between '{{StartTime}}'
-        and '{{EndTime}}'
+      and call_block_time between '{{StartTime}}' and '{{StartTime}}'::timestamptz + interval '7 day'
     order by call_block_number desc
 ),
 clearing_prices as (
@@ -294,23 +297,17 @@ valued_potential_buffered_trades as (
                                  and date_trunc('minute', block_time) = pusd.minute
 ),
 internal_buffer_trader_solvers as (
-    -- See the resulting list at: https://dune.com/queries/908642
-    select
-        CONCAT('0x', ENCODE(address, 'hex'))
+    select address
     from gnosis_protocol_v2."view_solvers"
-    -- Exclude Single Order Solvers
-    where name not in (
-        '1inch',
-        '0x',
-        'ParaSwap',
-        'Baseline',
-        'BalancerSOR'
-    )
-    -- Exclude services and test solvers
-    and environment not in ('service', 'test')
+    where
+            name = 'DexCowAgg' or
+            name = 'CowDexAg' or
+            name = 'MIP' or
+            name = 'Quasimodo' or
+            name = 'QuasiModo'
 ),
 buffer_trades as (
-    Select a.block_time as block_time,
+    Select date(a.block_time) as block_time,
            a.tx_hash,
            a.solver_address,
            a.solver_name,
@@ -404,207 +401,77 @@ incoming_and_outgoing_with_buffer_trades as (
     from buffer_trades
 ),
 final_token_balance_sheet as (
-    select
-        solver_address,
-        solver_name,
-        sum(amount) token_imbalance_wei,
-        symbol,
-        token,
-        tx_hash,
-        date_trunc('hour', block_time) as hour
-    from
-        incoming_and_outgoing_with_buffer_trades
-    group by
-        symbol,
-        token,
-        solver_address,
-        solver_name,
-        tx_hash,
-        block_time
-    having
-        sum(amount) != 0
+    select solver_address,
+           solver_name,
+           sum(amount) token_imbalance_wei,
+           symbol,
+           token,
+           tx_hash
+    from incoming_and_outgoing_with_buffer_trades
+    group by symbol,
+             token,
+             solver_address,
+             solver_name,
+             tx_hash
 ),
-token_times as (
-    select
-        hour,
-        token
-    from
-        final_token_balance_sheet
-    group by
-        hour,
-        token
-),
-precise_prices as (
-    select
-        contract_address,
-        decimals,
-        date_trunc('hour', minute) as hour,
-        avg(price) as price
-    from
-        prices.usd pusd
-    inner join token_times tt
-        on minute between date(hour) and date(hour) + interval '1 day' -- query execution speed optimization since minute is indexed
-        and date_trunc('hour', minute) = hour
-        and contract_address = token
-    group by
-        contract_address,
-        decimals,
-        date_trunc('hour', minute) 
-),
-median_prices as (
-    select
-        contract_address,
-        decimals,
-        tt.hour,
-        median_price
-    from
-        prices.prices_from_dex_data musd
-        inner join token_times tt on musd.hour = tt.hour
-        and contract_address = token
-),
-intrinsic_prices as (
-    select 
-        contract_address,
-        decimals,
-        hour,
-        AVG(price) as price
-    from (
-        select
-            buy_token_address as contract_address,
-            ROUND(LOG(10, atoms_bought / units_bought)) as decimals,
-            date_trunc('hour', block_time) as hour,
-            trade_value_usd / units_bought as price
-        FROM gnosis_protocol_v2."trades"
-        WHERE units_bought > 0
-    UNION
-        select
-            sell_token_address as contract_address,
-            ROUND(LOG(10, atoms_sold / units_sold)) as decimals,
-            date_trunc('hour', block_time) as hour,
-            trade_value_usd / units_sold as price
-        FROM gnosis_protocol_v2."trades"
-        WHERE units_sold > 0
-    ) as combined
-    GROUP BY hour, contract_address, decimals
-),
-prices as (
-    select
-        tt.hour as hour,
-        tt.token as contract_address,
-        COALESCE(precise.decimals, median.decimals, intrinsic.decimals) as decimals,
-        COALESCE(precise.price, median_price, intrinsic.price) as price
-    from token_times tt
-    LEFT JOIN precise_prices precise
-        ON precise.hour = tt.hour
-        AND precise.contract_address = token
-    LEFT JOIN prices.prices_from_dex_data median
-        ON median.hour = tt.hour
-        and median.contract_address = token
-    LEFT JOIN intrinsic_prices intrinsic
-        ON intrinsic.hour = tt.hour
-        and intrinsic.contract_address = token
-),
-eth_prices as (
-    select
-        date_trunc('hour', minute) as hour,
-        avg(price) as eth_price
-    from
-        prices."layer1_usd_eth"
-    where
-        minute between '{{StartTime}}' and '{{EndTime}}'
-    group by date_trunc('hour', minute)
+end_prices as (
+    select median_price as price,
+           contract_address,
+           decimals
+    from prices.prices_from_dex_data
+    where hour = '{{StartTime}}'::timestamptz + interval '7 day'
+    and sample_size > 0
 ),
 results_per_tx as (
-    select
-        ftbs.hour,
-        solver_address,
-        solver_name,
-        sum(token_imbalance_wei * price / 10 ^ p.decimals) as usd_value,
-        sum(token_imbalance_wei * price / 10 ^ p.decimals / eth_price) * 10^18 as eth_slippage_wei,
-        tx_hash
-    from
-        final_token_balance_sheet ftbs
-    left join prices p
-        on token = p.contract_address
-        and p.hour = ftbs.hour
-    left join eth_prices ep
-        on  ftbs.hour = ep.hour
-    group by
-        ftbs.hour,
-        solver_address,
-        solver_name,
-        tx_hash
-    having
-        bool_and(price is not null)
+    select solver_address,
+           solver_name,
+           sum(token_imbalance_wei * price / 10 ^ p.decimals) as usd_value,
+           tx_hash
+    from final_token_balance_sheet
+             inner join end_prices p on token = p.contract_address
+    group by solver_address,
+             solver_name,
+             tx_hash
+    having sum(token_imbalance_wei) != 0
 ),
 results as (
-    select
-        solver_address,
-        solver_name,
-        sum(usd_value) as usd_value,
-        sum(eth_slippage_wei) as eth_slippage_wei
-    from
-        results_per_tx rpt
-    join eth_prices ep
-        on rpt.hour = ep.hour
-    group by
-        solver_address,
-        solver_name
+    select solver_address,
+           solver_name,
+           sum(usd_value) as usd_value
+    from results_per_tx
+    group by solver_address, solver_name
+),
+eth_price as (
+    select price
+    from prices."layer1_usd_eth"
+    where minute = '{{StartTime}}'::timestamptz + interval '7 day'
 ),
 
----- End Slippage Subquery.
-
----- Begin Transfer File Subquery
-
-negative_slippage as (
-    select
-        solver_address as solver,
-        case when eth_slippage_wei < 0 then eth_slippage_wei / 10^18 else 0 end as eth_slippage
+solver_slippage as (
+    select *,  usd_value / (select price from eth_price) as eth_slippage 
     from results
 ),
 
-solver_data as (
-    select
-        solver_address,
-        environment,
-        name,
-        solver_name,
-        sum(gas_price_gwei * gas_used) / 10 ^ 9 as execution_cost_eth,
-        count(*) as batches_settled
-    from gnosis_protocol_v2."batches"
-    join gnosis_protocol_v2."view_solvers"
-        on solver_address = address
-    where block_time >= '{{StartTime}}'
-    and block_time < '{{StartTime}}'::timestamptz + interval '7 day'
-    group by solver_address,solver_name, environment, name
-    order by execution_cost_eth desc
+negative_slippage as (
+    select solver_address as solver, case when eth_slippage < 0 then eth_slippage else 0 end as eth_slippage from solver_slippage
 ),
 
-per_solver_results as (
-    select
-        concat('0x', encode(solver_address, 'hex')) as solver_address,
-        environment,
-        name,
-        execution_cost_eth,
-        (select eth_slippage from negative_slippage where solver = concat('0x', encode(solver_address, 'hex'))) as eth_penalty,
-        batches_settled,
-        (select concat('0x', encode(reward_target, 'hex')) from valid_vouches where solver = solver_address) as cow_reward_target
-    from solver_data
-),
-
-transfer_file as (
-    select * from (
-        select 'erc20'                                   as token_type,
-            '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB' as token_address,
-            cow_reward_target                            as receiver,
-            100 * sum(batches_settled)                   as amount
-        from per_solver_results
-        group by receiver
-            union
-        select 'native'  as token_type,
-            null      as token_address,
-            solver_address    as receiver,
-            execution_cost_eth + (case when eth_penalty is null then 0 else eth_penalty end) as amount
-        from per_solver_results
-    ) as _
+final_results as (
+select 
+    concat('0x', encode(solver_address, 'hex')) as solver_address, 
+    solver_name,
+    execution_cost_eth, 
+    (select eth_slippage from negative_slippage where solver = solver_address) as eth_penalty,
+    batches_settled,
+    (select concat('0x', encode(reward_target, 'hex')) from valid_vouches where solver = solver_address) as cow_reward_target
+from solver_data
 )
+
+select 
+    solver_address, 
+    solver_name, 
+    execution_cost_eth, 
+    (case when eth_penalty is null then 0 else eth_penalty end) as eth_penalty, 
+    batches_settled, 
+    cow_reward_target 
+from final_results

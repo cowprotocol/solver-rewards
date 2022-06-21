@@ -1,0 +1,52 @@
+{
+  "meta": {
+    "name": "Solver Rewards Accounting",
+    "slug": "solver-rewards-accounting",
+    "user": "gnosis.protocol",
+    "query_path": "./out/solver-rewards-accounting"
+  },
+  "queries": [
+    {
+      "id": 448457,
+      "name": "Total Solver Rewards",
+      "description": "",
+      "query_file": "total-solver-rewards.sql",
+      "network": "Ethereum Mainnet",
+      "parameters": [
+        {
+          "key": "StartTime",
+          "value": "2022-05-10 00:00:00",
+          "type": "datetime"
+        }
+      ]
+    },
+    {
+      "id": 469110,
+      "name": "Reimbursement Transfer File",
+      "description": "",
+      "query_file": "reimbursement-transfer-file.sql",
+      "network": "Ethereum Mainnet",
+      "parameters": [
+        {
+          "key": "StartTime",
+          "value": "2022-05-10 00:00:00",
+          "type": "datetime"
+        }
+      ]
+    },
+    {
+      "id": 446799,
+      "name": "Solver Execution Costs",
+      "description": "",
+      "query_file": "solver-execution-costs.sql",
+      "network": "Ethereum Mainnet",
+      "parameters": [
+        {
+          "key": "StartTime",
+          "value": "2022-05-10 00:00:00",
+          "type": "datetime"
+        }
+      ]
+    }
+  ]
+}
