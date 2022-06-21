@@ -548,16 +548,9 @@ results as (
 
 ---- Begin Transfer File Subquery
 
-negative_slippage as (
-    select
-        solver_address as solver,
-        case when eth_slippage_wei < 0 then eth_slippage_wei / 10^18 else 0 end as eth_slippage
-    from results
-),
-
 solver_data as (
     select
-        solver_address,
+        solver_address as solver,
         environment,
         name,
         solver_name,
@@ -569,21 +562,21 @@ solver_data as (
         on solver_address = address
     where block_time >= '{{StartTime}}'
     and block_time < '{{StartTime}}'::timestamptz + interval '7 day'
-    group by solver_address,solver_name, environment, name
+    group by solver,solver_name, environment, name
     order by execution_cost_eth desc
 ),
 
 per_solver_results as (
     select
-        concat('0x', encode(solver_address, 'hex')) as solver_address,
+        concat('0x', encode(solver, 'hex')) as solver_address,
         environment,
         name,
         execution_cost_eth,
-        (select eth_slippage from negative_slippage where solver = concat('0x', encode(solver_address, 'hex'))) as eth_penalty,
+        (select eth_slippage_wei / 10 ^ 18 from results where solver_address = concat('0x', encode(solver, 'hex'))) as eth_penalty,
         batches_settled,
         num_trades,
-        (select concat('0x', encode(reward_target, 'hex')) from valid_vouches where solver = solver_address) as cow_reward_target
-    from solver_data
+        (select concat('0x', encode(reward_target, 'hex')) from valid_vouches vv where vv.solver = sd.solver) as cow_reward_target
+    from solver_data sd
 ),
 
 transfer_file as (
@@ -598,7 +591,7 @@ transfer_file as (
         select 'native'  as token_type,
             null      as token_address,
             solver_address    as receiver,
-            execution_cost_eth + (case when eth_penalty is null then 0 else eth_penalty end) as amount
+            execution_cost_eth + (case when eth_penalty > 0 or eth_penalty is null then 0 else eth_penalty end) as amount
         from per_solver_results
     ) as _
 ),
