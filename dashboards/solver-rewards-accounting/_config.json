@@ -3,7 +3,7 @@
     "name": "Solver Rewards Accounting",
     "slug": "solver-rewards-accounting",
     "user": "gnosis.protocol",
-    "query_path": "./out/solver-rewards-accounting"
+    "query_path": "./dashboards/solver-rewards-accounting"
   },
   "queries": [
     {
@@ -11,12 +11,28 @@
       "name": "Total Solver Rewards",
       "description": "",
       "query_file": "total-solver-rewards.sql",
+      "requires": "./queries/solver_slippage.sql",
       "network": "Ethereum Mainnet",
       "parameters": [
         {
-          "key": "StartTime",
-          "value": "2022-05-10 00:00:00",
+          "key": "EndTime",
+          "value": "2022-06-07 00:00:00",
           "type": "datetime"
+        },
+        {
+          "key": "StartTime",
+          "value": "2022-05-31 00:00:00",
+          "type": "datetime"
+        },
+        {
+          "key": "BondingPoolData",
+          "value": "('\\x8353713b6D2F728Ed763a04B886B16aAD2b16eBD'::bytea, 'Gnosis', '\\x6c642cafcbd9d8383250bb25f67ae409147f78b2'::bytea),('\\x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6'::bytea, 'CoW Services', '\\x423cec87f19f0778f549846e0801ee267a917935'::bytea)",
+          "type": "text"
+        },
+        {
+          "key": "TxHash",
+          "value": "0x",
+          "type": "text"
         }
       ]
     },
@@ -25,12 +41,28 @@
       "name": "Reimbursement Transfer File",
       "description": "",
       "query_file": "reimbursement-transfer-file.sql",
+      "requires": "./queries/solver_slippage.sql",
       "network": "Ethereum Mainnet",
       "parameters": [
         {
-          "key": "StartTime",
-          "value": "2022-05-10 00:00:00",
+          "key": "EndTime",
+          "value": "2022-06-07 00:00:00",
           "type": "datetime"
+        },
+        {
+          "key": "StartTime",
+          "value": "2022-05-31 00:00:00",
+          "type": "datetime"
+        },
+        {
+          "key": "TxHash",
+          "value": "0x",
+          "type": "text"
+        },
+        {
+          "key": "BondingPoolData",
+          "value": "('\\x8353713b6D2F728Ed763a04B886B16aAD2b16eBD'::bytea, 'Gnosis', '\\x6c642cafcbd9d8383250bb25f67ae409147f78b2'::bytea),('\\x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6'::bytea, 'CoW Services', '\\x423cec87f19f0778f549846e0801ee267a917935'::bytea)",
+          "type": "text"
         }
       ]
     },
@@ -39,12 +71,68 @@
       "name": "Solver Execution Costs",
       "description": "",
       "query_file": "solver-execution-costs.sql",
+      "requires": "./queries/solver_slippage.sql",
       "network": "Ethereum Mainnet",
       "parameters": [
         {
-          "key": "StartTime",
-          "value": "2022-05-10 00:00:00",
+          "key": "EndTime",
+          "value": "2022-06-07 00:00:00",
           "type": "datetime"
+        },
+        {
+          "key": "StartTime",
+          "value": "2022-05-31 00:00:00",
+          "type": "datetime"
+        },
+        {
+          "key": "TxHash",
+          "value": "0x",
+          "type": "text"
+        },
+        {
+          "key": "BondingPoolData",
+          "value": "('\\x8353713b6D2F728Ed763a04B886B16aAD2b16eBD'::bytea, 'Gnosis', '\\x6c642cafcbd9d8383250bb25f67ae409147f78b2'::bytea),('\\x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6'::bytea, 'CoW Services', '\\x423cec87f19f0778f549846e0801ee267a917935'::bytea)",
+          "type": "text"
+        }
+      ]
+    },
+    {
+      "id": 645559,
+      "name": "Unusual Slippage",
+      "description": "",
+      "query_file": "unusual-slippage.sql",
+      "requires": "./queries/solver_slippage.sql",
+      "network": "Ethereum Mainnet",
+      "parameters": [
+        {
+          "key": "EndTime",
+          "value": "2022-06-07 00:00:00",
+          "type": "datetime"
+        },
+        {
+          "key": "RelativeSlippageTolerance",
+          "value": 0.3,
+          "type": "number"
+        },
+        {
+          "key": "SignificantSlippageValue",
+          "value": 100,
+          "type": "number"
+        },
+        {
+          "key": "StartTime",
+          "value": "2022-05-31 00:00:00",
+          "type": "datetime"
+        },
+        {
+          "key": "TxHash",
+          "value": "0x",
+          "type": "text"
+        },
+        {
+          "key": "BondingPoolData",
+          "value": "('\\x8353713b6D2F728Ed763a04B886B16aAD2b16eBD'::bytea, 'Gnosis', '\\x6c642cafcbd9d8383250bb25f67ae409147f78b2'::bytea),('\\x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6'::bytea, 'CoW Services', '\\x423cec87f19f0778f549846e0801ee267a917935'::bytea)",
+          "type": "text"
         }
       ]
     }
