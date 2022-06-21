@@ -1,18 +1,11 @@
 import unittest
 from dataclasses import dataclass
 
-<<<<<<< HEAD
 from duneapi.types import DuneQuery, Address
 
 from src.base_query import base_query, RECOGNIZED_BONDING_POOLS
 from src.fetch.reward_targets import Vouch, parse_vouches
 from src.models import AccountingPeriod
-=======
-from duneapi.types import DuneQuery, Network, QueryParameter, Address
-from duneapi.util import open_query
-
-from src.fetch.reward_targets import Vouch, parse_vouches, RECOGNIZED_BONDING_POOLS
->>>>>>> main
 from tests.db.pg_client import (
     ConnectionType,
     DBRouter,
