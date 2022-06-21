@@ -125,6 +125,9 @@ class Transfer:
 def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
     query = DuneQuery.from_environment(
+        # TODO - this can also be completely removed in favour of the new base_query.
+        #   However, then this would refactor the entire script
+        #  since the base query can fetch all relevant data at once.
         raw_sql=open_query("./queries/period_transfers.sql"),
         network=Network.MAINNET,
         name="ETH Reimbursement & COW Rewards",
@@ -198,9 +201,10 @@ if __name__ == "__main__":
         description="Fetch Complete Reimbursement"
     )
     print(
-        f"While you are waiting, The data being compiled here can be visualized at\n"
+        f"While you are waiting, the data being compiled here can be visualized at\n"
         f"{dashboard_url(accounting_period)}\n"
     )
+    # TODO - This can be removed since the dashboard linked above will show these.
     detect_unusual_slippage(dune=dune_connection, period=accounting_period)
     transfers = consolidate_transfers(
         get_transfers(

@@ -221,7 +221,6 @@ class TestVouchRegistry(unittest.TestCase):
                 vouch(0, 1, solver, pool, target1, sender),
             ]
         )
-        print(self.test_query)
         fetched_records = self.dune.fetch(self.test_query)
         self.assertEqual(1, len(fetched_records))
         self.assertEqual(
