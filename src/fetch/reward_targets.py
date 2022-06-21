@@ -43,7 +43,7 @@ def get_vouches(dune: DuneAPI, end_time: datetime) -> dict[Address, Vouch]:
     query = base_query(
         name="Solver Reward Targets",
         select="select * from valid_vouches",
-        period=AccountingPeriod.from_end_date(end_time),
+        period=AccountingPeriod.from_end(end_time),
     )
     return parse_vouches(dune.fetch(query))
 

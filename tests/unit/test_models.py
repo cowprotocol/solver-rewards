@@ -1,4 +1,5 @@
 import unittest
+from datetime import datetime
 
 from duneapi.types import Address
 
@@ -314,11 +315,33 @@ class TestTransfer(unittest.TestCase):
 
 class TestAccountingPeriod(unittest.TestCase):
     def test_str(self):
+        start_str = "2022-01-01"
+        self.assertEqual("2022-01-01-to-2022-01-08", str(AccountingPeriod(start_str)))
         self.assertEqual(
-            "2022-01-01-to-2022-01-08", str(AccountingPeriod("2022-01-01"))
+            "2022-01-01-to-2022-01-07", str(AccountingPeriod(start_str, 6))
+        )
+
+    def test_date(self):
+        start = datetime.strptime("2022-01-01", "%Y-%m-%d")
+        self.assertEqual("2022-01-01-to-2022-01-08", str(AccountingPeriod(start)))
+        self.assertEqual("2022-01-01-to-2022-01-07", str(AccountingPeriod(start, 6)))
+
+    def test_str(self):
+        end_str = "2022-01-08"
+        self.assertEqual(
+            "2022-01-01-to-2022-01-08", str(AccountingPeriod.from_end(end_str))
         )
         self.assertEqual(
-            "2022-01-01-to-2022-01-07", str(AccountingPeriod("2022-01-01", 6))
+            "2022-01-02-to-2022-01-08", str(AccountingPeriod.from_end(end_str, 6))
+        )
+
+    def test_date(self):
+        end = datetime.strptime("2022-01-08", "%Y-%m-%d")
+        self.assertEqual(
+            "2022-01-01-to-2022-01-08", str(AccountingPeriod.from_end(end))
+        )
+        self.assertEqual(
+            "2022-01-02-to-2022-01-08", str(AccountingPeriod.from_end(end, 6))
         )
 
     def test_invalid(self):

@@ -28,7 +28,7 @@ class TestDuneAnalytics(unittest.TestCase):
             name="Slippage Accounting",
             select=QueryType.TOTAL.select_statement(),
             period=self.period,
-            connection_type=ConnectionType.LOCAL
+            connection_type=ConnectionType.LOCAL,
         )
         local_query_results = self.dune.fetch(query)
         solver_slippages = SplitSlippages.from_data_set(data_set=local_query_results)

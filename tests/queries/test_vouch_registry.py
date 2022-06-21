@@ -90,21 +90,20 @@ def query_for(date_str: str, bonding_pools: list[str]) -> DuneQuery:
     return base_query(
         name="",
         select="select * from valid_vouches",
-        period=AccountingPeriod.from_end_str(date_str),
+        period=AccountingPeriod.from_end(date_str),
         bonding_pools=bonding_pools,
-        connection_type=ConnectionType.LOCAL
+        connection_type=ConnectionType.LOCAL,
     )
 
 
 class TestVouchRegistry(unittest.TestCase):
     def setUp(self) -> None:
         self.dune = DBRouter(ConnectionType.LOCAL)
-        populate_from(self.dune.cur, "./tests/db/schema_vouch_registry.sql")
         self.solvers = list(map(lambda t: f"\\x5{t}", range(5)))
         self.pools = list(map(lambda t: pool_from(t), range(5)))
         self.targets = list(map(lambda t: f"\\xc{t}", range(5)))
         self.senders = list(map(lambda t: sender_from(t), range(5)))
-        self.test_query = query_for("2022-01-01 00:00:00", TEST_BONDING_POOLS)
+        self.test_query = query_for("2022-01-01", TEST_BONDING_POOLS)
 
     def insert_vouches(self, vouches: list[str]):
         self.dune.cur.execute(insert_query(VOUCH_META, vouches))
@@ -116,7 +115,7 @@ class TestVouchRegistry(unittest.TestCase):
         self.dune.close()
 
     def test_real_data(self):
-        may_fifth = "2022-05-05 00:00:00"
+        may_fifth = "2022-05-05"
         populate_from(self.dune.cur, "./tests/db/vouch_registry_real_data.sql")
         fetched_records = parse_vouches(
             self.dune.fetch(query_for(may_fifth, RECOGNIZED_BONDING_POOLS))
@@ -222,6 +221,7 @@ class TestVouchRegistry(unittest.TestCase):
                 vouch(0, 1, solver, pool, target1, sender),
             ]
         )
+        print(self.test_query)
         fetched_records = self.dune.fetch(self.test_query)
         self.assertEqual(1, len(fetched_records))
         self.assertEqual(

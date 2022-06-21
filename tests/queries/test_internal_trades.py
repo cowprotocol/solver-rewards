@@ -95,7 +95,7 @@ class TestInternalTrades(unittest.TestCase):
             connection_type=ConnectionType.LOCAL,
             select=SELECT_INTERNAL_TRANSFERS,
             period=self.period,
-            tx_hash=tx_hash
+            tx_hash=tx_hash,
         )
         data_set = self.dune.fetch(query)
         return [InternalTransfer.from_dict(row) for row in data_set]

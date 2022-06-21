@@ -127,7 +127,7 @@ def detect_unusual_slippage(
         additional_parameters=[
             QueryParameter.number_type("RelativeTolerance", 0.3),
             QueryParameter.number_type("SignificantValue", 100),
-        ]
+        ],
     )
     unusual_slippage = dune.fetch(query)
     if unusual_slippage:

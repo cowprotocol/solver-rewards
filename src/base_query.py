@@ -1,3 +1,4 @@
+"""File contains a Base Query constructor for ./queries/solver_slippage.sql """
 from enum import Enum
 from typing import Optional
 
@@ -14,26 +15,37 @@ RECOGNIZED_BONDING_POOLS = [
 
 
 class ConnectionType(Enum):
+    """
+    Different connection types for routing Dune queries.
+    """
+
+    # Queries directed to local DB Instance
     LOCAL = "local"
+    # Queries being made through DuneAPI
     REMOTE = "remote"
 
 
+# pylint: disable=too-many-arguments
 def base_query(
     name: str,
     period: AccountingPeriod,
     select: str,
     connection_type: ConnectionType = ConnectionType.REMOTE,
     bonding_pools: Optional[list[str]] = None,
-    tx_hash: Optional[str] = "0x",
+    tx_hash: Optional[str] = None,
     additional_parameters: Optional[list[QueryParameter]] = None,
 ) -> DuneQuery:
+    """
+    Base query built as the join of `solver_slippage.sql`
+    with `select` along with parameters provided
+    """
     if not bonding_pools:
         bonding_pools = RECOGNIZED_BONDING_POOLS
     parameters = [
         QueryParameter.date_type("StartTime", period.start),
         QueryParameter.date_type("EndTime", period.end),
         QueryParameter.text_type("BondingPoolData", ",\n  ".join(bonding_pools)),
-        QueryParameter.text_type("TxHash", tx_hash),
+        QueryParameter.text_type("TxHash", tx_hash or "0x"),
     ]
     if additional_parameters:
         parameters += additional_parameters
@@ -50,12 +62,14 @@ def base_query(
             name=name,
             parameters=parameters,
         )
-    else:
+    if connection_type == ConnectionType.LOCAL:
         return DuneQuery(
             raw_sql=query,
             network=Network.MAINNET,
             name=name,
             parameters=parameters,
             description="",
-            query_id=-1
+            query_id=-1,
         )
+
+    raise ValueError(f"Invalid ConnectionType {connection_type}")

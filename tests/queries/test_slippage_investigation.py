@@ -31,7 +31,7 @@ class TestDuneAnalytics(unittest.TestCase):
             name="Slippage Accounting",
             select=QueryType.PER_TX.select_statement(),
             period=period,
-            connection_type=ConnectionType.LOCAL
+            connection_type=ConnectionType.LOCAL,
         )
         slippage_per_tx = self.dune.fetch(query)
         slippage_per_tx.sort(key=lambda t: int(t["eth_slippage_wei"]))
