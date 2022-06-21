@@ -5,7 +5,7 @@ from duneapi.types import Address
 from src.fetch.period_slippage import SolverSlippage
 from src.fetch.transfer_file import TokenType, Transfer, consolidate_transfers
 from src.models import AccountingPeriod
-from tests.e2e.test_internal_trades import TransferType
+from tests.queries.test_internal_trades import TransferType
 
 ONE_ADDRESS = Address("0x1111111111111111111111111111111111111111")
 TWO_ADDRESS = Address("0x2222222222222222222222222222222222222222")

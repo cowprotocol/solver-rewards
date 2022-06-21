@@ -410,17 +410,33 @@ prices as (
         ON intrinsic.hour = tt.hour
         and intrinsic.contract_address = token
 ),
+eth_prices as (
+    select
+        date_trunc('hour', minute) as hour,
+        avg(price) as eth_price
+    from
+        prices."layer1_usd_eth"
+    where
+        minute between '{{StartTime}}' and '{{EndTime}}'
+    group by date_trunc('hour', minute)
+),
 results_per_tx as (
     select
+        ftbs.hour,
         solver_address,
         solver_name,
         sum(token_imbalance_wei * price / 10 ^ p.decimals) as usd_value,
+        sum(token_imbalance_wei * price / 10 ^ p.decimals / eth_price) * 10^18 as eth_slippage_wei,
         tx_hash
     from
         final_token_balance_sheet ftbs
-        left join prices p on token = p.contract_address
+    left join prices p
+        on token = p.contract_address
         and p.hour = ftbs.hour
+    left join eth_prices ep
+        on  ftbs.hour = ep.hour
     group by
+        ftbs.hour,
         solver_address,
         solver_name,
         tx_hash
@@ -431,18 +447,13 @@ results as (
     select
         solver_address,
         solver_name,
-        sum(usd_value) as usd_value
+        sum(usd_value) as usd_value,
+        sum(eth_slippage_wei) as eth_slippage_wei
     from
-        results_per_tx
+        results_per_tx rpt
+    join eth_prices ep
+        on rpt.hour = ep.hour
     group by
         solver_address,
         solver_name
-),
-eth_price as (
-    select
-        price
-    from
-        prices."layer1_usd_eth"
-    where
-        minute = '{{EndTime}}'
 )
