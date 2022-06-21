@@ -3,7 +3,6 @@ Script to query and display total funds distributed for specified accounting per
 """
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Optional
 
 from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, Network, QueryParameter, Address
@@ -28,17 +27,17 @@ class Vouch:
     bonding_pool: Address
 
 
-def vouch_query(bonding_pools: Optional[list[str]] = None) -> str:
-    """
-    Constructs a VouchRegistry Query based on the
-    Event data queries and bonding pools provided
-    """
-    if bonding_pools is None:
-        bonding_pools = RECOGNIZED_BONDING_POOLS
-    query_template = open_query("./queries/vouch_registry.sql")
-    pool_values = ",\n           ".join(bonding_pools)
-    query = query_template.replace("{{BondingPoolData}}", pool_values)
-    return query
+# def vouch_query(bonding_pools: Optional[list[str]] = None) -> str:
+#     """
+#     Constructs a VouchRegistry Query based on the
+#     Event data queries and bonding pools provided
+#     """
+#     if bonding_pools is None:
+#         bonding_pools = RECOGNIZED_BONDING_POOLS
+#     query_template = open_query("./queries/vouch_registry.sql")
+#     pool_values = ",\n           ".join(bonding_pools)
+#     query = query_template.replace("{{BondingPoolData}}", pool_values)
+#     return query
 
 
 def parse_vouches(raw_data: list[dict[str, str]]) -> dict[Address, Vouch]:
@@ -59,11 +58,15 @@ def get_vouches(dune: DuneAPI, end_time: datetime) -> dict[Address, Vouch]:
     """
     Fetches & Returns Parsed Results for VouchRegistry query.
     """
+    pool_values = ",\n           ".join(RECOGNIZED_BONDING_POOLS)
     query = DuneQuery.from_environment(
-        raw_sql=vouch_query(),
+        raw_sql=open_query("./queries/vouch_registry.sql"),
         network=Network.MAINNET,
         name="Solver Reward Targets",
-        parameters=[QueryParameter.date_type("EndTime", end_time)],
+        parameters=[
+            QueryParameter.date_type("EndTime", end_time),
+            QueryParameter.text_type("BondingPoolData", pool_values),
+        ],
     )
     return parse_vouches(dune.fetch(query))
 

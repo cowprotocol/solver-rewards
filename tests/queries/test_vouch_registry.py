@@ -1,10 +1,10 @@
 import unittest
 from dataclasses import dataclass
 
-from duneapi.types import DuneQuery, Network, QueryParameter
+from duneapi.types import DuneQuery, Network, QueryParameter, Address
+from duneapi.util import open_query
 
-from src.fetch.reward_targets import vouch_query
-
+from src.fetch.reward_targets import Vouch, parse_vouches, RECOGNIZED_BONDING_POOLS
 from tests.db.pg_client import (
     ConnectionType,
     DBRouter,
@@ -93,6 +93,20 @@ def invalidate_vouch(
     )
 
 
+def query_for(date_str: str, bonding_pools: list[str]) -> DuneQuery:
+    return DuneQuery(
+        raw_sql=open_query("./queries/vouch_registry.sql"),
+        network=Network.MAINNET,
+        name="Solver Reward Targets",
+        parameters=[
+            QueryParameter.date_type("EndTime", date_str),
+            QueryParameter.text_type("BondingPoolData", ",".join(bonding_pools)),
+        ],
+        query_id=-1,
+        description="",
+    )
+
+
 class TestVouchRegistry(unittest.TestCase):
     def setUp(self) -> None:
         self.dune = DBRouter(ConnectionType.LOCAL)
@@ -101,26 +115,41 @@ class TestVouchRegistry(unittest.TestCase):
         self.pools = list(map(lambda t: pool_from(t), range(5)))
         self.targets = list(map(lambda t: target_from(t), range(5)))
         self.senders = list(map(lambda t: sender_from(t), range(5)))
-        self.query = DuneQuery(
-            raw_sql=vouch_query(bonding_pools=TEST_BONDING_POOLS),
-            network=Network.MAINNET,
-            name="Solver Reward Targets",
-            parameters=[QueryParameter.date_type("EndTime", "2022-01-01 00:00:00")],
-            query_id=-1,
-            description="",
-        )
+        self.query = query_for("2022-01-01 00:00:00", TEST_BONDING_POOLS)
 
     def tearDown(self) -> None:
-        # self.dune.cur.execute(
-        #     """
-        # TRUNCATE cow_protocol."VouchRegister_evt_Vouch";
-        # TRUNCATE cow_protocol."VouchRegister_evt_InvalidateVouch";
-        # """
-        # )
         self.dune.close()
 
-    def test_invalidation_before_vouch(self):
+    def test_real_data(self):
+        may_fifth = "2022-05-05 00:00:00"
+        populate_from(self.dune.cur, "./tests/db/vouch_registry_real_data.sql")
+        fetched_records = parse_vouches(
+            self.dune.fetch(query_for(may_fifth, RECOGNIZED_BONDING_POOLS))
+        )
+        solvers = [
+            Address("\\x109bf9e0287cc95cc623fbe7380dd841d4bdeb03"),
+            Address("\\x6fa201c3aff9f1e4897ed14c7326cf27548d9c35"),
+        ]
+        reward_target = Address("\\x84dbae2549d67caf00f65c355de3d6f4df59a32c")
+        bonding_pool = Address("\\x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6")
 
+        self.assertEqual(
+            list(fetched_records.values()),
+            [
+                Vouch(
+                    solver=solvers[0],
+                    bonding_pool=bonding_pool,
+                    reward_target=reward_target,
+                ),
+                Vouch(
+                    solver=solvers[1],
+                    bonding_pool=bonding_pool,
+                    reward_target=reward_target,
+                ),
+            ],
+        )
+
+    def test_invalidation_before_vouch(self):
         solver, sender, pool = self.solvers[0], self.senders[0], self.pools[0]
         target = self.targets[1]
         invalidations = [invalidate_vouch(0, 0, solver, pool, sender)]
