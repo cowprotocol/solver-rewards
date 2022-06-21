@@ -7,12 +7,6 @@ bonding_pools (pool, name, initial_funder) as (
     values {{BondingPoolData}}
   ) as _
 ),
-vouch_events (evt_block_number, evt_index, solver, "cowRewardTarget", "bondingPool", sender) as (
-{{VouchEvents}}
-),
-invalidation_events (evt_block_number, evt_index, solver, "bondingPool", sender) as (
-{{InvalidationEvents}}
-),
 
 last_block_before_timestamp as (
     select max("number") from ethereum.blocks
@@ -29,7 +23,7 @@ vouches as (
     pool,
     sender,
     True as active
-  from vouch_events
+  from cow_protocol."VouchRegister_evt_Vouch"
     join bonding_pools
         on pool = "bondingPool"
         and sender = initial_funder
@@ -44,7 +38,7 @@ invalidations as (
     pool,
     sender,
     False as active
-  from invalidation_events
+  from cow_protocol."VouchRegister_evt_InvalidateVouch"
     join bonding_pools
         on pool = "bondingPool"
         and sender = initial_funder
