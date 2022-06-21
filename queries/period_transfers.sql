@@ -3,8 +3,9 @@ with
 relevant_batch_info as (
     select concat('0x', encode(solver_address, 'hex')) as solver,
            sum(gas_price_gwei * gas_used) / 10 ^ 9     as eth_spent,
-           count(*) * 100                              as cow_reward
-    from gnosis_protocol_v2."batches"
+           count(*) * '{{PerBatchReward}}'             as batch_reward,
+           sum(num_trades) * '{{PerTradeReward}}'      as trade_reward
+    from gnosis_protocol_v2.batches
     where block_time >= '{{StartTime}}'
       and block_time < '{{EndTime}}'
     group by solver
@@ -21,7 +22,7 @@ from (
          select 'erc20'                                      as token_type,
                 '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB' as token_address,
                 solver                                       as receiver,
-                cow_reward                                   as amount
+                batch_reward + trade_reward                  as amount
          from relevant_batch_info
      ) as _
 order by receiver, token_address desc

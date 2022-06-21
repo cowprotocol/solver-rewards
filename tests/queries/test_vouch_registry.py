@@ -1,11 +1,18 @@
 import unittest
 from dataclasses import dataclass
 
+<<<<<<< HEAD
 from duneapi.types import DuneQuery, Address
 
 from src.base_query import base_query, RECOGNIZED_BONDING_POOLS
 from src.fetch.reward_targets import Vouch, parse_vouches
 from src.models import AccountingPeriod
+=======
+from duneapi.types import DuneQuery, Network, QueryParameter, Address
+from duneapi.util import open_query
+
+from src.fetch.reward_targets import Vouch, parse_vouches, RECOGNIZED_BONDING_POOLS
+>>>>>>> main
 from tests.db.pg_client import (
     ConnectionType,
     DBRouter,
@@ -86,11 +93,11 @@ def invalidate_vouch(
     )
 
 
-def query_for(date_str: str, bonding_pools: list[str]) -> DuneQuery:
+def local_vouch_query(end_date: str, bonding_pools: list[str]) -> DuneQuery:
     return base_query(
         name="",
         select="select * from valid_vouches",
-        period=AccountingPeriod.from_end(date_str),
+        period=AccountingPeriod.from_end(end_date),
         bonding_pools=bonding_pools,
         connection_type=ConnectionType.LOCAL,
     )
@@ -103,7 +110,7 @@ class TestVouchRegistry(unittest.TestCase):
         self.pools = list(map(lambda t: pool_from(t), range(5)))
         self.targets = list(map(lambda t: f"\\xc{t}", range(5)))
         self.senders = list(map(lambda t: sender_from(t), range(5)))
-        self.test_query = query_for("2022-01-01", TEST_BONDING_POOLS)
+        self.test_query = local_vouch_query("2022-01-01", TEST_BONDING_POOLS)
 
     def insert_vouches(self, vouches: list[str]):
         self.dune.cur.execute(insert_query(VOUCH_META, vouches))
@@ -118,7 +125,7 @@ class TestVouchRegistry(unittest.TestCase):
         may_fifth = "2022-05-05"
         populate_from(self.dune.cur, "./tests/db/vouch_registry_real_data.sql")
         fetched_records = parse_vouches(
-            self.dune.fetch(query_for(may_fifth, RECOGNIZED_BONDING_POOLS))
+            self.dune.fetch(local_vouch_query(may_fifth, RECOGNIZED_BONDING_POOLS))
         )
         reward_target = Address("\\x84dbae2549d67caf00f65c355de3d6f4df59a32c")
         bonding_pool = Address("\\x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6")
