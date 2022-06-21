@@ -7,6 +7,7 @@ from enum import Enum
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
+from src.base_query import base_query
 from src.models import AccountingPeriod
 from tests.db.pg_client import ConnectionType, DBRouter
 
@@ -89,28 +90,12 @@ class TestInternalTrades(unittest.TestCase):
         self.dune.close()
 
     def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
-        raw_sql = "\n".join(
-            [
-                open_query("./queries/period_slippage.sql"),
-                SELECT_INTERNAL_TRANSFERS,
-            ]
-        )
-        query = DuneQuery(
-            # TODO - this field should be renamed to `query_template`.
-            #  `raw_sql` should be constructed from template and parameters
-            #  as in `fill_parameterized_query`. This is a task for duneapi:
-            # https://github.com/bh2smith/duneapi/issues/46
-            raw_sql=raw_sql,
-            network=Network.MAINNET,
+        query = base_query(
             name="Internal Token Transfer Accounting",
-            parameters=[
-                QueryParameter.text_type("TxHash", tx_hash),
-                QueryParameter.date_type("StartTime", self.period.start),
-                QueryParameter.date_type("EndTime", self.period.end),
-            ],
-            # These are irrelevant here.
-            description="",
-            query_id=-1,
+            connection_type=ConnectionType.LOCAL,
+            select=SELECT_INTERNAL_TRANSFERS,
+            period=self.period,
+            tx_hash=tx_hash
         )
         data_set = self.dune.fetch(query)
         return [InternalTransfer.from_dict(row) for row in data_set]

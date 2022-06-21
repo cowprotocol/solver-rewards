@@ -1,10 +1,11 @@
 import unittest
 from dataclasses import dataclass
 
-from duneapi.types import DuneQuery, Network, QueryParameter, Address
-from duneapi.util import open_query
+from duneapi.types import DuneQuery, Address
 
-from src.fetch.reward_targets import Vouch, parse_vouches, RECOGNIZED_BONDING_POOLS
+from src.base_query import base_query, RECOGNIZED_BONDING_POOLS
+from src.fetch.reward_targets import Vouch, parse_vouches
+from src.models import AccountingPeriod
 from tests.db.pg_client import (
     ConnectionType,
     DBRouter,
@@ -86,16 +87,12 @@ def invalidate_vouch(
 
 
 def query_for(date_str: str, bonding_pools: list[str]) -> DuneQuery:
-    return DuneQuery(
-        raw_sql=open_query("./queries/vouch_registry.sql"),
-        network=Network.MAINNET,
-        name="Solver Reward Targets",
-        parameters=[
-            QueryParameter.date_type("EndTime", date_str),
-            QueryParameter.text_type("BondingPoolData", ",".join(bonding_pools)),
-        ],
-        query_id=-1,
-        description="",
+    return base_query(
+        name="",
+        select="select * from valid_vouches",
+        period=AccountingPeriod.from_end_str(date_str),
+        bonding_pools=bonding_pools,
+        connection_type=ConnectionType.LOCAL
     )
 
 

@@ -5,17 +5,12 @@ from dataclasses import dataclass
 from datetime import datetime
 
 from duneapi.api import DuneAPI
-from duneapi.types import DuneQuery, Network, QueryParameter, Address
-from duneapi.util import open_query
+from duneapi.types import Address
 
+from src.base_query import base_query
+from src.models import AccountingPeriod
 from src.utils.dataset import index_by
 from src.utils.script_args import generic_script_init
-
-# pylint: disable=line-too-long
-RECOGNIZED_BONDING_POOLS = [
-    "('\\x8353713b6D2F728Ed763a04B886B16aAD2b16eBD'::bytea, 'Gnosis', '\\x6c642cafcbd9d8383250bb25f67ae409147f78b2'::bytea)",
-    "('\\x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6'::bytea, 'CoW Services', '\\x423cec87f19f0778f549846e0801ee267a917935'::bytea)",
-]
 
 
 @dataclass
@@ -45,15 +40,10 @@ def get_vouches(dune: DuneAPI, end_time: datetime) -> dict[Address, Vouch]:
     """
     Fetches & Returns Parsed Results for VouchRegistry query.
     """
-    pool_values = ",\n           ".join(RECOGNIZED_BONDING_POOLS)
-    query = DuneQuery.from_environment(
-        raw_sql=open_query("./queries/vouch_registry.sql"),
-        network=Network.MAINNET,
+    query = base_query(
         name="Solver Reward Targets",
-        parameters=[
-            QueryParameter.date_type("EndTime", end_time),
-            QueryParameter.text_type("BondingPoolData", pool_values),
-        ],
+        select="select * from valid_vouches",
+        period=AccountingPeriod.from_end_date(end_time),
     )
     return parse_vouches(dune.fetch(query))
 

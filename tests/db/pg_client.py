@@ -7,10 +7,7 @@ from duneapi.types import DuneQuery
 from psycopg2._psycopg import connection, cursor
 from psycopg2.extras import RealDictCursor, RealDictRow
 
-
-class ConnectionType(Enum):
-    LOCAL = "local"
-    REMOTE = "remote"
+from src.base_query import ConnectionType
 
 
 class DBRouter:
@@ -83,6 +80,7 @@ def fill_parameterized_query(dune_query: DuneQuery):
 def execute_dune_query(dune_query: DuneQuery, cur: cursor):
     """Transforms DuneQuery into raw SQL and executes on the local database"""
     local_query = fill_parameterized_query(dune_query)
+    print(local_query)
     cur.execute(local_query)
     results: list[RealDictRow] = cur.fetchall()
     parsed_results: list[dict[str, str]] = []

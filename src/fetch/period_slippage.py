@@ -7,9 +7,9 @@ from enum import Enum
 from pprint import pprint
 
 from duneapi.api import DuneAPI
-from duneapi.types import QueryParameter, DuneQuery, Network, Address, DuneRecord
-from duneapi.util import open_query
+from duneapi.types import QueryParameter, Address, DuneRecord
 
+from src.base_query import base_query
 from src.models import AccountingPeriod
 from src.token_list import fetch_trusted_tokens
 from src.update.token_list import update_token_list
@@ -56,17 +56,6 @@ class QueryType(Enum):
             return SELECT_UNUSUAL_SLIPPAGE
         # Can only happen if types are added to the enum and not accounted for.
         raise ValueError(f"Invalid Query Type! {self}")
-
-
-def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
-    """
-    Constructs our slippage query by joining sub-queries
-    Default query type input it total, but we can request
-    per transaction results for testing
-    """
-    return "\n".join(
-        [open_query("./queries/period_slippage.sql"), query_type.select_statement()]
-    )
 
 
 @dataclass
@@ -131,17 +120,14 @@ def detect_unusual_slippage(
     period: AccountingPeriod,
 ) -> None:
     """Constructs query and fetches results for unusual solver"""
-    query = DuneQuery.from_environment(
-        raw_sql=slippage_query(QueryType.UNUSUAL),
-        network=Network.MAINNET,
+    query = base_query(
         name="Unusual Slippage",
-        parameters=[
-            QueryParameter.date_type("StartTime", period.start),
-            QueryParameter.date_type("EndTime", period.end),
-            QueryParameter.text_type("TxHash", "0x"),
+        select=QueryType.UNUSUAL.select_statement(),
+        period=period,
+        additional_parameters=[
             QueryParameter.number_type("RelativeTolerance", 0.3),
             QueryParameter.number_type("SignificantValue", 100),
-        ],
+        ]
     )
     unusual_slippage = dune.fetch(query)
     if unusual_slippage:
@@ -159,15 +145,10 @@ def fetch_dune_slippage(
     period: AccountingPeriod,
 ) -> list[DuneRecord]:
     """Constructs query and fetches results for solver slippage"""
-    query = DuneQuery.from_environment(
-        raw_sql=slippage_query(),
-        network=Network.MAINNET,
-        name="Slippage Accounting",
-        parameters=[
-            QueryParameter.date_type("StartTime", period.start),
-            QueryParameter.date_type("EndTime", period.end),
-            QueryParameter.text_type("TxHash", "0x"),
-        ],
+    query = base_query(
+        name="Solver Slippage",
+        select=QueryType.TOTAL.select_statement(),
+        period=period,
     )
     return dune.fetch(query)
 

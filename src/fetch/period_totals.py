@@ -5,9 +5,9 @@ from dataclasses import dataclass
 from pprint import pprint
 
 from duneapi.api import DuneAPI
-from duneapi.types import QueryParameter, DuneQuery, Network
 from duneapi.util import open_query
 
+from src.base_query import base_query
 from src.models import AccountingPeriod
 from src.utils.script_args import generic_script_init
 
@@ -26,14 +26,12 @@ def get_period_totals(dune: DuneAPI, period: AccountingPeriod) -> PeriodTotals:
     """
     Fetches & Returns Dune Results for accounting period totals.
     """
-    query = DuneQuery.from_environment(
-        raw_sql=open_query("./queries/period_totals.sql"),
-        network=Network.MAINNET,
+    query = base_query(
         name="Accounting Period Totals",
-        parameters=[
-            QueryParameter.date_type("StartTime", period.start),
-            QueryParameter.date_type("EndTime", period.end),
-        ],
+        select=open_query(
+            "./dashboards/solver-rewards-accounting/total-solver-rewards.sql"
+        ),
+        period=period,
     )
     data_set = dune.fetch(query)
     assert len(data_set) == 1
