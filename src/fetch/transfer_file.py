@@ -190,9 +190,9 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
                 transfer.add_slippage(slippage)
             except ValueError as err:
                 print(
-                    f"Failed to add slippage: {err} \n"
-                    f"Excluding from reimbursement and appending excess to overdraft"
-                    f"{slippage.solver_name}({slippage.solver_address})"
+                    f"Slippage for {slippage.solver_address}({slippage.solver_name}) "
+                    f"exceeds reimbursement: {err} \n"
+                    f"Excluding payout and appending excess to overdraft"
                 )
                 overdrafts.append(Overdraft(transfer, slippage, period))
                 continue
@@ -204,7 +204,7 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
 
         results.append(transfer)
     if overdrafts:
-        print("Additional Owed", "\n".join(map(str, overdrafts)))
+        print("Additional owed", "\n".join(map(str, overdrafts)))
     return results
 
 
