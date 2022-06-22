@@ -16,10 +16,11 @@ from src.fetch.period_slippage import (
     get_period_slippage,
     detect_unusual_slippage,
 )
-from src.fetch.reward_targets import get_vouches
+from src.fetch.reward_targets import get_vouches, Vouch
 
 from src.models import AccountingPeriod
 from src.utils.dataset import index_by
+from src.utils.prices import eth_in_token, QuoteToken, token_in_eth
 from src.utils.script_args import generic_script_init
 
 COW_TOKEN = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
@@ -136,6 +137,101 @@ class Transfer:
         raise ValueError(f"Invalid Token Type {self.token_type}")
 
 
+class SplitTransfers:
+    """
+    This class keeps the ERC20 and NATIVE token transfers Split.
+    Technically we should have two additional classes one for each token type.
+    """
+
+    def __init__(self, period: AccountingPeriod, mixed_transfers: list[Transfer]):
+        self.period = period
+        self.native, self.cow = [], []
+        for transfer in mixed_transfers:
+            if transfer.token_type == TokenType.NATIVE:
+                self.native.append(transfer)
+            elif transfer.token_type == TokenType.ERC20:
+                self.cow.append(transfer)
+            else:
+                raise ValueError(f"Invalid token type! {transfer.token_type}")
+        # Initialize empty overdraft
+        self.overdrafts: dict[Address, Overdraft] = {}
+        self.eth_transfers = []
+        self.cow_transfers = []
+
+    def _process_native_transfers(
+        self, indexed_slippage: dict[Address, SolverSlippage]
+    ):
+        for transfer in self.native:
+            solver = transfer.receiver
+            slippage: Optional[SolverSlippage] = indexed_slippage.get(solver)
+            if slippage is not None:
+                try:
+                    transfer.add_slippage(slippage)
+                except ValueError as err:
+                    name, address = slippage.solver_name, slippage.solver_address
+                    print(
+                        f"Slippage for {address}({name}) exceeds reimbursement: {err}\n"
+                        f"Excluding payout and appending excess to overdraft"
+                    )
+                    self.overdrafts[solver] = Overdraft(transfer, slippage, self.period)
+                    continue
+            self.eth_transfers.append(transfer)
+
+    def _process_token_transfers(self, cow_redirects: dict[Address, Vouch]):
+        for transfer in self.cow:
+            solver = transfer.receiver
+            overdraft = self.overdrafts.get(solver)
+            if overdraft is not None:
+                cow_deduction = eth_in_token(
+                    QuoteToken.COW, overdraft.eth, self.period.end
+                )
+                print(f"Deducting {cow_deduction} from reward for {solver}")
+                transfer.amount -= cow_deduction
+                if transfer.amount < 0:
+                    # TODO - This token_in_eth method doesn't look right.
+                    # Additional owed Overdraft(
+                    #     solver=barn-0x(0xDe786877a10DBb7EBa25a4DA65aEcf47654F08ab),
+                    #     period=2022-06-14-to-2022-06-21,
+                    #     owed=0.0008727069624561466 ETH
+                    # )
+                    # 0.1854 -0.3247 = -0.1393
+                    # 6 batches:
+                    # Deducting 1145.86 from reward for 0xDe786877a10DBb7EBa25a4DA65aEcf47654F08ab
+                    # 1145.86 - 600 = 545 COW Deficit.
+                    print(
+                        "Overdraft exceeds COW reward! "
+                        "Excluding reward and updating overdraft"
+                    )
+                    overdraft.eth = token_in_eth(
+                        QuoteToken.COW, abs(transfer.amount), self.period.end
+                    )
+                    continue
+            if solver in cow_redirects:
+                # Redirect COW rewards to reward target specific by VouchRegistry
+                redirect_address = cow_redirects[solver].reward_target
+                print(f"Redirecting solver {solver} COW tokens to {redirect_address}")
+                transfer.receiver = redirect_address
+            self.cow_transfers.append(transfer)
+
+    def process_transfers(
+        self,
+        indexed_slippage: dict[Address, SolverSlippage],
+        cow_redirects: dict[Address, Vouch],
+    ):
+        """
+        This is the public interface to construct the final transfer file based on
+        raw (unpenalized) results, slippage penalty, redirected rewards and overdrafts.
+        It is very important that the native token transfers are processed first,
+        so that and overdraft from slippage can be carried over and deducted from
+        the COW rewards.
+        """
+        self._process_native_transfers(indexed_slippage)
+        self._process_token_transfers(cow_redirects)
+        if self.overdrafts:
+            print("Additional owed", "\n".join(map(str, self.overdrafts.values())))
+        return self.cow_transfers + self.eth_transfers
+
+
 class Overdraft:
     def __init__(
         self, transfer: Transfer, slippage: SolverSlippage, period: AccountingPeriod
@@ -153,7 +249,7 @@ class Overdraft:
     def __str__(self):
         return (
             f"Overdraft(\n"
-            f"    solver={self.name}({self.account}),\n"
+            f"    solver={self.account}({self.name}),\n"
             f"    period={self.period},\n"
             f"    owed={self.eth} ETH\n"
             f")"
@@ -173,39 +269,17 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
             QueryParameter.number_type("PerTradeReward", COW_PER_TRADE),
         ],
     )
-    reimbursements_and_rewards = dune.fetch(query)
+    reimbursements_and_rewards = [Transfer.from_dict(t) for t in dune.fetch(query)]
+    split_transfers = SplitTransfers(period, reimbursements_and_rewards)
 
     negative_slippage = get_period_slippage(dune, period).negative
     indexed_slippage = index_by(negative_slippage, "solver_address")
     cow_redirects = get_vouches(dune, period.end)
 
-    results = []
-    overdrafts: list[Overdraft] = []
-    for row in reimbursements_and_rewards:
-        transfer = Transfer.from_dict(row)
-        solver = transfer.receiver
-        slippage: Optional[SolverSlippage] = indexed_slippage.get(solver)
-        if transfer.token_type == TokenType.NATIVE and slippage is not None:
-            try:
-                transfer.add_slippage(slippage)
-            except ValueError as err:
-                print(
-                    f"Slippage for {slippage.solver_address}({slippage.solver_name}) "
-                    f"exceeds reimbursement: {err} \n"
-                    f"Excluding payout and appending excess to overdraft"
-                )
-                overdrafts.append(Overdraft(transfer, slippage, period))
-                continue
-        elif transfer.token_address == COW_TOKEN and solver in cow_redirects:
-            # Redirect COW rewards to reward target specific by VouchRegistry
-            redirect_address = cow_redirects[solver].reward_target
-            print(f"Redirecting solver {solver} COW tokens to {redirect_address}")
-            transfer.receiver = redirect_address
-
-        results.append(transfer)
-    if overdrafts:
-        print("Additional owed", "\n".join(map(str, overdrafts)))
-    return results
+    return split_transfers.process_transfers(
+        indexed_slippage=index_by(negative_slippage, "solver_address"),
+        cow_redirects=get_vouches(dune, period.end),
+    )
 
 
 def consolidate_transfers(transfer_list: list[Transfer]) -> list[Transfer]:
@@ -244,7 +318,8 @@ if __name__ == "__main__":
         f"While you are waiting, The data being compiled here can be visualized at\n"
         f"{dashboard_url(accounting_period)}\n"
     )
-    detect_unusual_slippage(dune=dune_connection, period=accounting_period)
+    # THIS TAKES TOO LONG and needs to be optionally skipped.
+    # detect_unusual_slippage(dune=dune_connection, period=accounting_period)
     transfers = consolidate_transfers(
         get_transfers(
             dune=dune_connection,
