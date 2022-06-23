@@ -11,11 +11,7 @@ from duneapi.file_io import File, write_to_csv
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
-from src.fetch.period_slippage import (
-    SolverSlippage,
-    get_period_slippage,
-    detect_unusual_slippage,
-)
+from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches
 
 from src.models import AccountingPeriod
@@ -245,6 +241,13 @@ def dashboard_url(period: AccountingPeriod) -> str:
     return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
 
+def unusual_slippage_url(period: AccountingPeriod) -> str:
+    """Returns a link to unusual slippage query for period"""
+    base = "https://dune.com/queries/645559"
+    query = f"?StartTime={period.start}&EndTime={period.end}"
+    return base + urllib.parse.quote_plus(query, safe="=&?")
+
+
 if __name__ == "__main__":
     dune_connection, accounting_period = generic_script_init(
         description="Fetch Complete Reimbursement"
@@ -253,7 +256,10 @@ if __name__ == "__main__":
         f"While you are waiting, The data being compiled here can be visualized at\n"
         f"{dashboard_url(accounting_period)}\n"
     )
-    detect_unusual_slippage(dune=dune_connection, period=accounting_period)
+    print(
+        f"In particular, please double check the batches with unusual slippage: "
+        f"{unusual_slippage_url(accounting_period)}"
+    )
     transfers = consolidate_transfers(
         get_transfers(
             dune=dune_connection,
