@@ -136,7 +136,13 @@ class Transfer:
         raise ValueError(f"Invalid Token Type {self.token_type}")
 
 
+# pylint: disable=too-few-public-methods
 class Overdraft:
+    """
+    Contains the data for a solver's overdraft;
+    Namely, overdraft = |transfer - negative slippage| when the difference is negative
+    """
+
     def __init__(
         self, transfer: Transfer, slippage: SolverSlippage, period: AccountingPeriod
     ):
@@ -158,6 +164,9 @@ class Overdraft:
             f"    owed={self.eth} ETH\n"
             f")"
         )
+
+
+# pylint: enable=too-few-public-methods
 
 
 def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
