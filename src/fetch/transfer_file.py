@@ -156,7 +156,7 @@ class Overdraft:
         self.account = slippage.solver_address
         self.eth = eth_amount
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"Overdraft(\n"
             f"    solver={self.name}({self.account}),\n"
