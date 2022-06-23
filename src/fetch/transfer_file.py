@@ -20,7 +20,7 @@ from src.fetch.reward_targets import get_vouches, Vouch
 
 from src.models import AccountingPeriod
 from src.utils.dataset import index_by
-from src.utils.prices import eth_in_token, QuoteToken, token_in_eth
+from src.utils.prices import eth_in_token, TokenId, token_in_eth
 from src.utils.script_args import generic_script_init
 
 COW_TOKEN = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
@@ -89,6 +89,35 @@ class Transfer:
             amount=float(obj["amount"]),
         )
 
+    @classmethod
+    def native(cls, receiver: str | Address, amount: str | float) -> Transfer:
+        """Construct a native token transfer"""
+        if isinstance(receiver, str):
+            receiver = Address(receiver)
+        return cls(
+            token_type=TokenType.NATIVE,
+            receiver=receiver,
+            amount=float(amount),
+            token_address=None,
+        )
+
+    @classmethod
+    def erc20(
+        cls, receiver: str | Address, amount: str | float, token: str | Address
+    ) -> Transfer:
+        """Construct an erc20 token transfer"""
+        if isinstance(token, str):
+            token = Address(token)
+        if isinstance(receiver, str):
+            receiver = Address(receiver)
+
+        return cls(
+            token_type=TokenType.ERC20,
+            receiver=receiver,
+            amount=float(amount),
+            token_address=token,
+        )
+
     def add_slippage(self, slippage: SolverSlippage) -> None:
         """Adds Adjusts Transfer amount by Slippage amount"""
         assert self.receiver == slippage.solver_address, "receiver != solver"
@@ -137,6 +166,7 @@ class Transfer:
         raise ValueError(f"Invalid Token Type {self.token_type}")
 
 
+# pylint: disable=too-few-public-methods
 class SplitTransfers:
     """
     This class keeps the ERC20 and NATIVE token transfers Split.
@@ -155,12 +185,13 @@ class SplitTransfers:
                 raise ValueError(f"Invalid token type! {transfer.token_type}")
         # Initialize empty overdraft
         self.overdrafts: dict[Address, Overdraft] = {}
-        self.eth_transfers = []
-        self.cow_transfers = []
+        self.eth_transfers: list[Transfer] = []
+        self.cow_transfers: list[Transfer] = []
 
     def _process_native_transfers(
         self, indexed_slippage: dict[Address, SolverSlippage]
-    ):
+    ) -> None:
+        # TODO - drain self.native into self.eth_transfers
         for transfer in self.native:
             solver = transfer.receiver
             slippage: Optional[SolverSlippage] = indexed_slippage.get(solver)
@@ -177,33 +208,24 @@ class SplitTransfers:
                     continue
             self.eth_transfers.append(transfer)
 
-    def _process_token_transfers(self, cow_redirects: dict[Address, Vouch]):
+    def _process_token_transfers(self, cow_redirects: dict[Address, Vouch]) -> None:
+        # TODO - drain self.cow into self.cow_transfers
         for transfer in self.cow:
             solver = transfer.receiver
             overdraft = self.overdrafts.get(solver)
             if overdraft is not None:
                 cow_deduction = eth_in_token(
-                    QuoteToken.COW, overdraft.eth, self.period.end
+                    TokenId.COW, overdraft.eth, self.period.end
                 )
                 print(f"Deducting {cow_deduction} from reward for {solver}")
                 transfer.amount -= cow_deduction
                 if transfer.amount < 0:
-                    # TODO - This token_in_eth method doesn't look right.
-                    # Additional owed Overdraft(
-                    #     solver=barn-0x(0xDe786877a10DBb7EBa25a4DA65aEcf47654F08ab),
-                    #     period=2022-06-14-to-2022-06-21,
-                    #     owed=0.0008727069624561466 ETH
-                    # )
-                    # 0.1854 -0.3247 = -0.1393
-                    # 6 batches:
-                    # Deducting 1145.86 from reward for 0xDe786877a10DBb7EBa25a4DA65aEcf47654F08ab
-                    # 1145.86 - 600 = 545 COW Deficit.
                     print(
                         "Overdraft exceeds COW reward! "
                         "Excluding reward and updating overdraft"
                     )
                     overdraft.eth = token_in_eth(
-                        QuoteToken.COW, abs(transfer.amount), self.period.end
+                        TokenId.COW, abs(transfer.amount), self.period.end
                     )
                     continue
             if solver in cow_redirects:
@@ -213,11 +235,11 @@ class SplitTransfers:
                 transfer.receiver = redirect_address
             self.cow_transfers.append(transfer)
 
-    def process_transfers(
+    def process(
         self,
         indexed_slippage: dict[Address, SolverSlippage],
         cow_redirects: dict[Address, Vouch],
-    ):
+    ) -> list[Transfer]:
         """
         This is the public interface to construct the final transfer file based on
         raw (unpenalized) results, slippage penalty, redirected rewards and overdrafts.
@@ -233,6 +255,11 @@ class SplitTransfers:
 
 
 class Overdraft:
+    """
+    Contains the data for a solver's overdraft;
+    Namely, overdraft = |transfer - negative slippage| when the difference is negative
+    """
+
     def __init__(
         self, transfer: Transfer, slippage: SolverSlippage, period: AccountingPeriod
     ):
@@ -246,7 +273,7 @@ class Overdraft:
         self.account = slippage.solver_address
         self.eth = eth_amount
 
-    def __str__(self):
+    def __str__(self) -> str:
         return (
             f"Overdraft(\n"
             f"    solver={self.account}({self.name}),\n"
@@ -254,6 +281,9 @@ class Overdraft:
             f"    owed={self.eth} ETH\n"
             f")"
         )
+
+
+# pylint: enable=too-few-public-methods
 
 
 def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
@@ -273,10 +303,8 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     split_transfers = SplitTransfers(period, reimbursements_and_rewards)
 
     negative_slippage = get_period_slippage(dune, period).negative
-    indexed_slippage = index_by(negative_slippage, "solver_address")
-    cow_redirects = get_vouches(dune, period.end)
 
-    return split_transfers.process_transfers(
+    return split_transfers.process(
         indexed_slippage=index_by(negative_slippage, "solver_address"),
         cow_redirects=get_vouches(dune, period.end),
     )
@@ -318,8 +346,8 @@ if __name__ == "__main__":
         f"While you are waiting, The data being compiled here can be visualized at\n"
         f"{dashboard_url(accounting_period)}\n"
     )
-    # THIS TAKES TOO LONG and needs to be optionally skipped.
-    # detect_unusual_slippage(dune=dune_connection, period=accounting_period)
+    # TODO - THIS TAKES TOO LONG and needs to be optionally skipped.
+    detect_unusual_slippage(dune=dune_connection, period=accounting_period)
     transfers = consolidate_transfers(
         get_transfers(
             dune=dune_connection,
