@@ -1,7 +1,13 @@
 import unittest
 from datetime import datetime, timedelta
 
-from src.utils.prices import eth_in_token, TokenId, token_in_eth, token_in_usd
+from src.utils.prices import (
+    eth_in_token,
+    TokenId,
+    token_in_eth,
+    token_in_usd,
+    usd_price,
+)
 
 
 class TestPrices(unittest.TestCase):
@@ -17,7 +23,6 @@ class TestPrices(unittest.TestCase):
 
         self.assertEqual(token_in_usd(TokenId.ETH, 1, self.first_cow_day), 3032.45)
         self.assertEqual(token_in_usd(TokenId.COW, 1, self.first_cow_day), 0.435229)
-        self.assertEqual(token_in_usd(TokenId.USDC, 1, self.first_cow_day), 1.001656)
 
     def test_eth_in_token(self):
         with self.assertRaises(AssertionError):
@@ -28,11 +33,6 @@ class TestPrices(unittest.TestCase):
         self.assertAlmostEqual(
             eth_in_token(TokenId.COW, 1, self.first_cow_day),
             3032.45 / 0.435229,
-            delta=0.0001,
-        )
-        self.assertAlmostEqual(
-            eth_in_token(TokenId.USDC, 1, self.first_cow_day),
-            3032.45 / 1.001656,
             delta=0.0001,
         )
 
@@ -47,11 +47,21 @@ class TestPrices(unittest.TestCase):
             3032.45 / 0.435229,
             delta=0.0001,
         )
-        self.assertAlmostEqual(
-            eth_in_token(TokenId.USDC, 1, self.first_cow_day),
-            3032.45 / 1.001656,
-            delta=0.0001,
+
+    def test_price_cache(self):
+        # First call logs
+        day = self.first_cow_day
+        token = TokenId.USDC  # A token we haven't yet used in tests.
+        with self.assertLogs("src.utils.prices", level="INFO") as cm:
+            usd_price(token, day)
+        expected_msg = f"requesting price for token={token.value}, day={day.date()}"
+        self.assertEqual(
+            cm.output,
+            [f"INFO:src.utils.prices:{expected_msg}"],
         )
+        # Second call does not log.
+        with self.assertNoLogs("src.utils.prices", level="INFO"):
+            usd_price(token, day)
 
 
 if __name__ == "__main__":

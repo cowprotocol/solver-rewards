@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import urllib.parse
 from dataclasses import dataclass
+from datetime import timedelta
 from enum import Enum
 from typing import Optional
 
@@ -210,13 +211,13 @@ class SplitTransfers:
 
     def _process_token_transfers(self, cow_redirects: dict[Address, Vouch]) -> None:
         # TODO - drain self.cow into self.cow_transfers
+        # We use the day before, because the current day prices haven't yet closed.
+        price_day = self.period.end - timedelta(days=1)
         for transfer in self.cow:
             solver = transfer.receiver
             overdraft = self.overdrafts.get(solver)
             if overdraft is not None:
-                cow_deduction = eth_in_token(
-                    TokenId.COW, overdraft.eth, self.period.end
-                )
+                cow_deduction = eth_in_token(TokenId.COW, overdraft.eth, price_day)
                 print(f"Deducting {cow_deduction} from reward for {solver}")
                 transfer.amount -= cow_deduction
                 if transfer.amount < 0:
@@ -225,13 +226,16 @@ class SplitTransfers:
                         "Excluding reward and updating overdraft"
                     )
                     overdraft.eth = token_in_eth(
-                        TokenId.COW, abs(transfer.amount), self.period.end
+                        TokenId.COW, abs(transfer.amount), price_day
                     )
                     continue
             if solver in cow_redirects:
                 # Redirect COW rewards to reward target specific by VouchRegistry
                 redirect_address = cow_redirects[solver].reward_target
-                print(f"Redirecting solver {solver} COW tokens to {redirect_address}")
+                print(
+                    f"Redirecting solver {solver} COW tokens "
+                    f"({transfer.amount}) to {redirect_address}"
+                )
                 transfer.receiver = redirect_address
             self.cow_transfers.append(transfer)
 
@@ -344,7 +348,7 @@ if __name__ == "__main__":
     )
     print(
         f"While you are waiting, The data being compiled here can be visualized at\n"
-        f"{dashboard_url(accounting_period)}\n"
+        f"{dashboard_url(accounting_period)}"
     )
     # TODO - THIS TAKES TOO LONG and needs to be optionally skipped.
     detect_unusual_slippage(dune=dune_connection, period=accounting_period)
