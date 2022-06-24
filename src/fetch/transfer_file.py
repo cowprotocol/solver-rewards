@@ -12,7 +12,7 @@ from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
-from src.fetch.reward_targets import get_vouches
+from src.fetch.reward_targets import get_vouches, Vouch
 
 from src.models import AccountingPeriod
 from src.utils.dataset import index_by
@@ -171,12 +171,13 @@ class SplitTransfers:
 
     def __init__(self, period: AccountingPeriod, mixed_transfers: list[Transfer]):
         self.period = period
-        self.native, self.cow = [], []
+        self.unprocessed_native = []
+        self.unprocessed_cow = []
         for transfer in mixed_transfers:
             if transfer.token_type == TokenType.NATIVE:
-                self.native.append(transfer)
+                self.unprocessed_native.append(transfer)
             elif transfer.token_type == TokenType.ERC20:
-                self.cow.append(transfer)
+                self.unprocessed_cow.append(transfer)
             else:
                 raise ValueError(f"Invalid token type! {transfer.token_type}")
         # Initialize empty overdraft
@@ -187,8 +188,8 @@ class SplitTransfers:
     def _process_native_transfers(
         self, indexed_slippage: dict[Address, SolverSlippage]
     ) -> None:
-        # TODO - drain self.native into self.eth_transfers
-        for transfer in self.native:
+        while self.unprocessed_native:
+            transfer = self.unprocessed_native.pop(0)
             solver = transfer.receiver
             slippage: Optional[SolverSlippage] = indexed_slippage.get(solver)
             if slippage is not None:
@@ -205,15 +206,16 @@ class SplitTransfers:
             self.eth_transfers.append(transfer)
 
     def _process_token_transfers(self, cow_redirects: dict[Address, Vouch]) -> None:
-        # TODO - drain self.cow into self.cow_transfers
-        for transfer in self.cow:
+        while self.unprocessed_cow:
+            transfer = self.unprocessed_cow.pop(0)
             solver = transfer.receiver
-            overdraft = self.overdrafts.get(solver)
+            # Remove the element if it exists (assuming it won't have to be reinserted)
+            overdraft = self.overdrafts.pop(solver)
             if overdraft is not None:
                 cow_deduction = eth_in_token(
                     TokenId.COW, overdraft.eth, self.period.end
                 )
-                print(f"Deducting {cow_deduction} from reward for {solver}")
+                print(f"Deducting {cow_deduction} COW from reward for {solver}")
                 transfer.amount -= cow_deduction
                 if transfer.amount < 0:
                     print(
@@ -223,6 +225,8 @@ class SplitTransfers:
                     overdraft.eth = token_in_eth(
                         TokenId.COW, abs(transfer.amount), self.period.end
                     )
+                    # Reinsert since there is still an amount owed.
+                    self.overdrafts[solver] = overdraft
                     continue
             if solver in cow_redirects:
                 # Redirect COW rewards to reward target specific by VouchRegistry
