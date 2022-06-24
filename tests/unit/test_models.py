@@ -301,7 +301,7 @@ class TestTransfer(unittest.TestCase):
         with self.assertRaises(ValueError) as err:
             Transfer.from_dict(
                 {
-                    "token_type": "unprocessed_native",
+                    "token_type": "native",
                     "token_address": ONE_ADDRESS.address,
                     "receiver": ONE_ADDRESS.address,
                     "amount": "1.234",
