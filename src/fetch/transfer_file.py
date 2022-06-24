@@ -201,7 +201,9 @@ class SplitTransfers:
                         f"Slippage for {address}({name}) exceeds reimbursement: {err}\n"
                         f"Excluding payout and appending excess to overdraft"
                     )
-                    self.overdrafts[solver] = Overdraft(transfer, slippage, self.period)
+                    self.overdrafts[solver] = Overdraft.from_objects(
+                        transfer, slippage, self.period
+                    )
                     continue
             self.eth_transfers.append(transfer)
 
@@ -210,7 +212,7 @@ class SplitTransfers:
             transfer = self.unprocessed_cow.pop(0)
             solver = transfer.receiver
             # Remove the element if it exists (assuming it won't have to be reinserted)
-            overdraft = self.overdrafts.pop(solver)
+            overdraft = self.overdrafts.pop(solver, None)
             if overdraft is not None:
                 cow_deduction = eth_in_token(
                     TokenId.COW, overdraft.eth, self.period.end
@@ -254,32 +256,38 @@ class SplitTransfers:
         return self.cow_transfers + self.eth_transfers
 
 
+@dataclass
 class Overdraft:
     """
     Contains the data for a solver's overdraft;
     Namely, overdraft = |transfer - negative slippage| when the difference is negative
     """
 
-    def __init__(
-        self, transfer: Transfer, slippage: SolverSlippage, period: AccountingPeriod
-    ):
+    period: AccountingPeriod
+    account: Address
+    name: str
+    eth: float
+
+    @classmethod
+    def from_objects(
+        cls, transfer: Transfer, slippage: SolverSlippage, period: AccountingPeriod
+    ) -> Overdraft:
+        """Constructs an overdraft instance based on Transfer & Slippage"""
+        assert transfer.receiver == slippage.solver_address
         assert transfer.token_type == TokenType.NATIVE
         overdraft = transfer.amount * 10**18 + slippage.amount_wei
         assert overdraft < 0, "This is why we are here."
-
-        eth_amount = abs(overdraft) / 10**18
-        self.period = period
-        self.name = slippage.solver_name
-        self.account = slippage.solver_address
-        self.eth = eth_amount
+        return cls(
+            period=period,
+            name=slippage.solver_name,
+            account=slippage.solver_address,
+            eth=abs(overdraft) / 10**18,
+        )
 
     def __str__(self) -> str:
         return (
-            f"Overdraft(\n"
-            f"    solver={self.account}({self.name}),\n"
-            f"    period={self.period},\n"
-            f"    owed={self.eth} ETH\n"
-            f")"
+            f"Overdraft(solver={self.account}({self.name}),"
+            f"period={self.period},owed={self.eth} ETH)"
         )
 
 
