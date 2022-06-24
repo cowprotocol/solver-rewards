@@ -216,9 +216,7 @@ class SplitTransfers:
             # Remove the element if it exists (assuming it won't have to be reinserted)
             overdraft = self.overdrafts.pop(solver, None)
             if overdraft is not None:
-                cow_deduction = eth_in_token(
-                    TokenId.COW, overdraft.eth, price_day
-                )
+                cow_deduction = eth_in_token(TokenId.COW, overdraft.eth, price_day)
                 print(f"Deducting {cow_deduction} COW from reward for {solver}")
                 transfer.amount -= cow_deduction
                 if transfer.amount < 0:
