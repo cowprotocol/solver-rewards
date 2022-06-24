@@ -126,34 +126,6 @@ class SplitSlippages:
         return sum(pos.amount_wei for pos in self.positive)
 
 
-def detect_unusual_slippage(
-    dune: DuneAPI,
-    period: AccountingPeriod,
-) -> None:
-    """Constructs query and fetches results for unusual solver"""
-    query = DuneQuery.from_environment(
-        raw_sql=slippage_query(QueryType.UNUSUAL),
-        network=Network.MAINNET,
-        name="Unusual Slippage",
-        parameters=[
-            QueryParameter.date_type("StartTime", period.start),
-            QueryParameter.date_type("EndTime", period.end),
-            QueryParameter.text_type("TxHash", "0x"),
-            QueryParameter.number_type("RelativeTolerance", 0.3),
-            QueryParameter.number_type("SignificantValue", 100),
-        ],
-    )
-    unusual_slippage = dune.fetch(query)
-    if unusual_slippage:
-        print(f"Found {len(unusual_slippage)} batch(es) with unusual slippage!")
-        pprint(unusual_slippage)
-        print("Please double check these on etherscan or with the batch token ledger:")
-        for batch in unusual_slippage:
-            print(f"https://dune.com/queries/459494?TxHash={batch['tx_hash']}")
-    else:
-        print("No unusual slippage detected!")
-
-
 def fetch_dune_slippage(
     dune: DuneAPI,
     period: AccountingPeriod,
@@ -192,5 +164,4 @@ if __name__ == "__main__":
     slippage_for_period = get_period_slippage(
         dune=dune_connection, period=accounting_period
     )
-    detect_unusual_slippage(dune=dune_connection, period=accounting_period)
     pprint(slippage_for_period)
