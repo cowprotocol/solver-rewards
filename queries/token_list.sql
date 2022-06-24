@@ -1,4 +1,4 @@
-DROP MATERIALIZED VIEW IF EXISTS dune_user_generated.cow_trusted_tokens;
+DROP MATERIALIZED VIEW IF EXISTS dune_user_generated.cow_trusted_tokens CASCADE;
 CREATE MATERIALIZED VIEW dune_user_generated.cow_trusted_tokens (address) AS (
   SELECT *
   FROM (
