@@ -12,11 +12,7 @@ from duneapi.file_io import File, write_to_csv
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
-from src.fetch.period_slippage import (
-    SolverSlippage,
-    get_period_slippage,
-    detect_unusual_slippage,
-)
+from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches, Vouch
 
 from src.models import AccountingPeriod
@@ -176,12 +172,13 @@ class SplitTransfers:
 
     def __init__(self, period: AccountingPeriod, mixed_transfers: list[Transfer]):
         self.period = period
-        self.native, self.cow = [], []
+        self.unprocessed_native = []
+        self.unprocessed_cow = []
         for transfer in mixed_transfers:
             if transfer.token_type == TokenType.NATIVE:
-                self.native.append(transfer)
+                self.unprocessed_native.append(transfer)
             elif transfer.token_type == TokenType.ERC20:
-                self.cow.append(transfer)
+                self.unprocessed_cow.append(transfer)
             else:
                 raise ValueError(f"Invalid token type! {transfer.token_type}")
         # Initialize empty overdraft
@@ -192,8 +189,8 @@ class SplitTransfers:
     def _process_native_transfers(
         self, indexed_slippage: dict[Address, SolverSlippage]
     ) -> None:
-        # TODO - drain self.native into self.eth_transfers
-        for transfer in self.native:
+        while self.unprocessed_native:
+            transfer = self.unprocessed_native.pop(0)
             solver = transfer.receiver
             slippage: Optional[SolverSlippage] = indexed_slippage.get(solver)
             if slippage is not None:
@@ -205,20 +202,24 @@ class SplitTransfers:
                         f"Slippage for {address}({name}) exceeds reimbursement: {err}\n"
                         f"Excluding payout and appending excess to overdraft"
                     )
-                    self.overdrafts[solver] = Overdraft(transfer, slippage, self.period)
+                    self.overdrafts[solver] = Overdraft.from_objects(
+                        transfer, slippage, self.period
+                    )
                     continue
             self.eth_transfers.append(transfer)
 
     def _process_token_transfers(self, cow_redirects: dict[Address, Vouch]) -> None:
-        # TODO - drain self.cow into self.cow_transfers
-        # We use the day before, because the current day prices haven't yet closed.
         price_day = self.period.end - timedelta(days=1)
-        for transfer in self.cow:
+        while self.unprocessed_cow:
+            transfer = self.unprocessed_cow.pop(0)
             solver = transfer.receiver
-            overdraft = self.overdrafts.get(solver)
+            # Remove the element if it exists (assuming it won't have to be reinserted)
+            overdraft = self.overdrafts.pop(solver, None)
             if overdraft is not None:
-                cow_deduction = eth_in_token(TokenId.COW, overdraft.eth, price_day)
-                print(f"Deducting {cow_deduction} from reward for {solver}")
+                cow_deduction = eth_in_token(
+                    TokenId.COW, overdraft.eth, price_day
+                )
+                print(f"Deducting {cow_deduction} COW from reward for {solver}")
                 transfer.amount -= cow_deduction
                 if transfer.amount < 0:
                     print(
@@ -228,6 +229,8 @@ class SplitTransfers:
                     overdraft.eth = token_in_eth(
                         TokenId.COW, abs(transfer.amount), price_day
                     )
+                    # Reinsert since there is still an amount owed.
+                    self.overdrafts[solver] = overdraft
                     continue
             if solver in cow_redirects:
                 # Redirect COW rewards to reward target specific by VouchRegistry
@@ -258,32 +261,38 @@ class SplitTransfers:
         return self.cow_transfers + self.eth_transfers
 
 
+@dataclass
 class Overdraft:
     """
     Contains the data for a solver's overdraft;
     Namely, overdraft = |transfer - negative slippage| when the difference is negative
     """
 
-    def __init__(
-        self, transfer: Transfer, slippage: SolverSlippage, period: AccountingPeriod
-    ):
+    period: AccountingPeriod
+    account: Address
+    name: str
+    eth: float
+
+    @classmethod
+    def from_objects(
+        cls, transfer: Transfer, slippage: SolverSlippage, period: AccountingPeriod
+    ) -> Overdraft:
+        """Constructs an overdraft instance based on Transfer & Slippage"""
+        assert transfer.receiver == slippage.solver_address
         assert transfer.token_type == TokenType.NATIVE
         overdraft = transfer.amount * 10**18 + slippage.amount_wei
         assert overdraft < 0, "This is why we are here."
-
-        eth_amount = abs(overdraft) / 10**18
-        self.period = period
-        self.name = slippage.solver_name
-        self.account = slippage.solver_address
-        self.eth = eth_amount
+        return cls(
+            period=period,
+            name=slippage.solver_name,
+            account=slippage.solver_address,
+            eth=abs(overdraft) / 10**18,
+        )
 
     def __str__(self) -> str:
         return (
-            f"Overdraft(\n"
-            f"    solver={self.account}({self.name}),\n"
-            f"    period={self.period},\n"
-            f"    owed={self.eth} ETH\n"
-            f")"
+            f"Overdraft(solver={self.account}({self.name}),"
+            f"period={self.period},owed={self.eth} ETH)"
         )
 
 
@@ -342,6 +351,13 @@ def dashboard_url(period: AccountingPeriod) -> str:
     return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
 
+def unusual_slippage_url(period: AccountingPeriod) -> str:
+    """Returns a link to unusual slippage query for period"""
+    base = "https://dune.com/queries/645559"
+    query = f"?StartTime={period.start}&EndTime={period.end}"
+    return base + urllib.parse.quote_plus(query, safe="=&?")
+
+
 if __name__ == "__main__":
     dune_connection, accounting_period = generic_script_init(
         description="Fetch Complete Reimbursement"
@@ -350,8 +366,10 @@ if __name__ == "__main__":
         f"While you are waiting, The data being compiled here can be visualized at\n"
         f"{dashboard_url(accounting_period)}"
     )
-    # TODO - THIS TAKES TOO LONG and needs to be optionally skipped.
-    detect_unusual_slippage(dune=dune_connection, period=accounting_period)
+    print(
+        f"In particular, please double check the batches with unusual slippage: "
+        f"{unusual_slippage_url(accounting_period)}"
+    )
     transfers = consolidate_transfers(
         get_transfers(
             dune=dune_connection,
