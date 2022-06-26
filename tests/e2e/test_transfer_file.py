@@ -1,12 +1,9 @@
 import unittest
-from datetime import datetime, timedelta
-
 from duneapi.types import Address
 
 from src.fetch.period_slippage import SolverSlippage
 from src.fetch.transfer_file import Transfer, SplitTransfers, Overdraft
 from src.models import AccountingPeriod
-from src.utils.prices import eth_in_token, TokenId, token_in_eth, token_in_usd
 
 
 # TODO - mock the price feed so that this test doesn't require API call.
@@ -47,14 +44,14 @@ class TestPrices(unittest.TestCase):
             transfers,
             [
                 Transfer.erc20(
-                    receiver=other_solver, token=cow_token, amount=783.8205013903926
+                    receiver=other_solver, token=cow_token, amount=845.0943770281408
                 )
             ],
         )
         # barn_zerox still has outstanding overdraft
         self.assertEqual(
             accounting.overdrafts,
-            {barn_zerox: Overdraft(period, barn_zerox, "barn-0x", 0.09000226926318651)},
+            {barn_zerox: Overdraft(period, barn_zerox, "barn-0x", 0.08738479495718031)},
         )
         # All unprocessed entries have been processed.
         self.assertEqual(accounting.unprocessed_cow, [])
