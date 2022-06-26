@@ -66,8 +66,8 @@ class TestPrices(unittest.TestCase):
 
     def test_price_cache(self):
         # First call logs
-        day = self.first_cow_day
-        token = TokenId.USDC  # A token we haven't yet used in tests.
+        day = datetime.strptime("2022-03-10", "%Y-%m-%d")  # A date we used yet!
+        token = TokenId.USDC
         with self.assertLogs("src.utils.prices", level="INFO") as cm:
             usd_price(token, day)
         expected_msg = f"requesting price for token={token.value}, day={day.date()}"
