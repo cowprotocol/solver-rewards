@@ -21,8 +21,12 @@ class TestPrices(unittest.TestCase):
         with self.assertRaises(AssertionError):
             token_in_usd(TokenId.COW, 1, self.day_before_cow)
 
+        with self.assertRaises(AssertionError):
+            token_in_usd(TokenId.COW, 1, datetime.today())
+
         self.assertEqual(token_in_usd(TokenId.ETH, 1, self.first_cow_day), 3032.45)
         self.assertEqual(token_in_usd(TokenId.COW, 1, self.first_cow_day), 0.435229)
+        self.assertEqual(token_in_usd(TokenId.USDC, 1, self.first_cow_day), 1.001656)
 
     def test_eth_in_token(self):
         with self.assertRaises(AssertionError):
@@ -30,9 +34,15 @@ class TestPrices(unittest.TestCase):
 
         # cow_price =  0.435229
         # eth_price = 3032.45
+        # usdc_price = 1.001656
         self.assertAlmostEqual(
             eth_in_token(TokenId.COW, 1, self.first_cow_day),
             3032.45 / 0.435229,
+            delta=0.0001,
+        )
+        self.equal = self.assertAlmostEqual(
+            eth_in_token(TokenId.USDC, 1, self.first_cow_day),
+            3032.45 / 1.001656,
             delta=0.0001,
         )
 
@@ -42,9 +52,15 @@ class TestPrices(unittest.TestCase):
 
         # cow_price =  0.435229
         # eth_price = 3032.45
+        # usdc_price = 1.001656
         self.assertAlmostEqual(
-            eth_in_token(TokenId.COW, 1, self.first_cow_day),
-            3032.45 / 0.435229,
+            token_in_eth(TokenId.COW, 1, self.first_cow_day),
+            0.435229 / 3032.45,
+            delta=0.0001,
+        )
+        self.assertAlmostEqual(
+            token_in_eth(TokenId.USDC, 1, self.first_cow_day),
+            1.001656 / 3032.45,
             delta=0.0001,
         )
 

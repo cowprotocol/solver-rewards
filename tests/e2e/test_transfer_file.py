@@ -11,12 +11,6 @@ from src.utils.prices import eth_in_token, TokenId, token_in_eth, token_in_usd
 
 # TODO - mock the price feed so that this test doesn't require API call.
 class TestPrices(unittest.TestCase):
-    def setUp(self) -> None:
-        self.far_past = datetime.strptime("2022-01-01", "%Y-%m-%d")
-        # https://api.coinpaprika.com/v1/tickers/cow-cow-protocol-token/historical?start=2022-01-01&interval=1d&end=2022-04-16
-        self.first_cow_day = datetime.strptime("2022-04-15", "%Y-%m-%d")
-        self.day_before_cow = self.first_cow_day - timedelta(days=1)
-
     def test_process_transfers(self):
         period = AccountingPeriod("2022-06-14")
         barn_zerox = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
