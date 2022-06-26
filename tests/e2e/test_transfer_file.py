@@ -1,22 +1,13 @@
 import unittest
-from datetime import datetime, timedelta
-
 from duneapi.types import Address
 
 from src.fetch.period_slippage import SolverSlippage
 from src.fetch.transfer_file import Transfer, SplitTransfers, Overdraft
 from src.models import AccountingPeriod
-from src.utils.prices import eth_in_token, TokenId, token_in_eth, token_in_usd
 
 
 # TODO - mock the price feed so that this test doesn't require API call.
 class TestPrices(unittest.TestCase):
-    def setUp(self) -> None:
-        self.far_past = datetime.strptime("2022-01-01", "%Y-%m-%d")
-        # https://api.coinpaprika.com/v1/tickers/cow-cow-protocol-token/historical?start=2022-01-01&interval=1d&end=2022-04-16
-        self.first_cow_day = datetime.strptime("2022-04-15", "%Y-%m-%d")
-        self.day_before_cow = self.first_cow_day - timedelta(days=1)
-
     def test_process_transfers(self):
         period = AccountingPeriod("2022-06-14")
         barn_zerox = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
@@ -53,14 +44,14 @@ class TestPrices(unittest.TestCase):
             transfers,
             [
                 Transfer.erc20(
-                    receiver=other_solver, token=cow_token, amount=783.8205013903926
+                    receiver=other_solver, token=cow_token, amount=845.0943770281408
                 )
             ],
         )
         # barn_zerox still has outstanding overdraft
         self.assertEqual(
             accounting.overdrafts,
-            {barn_zerox: Overdraft(period, barn_zerox, "barn-0x", 0.09000226926318651)},
+            {barn_zerox: Overdraft(period, barn_zerox, "barn-0x", 0.08738479495718031)},
         )
         # All unprocessed entries have been processed.
         self.assertEqual(accounting.unprocessed_cow, [])

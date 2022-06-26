@@ -2,11 +2,15 @@
 An interface for fetching prices.
 Currently, only price feed is CoinPaprika's Free tier API.
 """
+import functools
+import logging.config
 from enum import Enum
 from datetime import datetime
 
 from coinpaprika import client as cp
 
+log = logging.getLogger(__name__)
+logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
 
 client = cp.Client()
 
@@ -51,6 +55,16 @@ def token_in_usd(token: TokenId, amount: float, day: datetime) -> float:
     """
     Converts token amount to usd amount on given day.
     """
+    return amount * usd_price(token, day)
+
+
+@functools.cache
+def usd_price(token: TokenId, day: datetime) -> float:
+    """
+    A cached version of CoinPaprika's API request.
+    This will only ever make an API request on unique (token, day) pairs
+    """
+    log.info("requesting price for token=%s, day=%s", token.value, day.date())
     response_list = client.historical(
         coin_id=token.value, start=day.strftime("%Y-%m-%d"), limit=1, interval="1d"
     )
@@ -58,4 +72,4 @@ def token_in_usd(token: TokenId, amount: float, day: datetime) -> float:
     item = response_list[0]
     price_time = datetime.strptime(item["timestamp"], "%Y-%m-%dT00:00:00Z")
     assert price_time == day
-    return amount * float(item["price"])
+    return float(item["price"])

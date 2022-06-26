@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import urllib.parse
 from dataclasses import dataclass
+from datetime import timedelta
 from enum import Enum
 from typing import Optional
 
@@ -208,15 +209,14 @@ class SplitTransfers:
             self.eth_transfers.append(transfer)
 
     def _process_token_transfers(self, cow_redirects: dict[Address, Vouch]) -> None:
+        price_day = self.period.end - timedelta(days=1)
         while self.unprocessed_cow:
             transfer = self.unprocessed_cow.pop(0)
             solver = transfer.receiver
             # Remove the element if it exists (assuming it won't have to be reinserted)
             overdraft = self.overdrafts.pop(solver, None)
             if overdraft is not None:
-                cow_deduction = eth_in_token(
-                    TokenId.COW, overdraft.eth, self.period.end
-                )
+                cow_deduction = eth_in_token(TokenId.COW, overdraft.eth, price_day)
                 print(f"Deducting {cow_deduction} COW from reward for {solver}")
                 transfer.amount -= cow_deduction
                 if transfer.amount < 0:
@@ -225,7 +225,7 @@ class SplitTransfers:
                         "Excluding reward and updating overdraft"
                     )
                     overdraft.eth = token_in_eth(
-                        TokenId.COW, abs(transfer.amount), self.period.end
+                        TokenId.COW, abs(transfer.amount), price_day
                     )
                     # Reinsert since there is still an amount owed.
                     self.overdrafts[solver] = overdraft
@@ -233,7 +233,10 @@ class SplitTransfers:
             if solver in cow_redirects:
                 # Redirect COW rewards to reward target specific by VouchRegistry
                 redirect_address = cow_redirects[solver].reward_target
-                print(f"Redirecting solver {solver} COW tokens to {redirect_address}")
+                print(
+                    f"Redirecting solver {solver} COW tokens "
+                    f"({transfer.amount}) to {redirect_address}"
+                )
                 transfer.receiver = redirect_address
             self.cow_transfers.append(transfer)
 
@@ -359,7 +362,7 @@ if __name__ == "__main__":
     )
     print(
         f"While you are waiting, The data being compiled here can be visualized at\n"
-        f"{dashboard_url(accounting_period)}\n"
+        f"{dashboard_url(accounting_period)}"
     )
     print(
         f"In particular, please double check the batches with unusual slippage: "

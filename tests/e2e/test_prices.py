@@ -1,7 +1,13 @@
 import unittest
 from datetime import datetime, timedelta
 
-from src.utils.prices import eth_in_token, TokenId, token_in_eth, token_in_usd
+from src.utils.prices import (
+    eth_in_token,
+    TokenId,
+    token_in_eth,
+    token_in_usd,
+    usd_price,
+)
 
 
 class TestPrices(unittest.TestCase):
@@ -15,6 +21,9 @@ class TestPrices(unittest.TestCase):
         with self.assertRaises(AssertionError):
             token_in_usd(TokenId.COW, 1, self.day_before_cow)
 
+        with self.assertRaises(AssertionError):
+            token_in_usd(TokenId.COW, 1, datetime.today())
+
         self.assertEqual(token_in_usd(TokenId.ETH, 1, self.first_cow_day), 3032.45)
         self.assertEqual(token_in_usd(TokenId.COW, 1, self.first_cow_day), 0.435229)
         self.assertEqual(token_in_usd(TokenId.USDC, 1, self.first_cow_day), 1.001656)
@@ -25,12 +34,13 @@ class TestPrices(unittest.TestCase):
 
         # cow_price =  0.435229
         # eth_price = 3032.45
+        # usdc_price = 1.001656
         self.assertAlmostEqual(
             eth_in_token(TokenId.COW, 1, self.first_cow_day),
             3032.45 / 0.435229,
             delta=0.0001,
         )
-        self.assertAlmostEqual(
+        self.equal = self.assertAlmostEqual(
             eth_in_token(TokenId.USDC, 1, self.first_cow_day),
             3032.45 / 1.001656,
             delta=0.0001,
@@ -42,16 +52,32 @@ class TestPrices(unittest.TestCase):
 
         # cow_price =  0.435229
         # eth_price = 3032.45
+        # usdc_price = 1.001656
         self.assertAlmostEqual(
-            eth_in_token(TokenId.COW, 1, self.first_cow_day),
-            3032.45 / 0.435229,
+            token_in_eth(TokenId.COW, 1, self.first_cow_day),
+            0.435229 / 3032.45,
             delta=0.0001,
         )
         self.assertAlmostEqual(
-            eth_in_token(TokenId.USDC, 1, self.first_cow_day),
-            3032.45 / 1.001656,
+            token_in_eth(TokenId.USDC, 1, self.first_cow_day),
+            1.001656 / 3032.45,
             delta=0.0001,
         )
+
+    def test_price_cache(self):
+        # First call logs
+        day = datetime.strptime("2022-03-10", "%Y-%m-%d")  # A date we used yet!
+        token = TokenId.USDC
+        with self.assertLogs("src.utils.prices", level="INFO") as cm:
+            usd_price(token, day)
+        expected_msg = f"requesting price for token={token.value}, day={day.date()}"
+        self.assertEqual(
+            cm.output,
+            [f"INFO:src.utils.prices:{expected_msg}"],
+        )
+        # Second call does not log.
+        with self.assertNoLogs("src.utils.prices", level="INFO"):
+            usd_price(token, day)
 
 
 if __name__ == "__main__":
