@@ -43,7 +43,7 @@ invalidations as (
         on pool = "bondingPool"
         and sender = initial_funder
   where evt_block_number <= (select * from last_block_before_timestamp)
-    and evt_block_number < 15022969 -- block of the invouch transaction
+    and evt_block_number < 15022969 -- block of the invalidation transaction
 ),
 -- At this point we have excluded all arbitrary vouches (i.e. those not from initial funders of recognized pools)
 -- This ranks (solver, pool, sender) by most recent (vouch or invalidation)
