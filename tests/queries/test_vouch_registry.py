@@ -87,10 +87,9 @@ def invalidate_vouch(
 
 def query_for(date_str: str, bonding_pools: list[str]) -> DuneQuery:
     return DuneQuery(
-        raw_sql="\n".join([
-            open_query("./queries/vouch_registry.sql"),
-            "select * from valid_vouches"
-        ]),
+        raw_sql="\n".join(
+            [open_query("./queries/vouch_registry.sql"), "select * from valid_vouches"]
+        ),
         network=Network.MAINNET,
         name="Solver Reward Targets",
         parameters=[
