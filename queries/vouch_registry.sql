@@ -55,8 +55,8 @@ ranked_vouches as (
     *
   from (
       select * from vouches
-      union
-      select * from invalidations
+--       union
+--       select * from invalidations
     ) as _
 ),
 -- This will contain all latest active vouches,
