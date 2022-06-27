@@ -49,7 +49,7 @@ def get_vouches(dune: DuneAPI, end_time: datetime) -> dict[Address, Vouch]:
     query = DuneQuery.from_environment(
         raw_sql="\n".join([
             open_query("./queries/vouch_registry.sql"),
-            "select * from vouches"
+            "select * from valid_vouches"
         ]),
         network=Network.MAINNET,
         name="Solver Reward Targets",
