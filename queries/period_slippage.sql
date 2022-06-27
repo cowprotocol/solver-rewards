@@ -13,6 +13,9 @@ filtered_trades as (
            buy_token_address                                     as "buyToken",
            atoms_sold                                            as "sellAmount",
            atoms_bought                                          as "buyAmount",
+           units_bought,
+           units_sold,
+           trade_value_usd,
            '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' :: bytea as contract_address
     from gnosis_protocol_v2."trades" t
              join gnosis_protocol_v2."batches" b on t.tx_hash = b.tx_hash
@@ -111,7 +114,7 @@ incoming_and_outgoing as (
     SELECT block_time,
            tx_hash,
            dex_swaps,
-           CONCAT('0x', ENCODE(solver_address, 'hex')) as solver_address,
+           solver_address,
            solver_name,
            case
                when t.symbol = 'ETH' then 'WETH'
@@ -150,6 +153,10 @@ pre_clearing_prices as (
     where call_success = true
       and call_block_time between '{{StartTime}}'
         and '{{EndTime}}'
+      and case
+          when '{{TxHash}}' = '0x' then true
+          else replace('{{TxHash}}', '0x', '\x') :: bytea = call_tx_hash
+        end
     order by call_block_number desc
 ),
 clearing_prices as (
@@ -202,7 +209,7 @@ valued_potential_buffered_trades as (
 internal_buffer_trader_solvers as (
     -- See the resulting list at: https://dune.com/queries/908642
     select
-        CONCAT('0x', ENCODE(address, 'hex'))
+        address
     from gnosis_protocol_v2."view_solvers"
     -- Exclude Single Order Solvers
     where name not in (
@@ -355,7 +362,7 @@ precise_prices as (
     group by
         contract_address,
         decimals,
-        date_trunc('hour', minute) 
+        date_trunc('hour', minute)
 ),
 median_prices as (
     select
@@ -369,26 +376,26 @@ median_prices as (
         and contract_address = token
 ),
 intrinsic_prices as (
-    select 
+    select
         contract_address,
         decimals,
         hour,
         AVG(price) as price
     from (
         select
-            buy_token_address as contract_address,
-            ROUND(LOG(10, atoms_bought / units_bought)) as decimals,
+            "buyToken" as contract_address,
+            ROUND(LOG(10, "buyAmount" / units_bought)) as decimals,
             date_trunc('hour', block_time) as hour,
             trade_value_usd / units_bought as price
-        FROM gnosis_protocol_v2."trades"
+        FROM filtered_trades
         WHERE units_bought > 0
     UNION
         select
-            sell_token_address as contract_address,
-            ROUND(LOG(10, atoms_sold / units_sold)) as decimals,
+            "sellToken" as contract_address,
+            ROUND(LOG(10, "sellAmount" / units_sold)) as decimals,
             date_trunc('hour', block_time) as hour,
             trade_value_usd / units_sold as price
-        FROM gnosis_protocol_v2."trades"
+        FROM filtered_trades
         WHERE units_sold > 0
     ) as combined
     GROUP BY hour, contract_address, decimals
@@ -423,7 +430,7 @@ eth_prices as (
 results_per_tx as (
     select
         ftbs.hour,
-        solver_address,
+        concat('0x', encode(solver_address, 'hex')) as solver_address,
         solver_name,
         sum(token_imbalance_wei * price / 10 ^ p.decimals) as usd_value,
         sum(token_imbalance_wei * price / 10 ^ p.decimals / eth_price) * 10^18 as eth_slippage_wei,
