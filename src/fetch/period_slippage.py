@@ -87,7 +87,7 @@ class SolverSlippage:
             amount_wei=int(obj["eth_slippage_wei"]),
         )
 
-    def force_merge(self, other: SolverSlippage, target: Address) -> SolverSlippage:
+    def merge(self, other: SolverSlippage, target: Address) -> SolverSlippage:
         """Merges two solver slippages as long as their names are the same."""
         assert (
             self.solver_name == other.solver_name
@@ -97,6 +97,13 @@ class SolverSlippage:
             solver_address=target,
             amount_wei=self.amount_wei + other.amount_wei,
         )
+
+    @classmethod
+    def zero(cls, address: str | Address, name: str) -> SolverSlippage:
+        """Used as default instance"""
+        if isinstance(address, str):
+            address = Address(address)
+        return cls(solver_name=name, solver_address=address, amount_wei=0)
 
 
 @dataclass
