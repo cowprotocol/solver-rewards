@@ -138,8 +138,8 @@ class SplitSlippages:
             indexed_slippage[target] = new_solver_slippage.merge(
                 old_solver_slippage, target
             )
-        for row in indexed_slippage.values():
-            results.append(slippage=SolverSlippage.from_dict(row))
+        for slippage in indexed_slippage.values():
+            results.append(slippage)
         return results
 
     def append(self, slippage: SolverSlippage) -> None:
