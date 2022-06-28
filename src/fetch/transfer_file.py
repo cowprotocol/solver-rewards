@@ -189,7 +189,7 @@ class SplitTransfers:
     def _process_native_transfers(
         self, indexed_slippage: dict[Address, SolverSlippage]
     ) -> float:
-        penalty_total = 0
+        penalty_total = 0.0
         while self.unprocessed_native:
             transfer = self.unprocessed_native.pop(0)
             solver = transfer.receiver
