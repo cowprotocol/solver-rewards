@@ -83,5 +83,3 @@ valid_vouches as (
   from current_active_vouches
   where time_rank = 1
 )
-select *
-from valid_vouches

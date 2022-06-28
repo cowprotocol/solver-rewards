@@ -1,6 +1,4 @@
-with 
--- For a permanent version of this Query visit: https://dune.xyz/queries/448457/852218
--- TODO - use block numbers for accounting periods.
+with
 solver_rewards as (
     select
         concat(
@@ -9,8 +7,9 @@ solver_rewards as (
             to_char('{{EndTime}}'::timestamptz - interval '1 day', 'YYYY-MM-DD')
         ) as accounting_period,
         sum(gas_price_gwei * gas_used) / 10 ^ 9 as execution_cost_eth,
-        count(*) * 100 as cow_rewards
-    from gnosis_protocol_v2."batches"
+        count(*) as batches_settled,
+        sum(num_trades) as num_trades
+    from gnosis_protocol_v2.batches
     where block_time >= '{{StartTime}}'
     and block_time < '{{EndTime}}'
 ),
@@ -29,14 +28,13 @@ realized_fees as (
         from gnosis_protocol_v2."view_solvers"
         where name = 'Withdraw'
     )
-    and block_time >= '{{StartTime}}'
-    and block_time < '{{EndTime}}'
+    and block_time between '{{StartTime}}' and '{{EndTime}}'
 )
 
-select 
+select
     r.accounting_period,
     execution_cost_eth,
-    cow_rewards,
+    batches_settled * '{{PerBatchReward}}' + num_trades * '{{PerTradeReward}}' as cow_rewards,
     realized_fees_eth
 from solver_rewards r
 join realized_fees f

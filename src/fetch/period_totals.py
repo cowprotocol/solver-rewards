@@ -27,7 +27,7 @@ def get_period_totals(dune: DuneAPI, period: AccountingPeriod) -> PeriodTotals:
     Fetches & Returns Dune Results for accounting period totals.
     """
     query = DuneQuery.from_environment(
-        raw_sql=open_query("./queries/period_totals.sql"),
+        raw_sql=open_query("./dashboards/period-totals.sql"),
         network=Network.MAINNET,
         name="Accounting Period Totals",
         parameters=[
