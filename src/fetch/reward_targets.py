@@ -47,7 +47,9 @@ def get_vouches(dune: DuneAPI, end_time: datetime) -> dict[Address, Vouch]:
     """
     pool_values = ",\n           ".join(RECOGNIZED_BONDING_POOLS)
     query = DuneQuery.from_environment(
-        raw_sql=open_query("./queries/vouch_registry.sql"),
+        raw_sql="\n".join(
+            [open_query("./queries/vouch_registry.sql"), "select * from valid_vouches"]
+        ),
         network=Network.MAINNET,
         name="Solver Reward Targets",
         parameters=[
