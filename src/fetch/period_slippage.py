@@ -87,6 +87,17 @@ class SolverSlippage:
             amount_wei=int(obj["eth_slippage_wei"]),
         )
 
+    def force_merge(self, other: SolverSlippage, target: Address) -> SolverSlippage:
+        """Merges two solver slippages as long as their names are the same."""
+        assert (
+            self.solver_name == other.solver_name
+        ), "Can only merge solver with same name"
+        return SolverSlippage(
+            solver_name=self.solver_name,
+            solver_address=target,
+            amount_wei=self.amount_wei + other.amount_wei,
+        )
+
 
 @dataclass
 class SplitSlippages:
