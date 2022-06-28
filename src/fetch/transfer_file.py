@@ -311,6 +311,7 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
         ],
     )
     reimbursements_and_rewards = [Transfer.from_dict(t) for t in dune.fetch(query)]
+    # TODO - Here we could also merge all the transfers with the merge data from below!
     split_transfers = SplitTransfers(period, reimbursements_and_rewards)
 
     negative_slippage = get_period_slippage(dune, period).negative
