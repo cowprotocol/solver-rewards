@@ -123,6 +123,7 @@ class SplitSlippages:
     def from_data_set(cls, data_set: list[dict[str, str]]) -> SplitSlippages:
         """Constructs an object based on provided dataset"""
         results = cls()
+        # Intercept the constructor to merge results.
         all_slippages = [SolverSlippage.from_dict(row) for row in data_set]
         indexed_slippage = index_by(all_slippages, "solver_address")
         for name, (old, new) in MERGE_DATA.items():

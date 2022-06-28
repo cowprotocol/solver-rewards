@@ -344,9 +344,9 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
             target, Transfer.native(receiver=target, amount=0)
         )
         # Merge old with new.
-        indexed_native_transfers[target] = new_transfer.force_merge(
-            old_transfer, target
-        )
+        merged_transfer = new_transfer.force_merge(old_transfer, target)
+        if merged_transfer.amount > 0:
+            indexed_native_transfers[target] = merged_transfer
     # Set the unprocessed native transfers to be the merged results.
     split_transfers.unprocessed_native = list(indexed_native_transfers.values())
 
