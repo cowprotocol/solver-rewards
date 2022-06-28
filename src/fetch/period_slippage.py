@@ -10,9 +10,11 @@ from duneapi.api import DuneAPI
 from duneapi.types import QueryParameter, DuneQuery, Network, Address, DuneRecord
 from duneapi.util import open_query
 
+from src.constants import MERGE_DATA
 from src.models import AccountingPeriod
 from src.token_list import fetch_trusted_tokens
 from src.update.token_list import update_token_list
+from src.utils.dataset import index_by
 from src.utils.script_args import generic_script_init
 
 log = logging.getLogger(__name__)
@@ -121,7 +123,22 @@ class SplitSlippages:
     def from_data_set(cls, data_set: list[dict[str, str]]) -> SplitSlippages:
         """Constructs an object based on provided dataset"""
         results = cls()
-        for row in data_set:
+        all_slippages = [SolverSlippage.from_dict(row) for row in data_set]
+        indexed_slippage = index_by(all_slippages, "solver_address")
+        for name, (old, new) in MERGE_DATA.items():
+            # Remove the old one.
+            old_address, target = Address(old), Address(new)
+            old_solver_slippage: SolverSlippage = indexed_slippage.pop(
+                old_address, SolverSlippage.zero(address=old_address, name=name)
+            )
+            new_solver_slippage: SolverSlippage = indexed_slippage.pop(
+                target, SolverSlippage.zero(address=target, name=name)
+            )
+            # Merge old with new.
+            indexed_slippage[target] = new_solver_slippage.merge(
+                old_solver_slippage, target
+            )
+        for row in indexed_slippage.values():
             results.append(slippage=SolverSlippage.from_dict(row))
         return results
 
