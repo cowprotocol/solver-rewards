@@ -9,5 +9,5 @@ from results_per_tx rpt
 join gnosis_protocol_v2."batches" b
     on rpt.tx_hash = b.tx_hash
 where abs(usd_value) > '{{SignificantSlippageValue}}'
-and 100.0 * abs(usd_value) / batch_value > '{{RelativeSlippageTolerance}}'
+or 100.0 * abs(usd_value) / batch_value > '{{RelativeSlippageTolerance}}'
 order by relative_slippage
