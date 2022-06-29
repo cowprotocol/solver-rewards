@@ -98,6 +98,11 @@
           "type": "datetime"
         },
         {
+          "key": "MeaningfulBatchValue",
+          "value": 1000,
+          "type": "number"
+        },
+        {
           "key": "RelativeSlippageTolerance",
           "value": 0.3,
           "type": "number"
