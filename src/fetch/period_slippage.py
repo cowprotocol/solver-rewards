@@ -19,22 +19,6 @@ log = logging.getLogger(__name__)
 logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
 
 
-SELECT_UNUSUAL_SLIPPAGE = """
-select
-    block_time,
-    rpt.solver_name,
-    concat('0x', encode(rpt.tx_hash, 'hex')) as tx_hash,
-    usd_value,
-    batch_value,
-    100 * usd_value / batch_value as relative_slippage
-from results_per_tx rpt
-join gnosis_protocol_v2."batches" b
-    on rpt.tx_hash = b.tx_hash
-where abs(usd_value) > '{{SignificantValue}}'
-and 100.0 * abs(usd_value) / batch_value > '{{RelativeTolerance}}'
-order by relative_slippage"""
-
-
 class QueryType(Enum):
     """
     Determines type of slippage data to be fetched.
@@ -53,7 +37,9 @@ class QueryType(Enum):
         if self in (QueryType.PER_TX, QueryType.TOTAL):
             return f"select * from {self}"
         if self == QueryType.UNUSUAL:
-            return SELECT_UNUSUAL_SLIPPAGE
+            return open_query(
+                "./dashboards/solver-rewards-accounting/unusual-slippage.sql"
+            )
         # Can only happen if types are added to the enum and not accounted for.
         raise ValueError(f"Invalid Query Type! {self}")
 
