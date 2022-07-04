@@ -214,7 +214,8 @@ class SplitTransfers:
 
     def _process_native_transfers(
         self, indexed_slippage: dict[Address, SolverSlippage]
-    ) -> None:
+    ) -> float:
+        penalty_total = 0.0
         while self.unprocessed_native:
             transfer = self.unprocessed_native.pop(0)
             solver = transfer.receiver
@@ -222,6 +223,7 @@ class SplitTransfers:
             if slippage is not None:
                 try:
                     transfer.add_slippage(slippage)
+                    penalty_total += slippage.amount_wei / 10**18
                 except ValueError as err:
                     name, address = slippage.solver_name, slippage.solver_address
                     print(
@@ -231,8 +233,11 @@ class SplitTransfers:
                     self.overdrafts[solver] = Overdraft.from_objects(
                         transfer, slippage, self.period
                     )
+                    # Deduct entire transfer value.
+                    penalty_total += transfer.amount
                     continue
             self.eth_transfers.append(transfer)
+        return penalty_total
 
     def _process_token_transfers(self, cow_redirects: dict[Address, Vouch]) -> None:
         price_day = self.period.end - timedelta(days=1)
@@ -278,8 +283,9 @@ class SplitTransfers:
         so that and overdraft from slippage can be carried over and deducted from
         the COW rewards.
         """
-        self._process_native_transfers(indexed_slippage)
+        penalty_total = self._process_native_transfers(indexed_slippage)
         self._process_token_transfers(cow_redirects)
+        print(f"Total Slippage deducted {penalty_total}")
         if self.overdrafts:
             print("Additional owed", "\n".join(map(str, self.overdrafts.values())))
         return self.cow_transfers + self.eth_transfers
@@ -375,7 +381,7 @@ def consolidate_transfers(transfer_list: list[Transfer]) -> list[Transfer]:
 def dashboard_url(period: AccountingPeriod) -> str:
     """Constructs Solver Accounting Dashboard URL for Period"""
     base = "https://dune.com/gnosis.protocol/"
-    slug = "CoW-Protocol:-Solver-Accounting"
+    slug = "solver-rewards-accounting"
     query = f"?StartTime={period.start}&EndTime={period.end}"
     return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
