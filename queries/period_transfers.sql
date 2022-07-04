@@ -16,13 +16,13 @@ from (
          select 'native'  as token_type,
                 null      as token_address,
                 solver    as receiver,
-                eth_spent as amount
+                eth_spent::numeric::text as amount
          from relevant_batch_info
          union
          select 'erc20'                                      as token_type,
                 '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB' as token_address,
                 solver                                       as receiver,
-                (batch_reward + trade_reward) * 10 ^ 18      as amount
+                (10^18 * (batch_reward + trade_reward))::numeric::text    as amount
          from relevant_batch_info
      ) as _
 order by receiver, token_address desc
