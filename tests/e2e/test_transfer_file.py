@@ -5,6 +5,8 @@ from src.fetch.period_slippage import SolverSlippage
 from src.fetch.transfer_file import Transfer, SplitTransfers, Overdraft
 from src.models import AccountingPeriod
 
+ONE_ETH = 10**18
+
 
 # TODO - mock the price feed so that this test doesn't require API call.
 class TestPrices(unittest.TestCase):
@@ -16,11 +18,13 @@ class TestPrices(unittest.TestCase):
         mixed_transfers = [
             Transfer.native(
                 receiver=barn_zerox,
-                amount=0.18536027477313313,
+                amount=185360274773133130,
             ),
-            Transfer.native(receiver=other_solver, amount=1),
-            Transfer.erc20(receiver=barn_zerox, amount=600, token=cow_token),
-            Transfer.erc20(receiver=other_solver, amount=2000, token=cow_token),
+            Transfer.native(receiver=other_solver, amount=1 * ONE_ETH),
+            Transfer.erc20(receiver=barn_zerox, amount=600 * ONE_ETH, token=cow_token),
+            Transfer.erc20(
+                receiver=other_solver, amount=2000 * ONE_ETH, token=cow_token
+            ),
         ]
 
         barn_slippage = SolverSlippage(
@@ -44,14 +48,14 @@ class TestPrices(unittest.TestCase):
             transfers,
             [
                 Transfer.erc20(
-                    receiver=other_solver, token=cow_token, amount=845.0943770281408
+                    receiver=other_solver, token=cow_token, amount=845094377028141056000
                 )
             ],
         )
         # barn_zerox still has outstanding overdraft
         self.assertEqual(
             accounting.overdrafts,
-            {barn_zerox: Overdraft(period, barn_zerox, "barn-0x", 0.08738479495718031)},
+            {barn_zerox: Overdraft(period, barn_zerox, "barn-0x", 87384794957180304)},
         )
         # All unprocessed entries have been processed.
         self.assertEqual(accounting.unprocessed_cow, [])

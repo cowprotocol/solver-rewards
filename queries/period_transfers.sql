@@ -2,7 +2,7 @@ with
 -- For a configurable permanent version visit: https://dune.xyz/queries/469110
 relevant_batch_info as (
     select concat('0x', encode(solver_address, 'hex')) as solver,
-           sum(gas_price_gwei * gas_used) / 10 ^ 9     as eth_spent,
+           sum(gas_price_gwei * gas_used) * 10 ^ 9     as eth_spent,
            count(*) * '{{PerBatchReward}}'             as batch_reward,
            sum(num_trades) * '{{PerTradeReward}}'      as trade_reward
     from gnosis_protocol_v2.batches
@@ -22,7 +22,7 @@ from (
          select 'erc20'                                      as token_type,
                 '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB' as token_address,
                 solver                                       as receiver,
-                batch_reward + trade_reward                  as amount
+                (batch_reward + trade_reward) * 10 ^ 18      as amount
          from relevant_batch_info
      ) as _
 order by receiver, token_address desc
