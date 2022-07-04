@@ -36,17 +36,17 @@ class TokenId(Enum):
         return 18
 
 
-def eth_in_token(quote_token: TokenId, amount: int, day: datetime) -> float:
+def eth_in_token(quote_token: TokenId, amount: int, day: datetime) -> int:
     """
     Compute how much of `token` is equivalent to `amount` ETH on `day`.
     Use current price if day not specified.
     """
     eth_amount_usd = token_in_usd(TokenId.ETH, amount, day)
     quote_price_usd = token_in_usd(quote_token, 10 ** quote_token.decimals(), day)
-    return eth_amount_usd / quote_price_usd
+    return int(eth_amount_usd / quote_price_usd * 10 ** quote_token.decimals())
 
 
-def token_in_eth(token: TokenId, amount: int, day: datetime) -> float:
+def token_in_eth(token: TokenId, amount: int, day: datetime) -> int:
     """
     The inverse of eth_in_token;
     how much ETH is equivalent to `amount` of `token` on `day`
@@ -54,7 +54,7 @@ def token_in_eth(token: TokenId, amount: int, day: datetime) -> float:
     token_amount_usd = token_in_usd(token, amount, day)
     eth_price_usd = token_in_usd(TokenId.ETH, 10 ** TokenId.ETH.decimals(), day)
 
-    return token_amount_usd / eth_price_usd
+    return int(token_amount_usd / eth_price_usd * 10 ** TokenId.ETH.decimals())
 
 
 def token_in_usd(token: TokenId, amount: int, day: datetime) -> float:

@@ -33,7 +33,7 @@ class TestPrices(unittest.TestCase):
             solver_address=barn_zerox,
         )
         other_slippage = SolverSlippage(
-            amount_wei=-1100000000000000000,
+            amount_wei=-11 * 10**17,
             solver_name="Other Solver",
             solver_address=other_solver,
         )
@@ -44,6 +44,8 @@ class TestPrices(unittest.TestCase):
 
         transfers = accounting.process(indexed_slippage, cow_redirects)
         # The only remaining transfer is the other_solver's COW reward.
+        print(transfers[0].amount)
+        print(transfers[0].amount_wei)
         self.assertEqual(
             transfers,
             [

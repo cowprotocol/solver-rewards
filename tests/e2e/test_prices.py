@@ -44,15 +44,13 @@ class TestPrices(unittest.TestCase):
         # cow_price =  0.435229
         # eth_price = 3032.45
         # usdc_price = 1.001656
-        self.assertAlmostEqual(
+        self.assertEqual(
             eth_in_token(TokenId.COW, ONE_ETH, self.first_cow_day),
-            3032.45 / 0.435229,
-            delta=DELTA,
+            10**18 * 3032.45 // 0.435229,
         )
-        self.equal = self.assertAlmostEqual(
+        self.assertEqual(
             eth_in_token(TokenId.USDC, ONE_ETH, self.first_cow_day),
-            3032.45 / 1.001656,
-            delta=DELTA,
+            10**6 * 3032.45 // 1.001656,
         )
 
     def test_token_in_eth(self):
@@ -64,12 +62,12 @@ class TestPrices(unittest.TestCase):
         # usdc_price = 1.001656
         self.assertAlmostEqual(
             token_in_eth(TokenId.COW, ONE_ETH, self.first_cow_day),
-            0.435229 / 3032.45,
+            10**18 * 0.435229 // 3032.45,
             delta=DELTA,
         )
         self.assertAlmostEqual(
             token_in_eth(TokenId.USDC, 10**6, self.first_cow_day),
-            1.001656 / 3032.45,
+            10**18 * 1.001656 // 3032.45,
             delta=DELTA,
         )
 

@@ -57,14 +57,35 @@ class TokenType(Enum):
 
 
 @dataclass
-class Transfer:
-    """Total amount reimbursed for accounting period"""
+class CSVTransfer:
+    """Essentially a Transfer Object, but with amount as float instead of amount_wei"""
 
     token_type: TokenType
     # Safe airdrop uses null address for native asset transfers
     token_address: Optional[Address]
     receiver: Address
     # safe-airdrop uses float amounts!
+    amount: float
+
+    @classmethod
+    def from_transfer(cls, transfer: Transfer) -> CSVTransfer:
+        """Converts WeiTransfer into CSVTransfer"""
+        return cls(
+            token_type=transfer.token_type,
+            token_address=transfer.token_address,
+            receiver=transfer.receiver,
+            # The primary purpose for this class is to convert amount_wei to amount
+            amount=transfer.amount,
+        )
+
+
+@dataclass
+class Transfer:
+    """Total amount reimbursed for accounting period"""
+
+    token_type: TokenType
+    token_address: Optional[Address]
+    receiver: Address
     amount_wei: int
 
     @classmethod
@@ -221,7 +242,7 @@ class SplitTransfers:
             # Remove the element if it exists (assuming it won't have to be reinserted)
             overdraft = self.overdrafts.pop(solver, None)
             if overdraft is not None:
-                cow_deduction = int(eth_in_token(TokenId.COW, overdraft.wei, price_day))
+                cow_deduction = eth_in_token(TokenId.COW, overdraft.wei, price_day)
                 print(f"Deducting {cow_deduction} COW from reward for {solver}")
                 transfer.amount_wei -= cow_deduction
                 if transfer.amount_wei < 0:
@@ -229,8 +250,8 @@ class SplitTransfers:
                         "Overdraft exceeds COW reward! "
                         "Excluding reward and updating overdraft"
                     )
-                    overdraft.wei = int(
-                        token_in_eth(TokenId.COW, abs(transfer.amount_wei), price_day)
+                    overdraft.wei = token_in_eth(
+                        TokenId.COW, abs(transfer.amount_wei), price_day
                     )
                     # Reinsert since there is still an amount owed.
                     self.overdrafts[solver] = overdraft
@@ -385,7 +406,7 @@ if __name__ == "__main__":
         )
     )
     write_to_csv(
-        data_list=transfers,
+        data_list=[CSVTransfer.from_transfer(t) for t in transfers],
         outfile=File(name=f"transfers-{accounting_period}.csv"),
     )
     eth_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.NATIVE)
