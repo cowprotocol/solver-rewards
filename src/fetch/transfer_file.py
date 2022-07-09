@@ -57,8 +57,8 @@ class TokenType(Enum):
 
 
 @dataclass
-class Transfer:
-    """Total amount reimbursed for accounting period"""
+class CSVTransfer:
+    """Essentially a Transfer Object, but with amount as float instead of amount_wei"""
 
     token_type: TokenType
     # Safe airdrop uses null address for native asset transfers
@@ -66,6 +66,27 @@ class Transfer:
     receiver: Address
     # safe-airdrop uses float amounts!
     amount: float
+
+    @classmethod
+    def from_transfer(cls, transfer: Transfer) -> CSVTransfer:
+        """Converts WeiTransfer into CSVTransfer"""
+        return cls(
+            token_type=transfer.token_type,
+            token_address=transfer.token_address,
+            receiver=transfer.receiver,
+            # The primary purpose for this class is to convert amount_wei to amount
+            amount=transfer.amount,
+        )
+
+
+@dataclass
+class Transfer:
+    """Total amount reimbursed for accounting period"""
+
+    token_type: TokenType
+    token_address: Optional[Address]
+    receiver: Address
+    amount_wei: int
 
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> Transfer:
@@ -83,24 +104,24 @@ class Transfer:
             if token_type != TokenType.NATIVE
             else None,
             receiver=Address(obj["receiver"]),
-            amount=float(obj["amount"]),
+            amount_wei=int(obj["amount"]),
         )
 
     @classmethod
-    def native(cls, receiver: str | Address, amount: str | float) -> Transfer:
+    def native(cls, receiver: str | Address, amount: str | int) -> Transfer:
         """Construct a native token transfer"""
         if isinstance(receiver, str):
             receiver = Address(receiver)
         return cls(
             token_type=TokenType.NATIVE,
             receiver=receiver,
-            amount=float(amount),
+            amount_wei=int(amount),
             token_address=None,
         )
 
     @classmethod
     def erc20(
-        cls, receiver: str | Address, amount: str | float, token: str | Address
+        cls, receiver: str | Address, amount: str | int, token: str | Address
     ) -> Transfer:
         """Construct an erc20 token transfer"""
         if isinstance(token, str):
@@ -111,22 +132,27 @@ class Transfer:
         return cls(
             token_type=TokenType.ERC20,
             receiver=receiver,
-            amount=float(amount),
+            amount_wei=int(amount),
             token_address=token,
         )
+
+    @property
+    def amount(self) -> float:
+        """Returns transfer amount in units"""
+        return self.amount_wei / 10**18
 
     def add_slippage(self, slippage: SolverSlippage) -> None:
         """Adds Adjusts Transfer amount by Slippage amount"""
         assert self.receiver == slippage.solver_address, "receiver != solver"
-        adjustment = slippage.amount_wei / 10**18
+        adjustment = slippage.amount_wei
         print(
             f"Adjusting {self.receiver}({slippage.solver_name}) "
-            f"transfer by {adjustment:.5f} (slippage)"
+            f"transfer by {adjustment / 10 ** 18:.5f} (slippage)"
         )
-        new_amount = self.amount + adjustment
+        new_amount = self.amount_wei + adjustment
         if new_amount <= 0:
-            raise ValueError(f"Invalid adjustment {self} by {adjustment}")
-        self.amount = new_amount
+            raise ValueError(f"Invalid adjustment {self} by {adjustment / 10 ** 18}")
+        self.amount_wei = new_amount
 
     def merge(self, other: Transfer) -> Transfer:
         """
@@ -143,7 +169,7 @@ class Transfer:
                 token_type=self.token_type,
                 token_address=self.token_address,
                 receiver=self.receiver,
-                amount=self.amount + other.amount,
+                amount_wei=self.amount_wei + other.amount_wei,
             )
         raise ValueError(
             f"Can't merge tokens {self}, {other}. "
@@ -221,16 +247,16 @@ class SplitTransfers:
             # Remove the element if it exists (assuming it won't have to be reinserted)
             overdraft = self.overdrafts.pop(solver, None)
             if overdraft is not None:
-                cow_deduction = eth_in_token(TokenId.COW, overdraft.eth, price_day)
+                cow_deduction = eth_in_token(TokenId.COW, overdraft.wei, price_day)
                 print(f"Deducting {cow_deduction} COW from reward for {solver}")
-                transfer.amount -= cow_deduction
-                if transfer.amount < 0:
+                transfer.amount_wei -= cow_deduction
+                if transfer.amount_wei < 0:
                     print(
                         "Overdraft exceeds COW reward! "
                         "Excluding reward and updating overdraft"
                     )
-                    overdraft.eth = token_in_eth(
-                        TokenId.COW, abs(transfer.amount), price_day
+                    overdraft.wei = token_in_eth(
+                        TokenId.COW, abs(transfer.amount_wei), price_day
                     )
                     # Reinsert since there is still an amount owed.
                     self.overdrafts[solver] = overdraft
@@ -275,7 +301,7 @@ class Overdraft:
     period: AccountingPeriod
     account: Address
     name: str
-    eth: float
+    wei: int
 
     @classmethod
     def from_objects(
@@ -284,14 +310,19 @@ class Overdraft:
         """Constructs an overdraft instance based on Transfer & Slippage"""
         assert transfer.receiver == slippage.solver_address
         assert transfer.token_type == TokenType.NATIVE
-        overdraft = transfer.amount * 10**18 + slippage.amount_wei
+        overdraft = transfer.amount_wei + slippage.amount_wei
         assert overdraft < 0, "This is why we are here."
         return cls(
             period=period,
             name=slippage.solver_name,
             account=slippage.solver_address,
-            eth=abs(overdraft) / 10**18,
+            wei=abs(overdraft),
         )
+
+    @property
+    def eth(self) -> float:
+        """Returns amount in units"""
+        return self.wei / 10**18
 
     def __str__(self) -> str:
         return (
@@ -381,15 +412,15 @@ if __name__ == "__main__":
         )
     )
     write_to_csv(
-        data_list=transfers,
+        data_list=[CSVTransfer.from_transfer(t) for t in transfers],
         outfile=File(name=f"transfers-{accounting_period}.csv"),
     )
-    eth_total = sum(t.amount for t in transfers if t.token_type == TokenType.NATIVE)
-    cow_total = sum(t.amount for t in transfers if t.token_type == TokenType.ERC20)
+    eth_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.NATIVE)
+    cow_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.ERC20)
 
     print(
-        f"Total ETH Funds needed: {eth_total}\n"
-        f"Total COW Funds needed: {cow_total}\n"
+        f"Total ETH Funds needed: {eth_total / 10 ** 18}\n"
+        f"Total COW Funds needed: {cow_total / 10 ** 18}\n"
         f"Please cross check these results with the dashboard linked above.\n "
         f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
         f"{safe_url()}"
