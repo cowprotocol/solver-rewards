@@ -57,11 +57,11 @@ def token_in_eth(token: TokenId, amount: int, day: datetime) -> int:
     return int(token_amount_usd / eth_price_usd * 10 ** TokenId.ETH.decimals())
 
 
-def token_in_usd(token: TokenId, amount: int, day: datetime) -> float:
+def token_in_usd(token: TokenId, amount_wei: int, day: datetime) -> float:
     """
-    Converts token amount to usd amount on given day.
+    Converts token amount [wei] to usd amount on given day.
     """
-    return float(amount) * usd_price(token, day) / 10.0 ** token.decimals()
+    return float(amount_wei) * usd_price(token, day) / 10.0 ** token.decimals()
 
 
 @functools.cache
