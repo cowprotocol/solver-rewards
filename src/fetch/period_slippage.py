@@ -57,7 +57,7 @@ def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
 
 @dataclass
 class SolverSlippage:
-    """Total amount_wei reimbursed for accounting period"""
+    """Total amount reimbursed for accounting period"""
 
     solver_address: Address
     solver_name: str
@@ -94,7 +94,7 @@ class SplitSlippages:
         return results
 
     def append(self, slippage: SolverSlippage) -> None:
-        """Appends the Slippage to appropriate half based on signature of amount"""
+        """Appends the Slippage to the appropriate half based on signature of amount"""
         if slippage.amount_wei < 0:
             self.negative.append(slippage)
         else:

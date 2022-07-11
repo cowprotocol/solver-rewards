@@ -53,17 +53,17 @@ class TestTransfer(unittest.TestCase):
             receiver=receiver,
             amount_wei=2,
         )
-        self.assertEqual(native_transfer, Transfer.native(receiver, amount_wei=1))
+        self.assertEqual(native_transfer, Transfer.native(receiver, amount=1))
         self.assertEqual(
             erc20_transfer,
-            Transfer.erc20(token=self.token_1, receiver=receiver, amount_wei=2),
+            Transfer.erc20(token=self.token_1, receiver=receiver, amount=2),
         )
 
     def test_add_slippage(self):
         solver = Address.zero()
         transfer = Transfer.native(
             receiver=solver,
-            amount_wei=ONE_ETH,
+            amount=ONE_ETH,
         )
         positive_slippage = SolverSlippage(
             solver_name="Test Solver", solver_address=solver, amount_wei=ONE_ETH // 2
@@ -93,29 +93,29 @@ class TestTransfer(unittest.TestCase):
     def test_merge(self):
         receiver = Address.zero()
         # Native Transfer Merge
-        native_transfer1 = Transfer.native(receiver=receiver, amount_wei=ONE_ETH)
-        native_transfer2 = Transfer.native(receiver=receiver, amount_wei=ONE_ETH)
+        native_transfer1 = Transfer.native(receiver=receiver, amount=ONE_ETH)
+        native_transfer2 = Transfer.native(receiver=receiver, amount=ONE_ETH)
         self.assertEqual(
             native_transfer1.merge(native_transfer2),
-            Transfer.native(receiver=receiver, amount_wei=2 * ONE_ETH),
+            Transfer.native(receiver=receiver, amount=2 * ONE_ETH),
         )
         # ERC20 Transfer Merge
         erc20_transfer1 = Transfer.erc20(
             token=self.token_1,
             receiver=receiver,
-            amount_wei=ONE_ETH,
+            amount=ONE_ETH,
         )
         erc20_transfer2 = Transfer.erc20(
             token=self.token_1,
             receiver=receiver,
-            amount_wei=ONE_ETH,
+            amount=ONE_ETH,
         )
         self.assertEqual(
             erc20_transfer1.merge(erc20_transfer2),
             Transfer.erc20(
                 token=self.token_1,
                 receiver=receiver,
-                amount_wei=2 * ONE_ETH,
+                amount=2 * ONE_ETH,
             ),
         )
 
@@ -132,12 +132,12 @@ class TestTransfer(unittest.TestCase):
             t1 = Transfer.erc20(
                 token=self.token_1,
                 receiver=ONE_ADDRESS,
-                amount_wei=2 * ONE_ETH,
+                amount=2 * ONE_ETH,
             )
             t2 = Transfer.erc20(
                 token=self.token_1,
                 receiver=TWO_ADDRESS,
-                amount_wei=2 * ONE_ETH,
+                amount=2 * ONE_ETH,
             )
             t1.merge(t2)
         self.assertEqual(
@@ -150,12 +150,12 @@ class TestTransfer(unittest.TestCase):
             t1 = Transfer.erc20(
                 token=self.token_1,
                 receiver=receiver,
-                amount_wei=2 * ONE_ETH,
+                amount=2 * ONE_ETH,
             )
             t2 = Transfer.erc20(
                 token=self.token_2,
                 receiver=receiver,
-                amount_wei=2 * ONE_ETH,
+                amount=2 * ONE_ETH,
             )
             t1.merge(t2)
         self.assertEqual(
@@ -279,7 +279,7 @@ class TestTransfer(unittest.TestCase):
                     "token_type": "native",
                     "token_address": None,
                     "receiver": ONE_ADDRESS.address,
-                    "amount_wei": "1234000000000000000",
+                    "amount": "1234000000000000000",
                 }
             ),
             Transfer(

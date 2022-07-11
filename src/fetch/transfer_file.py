@@ -57,7 +57,7 @@ class TokenType(Enum):
 
 @dataclass
 class CSVTransfer:
-    """Essentially a Transfer Object, but with amount_wei as float instead of amount_wei"""
+    """Essentially a Transfer Object, but with amount as float instead of amount_wei"""
 
     token_type: TokenType
     # Safe airdrop uses null address for native asset transfers
@@ -73,7 +73,7 @@ class CSVTransfer:
             token_type=transfer.token_type,
             token_address=transfer.token.address if transfer.token else None,
             receiver=transfer.receiver,
-            # The primary purpose for this class is to convert amount_wei to amount_wei
+            # The primary purpose for this class is to convert amount_wei to amount
             amount=transfer.amount,
         )
 
@@ -104,20 +104,20 @@ class Transfer:
         )
 
     @classmethod
-    def native(cls, receiver: str | Address, amount_wei: str | int) -> Transfer:
+    def native(cls, receiver: str | Address, amount: str | int) -> Transfer:
         """Construct a native token transfer"""
         if isinstance(receiver, str):
             receiver = Address(receiver)
         return cls(
             token_type=TokenType.NATIVE,
             receiver=receiver,
-            amount_wei=int(amount_wei),
+            amount_wei=int(amount),
             token=None,
         )
 
     @classmethod
     def erc20(
-        cls, receiver: str | Address, amount_wei: str | int, token: Token
+        cls, receiver: str | Address, amount: str | int, token: Token
     ) -> Transfer:
         """Construct an erc20 token transfer"""
         if isinstance(receiver, str):
@@ -126,7 +126,7 @@ class Transfer:
         return cls(
             token_type=TokenType.ERC20,
             receiver=receiver,
-            amount_wei=int(amount_wei),
+            amount_wei=int(amount),
             token=token,
         )
 
@@ -140,7 +140,7 @@ class Transfer:
         return self.amount_wei / int(10**self.token.decimals)
 
     def add_slippage(self, slippage: SolverSlippage) -> None:
-        """Adds Adjusts Transfer amount_wei by Slippage amount_wei"""
+        """Adds Adjusts Transfer amount by Slippage amount"""
         assert self.receiver == slippage.solver_address, "receiver != solver"
         adjustment = slippage.amount_wei
         print(
@@ -155,7 +155,7 @@ class Transfer:
     def merge(self, other: Transfer) -> Transfer:
         """
         Merge two transfers (acts like addition)
-        if all fields except amount_wei are equal, returns a transfer who amount_wei is the sum
+        if all fields except amount are equal, returns a transfer who amount is the sum
         """
         merge_requirements = [
             self.receiver == other.receiver,
@@ -287,7 +287,10 @@ class SplitTransfers:
         if self.overdrafts:
             print("Additional owed", "\n".join(map(str, self.overdrafts.values())))
         return self.cow_transfers + self.eth_transfers
+
+
 # pylint: enable=too-few-public-methods
+
 
 @dataclass
 class Overdraft:
