@@ -320,7 +320,7 @@ class TestTransfer(unittest.TestCase):
                     "token_type": "erc20",
                     "token_address": None,
                     "receiver": ONE_ADDRESS.address,
-                    "amount_wei": "1000000000000000000",
+                    "amount": "1000000000000000000",
                 }
             )
         self.assertEqual(
@@ -332,7 +332,7 @@ class TestTransfer(unittest.TestCase):
                     "token_type": "native",
                     "token_address": ONE_ADDRESS.address,
                     "receiver": ONE_ADDRESS.address,
-                    "amount_wei": "1000000000000000000",
+                    "amount": "1000000000000000000",
                 }
             )
         self.assertEqual(
