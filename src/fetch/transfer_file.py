@@ -82,7 +82,6 @@ class CSVTransfer:
 class Transfer:
     """Total amount reimbursed for accounting period"""
 
-    token_type: TokenType
     token: Optional[Token]
     receiver: Address
     amount_wei: int
@@ -90,45 +89,19 @@ class Transfer:
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> Transfer:
         """Converts Dune data dict to object with types"""
-        token_type = TokenType.from_str(obj["token_type"])
         token_address = obj["token_address"]
-        if token_type == TokenType.NATIVE and token_address is not None:
-            raise ValueError("Native transfers must have null token_address")
-        if token_type == TokenType.ERC20 and token_address is None:
-            raise ValueError("ERC20 transfers must have valid token_address")
         return cls(
-            token_type=token_type,
-            token=Token(token_address) if token_type == TokenType.ERC20 else None,
+            token=Token(token_address) if token_address else None,
             receiver=Address(obj["receiver"]),
             amount_wei=int(obj["amount"]),
         )
 
-    @classmethod
-    def native(cls, receiver: str | Address, amount: str | int) -> Transfer:
-        """Construct a native token transfer"""
-        if isinstance(receiver, str):
-            receiver = Address(receiver)
-        return cls(
-            token_type=TokenType.NATIVE,
-            receiver=receiver,
-            amount_wei=int(amount),
-            token=None,
-        )
-
-    @classmethod
-    def erc20(
-        cls, receiver: str | Address, amount: str | int, token: Token
-    ) -> Transfer:
-        """Construct an erc20 token transfer"""
-        if isinstance(receiver, str):
-            receiver = Address(receiver)
-
-        return cls(
-            token_type=TokenType.ERC20,
-            receiver=receiver,
-            amount_wei=int(amount),
-            token=token,
-        )
+    @property
+    def token_type(self) -> TokenType:
+        """Returns the type of transfer (Native or ERC20)"""
+        if self.token is None:
+            return TokenType.NATIVE
+        return TokenType.ERC20
 
     @property
     def amount(self) -> float:
@@ -159,12 +132,10 @@ class Transfer:
         """
         merge_requirements = [
             self.receiver == other.receiver,
-            self.token_type == other.token_type,
             self.token == other.token,
         ]
         if all(merge_requirements):
             return Transfer(
-                token_type=self.token_type,
                 token=self.token,
                 receiver=self.receiver,
                 amount_wei=self.amount_wei + other.amount_wei,
@@ -365,7 +336,7 @@ def consolidate_transfers(transfer_list: list[Transfer]) -> list[Transfer]:
 
     transfer_dict: dict[tuple, Transfer] = {}
     for transfer in transfer_list:
-        key = (transfer.receiver, transfer.token_type, transfer.token)
+        key = (transfer.receiver, transfer.token)
         if key in transfer_dict:
             transfer_dict[key] = transfer_dict[key].merge(transfer)
         else:
