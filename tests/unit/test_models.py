@@ -1,8 +1,10 @@
 import unittest
 
 from duneapi.types import Address
+from eth_typing import HexStr
+from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
 
-from src.constants import COW_TOKEN_ADDRESS
+from src.constants import COW_TOKEN_ADDRESS, ERC20_TOKEN
 from src.fetch.period_slippage import SolverSlippage
 from src.fetch.transfer_file import Transfer, consolidate_transfers
 from src.models import AccountingPeriod, Token
@@ -281,6 +283,35 @@ class TestTransfer(unittest.TestCase):
                 token=Token(COW_TOKEN_ADDRESS),
                 receiver=Address.from_int(1),
                 amount_wei=1234 * 10**15,
+            ),
+        )
+
+    def test_as_multisend_tx(self):
+        receiver = Address("0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1")
+        native_transfer = Transfer(token=None, receiver=receiver, amount_wei=16)
+        self.assertEqual(
+            native_transfer.as_multisend_tx(),
+            MultiSendTx(
+                operation=MultiSendOperation.CALL,
+                to=receiver.address,
+                value=16,
+                data=HexStr("0x"),
+            ),
+        )
+        erc20_transfer = Transfer(
+            token=Token(COW_TOKEN_ADDRESS),
+            receiver=receiver,
+            amount_wei=15,
+        )
+        self.assertEqual(
+            erc20_transfer.as_multisend_tx(),
+            MultiSendTx(
+                operation=MultiSendOperation.CALL,
+                to=COW_TOKEN_ADDRESS.address,
+                value=0,
+                data=ERC20_TOKEN.encodeABI(
+                    fn_name="transfer", args=[receiver.address, 15]
+                ),
             ),
         )
 

@@ -44,7 +44,6 @@ class TestPrices(unittest.TestCase):
 
         transfers = accounting.process(indexed_slippage, cow_redirects)
         # The only remaining transfer is the other_solver's COW reward.
-        print(transfers[0].amount_wei)
         self.assertEqual(
             transfers,
             [
