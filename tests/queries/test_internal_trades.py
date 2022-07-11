@@ -45,7 +45,7 @@ class TransferType(Enum):
 
 @dataclass
 class InternalTransfer:
-    """Total amount reimbursed for accounting period"""
+    """Total amount [wei] reimbursed for accounting period"""
 
     transfer_type: TransferType
     token: Address

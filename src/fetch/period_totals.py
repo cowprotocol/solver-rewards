@@ -14,7 +14,7 @@ from src.utils.script_args import generic_script_init
 
 @dataclass
 class PeriodTotals:
-    """Total amount reimbursed for accounting period"""
+    """Total amount_wei reimbursed for accounting period"""
 
     period: AccountingPeriod
     execution_cost_eth: int

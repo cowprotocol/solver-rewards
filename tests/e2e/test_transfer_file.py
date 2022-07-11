@@ -18,12 +18,14 @@ class TestPrices(unittest.TestCase):
         mixed_transfers = [
             Transfer.native(
                 receiver=barn_zerox,
-                amount=185360274773133130,
+                amount_wei=185360274773133130,
             ),
-            Transfer.native(receiver=other_solver, amount=1 * ONE_ETH),
-            Transfer.erc20(receiver=barn_zerox, amount=600 * ONE_ETH, token=cow_token),
+            Transfer.native(receiver=other_solver, amount_wei=1 * ONE_ETH),
             Transfer.erc20(
-                receiver=other_solver, amount=2000 * ONE_ETH, token=cow_token
+                receiver=barn_zerox, amount_wei=600 * ONE_ETH, token=cow_token
+            ),
+            Transfer.erc20(
+                receiver=other_solver, amount_wei=2000 * ONE_ETH, token=cow_token
             ),
         ]
 
@@ -49,7 +51,9 @@ class TestPrices(unittest.TestCase):
             transfers,
             [
                 Transfer.erc20(
-                    receiver=other_solver, token=cow_token, amount=845094377028141056000
+                    receiver=other_solver,
+                    token=cow_token,
+                    amount_wei=845094377028141056000,
                 )
             ],
         )

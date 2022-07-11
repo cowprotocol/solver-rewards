@@ -15,12 +15,11 @@ from duneapi.util import open_query
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches, Vouch
 
-from src.models import AccountingPeriod
+from src.models import AccountingPeriod, Token
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
 from src.utils.script_args import generic_script_init
 
-COW_TOKEN = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
 COW_PER_BATCH = 50
 COW_PER_TRADE = 35
 
@@ -58,7 +57,7 @@ class TokenType(Enum):
 
 @dataclass
 class CSVTransfer:
-    """Essentially a Transfer Object, but with amount as float instead of amount_wei"""
+    """Essentially a Transfer Object, but with amount_wei as float instead of amount_wei"""
 
     token_type: TokenType
     # Safe airdrop uses null address for native asset transfers
@@ -72,19 +71,19 @@ class CSVTransfer:
         """Converts WeiTransfer into CSVTransfer"""
         return cls(
             token_type=transfer.token_type,
-            token_address=transfer.token_address,
+            token_address=transfer.token.address if transfer.token else None,
             receiver=transfer.receiver,
-            # The primary purpose for this class is to convert amount_wei to amount
+            # The primary purpose for this class is to convert amount_wei to amount_wei
             amount=transfer.amount,
         )
 
 
 @dataclass
 class Transfer:
-    """Total amount reimbursed for accounting period"""
+    """Total amount_wei reimbursed for accounting period"""
 
     token_type: TokenType
-    token_address: Optional[Address]
+    token: Optional[Token]
     receiver: Address
     amount_wei: int
 
@@ -97,52 +96,51 @@ class Transfer:
             raise ValueError("Native transfers must have null token_address")
         if token_type == TokenType.ERC20 and token_address is None:
             raise ValueError("ERC20 transfers must have valid token_address")
-
         return cls(
             token_type=token_type,
-            token_address=Address(token_address)
-            if token_type != TokenType.NATIVE
-            else None,
+            token=Token(token_address) if token_type == TokenType.ERC20 else None,
             receiver=Address(obj["receiver"]),
-            amount_wei=int(obj["amount"]),
+            amount_wei=int(obj["amount_wei"]),
         )
 
     @classmethod
-    def native(cls, receiver: str | Address, amount: str | int) -> Transfer:
+    def native(cls, receiver: str | Address, amount_wei: str | int) -> Transfer:
         """Construct a native token transfer"""
         if isinstance(receiver, str):
             receiver = Address(receiver)
         return cls(
             token_type=TokenType.NATIVE,
             receiver=receiver,
-            amount_wei=int(amount),
-            token_address=None,
+            amount_wei=int(amount_wei),
+            token=None,
         )
 
     @classmethod
     def erc20(
-        cls, receiver: str | Address, amount: str | int, token: str | Address
+        cls, receiver: str | Address, amount_wei: str | int, token: Token
     ) -> Transfer:
         """Construct an erc20 token transfer"""
-        if isinstance(token, str):
-            token = Address(token)
         if isinstance(receiver, str):
             receiver = Address(receiver)
 
         return cls(
             token_type=TokenType.ERC20,
             receiver=receiver,
-            amount_wei=int(amount),
-            token_address=token,
+            amount_wei=int(amount_wei),
+            token=token,
         )
 
     @property
     def amount(self) -> float:
-        """Returns transfer amount in units"""
-        return self.amount_wei / 10**18
+        """Returns transfer amount_wei in units"""
+        if self.token_type == TokenType.NATIVE:
+            return self.amount_wei / int(10**18)
+        # This case was handled above.
+        assert self.token is not None
+        return self.amount_wei / int(10**self.token.decimals)
 
     def add_slippage(self, slippage: SolverSlippage) -> None:
-        """Adds Adjusts Transfer amount by Slippage amount"""
+        """Adds Adjusts Transfer amount_wei by Slippage amount_wei"""
         assert self.receiver == slippage.solver_address, "receiver != solver"
         adjustment = slippage.amount_wei
         print(
@@ -157,17 +155,17 @@ class Transfer:
     def merge(self, other: Transfer) -> Transfer:
         """
         Merge two transfers (acts like addition)
-        if all fields except amount are equal, returns a transfer who amount is the sum
+        if all fields except amount_wei are equal, returns a transfer who amount_wei is the sum
         """
         merge_requirements = [
             self.receiver == other.receiver,
             self.token_type == other.token_type,
-            self.token_address == other.token_address,
+            self.token == other.token,
         ]
         if all(merge_requirements):
             return Transfer(
                 token_type=self.token_type,
-                token_address=self.token_address,
+                token=self.token,
                 receiver=self.receiver,
                 amount_wei=self.amount_wei + other.amount_wei,
             )
@@ -178,13 +176,13 @@ class Transfer:
 
     def __str__(self) -> str:
         if self.token_type == TokenType.NATIVE:
-            return f"TransferETH(receiver={self.receiver}, amount={self.amount})"
+            return f"TransferETH(receiver={self.receiver}, amount_wei={self.amount})"
         if self.token_type == TokenType.ERC20:
             return (
                 f"Transfer("
-                f"token_address={self.token_address}, "
+                f"token_address={self.token}, "
                 f"receiver={self.receiver}, "
-                f"amount={self.amount})"
+                f"amount_wei={self.amount})"
             )
         raise ValueError(f"Invalid Token Type {self.token_type}")
 
@@ -258,7 +256,7 @@ class SplitTransfers:
                     overdraft.wei = token_in_eth(
                         TokenId.COW, abs(transfer.amount_wei), price_day
                     )
-                    # Reinsert since there is still an amount owed.
+                    # Reinsert since there is still an amount_wei owed.
                     self.overdrafts[solver] = overdraft
                     continue
             if solver in cow_redirects:
@@ -321,7 +319,7 @@ class Overdraft:
 
     @property
     def eth(self) -> float:
-        """Returns amount in units"""
+        """Returns amount_wei in units"""
         return self.wei / 10**18
 
     def __str__(self) -> str:
@@ -367,14 +365,14 @@ def consolidate_transfers(transfer_list: list[Transfer]) -> list[Transfer]:
 
     transfer_dict: dict[tuple, Transfer] = {}
     for transfer in transfer_list:
-        key = (transfer.receiver, transfer.token_type, transfer.token_address)
+        key = (transfer.receiver, transfer.token_type, transfer.token)
         if key in transfer_dict:
             transfer_dict[key] = transfer_dict[key].merge(transfer)
         else:
             transfer_dict[key] = transfer
     return sorted(
         transfer_dict.values(),
-        key=lambda t: (-t.amount, t.receiver, t.token_address),
+        key=lambda t: (-t.amount, t.receiver),
     )
 
 

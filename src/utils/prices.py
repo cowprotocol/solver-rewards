@@ -38,7 +38,7 @@ class TokenId(Enum):
 
 def eth_in_token(quote_token: TokenId, amount: int, day: datetime) -> int:
     """
-    Compute how much of `token` is equivalent to `amount` ETH on `day`.
+    Compute how much of `token` is equivalent to `amount_wei` ETH on `day`.
     Use current price if day not specified.
     """
     eth_amount_usd = token_in_usd(TokenId.ETH, amount, day)
@@ -49,7 +49,7 @@ def eth_in_token(quote_token: TokenId, amount: int, day: datetime) -> int:
 def token_in_eth(token: TokenId, amount: int, day: datetime) -> int:
     """
     The inverse of eth_in_token;
-    how much ETH is equivalent to `amount` of `token` on `day`
+    how much ETH is equivalent to `amount_wei` of `token` on `day`
     """
     token_amount_usd = token_in_usd(token, amount, day)
     eth_price_usd = token_in_usd(TokenId.ETH, 10 ** TokenId.ETH.decimals(), day)
@@ -59,7 +59,7 @@ def token_in_eth(token: TokenId, amount: int, day: datetime) -> int:
 
 def token_in_usd(token: TokenId, amount_wei: int, day: datetime) -> float:
     """
-    Converts token amount [wei] to usd amount on given day.
+    Converts token amount_wei [wei] to usd amount_wei on given day.
     """
     return float(amount_wei) * usd_price(token, day) / 10.0 ** token.decimals()
 
