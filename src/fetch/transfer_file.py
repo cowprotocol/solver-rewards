@@ -80,7 +80,7 @@ class CSVTransfer:
 
 @dataclass
 class Transfer:
-    """Total amount_wei reimbursed for accounting period"""
+    """Total amount reimbursed for accounting period"""
 
     token_type: TokenType
     token: Optional[Token]
@@ -100,7 +100,7 @@ class Transfer:
             token_type=token_type,
             token=Token(token_address) if token_type == TokenType.ERC20 else None,
             receiver=Address(obj["receiver"]),
-            amount_wei=int(obj["amount_wei"]),
+            amount_wei=int(obj["amount"]),
         )
 
     @classmethod
@@ -287,7 +287,7 @@ class SplitTransfers:
         if self.overdrafts:
             print("Additional owed", "\n".join(map(str, self.overdrafts.values())))
         return self.cow_transfers + self.eth_transfers
-
+# pylint: enable=too-few-public-methods
 
 @dataclass
 class Overdraft:
@@ -327,9 +327,6 @@ class Overdraft:
             f"Overdraft(solver={self.account}({self.name}),"
             f"period={self.period},owed={self.eth} ETH)"
         )
-
-
-# pylint: enable=too-few-public-methods
 
 
 def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:

@@ -61,7 +61,7 @@ class SolverSlippage:
 
     solver_address: Address
     solver_name: str
-    # ETH amount_wei (in WEI) to be deducted from Solver reimbursement
+    # ETH amount (in WEI) to be deducted from Solver reimbursement
     amount_wei: int
 
     @classmethod
@@ -94,7 +94,7 @@ class SplitSlippages:
         return results
 
     def append(self, slippage: SolverSlippage) -> None:
-        """Appends the Slippage to the appropriate half based on signature of amount_wei"""
+        """Appends the Slippage to appropriate half based on signature of amount"""
         if slippage.amount_wei < 0:
             self.negative.append(slippage)
         else:
