@@ -2,27 +2,16 @@
 import json
 import os
 
-import logging.config
 from dotenv import load_dotenv
 from duneapi.types import Address
-from gnosis.eth.ethereum_network import EthereumNetwork
 from web3 import Web3
 
 load_dotenv()
 
-log = logging.getLogger(__name__)
-logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
-
+COW_TOKEN_ADDRESS = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
 # Things requiring network
 # TODO - this is such a mess!
 network_string = os.environ.get("NETWORK", "mainnet")
-NETWORK = {
-    "mainnet": EthereumNetwork.MAINNET,
-    "rinkeby": EthereumNetwork.RINKEBY,
-    "gnosis": EthereumNetwork.XDAI,
-    "goerli": EthereumNetwork.GOERLI,
-}[network_string]
-
 NODE_URL = f"https://{network_string}.infura.io/v3/{os.environ.get('INFURA_KEY')}"
 
 # Things requiring Web3 instance
@@ -56,6 +45,3 @@ ERC20_ABI = json.loads(
 ]
 """
 )
-ERC20_TOKEN = w3.eth.contract(abi=ERC20_ABI)
-COW_SAFE_ADDRESS = w3.toChecksumAddress("0xA03be496e67Ec29bC62F01a428683D7F9c204930")
-COW_TOKEN_ADDRESS = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
