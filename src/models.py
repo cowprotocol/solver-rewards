@@ -59,3 +59,6 @@ class Token:
         if isinstance(other, Token):
             return self.address < other.address
         return False
+
+    def __hash__(self) -> int:
+        return self.address.__hash__()
