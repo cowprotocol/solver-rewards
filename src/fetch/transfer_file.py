@@ -256,7 +256,7 @@ class SplitTransfers:
                     overdraft.wei = token_in_eth(
                         TokenId.COW, abs(transfer.amount_wei), price_day
                     )
-                    # Reinsert since there is still an amount_wei owed.
+                    # Reinsert since there is still an amount owed.
                     self.overdrafts[solver] = overdraft
                     continue
             if solver in cow_redirects:
@@ -322,7 +322,7 @@ class Overdraft:
 
     @property
     def eth(self) -> float:
-        """Returns amount_wei in units"""
+        """Returns amount in units"""
         return self.wei / 10**18
 
     def __str__(self) -> str:
@@ -372,7 +372,7 @@ def consolidate_transfers(transfer_list: list[Transfer]) -> list[Transfer]:
             transfer_dict[key] = transfer
     return sorted(
         transfer_dict.values(),
-        key=lambda t: (-t.amount, t.receiver),
+        key=lambda t: (-t.amount, t.receiver, t.token),
     )
 
 

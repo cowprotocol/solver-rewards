@@ -3,11 +3,8 @@ import json
 import os
 
 import logging.config
-import requests.exceptions
 from dotenv import load_dotenv
 from duneapi.types import Address
-from eth_typing.ethpm import URI
-from gnosis.eth.ethereum_client import EthereumClient
 from gnosis.eth.ethereum_network import EthereumNetwork
 from web3 import Web3
 
@@ -27,11 +24,6 @@ NETWORK = {
 }[network_string]
 
 NODE_URL = f"https://{network_string}.infura.io/v3/{os.environ.get('INFURA_KEY')}"
-try:
-    ETH_CLIENT = EthereumClient(URI(NODE_URL))
-except requests.exceptions.InvalidURL:
-    # Use default client (i.e. localhost)
-    ETH_CLIENT = EthereumClient()
 
 # Things requiring Web3 instance
 w3 = Web3(Web3.HTTPProvider(NODE_URL))

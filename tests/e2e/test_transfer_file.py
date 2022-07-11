@@ -50,9 +50,7 @@ class TestPrices(unittest.TestCase):
             transfers,
             [
                 Transfer.erc20(
-                    receiver=other_solver,
-                    token=cow_token,
-                    amount=845094377028141056000,
+                    receiver=other_solver, token=cow_token, amount=845094377028141056000
                 )
             ],
         )
