@@ -10,9 +10,12 @@ COW_TOKEN_ADDRESS = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
 COW_SAFE_ADDRESS = Web3.toChecksumAddress("0xA03be496e67Ec29bC62F01a428683D7F9c204930")
 # Things requiring network
 load_dotenv()
-network_string = os.environ.get("NETWORK", "mainnet")
+ENV = os.environ
 INFURA_KEY = os.environ.get("INFURA_KEY")
-NODE_URL = f"https://{network_string}.infura.io/v3/{INFURA_KEY}"
+NODE_URL = f"https://{ENV.get('NETWORK', 'mainnet')}.infura.io/v3/{INFURA_KEY}"
+
+# Things requiring Web3 instance
+w3 = Web3(Web3.HTTPProvider(NODE_URL))
 ERC20_ABI = json.loads(
     """[
     {
