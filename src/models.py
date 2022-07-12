@@ -30,7 +30,7 @@ class AccountingPeriod:
 
 class Token:
     """
-    Token class consists of token address an additional decimals value.
+    Token class consists of token `address` and additional `decimals` value.
     The constructor exists in a way that we can either
     - provide the decimals (for unit testing) which avoids making web3 calls
     - fetch the token decimals with eth_call.
