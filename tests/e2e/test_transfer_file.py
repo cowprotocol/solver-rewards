@@ -1,9 +1,10 @@
 import unittest
 from duneapi.types import Address
 
+from src.constants import COW_TOKEN_ADDRESS
 from src.fetch.period_slippage import SolverSlippage
 from src.fetch.transfer_file import Transfer, SplitTransfers, Overdraft
-from src.models import AccountingPeriod
+from src.models import AccountingPeriod, Token
 
 ONE_ETH = 10**18
 
@@ -14,7 +15,7 @@ class TestPrices(unittest.TestCase):
         period = AccountingPeriod("2022-06-14")
         barn_zerox = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
         other_solver = Address("0x" + "1" * 40)
-        cow_token = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
+        cow_token = Token(COW_TOKEN_ADDRESS)
         mixed_transfers = [
             Transfer.native(
                 receiver=barn_zerox,

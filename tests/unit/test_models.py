@@ -4,7 +4,7 @@ from duneapi.types import Address
 
 from src.fetch.period_slippage import SolverSlippage
 from src.fetch.transfer_file import TokenType, Transfer, consolidate_transfers
-from src.models import AccountingPeriod
+from src.models import AccountingPeriod, Token
 from tests.queries.test_internal_trades import TransferType
 
 ONE_ADDRESS = Address("0x1111111111111111111111111111111111111111")
@@ -35,11 +35,35 @@ class TestTransferType(unittest.TestCase):
 
 
 class TestTransfer(unittest.TestCase):
+    def setUp(self) -> None:
+        self.token_1 = Token(ONE_ADDRESS, 18)
+        self.token_2 = Token(TWO_ADDRESS, 18)
+
+    def test_constructors(self):
+        receiver = Address.from_int(1)
+        native_transfer = Transfer(
+            token_type=TokenType.NATIVE,
+            token=None,
+            receiver=receiver,
+            amount_wei=1,
+        )
+        erc20_transfer = Transfer(
+            token_type=TokenType.ERC20,
+            token=self.token_1,
+            receiver=receiver,
+            amount_wei=2,
+        )
+        self.assertEqual(native_transfer, Transfer.native(receiver, amount=1))
+        self.assertEqual(
+            erc20_transfer,
+            Transfer.erc20(token=self.token_1, receiver=receiver, amount=2),
+        )
+
     def test_add_slippage(self):
         solver = Address.zero()
         transfer = Transfer(
             token_type=TokenType.NATIVE,
-            token_address=None,
+            token=None,
             receiver=solver,
             amount_wei=ONE_ETH,
         )
@@ -73,13 +97,13 @@ class TestTransfer(unittest.TestCase):
         # Native Transfer Merge
         native_transfer1 = Transfer(
             token_type=TokenType.NATIVE,
-            token_address=None,
+            token=None,
             receiver=receiver,
             amount_wei=ONE_ETH,
         )
         native_transfer2 = Transfer(
             token_type=TokenType.NATIVE,
-            token_address=None,
+            token=None,
             receiver=receiver,
             amount_wei=ONE_ETH,
         )
@@ -87,22 +111,21 @@ class TestTransfer(unittest.TestCase):
             native_transfer1.merge(native_transfer2),
             Transfer(
                 token_type=TokenType.NATIVE,
-                token_address=None,
+                token=None,
                 receiver=receiver,
                 amount_wei=2 * ONE_ETH,
             ),
         )
-        token = ONE_ADDRESS
         # ERC20 Transfer Merge
         erc20_transfer1 = Transfer(
             token_type=TokenType.ERC20,
-            token_address=token,
+            token=self.token_1,
             receiver=receiver,
             amount_wei=ONE_ETH,
         )
         erc20_transfer2 = Transfer(
             token_type=TokenType.ERC20,
-            token_address=token,
+            token=self.token_1,
             receiver=receiver,
             amount_wei=ONE_ETH,
         )
@@ -110,7 +133,7 @@ class TestTransfer(unittest.TestCase):
             erc20_transfer1.merge(erc20_transfer2),
             Transfer(
                 token_type=TokenType.ERC20,
-                token_address=token,
+                token=self.token_1,
                 receiver=receiver,
                 amount_wei=2 * ONE_ETH,
             ),
@@ -128,13 +151,13 @@ class TestTransfer(unittest.TestCase):
             # Different recipients
             t1 = Transfer(
                 token_type=TokenType.ERC20,
-                token_address=token,
+                token=self.token_1,
                 receiver=ONE_ADDRESS,
                 amount_wei=2 * ONE_ETH,
             )
             t2 = Transfer(
                 token_type=TokenType.ERC20,
-                token_address=token,
+                token=self.token_1,
                 receiver=TWO_ADDRESS,
                 amount_wei=2 * ONE_ETH,
             )
@@ -148,13 +171,13 @@ class TestTransfer(unittest.TestCase):
             # Different Token Addresses
             t1 = Transfer(
                 token_type=TokenType.ERC20,
-                token_address=ONE_ADDRESS,
+                token=self.token_1,
                 receiver=receiver,
                 amount_wei=2 * ONE_ETH,
             )
             t2 = Transfer(
                 token_type=TokenType.ERC20,
-                token_address=TWO_ADDRESS,
+                token=self.token_2,
                 receiver=receiver,
                 amount_wei=2 * ONE_ETH,
             )
@@ -170,55 +193,55 @@ class TestTransfer(unittest.TestCase):
             Address.from_int(1),
         ]
         tokens = [
-            Address.from_int(2),
-            Address.from_int(3),
+            Token(Address.from_int(2), 18),
+            Token(Address.from_int(3), 18),
         ]
         transfer_list = [
             Transfer(
                 token_type=TokenType.ERC20,
-                token_address=tokens[0],
+                token=tokens[0],
                 receiver=recipients[0],
                 amount_wei=1 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.ERC20,
-                token_address=tokens[0],
+                token=tokens[0],
                 receiver=recipients[0],
                 amount_wei=2 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.ERC20,
-                token_address=tokens[1],
+                token=tokens[1],
                 receiver=recipients[0],
                 amount_wei=3 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.ERC20,
-                token_address=tokens[0],
+                token=tokens[0],
                 receiver=recipients[1],
                 amount_wei=4 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.NATIVE,
-                token_address=None,
+                token=None,
                 receiver=recipients[0],
                 amount_wei=5 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.NATIVE,
-                token_address=None,
+                token=None,
                 receiver=recipients[0],
                 amount_wei=6 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.NATIVE,
-                token_address=None,
+                token=None,
                 receiver=recipients[1],
                 amount_wei=7 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.NATIVE,
-                token_address=None,
+                token=None,
                 receiver=recipients[1],
                 amount_wei=8 * ONE_ETH,
             ),
@@ -227,31 +250,31 @@ class TestTransfer(unittest.TestCase):
         expected = [
             Transfer(
                 token_type=TokenType.NATIVE,
-                token_address=None,
+                token=None,
                 receiver=recipients[1],
                 amount_wei=15 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.NATIVE,
-                token_address=None,
+                token=None,
                 receiver=recipients[0],
                 amount_wei=11 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.ERC20,
-                token_address=tokens[0],
+                token=tokens[0],
                 receiver=recipients[1],
                 amount_wei=4 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.ERC20,
-                token_address=tokens[0],
+                token=tokens[0],
                 receiver=recipients[0],
                 amount_wei=3 * ONE_ETH,
             ),
             Transfer(
                 token_type=TokenType.ERC20,
-                token_address=tokens[1],
+                token=tokens[1],
                 receiver=recipients[0],
                 amount_wei=3 * ONE_ETH,
             ),
@@ -261,7 +284,7 @@ class TestTransfer(unittest.TestCase):
     def test_receiver_error(self):
         transfer = Transfer(
             token_type=TokenType.NATIVE,
-            token_address=None,
+            token=None,
             receiver=ONE_ADDRESS,
             amount_wei=1 * ONE_ETH,
         )
@@ -285,7 +308,7 @@ class TestTransfer(unittest.TestCase):
             ),
             Transfer(
                 token_type=TokenType.NATIVE,
-                token_address=None,
+                token=None,
                 receiver=ONE_ADDRESS,
                 amount_wei=1234 * 10**15,
             ),
