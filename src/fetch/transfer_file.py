@@ -81,7 +81,6 @@ class CSVTransfer:
 @dataclass
 class Transfer:
     """Total amount reimbursed for accounting period"""
-
     token: Optional[Token]
     receiver: Address
     amount_wei: int
