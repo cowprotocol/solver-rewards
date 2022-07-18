@@ -74,7 +74,9 @@ def usd_price(token: TokenId, day: datetime) -> float:
     response_list = client.historical(
         coin_id=token.value, start=day.strftime("%Y-%m-%d"), limit=1, interval="1d"
     )
-    assert len(response_list) == 1, "no results for usd price on date"
+    assert (
+        len(response_list) == 1
+    ), f"invalid results for usd price on date {day} - got {response_list}"
     item = response_list[0]
     price_time = datetime.strptime(item["timestamp"], "%Y-%m-%dT00:00:00Z")
     assert price_time == day
