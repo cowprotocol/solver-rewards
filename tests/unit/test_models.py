@@ -2,13 +2,12 @@ import unittest
 
 from duneapi.types import Address
 
+from src.constants import COW_TOKEN_ADDRESS
 from src.fetch.period_slippage import SolverSlippage
-from src.fetch.transfer_file import TokenType, Transfer, consolidate_transfers
+from src.fetch.transfer_file import Transfer, consolidate_transfers
 from src.models import AccountingPeriod, Token
 from tests.queries.test_internal_trades import TransferType
 
-ONE_ADDRESS = Address("0x1111111111111111111111111111111111111111")
-TWO_ADDRESS = Address("0x2222222222222222222222222222222222222222")
 ONE_ETH = 10**18
 
 
@@ -36,33 +35,12 @@ class TestTransferType(unittest.TestCase):
 
 class TestTransfer(unittest.TestCase):
     def setUp(self) -> None:
-        self.token_1 = Token(ONE_ADDRESS, 18)
-        self.token_2 = Token(TWO_ADDRESS, 18)
-
-    def test_constructors(self):
-        receiver = Address.from_int(1)
-        native_transfer = Transfer(
-            token_type=TokenType.NATIVE,
-            token=None,
-            receiver=receiver,
-            amount_wei=1,
-        )
-        erc20_transfer = Transfer(
-            token_type=TokenType.ERC20,
-            token=self.token_1,
-            receiver=receiver,
-            amount_wei=2,
-        )
-        self.assertEqual(native_transfer, Transfer.native(receiver, amount=1))
-        self.assertEqual(
-            erc20_transfer,
-            Transfer.erc20(token=self.token_1, receiver=receiver, amount=2),
-        )
+        self.token_1 = Token(Address.from_int(1), 18)
+        self.token_2 = Token(Address.from_int(2), 18)
 
     def test_add_slippage(self):
         solver = Address.zero()
         transfer = Transfer(
-            token_type=TokenType.NATIVE,
             token=None,
             receiver=solver,
             amount_wei=ONE_ETH,
@@ -92,101 +70,6 @@ class TestTransfer(unittest.TestCase):
             f"by {overdraft_slippage.amount_wei / 10**18}",
         )
 
-    def test_merge(self):
-        receiver = Address.zero()
-        # Native Transfer Merge
-        native_transfer1 = Transfer(
-            token_type=TokenType.NATIVE,
-            token=None,
-            receiver=receiver,
-            amount_wei=ONE_ETH,
-        )
-        native_transfer2 = Transfer(
-            token_type=TokenType.NATIVE,
-            token=None,
-            receiver=receiver,
-            amount_wei=ONE_ETH,
-        )
-        self.assertEqual(
-            native_transfer1.merge(native_transfer2),
-            Transfer(
-                token_type=TokenType.NATIVE,
-                token=None,
-                receiver=receiver,
-                amount_wei=2 * ONE_ETH,
-            ),
-        )
-        # ERC20 Transfer Merge
-        erc20_transfer1 = Transfer(
-            token_type=TokenType.ERC20,
-            token=self.token_1,
-            receiver=receiver,
-            amount_wei=ONE_ETH,
-        )
-        erc20_transfer2 = Transfer(
-            token_type=TokenType.ERC20,
-            token=self.token_1,
-            receiver=receiver,
-            amount_wei=ONE_ETH,
-        )
-        self.assertEqual(
-            erc20_transfer1.merge(erc20_transfer2),
-            Transfer(
-                token_type=TokenType.ERC20,
-                token=self.token_1,
-                receiver=receiver,
-                amount_wei=2 * ONE_ETH,
-            ),
-        )
-
-        with self.assertRaises(ValueError) as err:
-            native_transfer1.merge(erc20_transfer1)
-        self.assertEqual(
-            f"Can't merge tokens {native_transfer1}, {erc20_transfer1}. "
-            f"Requirements met [True, False, False]",
-            str(err.exception),
-        )
-
-        with self.assertRaises(ValueError) as err:
-            # Different recipients
-            t1 = Transfer(
-                token_type=TokenType.ERC20,
-                token=self.token_1,
-                receiver=ONE_ADDRESS,
-                amount_wei=2 * ONE_ETH,
-            )
-            t2 = Transfer(
-                token_type=TokenType.ERC20,
-                token=self.token_1,
-                receiver=TWO_ADDRESS,
-                amount_wei=2 * ONE_ETH,
-            )
-            t1.merge(t2)
-        self.assertEqual(
-            f"Can't merge tokens {t1}, {t2}. Requirements met [False, True, True]",
-            str(err.exception),
-        )
-
-        with self.assertRaises(ValueError) as err:
-            # Different Token Addresses
-            t1 = Transfer(
-                token_type=TokenType.ERC20,
-                token=self.token_1,
-                receiver=receiver,
-                amount_wei=2 * ONE_ETH,
-            )
-            t2 = Transfer(
-                token_type=TokenType.ERC20,
-                token=self.token_2,
-                receiver=receiver,
-                amount_wei=2 * ONE_ETH,
-            )
-            t1.merge(t2)
-        self.assertEqual(
-            f"Can't merge tokens {t1}, {t2}. Requirements met [True, True, False]",
-            str(err.exception),
-        )
-
     def test_consolidation(self):
         recipients = [
             Address.from_int(0),
@@ -198,49 +81,41 @@ class TestTransfer(unittest.TestCase):
         ]
         transfer_list = [
             Transfer(
-                token_type=TokenType.ERC20,
                 token=tokens[0],
                 receiver=recipients[0],
                 amount_wei=1 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.ERC20,
                 token=tokens[0],
                 receiver=recipients[0],
                 amount_wei=2 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.ERC20,
                 token=tokens[1],
                 receiver=recipients[0],
                 amount_wei=3 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.ERC20,
                 token=tokens[0],
                 receiver=recipients[1],
                 amount_wei=4 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.NATIVE,
                 token=None,
                 receiver=recipients[0],
                 amount_wei=5 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.NATIVE,
                 token=None,
                 receiver=recipients[0],
                 amount_wei=6 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.NATIVE,
                 token=None,
                 receiver=recipients[1],
                 amount_wei=7 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.NATIVE,
                 token=None,
                 receiver=recipients[1],
                 amount_wei=8 * ONE_ETH,
@@ -249,31 +124,26 @@ class TestTransfer(unittest.TestCase):
 
         expected = [
             Transfer(
-                token_type=TokenType.NATIVE,
                 token=None,
                 receiver=recipients[1],
                 amount_wei=15 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.NATIVE,
                 token=None,
                 receiver=recipients[0],
                 amount_wei=11 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.ERC20,
                 token=tokens[0],
                 receiver=recipients[1],
                 amount_wei=4 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.ERC20,
                 token=tokens[0],
                 receiver=recipients[0],
                 amount_wei=3 * ONE_ETH,
             ),
             Transfer(
-                token_type=TokenType.ERC20,
                 token=tokens[1],
                 receiver=recipients[0],
                 amount_wei=3 * ONE_ETH,
@@ -281,62 +151,137 @@ class TestTransfer(unittest.TestCase):
         ]
         self.assertEqual(expected, consolidate_transfers(transfer_list))
 
+    def test_merge(self):
+        receiver = Address.zero()
+        # Native Transfer Merge
+        native_transfer1 = Transfer(
+            token=None,
+            receiver=receiver,
+            amount_wei=ONE_ETH,
+        )
+        native_transfer2 = Transfer(
+            token=None,
+            receiver=receiver,
+            amount_wei=ONE_ETH,
+        )
+        self.assertEqual(
+            native_transfer1.merge(native_transfer2),
+            Transfer(
+                token=None,
+                receiver=receiver,
+                amount_wei=2 * ONE_ETH,
+            ),
+        )
+        # ERC20 Transfer Merge
+        erc20_transfer1 = Transfer(
+            token=self.token_1,
+            receiver=receiver,
+            amount_wei=ONE_ETH,
+        )
+        erc20_transfer2 = Transfer(
+            token=self.token_1,
+            receiver=receiver,
+            amount_wei=ONE_ETH,
+        )
+        self.assertEqual(
+            erc20_transfer1.merge(erc20_transfer2),
+            Transfer(
+                token=self.token_1,
+                receiver=receiver,
+                amount_wei=2 * ONE_ETH,
+            ),
+        )
+
+        with self.assertRaises(ValueError) as err:
+            native_transfer1.merge(erc20_transfer1)
+        self.assertEqual(
+            f"Can't merge tokens {native_transfer1}, {erc20_transfer1}. "
+            f"Requirements met [True, False]",
+            str(err.exception),
+        )
+
+        with self.assertRaises(ValueError) as err:
+            # Different recipients
+            t1 = Transfer(
+                token=self.token_1,
+                receiver=Address.from_int(1),
+                amount_wei=2 * ONE_ETH,
+            )
+            t2 = Transfer(
+                token=self.token_1,
+                receiver=Address.from_int(2),
+                amount_wei=2 * ONE_ETH,
+            )
+            t1.merge(t2)
+        self.assertEqual(
+            f"Can't merge tokens {t1}, {t2}. Requirements met [False, True]",
+            str(err.exception),
+        )
+
+        with self.assertRaises(ValueError) as err:
+            # Different Token Addresses
+            t1 = Transfer(
+                token=self.token_1,
+                receiver=receiver,
+                amount_wei=2 * ONE_ETH,
+            )
+            t2 = Transfer(
+                token=self.token_2,
+                receiver=receiver,
+                amount_wei=2 * ONE_ETH,
+            )
+            t1.merge(t2)
+        self.assertEqual(
+            f"Can't merge tokens {t1}, {t2}. Requirements met [True, False]",
+            str(err.exception),
+        )
+
     def test_receiver_error(self):
         transfer = Transfer(
-            token_type=TokenType.NATIVE,
             token=None,
-            receiver=ONE_ADDRESS,
+            receiver=Address.from_int(1),
             amount_wei=1 * ONE_ETH,
         )
         with self.assertRaises(AssertionError) as err:
             transfer.add_slippage(
                 SolverSlippage(
-                    solver_name="Test Solver", solver_address=TWO_ADDRESS, amount_wei=0
+                    solver_name="Test Solver",
+                    solver_address=Address.from_int(2),
+                    amount_wei=0,
                 )
             )
             self.assertEqual(err, "receiver != solver")
 
     def test_from_dict(self):
+        receiver = Address.from_int(1)
         self.assertEqual(
             Transfer.from_dict(
                 {
-                    "token_type": "native",
                     "token_address": None,
-                    "receiver": ONE_ADDRESS.address,
+                    "receiver": receiver.address,
                     "amount": "1234000000000000000",
                 }
             ),
             Transfer(
-                token_type=TokenType.NATIVE,
                 token=None,
-                receiver=ONE_ADDRESS,
+                receiver=receiver,
                 amount_wei=1234 * 10**15,
             ),
         )
 
-        with self.assertRaises(ValueError) as err:
+        self.assertEqual(
             Transfer.from_dict(
                 {
-                    "token_type": "erc20",
-                    "token_address": None,
-                    "receiver": ONE_ADDRESS.address,
-                    "amount": "1000000000000000000",
+                    "token_address": COW_TOKEN_ADDRESS.address,
+                    "receiver": Address.from_int(1).address,
+                    "amount": "1234000000000000000",
                 }
-            )
-        self.assertEqual(
-            str(err.exception), "ERC20 transfers must have valid token_address"
-        )
-        with self.assertRaises(ValueError) as err:
-            Transfer.from_dict(
-                {
-                    "token_type": "native",
-                    "token_address": ONE_ADDRESS.address,
-                    "receiver": ONE_ADDRESS.address,
-                    "amount": "1000000000000000000",
-                }
-            )
-        self.assertEqual(
-            str(err.exception), "Native transfers must have null token_address"
+            ),
+            Transfer(
+                token=Token(COW_TOKEN_ADDRESS),
+                receiver=Address.from_int(1),
+                amount_wei=1234 * 10**15,
+            ),
         )
 
 
