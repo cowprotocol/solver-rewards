@@ -352,7 +352,7 @@ class TestTransfer(unittest.TestCase):
             ),
         )
 
-        self.assertEqual( 
+        self.assertEqual(
             Transfer.from_dict(
                 {
                     "token_address": COW_TOKEN_ADDRESS.address,

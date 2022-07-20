@@ -11,7 +11,7 @@ COW_SAFE_ADDRESS = Web3.toChecksumAddress("0xA03be496e67Ec29bC62F01a428683D7F9c2
 # Things requiring network
 load_dotenv()
 ENV = os.environ
-INFURA_KEY = ENV.get('INFURA_KEY')
+INFURA_KEY = ENV.get("INFURA_KEY")
 NODE_URL = f"https://{ENV.get('NETWORK', 'mainnet')}.infura.io/v3/{INFURA_KEY}"
 
 # Things requiring Web3 instance
