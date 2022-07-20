@@ -75,7 +75,7 @@ class CSVTransfer:
         return cls(
             token_type=transfer.token_type,
             token_address=transfer.token.address if transfer.token else None,
-            receiver=transfer.receiver.address,
+            receiver=transfer.receiver,
             # The primary purpose for this class is to convert amount_wei to amount
             amount=transfer.amount,
         )

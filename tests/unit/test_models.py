@@ -72,6 +72,87 @@ class TestTransfer(unittest.TestCase):
             f"by {overdraft_slippage.amount_wei / 10**18}",
         )
 
+    def test_consolidation(self):
+        recipients = [
+            Address.from_int(0),
+            Address.from_int(1),
+        ]
+        tokens = [
+            Token(Address.from_int(2), 18),
+            Token(Address.from_int(3), 18),
+        ]
+        transfer_list = [
+            Transfer(
+                token=tokens[0],
+                receiver=recipients[0],
+                amount_wei=1 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[0],
+                receiver=recipients[0],
+                amount_wei=2 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[1],
+                receiver=recipients[0],
+                amount_wei=3 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[0],
+                receiver=recipients[1],
+                amount_wei=4 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=recipients[0],
+                amount_wei=5 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=recipients[0],
+                amount_wei=6 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=recipients[1],
+                amount_wei=7 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=recipients[1],
+                amount_wei=8 * ONE_ETH,
+            ),
+        ]
+
+        expected = [
+            Transfer(
+                token=None,
+                receiver=recipients[1],
+                amount_wei=15 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=recipients[0],
+                amount_wei=11 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[0],
+                receiver=recipients[1],
+                amount_wei=4 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[0],
+                receiver=recipients[0],
+                amount_wei=3 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[1],
+                receiver=recipients[0],
+                amount_wei=3 * ONE_ETH,
+            ),
+        ]
+        self.assertEqual(expected, consolidate_transfers(transfer_list))
+
     def test_merge(self):
         receiver = Address.zero()
         # Native Transfer Merge
@@ -271,7 +352,7 @@ class TestTransfer(unittest.TestCase):
             ),
         )
 
-        self.assertEqual(
+        self.assertEqual( 
             Transfer.from_dict(
                 {
                     "token_address": COW_TOKEN_ADDRESS.address,
