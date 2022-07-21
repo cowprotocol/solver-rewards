@@ -40,7 +40,7 @@ class Token:
     def __init__(self, address: str | Address, decimals: Optional[int] = None):
         if isinstance(address, str):
             address = Address(address)
-        self._address = address
+        self.address = address
 
         if address == COW_TOKEN_ADDRESS:
             # Avoid Web3 Calls for main branch of program.
@@ -49,11 +49,6 @@ class Token:
         self.decimals = (
             decimals if decimals is not None else get_token_decimals(address)
         )
-
-    @property
-    def address(self) -> str:
-        """Returns checksum address of token"""
-        return self._address.address
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Token):

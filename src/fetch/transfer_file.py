@@ -64,8 +64,8 @@ class CSVTransfer:
 
     token_type: TokenType
     # Safe airdrop uses null address for native asset transfers
-    token_address: Optional[str]
-    receiver: str
+    token_address: Optional[Address]
+    receiver: Address
     # safe-airdrop uses float amounts!
     amount: float
 
@@ -75,7 +75,7 @@ class CSVTransfer:
         return cls(
             token_type=transfer.token_type,
             token_address=transfer.token.address if transfer.token else None,
-            receiver=transfer.receiver.address,
+            receiver=transfer.receiver,
             # The primary purpose for this class is to convert amount_wei to amount
             amount=transfer.amount,
         )
@@ -161,7 +161,7 @@ class Transfer:
             assert self.token is not None
             return MultiSendTx(
                 operation=MultiSendOperation.CALL,
-                to=self.token.address,
+                to=str(self.token.address),
                 value=0,
                 data=ERC20_TOKEN.encodeABI(
                     fn_name="transfer", args=[self.receiver.address, self.amount_wei]
