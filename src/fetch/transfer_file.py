@@ -11,7 +11,10 @@ from duneapi.api import DuneAPI
 from duneapi.file_io import File, write_to_csv
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
+from eth_typing.encoding import HexStr
+from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
 
+from src.constants import ERC20_TOKEN
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches, Vouch
 
@@ -145,6 +148,27 @@ class Transfer:
             f"Requirements met {merge_requirements}"
         )
 
+    def as_multisend_tx(self) -> MultiSendTx:
+        """Converts Transfer into encoded MultiSendTx bytes"""
+        if self.token_type == TokenType.NATIVE:
+            return MultiSendTx(
+                operation=MultiSendOperation.CALL,
+                to=self.receiver.address,
+                value=self.amount_wei,
+                data=HexStr("0x"),
+            )
+        if self.token_type == TokenType.ERC20:
+            assert self.token is not None
+            return MultiSendTx(
+                operation=MultiSendOperation.CALL,
+                to=str(self.token.address),
+                value=0,
+                data=ERC20_TOKEN.encodeABI(
+                    fn_name="transfer", args=[self.receiver.address, self.amount_wei]
+                ),
+            )
+        raise ValueError(f"Unsupported type {self.token_type}")
+
     def __str__(self) -> str:
         if self.token_type == TokenType.NATIVE:
             return f"TransferETH(receiver={self.receiver}, amount_wei={self.amount})"
@@ -192,6 +216,7 @@ class SplitTransfers:
             if slippage is not None:
                 try:
                     transfer.add_slippage(slippage)
+                    # TODO - this should also be in WEI.
                     penalty_total += slippage.amount_wei / 10**18
                 except ValueError as err:
                     name, address = slippage.solver_name, slippage.solver_address

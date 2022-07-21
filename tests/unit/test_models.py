@@ -1,8 +1,10 @@
 import unittest
 
 from duneapi.types import Address
+from eth_typing import HexStr
+from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
 
-from src.constants import COW_TOKEN_ADDRESS
+from src.constants import COW_TOKEN_ADDRESS, ERC20_TOKEN
 from src.fetch.period_slippage import SolverSlippage
 from src.fetch.transfer_file import Transfer, consolidate_transfers
 from src.models import AccountingPeriod, Token
@@ -236,6 +238,87 @@ class TestTransfer(unittest.TestCase):
             str(err.exception),
         )
 
+    def test_consolidation(self):
+        recipients = [
+            Address.from_int(0),
+            Address.from_int(1),
+        ]
+        tokens = [
+            Token(Address.from_int(2), 18),
+            Token(Address.from_int(3), 18),
+        ]
+        transfer_list = [
+            Transfer(
+                token=tokens[0],
+                receiver=recipients[0],
+                amount_wei=1 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[0],
+                receiver=recipients[0],
+                amount_wei=2 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[1],
+                receiver=recipients[0],
+                amount_wei=3 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[0],
+                receiver=recipients[1],
+                amount_wei=4 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=recipients[0],
+                amount_wei=5 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=recipients[0],
+                amount_wei=6 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=recipients[1],
+                amount_wei=7 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=recipients[1],
+                amount_wei=8 * ONE_ETH,
+            ),
+        ]
+
+        expected = [
+            Transfer(
+                token=None,
+                receiver=recipients[1],
+                amount_wei=15 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=recipients[0],
+                amount_wei=11 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[0],
+                receiver=recipients[1],
+                amount_wei=4 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[0],
+                receiver=recipients[0],
+                amount_wei=3 * ONE_ETH,
+            ),
+            Transfer(
+                token=tokens[1],
+                receiver=recipients[0],
+                amount_wei=3 * ONE_ETH,
+            ),
+        ]
+        self.assertEqual(expected, consolidate_transfers(transfer_list))
+
     def test_receiver_error(self):
         transfer = Transfer(
             token=None,
@@ -281,6 +364,35 @@ class TestTransfer(unittest.TestCase):
                 token=Token(COW_TOKEN_ADDRESS),
                 receiver=Address.from_int(1),
                 amount_wei=1234 * 10**15,
+            ),
+        )
+
+    def test_as_multisend_tx(self):
+        receiver = Address("0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1")
+        native_transfer = Transfer(token=None, receiver=receiver, amount_wei=16)
+        self.assertEqual(
+            native_transfer.as_multisend_tx(),
+            MultiSendTx(
+                operation=MultiSendOperation.CALL,
+                to=receiver.address,
+                value=16,
+                data=HexStr("0x"),
+            ),
+        )
+        erc20_transfer = Transfer(
+            token=Token(COW_TOKEN_ADDRESS),
+            receiver=receiver,
+            amount_wei=15,
+        )
+        self.assertEqual(
+            erc20_transfer.as_multisend_tx(),
+            MultiSendTx(
+                operation=MultiSendOperation.CALL,
+                to=COW_TOKEN_ADDRESS.address,
+                value=0,
+                data=ERC20_TOKEN.encodeABI(
+                    fn_name="transfer", args=[receiver.address, 15]
+                ),
             ),
         )
 
