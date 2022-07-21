@@ -4,6 +4,7 @@ import os
 
 from duneapi.types import Address
 from dotenv import load_dotenv
+from gnosis.eth.ethereum_network import EthereumNetwork
 from web3 import Web3
 
 COW_TOKEN_ADDRESS = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
@@ -12,10 +13,16 @@ COW_SAFE_ADDRESS = Web3.toChecksumAddress("0xA03be496e67Ec29bC62F01a428683D7F9c2
 load_dotenv()
 ENV = os.environ
 INFURA_KEY = ENV.get("INFURA_KEY")
-NODE_URL = f"https://{ENV.get('NETWORK', 'mainnet')}.infura.io/v3/{INFURA_KEY}"
+NETWORK_STRING = ENV.get("NETWORK", "mainnet")
+NODE_URL = f"https://{NETWORK_STRING}.infura.io/v3/{INFURA_KEY}"
+NETWORK = {
+    "mainnet": EthereumNetwork.MAINNET,
+    "rinkeby": EthereumNetwork.RINKEBY,
+    "gnosis": EthereumNetwork.XDAI,
+    "goerli": EthereumNetwork.GOERLI,
+}[NETWORK_STRING]
 
-# Things requiring Web3 instance
-w3 = Web3(Web3.HTTPProvider(NODE_URL))
+# Things requiring dummy Web3 instance
 ERC20_ABI = json.loads(
     """[
     {
@@ -46,3 +53,5 @@ ERC20_ABI = json.loads(
 """
 )
 ERC20_TOKEN = Web3().eth.contract(abi=ERC20_ABI)
+# Real Web3 Instance
+w3 = Web3(Web3.HTTPProvider(NODE_URL))
