@@ -1,6 +1,7 @@
 """Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Period"""
 from __future__ import annotations
 
+import os
 import urllib.parse
 from dataclasses import dataclass
 from datetime import timedelta
@@ -12,13 +13,15 @@ from duneapi.file_io import File, write_to_csv
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 from eth_typing.encoding import HexStr
+from eth_typing.ethpm import URI
+from gnosis.eth.ethereum_client import EthereumClient
 from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
 
-from src.constants import ERC20_TOKEN
+from src.constants import ERC20_TOKEN, COW_SAFE_ADDRESS, NETWORK, NODE_URL
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches, Vouch
-
 from src.models import AccountingPeriod, Token
+from src.multisend import post_multisend
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
 from src.utils.script_args import generic_script_init
@@ -416,6 +419,24 @@ if __name__ == "__main__":
         f"Total ETH Funds needed: {eth_total / 10 ** 18}\n"
         f"Total COW Funds needed: {cow_total / 10 ** 18}\n"
         f"Please cross check these results with the dashboard linked above.\n "
-        f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
-        f"{safe_url()}"
     )
+
+    if input("Would you like to send this transaction to the Safe? (y/n)") != "y":
+        print(
+            "Not posting transaction to safe interface: "
+            "You can do this manually with the csv file written here via CSV Airdrop"
+            f"at {safe_url()}"
+        )
+    else:
+        post_multisend(
+            safe_address=COW_SAFE_ADDRESS,
+            transfers=[t.as_multisend_tx() for t in transfers],
+            network=NETWORK,
+            signing_key=os.environ["PROPOSER_PK"],
+            client=EthereumClient(URI(NODE_URL)),
+        )
+        print(
+            f"Transaction successfully posted. Please visit "
+            f"https://gnosis-safe.io/app/eth:{COW_SAFE_ADDRESS}/transactions/queue "
+            f"to sign and execute"
+        )
