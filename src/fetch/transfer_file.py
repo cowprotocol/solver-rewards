@@ -390,27 +390,21 @@ def unusual_slippage_url(period: AccountingPeriod) -> str:
     return base + urllib.parse.quote_plus(query, safe="=&?")
 
 
-if __name__ == "__main__":
-    dune_connection, accounting_period = generic_script_init(
-        description="Fetch Complete Reimbursement"
-    )
+def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
+    """
+    Entry point to manual creation of rewards payout transaction.
+    This function generates the CSV transfer file to be pasted into the COW Safe app
+    """
     print(
         f"While you are waiting, The data being compiled here can be visualized at\n"
-        f"{dashboard_url(accounting_period)}"
-    )
-    print(
+        f"{dashboard_url(period)}\n"
         f"In particular, please double check the batches with unusual slippage: "
-        f"{unusual_slippage_url(accounting_period)}"
+        f"{unusual_slippage_url(period)}"
     )
-    transfers = consolidate_transfers(
-        get_transfers(
-            dune=dune_connection,
-            period=accounting_period,
-        )
-    )
+    transfers = consolidate_transfers(get_transfers(dune, period))
     write_to_csv(
         data_list=[CSVTransfer.from_transfer(t) for t in transfers],
-        outfile=File(name=f"transfers-{accounting_period}.csv"),
+        outfile=File(name=f"transfers-{period}.csv"),
     )
     eth_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.NATIVE)
     cow_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.ERC20)
@@ -419,24 +413,42 @@ if __name__ == "__main__":
         f"Total ETH Funds needed: {eth_total / 10 ** 18}\n"
         f"Total COW Funds needed: {cow_total / 10 ** 18}\n"
         f"Please cross check these results with the dashboard linked above.\n "
+        f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
+        f"{safe_url()}"
     )
 
-    if input("Would you like to send this transaction to the Safe? (y/n)") != "y":
-        print(
-            "Not posting transaction to safe interface: "
-            "You can do this manually with the csv file written here via CSV Airdrop"
-            f"at {safe_url()}"
-        )
+
+def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
+    """
+    Entry point auto creation of rewards payout transaction.
+    This function encodes the multisend of reward transfers and posts
+    the transaction to the COW TEAM SAFE from the proposer account.
+    """
+    # Check for required env vars early
+    # so not to wait for query execution to realize it's not available.
+    signing_key = os.environ["PROPOSER_PK"]
+    client = EthereumClient(URI(NODE_URL))
+    network = NETWORK
+
+    transfers = consolidate_transfers(get_transfers(dune, period))
+    post_multisend(
+        safe_address=COW_SAFE_ADDRESS,
+        transfers=[t.as_multisend_tx() for t in transfers],
+        network=network,
+        signing_key=signing_key,
+        client=client,
+    )
+    print(
+        f"Transaction successfully posted. Please visit "
+        f"https://gnosis-safe.io/app/eth:{COW_SAFE_ADDRESS}/transactions/queue "
+        f"to sign and execute"
+    )
+
+
+if __name__ == "__main__":
+    args = generic_script_init(description="Fetch Complete Reimbursement")
+
+    if args.post_tx:
+        auto_propose(args.dune, args.period)
     else:
-        post_multisend(
-            safe_address=COW_SAFE_ADDRESS,
-            transfers=[t.as_multisend_tx() for t in transfers],
-            network=NETWORK,
-            signing_key=os.environ["PROPOSER_PK"],
-            client=EthereumClient(URI(NODE_URL)),
-        )
-        print(
-            f"Transaction successfully posted. Please visit "
-            f"https://gnosis-safe.io/app/eth:{COW_SAFE_ADDRESS}/transactions/queue "
-            f"to sign and execute"
-        )
+        manual_propose(args.dune, args.period)

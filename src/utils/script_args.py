@@ -1,12 +1,21 @@
 """Common method for initializing setup for scripts"""
 import argparse
+from dataclasses import dataclass
 
 from duneapi.api import DuneAPI
-
 from src.models import AccountingPeriod
 
 
-def generic_script_init(description: str) -> tuple[DuneAPI, AccountingPeriod]:
+@dataclass
+class ScriptArgs:
+    """A collection of common script arguments relevant to this project"""
+
+    dune: DuneAPI
+    period: AccountingPeriod
+    post_tx: bool
+
+
+def generic_script_init(description: str) -> ScriptArgs:
     """
     1. parses parses command line arguments,
     2. establishes dune connection
@@ -16,6 +25,16 @@ def generic_script_init(description: str) -> tuple[DuneAPI, AccountingPeriod]:
     parser.add_argument(
         "--start", type=str, help="Accounting Period Start", required=True
     )
+    parser.add_argument(
+        "--post-tx",
+        type=bool,
+        help="Flag indicating whether multisend should be posted to safe "
+        "(requires valid env var `PROPOSER_PK`)",
+        default=False,
+    )
     args = parser.parse_args()
-
-    return DuneAPI.new_from_environment(), AccountingPeriod(args.start)
+    return ScriptArgs(
+        dune=DuneAPI.new_from_environment(),
+        period=AccountingPeriod(args.start),
+        post_tx=args.post_tx,
+    )

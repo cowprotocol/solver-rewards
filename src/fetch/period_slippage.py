@@ -144,10 +144,6 @@ def get_period_slippage(
 
 
 if __name__ == "__main__":
-    dune_connection, accounting_period = generic_script_init(
-        description="Fetch Accounting Period Totals"
-    )
-    slippage_for_period = get_period_slippage(
-        dune=dune_connection, period=accounting_period
-    )
+    args = generic_script_init(description="Fetch Accounting Period Totals")
+    slippage_for_period = get_period_slippage(dune=args.dune, period=args.period)
     pprint(slippage_for_period)
