@@ -210,8 +210,8 @@ class SplitTransfers:
 
     def _process_native_transfers(
         self, indexed_slippage: dict[Address, SolverSlippage]
-    ) -> float:
-        penalty_total = 0.0
+    ) -> int:
+        penalty_total = 0
         while self.unprocessed_native:
             transfer = self.unprocessed_native.pop(0)
             solver = transfer.receiver
@@ -219,8 +219,7 @@ class SplitTransfers:
             if slippage is not None:
                 try:
                     transfer.add_slippage(slippage)
-                    # TODO - this should also be in WEI.
-                    penalty_total += slippage.amount_wei / 10**18
+                    penalty_total += slippage.amount_wei
                 except ValueError as err:
                     name, address = slippage.solver_name, slippage.solver_address
                     print(
@@ -231,7 +230,7 @@ class SplitTransfers:
                         transfer, slippage, self.period
                     )
                     # Deduct entire transfer value.
-                    penalty_total += transfer.amount
+                    penalty_total += transfer.amount_wei
                     continue
             self.eth_transfers.append(transfer)
         return penalty_total
@@ -282,7 +281,7 @@ class SplitTransfers:
         """
         penalty_total = self._process_native_transfers(indexed_slippage)
         self._process_token_transfers(cow_redirects)
-        print(f"Total Slippage deducted {penalty_total}")
+        print(f"Total Slippage deducted {penalty_total / 10**18}")
         if self.overdrafts:
             print("Additional owed", "\n".join(map(str, self.overdrafts.values())))
         return self.cow_transfers + self.eth_transfers
