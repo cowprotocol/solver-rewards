@@ -47,10 +47,8 @@ def get_period_totals(dune: DuneAPI, period: AccountingPeriod) -> PeriodTotals:
 
 
 if __name__ == "__main__":
-    dune_connection, accounting_period = generic_script_init(
-        description="Fetch Accounting Period Totals"
-    )
+    args = generic_script_init(description="Fetch Accounting Period Totals")
 
-    total_for_period = get_period_totals(dune=dune_connection, period=accounting_period)
+    total_for_period = get_period_totals(dune=args.dune, period=args.period)
 
     pprint(total_for_period)

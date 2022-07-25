@@ -41,5 +41,5 @@ def update_token_list(dune: DuneAPI, token_list: list[str]) -> list[dict[str, st
 
 
 if __name__ == "__main__":
-    dune_connection, _ = generic_script_init(description="Update Token List")
+    dune_connection = generic_script_init(description="Update Token List").dune
     update_token_list(dune_connection, fetch_trusted_tokens())

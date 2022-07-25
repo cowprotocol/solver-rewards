@@ -61,10 +61,8 @@ def get_vouches(dune: DuneAPI, end_time: datetime) -> dict[Address, Vouch]:
 
 
 if __name__ == "__main__":
-    dune_connection, accounting_period = generic_script_init(
-        description="Fetch Reward Targets"
-    )
-    vouch_map = get_vouches(dune=dune_connection, end_time=accounting_period.end)
+    args = generic_script_init(description="Fetch Reward Targets")
+    vouch_map = get_vouches(dune=args.dune, end_time=args.period.end)
 
     for solver, vouch in vouch_map.items():
         print("Solver", solver, "Reward Target", vouch.reward_target)
