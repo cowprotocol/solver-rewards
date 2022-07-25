@@ -123,8 +123,8 @@ class Transfer:
         assert self.receiver == slippage.solver_address, "receiver != solver"
         adjustment = slippage.amount_wei
         print(
-            f"Adjusting {self.receiver}({slippage.solver_name}) "
-            f"transfer by {adjustment / 10 ** 18:.5f} (slippage)"
+            f"Deducting slippage for solver {self.receiver}"
+            f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})"
         )
         new_amount = self.amount_wei + adjustment
         if new_amount <= 0:
@@ -281,7 +281,7 @@ class SplitTransfers:
         """
         penalty_total = self._process_native_transfers(indexed_slippage)
         self._process_token_transfers(cow_redirects)
-        print(f"Total Slippage deducted {penalty_total / 10**18}")
+        print(f"Total Slippage deducted (ETH): {penalty_total / 10**18}")
         if self.overdrafts:
             print("Additional owed", "\n".join(map(str, self.overdrafts.values())))
         return self.cow_transfers + self.eth_transfers
