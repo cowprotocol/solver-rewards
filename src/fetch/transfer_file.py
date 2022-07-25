@@ -424,15 +424,19 @@ def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
     This function encodes the multisend of reward transfers and posts
     the transaction to the COW TEAM SAFE from the proposer account.
     """
-    # Check early not to wait for query execution to realize it's not available.
-    assert "PROPOSER_PK" in os.environ, "Missing Proposer PK"
+    # Check for required env vars early
+    # so not to wait for query execution to realize it's not available.
+    signing_key = os.environ["PROPOSER_PK"]
+    client = EthereumClient(URI(NODE_URL))
+    network = NETWORK
+
     transfers = consolidate_transfers(get_transfers(dune, period))
     post_multisend(
         safe_address=COW_SAFE_ADDRESS,
         transfers=[t.as_multisend_tx() for t in transfers],
-        network=NETWORK,
-        signing_key=os.environ["PROPOSER_PK"],
-        client=EthereumClient(URI(NODE_URL)),
+        network=network,
+        signing_key=signing_key,
+        client=client,
     )
     print(
         f"Transaction successfully posted. Please visit "
