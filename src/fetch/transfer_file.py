@@ -24,10 +24,13 @@ from src.models import AccountingPeriod, Token
 from src.multisend import post_multisend
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
+from src.utils.print_store import PrintStore
 from src.utils.script_args import generic_script_init
 
 COW_PER_BATCH = 50
 COW_PER_TRADE = 35
+
+log_saver = PrintStore()
 
 
 def safe_url() -> str:
@@ -122,7 +125,7 @@ class Transfer:
         """Adds Adjusts Transfer amount by Slippage amount"""
         assert self.receiver == slippage.solver_address, "receiver != solver"
         adjustment = slippage.amount_wei
-        print(
+        log_saver.print(
             f"Deducting slippage for solver {self.receiver}"
             f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})"
         )
@@ -222,7 +225,7 @@ class SplitTransfers:
                     penalty_total += slippage.amount_wei
                 except ValueError as err:
                     name, address = slippage.solver_name, slippage.solver_address
-                    print(
+                    log_saver.print(
                         f"Slippage for {address}({name}) exceeds reimbursement: {err}\n"
                         f"Excluding payout and appending excess to overdraft"
                     )
@@ -244,10 +247,12 @@ class SplitTransfers:
             overdraft = self.overdrafts.pop(solver, None)
             if overdraft is not None:
                 cow_deduction = eth_in_token(TokenId.COW, overdraft.wei, price_day)
-                print(f"Deducting {cow_deduction} COW from reward for {solver}")
+                log_saver.print(
+                    f"Deducting {cow_deduction} COW from reward for {solver}"
+                )
                 transfer.amount_wei -= cow_deduction
                 if transfer.amount_wei < 0:
-                    print(
+                    log_saver.print(
                         "Overdraft exceeds COW reward! "
                         "Excluding reward and updating overdraft"
                     )
@@ -260,7 +265,7 @@ class SplitTransfers:
             if solver in cow_redirects:
                 # Redirect COW rewards to reward target specific by VouchRegistry
                 redirect_address = cow_redirects[solver].reward_target
-                print(
+                log_saver.print(
                     f"Redirecting solver {solver} COW tokens "
                     f"({transfer.amount}) to {redirect_address}"
                 )
@@ -281,9 +286,10 @@ class SplitTransfers:
         """
         penalty_total = self._process_native_transfers(indexed_slippage)
         self._process_token_transfers(cow_redirects)
-        print(f"Total Slippage deducted (ETH): {penalty_total / 10**18}")
+        log_saver.print(f"Total Slippage deducted (ETH): {penalty_total / 10**18}")
         if self.overdrafts:
-            print("Additional owed", "\n".join(map(str, self.overdrafts.values())))
+            accounts_owing = "\n".join(map(str, self.overdrafts.values()))
+            log_saver.print(f"Additional owed\n {accounts_owing}")
         return self.cow_transfers + self.eth_transfers
 
 
@@ -389,6 +395,18 @@ def unusual_slippage_url(period: AccountingPeriod) -> str:
     return base + urllib.parse.quote_plus(query, safe="=&?")
 
 
+def summarize(transfers: list[Transfer]):
+    eth_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.NATIVE)
+    cow_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.ERC20)
+    log_saver.print(
+        f"Total ETH Funds needed: {eth_total / 10 ** 18}\n"
+        f"Total COW Funds needed: {cow_total / 10 ** 18}\n"
+        f"Please cross check these results with the dashboard linked above.\n "
+        f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
+        f"{safe_url()}"
+    )
+
+
 def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
     """
     Entry point to manual creation of rewards payout transaction.
@@ -405,16 +423,7 @@ def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
         data_list=[CSVTransfer.from_transfer(t) for t in transfers],
         outfile=File(name=f"transfers-{period}.csv"),
     )
-    eth_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.NATIVE)
-    cow_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.ERC20)
-
-    print(
-        f"Total ETH Funds needed: {eth_total / 10 ** 18}\n"
-        f"Total COW Funds needed: {cow_total / 10 ** 18}\n"
-        f"Please cross check these results with the dashboard linked above.\n "
-        f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
-        f"{safe_url()}"
-    )
+    summarize(transfers)
 
 
 def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
@@ -430,6 +439,7 @@ def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
     network = NETWORK
 
     transfers = consolidate_transfers(get_transfers(dune, period))
+    summarize(transfers)
     post_multisend(
         safe_address=COW_SAFE_ADDRESS,
         transfers=[t.as_multisend_tx() for t in transfers],
@@ -437,11 +447,12 @@ def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
         signing_key=signing_key,
         client=client,
     )
-    print(
+    log_saver.print(
         f"Transaction successfully posted. Please visit "
         f"https://gnosis-safe.io/app/eth:{COW_SAFE_ADDRESS}/transactions/queue "
         f"to sign and execute"
     )
+    # TODO post in #dev-multisig use log_saver.get_value()
 
 
 if __name__ == "__main__":
