@@ -395,10 +395,11 @@ def unusual_slippage_url(period: AccountingPeriod) -> str:
     return base + urllib.parse.quote_plus(query, safe="=&?")
 
 
-def summarize(transfers: list[Transfer]):
+def summary(transfers: list[Transfer]) -> str:
+    """Summarizes transfers with totals"""
     eth_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.NATIVE)
     cow_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.ERC20)
-    log_saver.print(
+    return (
         f"Total ETH Funds needed: {eth_total / 10 ** 18}\n"
         f"Total COW Funds needed: {cow_total / 10 ** 18}\n"
         f"Please cross check these results with the dashboard linked above.\n "
@@ -423,7 +424,7 @@ def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
         data_list=[CSVTransfer.from_transfer(t) for t in transfers],
         outfile=File(name=f"transfers-{period}.csv"),
     )
-    summarize(transfers)
+    print(summary(transfers))
 
 
 def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
@@ -439,7 +440,7 @@ def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
     network = NETWORK
 
     transfers = consolidate_transfers(get_transfers(dune, period))
-    summarize(transfers)
+    log_saver.print(summary(transfers))
     post_multisend(
         safe_address=COW_SAFE_ADDRESS,
         transfers=[t.as_multisend_tx() for t in transfers],
