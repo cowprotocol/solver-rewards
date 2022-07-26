@@ -3,7 +3,7 @@ import json
 
 import requests
 
-ALLOWED_TOKEN_LIST_URL = "https://token-list.cow.eth.link/"
+ALLOWED_TOKEN_LIST_URL = "https://files.cow.fi/token_list.json"
 
 
 def parse_token_list(token_list_json: str) -> list[str]:
