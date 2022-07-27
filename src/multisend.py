@@ -39,7 +39,7 @@ def post_multisend(
     transfers: list[MultiSendTx],
     client: EthereumClient,
     signing_key: str,
-) -> None:
+) -> int:
     """Posts a MultiSend Transaction from a list of Transfers."""
     encoded_multisend = build_encoded_multisend(transactions=transfers, client=client)
     safe = Safe(address=safe_address, ethereum_client=client)
@@ -58,3 +58,4 @@ def post_multisend(
         f" {safe_tx.safe_tx_hash.hex()} to {safe.address}"
     )
     tx_service.post_transaction(safe_address=safe.address, safe_tx=safe_tx)
+    return int(safe_tx.safe_nonce)

@@ -1,13 +1,17 @@
-"""Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Period"""
+"""
+Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Period
+"""
 from __future__ import annotations
 
 import os
+import ssl
 import urllib.parse
 from dataclasses import dataclass
 from datetime import timedelta
 from enum import Enum
 from typing import Optional
 
+import certifi
 from duneapi.api import DuneAPI
 from duneapi.file_io import File, write_to_csv
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
@@ -16,8 +20,17 @@ from eth_typing.encoding import HexStr
 from eth_typing.ethpm import URI
 from gnosis.eth.ethereum_client import EthereumClient
 from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
+from slack.web.client import WebClient
+from slack.web.slack_response import SlackResponse
 
-from src.constants import ERC20_TOKEN, COW_SAFE_ADDRESS, NETWORK, NODE_URL
+from src.constants import (
+    ERC20_TOKEN,
+    SAFE_ADDRESS,
+    NETWORK,
+    NODE_URL,
+    AIRDROP_URL,
+    SAFE_URL,
+)
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches, Vouch
 from src.models import AccountingPeriod, Token
@@ -31,16 +44,6 @@ COW_PER_BATCH = 50
 COW_PER_TRADE = 35
 
 log_saver = PrintStore()
-
-
-def safe_url() -> str:
-    """URL to CSV Airdrop App in CoW DAO Team Safe"""
-    safe_address = Address("0xA03be496e67Ec29bC62F01a428683D7F9c204930")
-    app_hash = "Qme49gESuwpSvwANmEqo34yfCkzyQehooJ5yL7aHmKJnpZ"
-    return (
-        f"https://gnosis-safe.io/app/eth:{safe_address}"
-        f"/apps?appUrl=https://cloudflare-ipfs.com/ipfs/{app_hash}/"
-    )
 
 
 class TokenType(Enum):
@@ -404,7 +407,7 @@ def summary(transfers: list[Transfer]) -> str:
         f"Total COW Funds needed: {cow_total / 10 ** 18}\n"
         f"Please cross check these results with the dashboard linked above.\n "
         f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
-        f"{safe_url()}"
+        f"{AIRDROP_URL}"
     )
 
 
@@ -414,9 +417,7 @@ def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
     This function generates the CSV transfer file to be pasted into the COW Safe app
     """
     print(
-        f"While you are waiting, The data being compiled here can be visualized at\n"
-        f"{dashboard_url(period)}\n"
-        f"In particular, please double check the batches with unusual slippage: "
+        f"Please double check the batches with unusual slippage: "
         f"{unusual_slippage_url(period)}"
     )
     transfers = consolidate_transfers(get_transfers(dune, period))
@@ -427,7 +428,35 @@ def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
     print(summary(transfers))
 
 
-def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
+def post_to_slack(
+    slack_client: WebClient, channel: str, message: str, sub_message: str
+) -> None:
+    """Posts message to slack channel and sub message inside thread of first message"""
+    response = slack_client.chat_postMessage(
+        channel=channel,
+        text=message,
+        # Do not show link preview!
+        # https://api.slack.com/reference/messaging/link-unfurling
+        unfurl_media=False,
+    )
+    # This assertion is only for type safety,
+    # since previous function can also return a Future
+    assert isinstance(response, SlackResponse)
+    # Post logs in thread.
+    slack_client.chat_postMessage(
+        channel=channel,
+        text=sub_message,
+        # According to https://api.slack.com/methods/conversations.replies
+        thread_ts=response.get("ts"),
+    )
+    # return response.get("ts"), sub_response.get("ts")
+
+
+def auto_propose(
+    dune: DuneAPI,
+    slack_client: WebClient,
+    period: AccountingPeriod,
+) -> None:
     """
     Entry point auto creation of rewards payout transaction.
     This function encodes the multisend of reward transfers and posts
@@ -437,29 +466,42 @@ def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
     # so not to wait for query execution to realize it's not available.
     signing_key = os.environ["PROPOSER_PK"]
     client = EthereumClient(URI(NODE_URL))
-    network = NETWORK
 
     transfers = consolidate_transfers(get_transfers(dune, period))
     log_saver.print(summary(transfers))
-    post_multisend(
-        safe_address=COW_SAFE_ADDRESS,
+    nonce = post_multisend(
+        safe_address=SAFE_ADDRESS,
         transfers=[t.as_multisend_tx() for t in transfers],
-        network=network,
+        network=NETWORK,
         signing_key=signing_key,
         client=client,
     )
-    log_saver.print(
-        f"Transaction successfully posted. Please visit "
-        f"https://gnosis-safe.io/app/eth:{COW_SAFE_ADDRESS}/transactions/queue "
-        f"to sign and execute"
+    post_to_slack(
+        slack_client,
+        channel=os.environ["SLACK_CHANNEL"],
+        message=(
+            f"Solver Rewards transaction with nonce {nonce} pending signatures.\n"
+            f"To sign and execute, visit:\n{SAFE_URL}\nMore details in thread"
+        ),
+        sub_message=log_saver.get_value(),
     )
-    # TODO post in #dev-multisig use log_saver.get_value()
 
 
 if __name__ == "__main__":
     args = generic_script_init(description="Fetch Complete Reimbursement")
-
+    log_saver.print(
+        f"The data being aggregated here is available for visualization at\n"
+        f"{dashboard_url(args.period)}"
+    )
     if args.post_tx:
-        auto_propose(args.dune, args.period)
+        auto_propose(
+            dune=args.dune,
+            slack_client=WebClient(
+                token=os.environ["SLACK_TOKEN"],
+                # https://stackoverflow.com/questions/59808346/python-3-slack-client-ssl-sslcertverificationerror
+                ssl=ssl.create_default_context(cafile=certifi.where()),
+            ),
+            period=args.period,
+        )
     else:
         manual_propose(args.dune, args.period)
