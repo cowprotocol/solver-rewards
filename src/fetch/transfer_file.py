@@ -405,9 +405,6 @@ def summary(transfers: list[Transfer]) -> str:
     return (
         f"Total ETH Funds needed: {eth_total / 10 ** 18}\n"
         f"Total COW Funds needed: {cow_total / 10 ** 18}\n"
-        f"Please cross check these results with the dashboard linked above.\n "
-        f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
-        f"{AIRDROP_URL}"
     )
 
 
@@ -426,6 +423,11 @@ def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
         outfile=File(name=f"transfers-{period}.csv"),
     )
     print(summary(transfers))
+    print(
+        f"Please cross check these results with the dashboard linked above.\n "
+        f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
+        f"{AIRDROP_URL}"
+    )
 
 
 def post_to_slack(
@@ -448,6 +450,7 @@ def post_to_slack(
         text=sub_message,
         # According to https://api.slack.com/methods/conversations.replies
         thread_ts=response.get("ts"),
+        unfurl_media=False,
     )
     # return response.get("ts"), sub_response.get("ts")
 
@@ -483,7 +486,7 @@ def auto_propose(
             f"Solver Rewards transaction with nonce {nonce} pending signatures.\n"
             f"To sign and execute, visit:\n{SAFE_URL}\nMore details in thread"
         ),
-        sub_message=log_saver.get_value(),
+        sub_message="```" + log_saver.get_value() + "```",
     )
 
 
