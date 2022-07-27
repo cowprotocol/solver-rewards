@@ -447,6 +447,7 @@ def post_to_slack(
     # Post logs in thread.
     slack_client.chat_postMessage(
         channel=channel,
+        format="mrkdwn",
         text=sub_message,
         # According to https://api.slack.com/methods/conversations.replies
         thread_ts=response.get("ts"),
@@ -486,7 +487,7 @@ def auto_propose(
             f"Solver Rewards transaction with nonce {nonce} pending signatures.\n"
             f"To sign and execute, visit:\n{SAFE_URL}\nMore details in thread"
         ),
-        sub_message="```" + log_saver.get_value() + "```",
+        sub_message=log_saver.get_value(),
     )
 
 

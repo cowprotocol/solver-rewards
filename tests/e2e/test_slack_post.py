@@ -35,7 +35,7 @@ class TestSlackPost(unittest.TestCase):
                 slack_client=good_client,
                 channel=os.environ["SLACK_CHANNEL"],
                 message="Test Message",
-                sub_message="Test Reply in Thread",
+                sub_message="```Test Reply in Thread```",
             ),
             None,
         )
