@@ -464,7 +464,6 @@ def post_to_slack(
             thread_ts=response.get("ts"),
             unfurl_media=False,
         )
-    # return response.get("ts"), sub_response.get("ts")
 
 
 def auto_propose(
