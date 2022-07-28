@@ -37,7 +37,7 @@ from src.models import AccountingPeriod, Token
 from src.multisend import post_multisend
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
-from src.utils.print_store import PrintStore
+from src.utils.print_store import PrintStore, Category
 from src.utils.script_args import generic_script_init
 
 COW_PER_BATCH = 50
@@ -130,7 +130,8 @@ class Transfer:
         adjustment = slippage.amount_wei
         log_saver.print(
             f"Deducting slippage for solver {self.receiver}"
-            f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})"
+            f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})",
+            category=Category.SLIPPAGE,
         )
         new_amount = self.amount_wei + adjustment
         if new_amount <= 0:
@@ -230,7 +231,8 @@ class SplitTransfers:
                     name, address = slippage.solver_name, slippage.solver_address
                     log_saver.print(
                         f"Slippage for {address}({name}) exceeds reimbursement: {err}\n"
-                        f"Excluding payout and appending excess to overdraft"
+                        f"Excluding payout and appending excess to overdraft",
+                        category=Category.OVERDRAFT,
                     )
                     self.overdrafts[solver] = Overdraft.from_objects(
                         transfer, slippage, self.period
@@ -251,13 +253,15 @@ class SplitTransfers:
             if overdraft is not None:
                 cow_deduction = eth_in_token(TokenId.COW, overdraft.wei, price_day)
                 log_saver.print(
-                    f"Deducting {cow_deduction} COW from reward for {solver}"
+                    f"Deducting {cow_deduction} COW from reward for {solver}",
+                    category=Category.OVERDRAFT,
                 )
                 transfer.amount_wei -= cow_deduction
                 if transfer.amount_wei < 0:
                     log_saver.print(
                         "Overdraft exceeds COW reward! "
-                        "Excluding reward and updating overdraft"
+                        "Excluding reward and updating overdraft",
+                        category=Category.OVERDRAFT,
                     )
                     overdraft.wei = token_in_eth(
                         TokenId.COW, abs(transfer.amount_wei), price_day
@@ -270,7 +274,8 @@ class SplitTransfers:
                 redirect_address = cow_redirects[solver].reward_target
                 log_saver.print(
                     f"Redirecting solver {solver} COW tokens "
-                    f"({transfer.amount}) to {redirect_address}"
+                    f"({transfer.amount}) to {redirect_address}",
+                    category=Category.REDIRECT,
                 )
                 transfer.receiver = redirect_address
             self.cow_transfers.append(transfer)
@@ -289,10 +294,15 @@ class SplitTransfers:
         """
         penalty_total = self._process_native_transfers(indexed_slippage)
         self._process_token_transfers(cow_redirects)
-        log_saver.print(f"Total Slippage deducted (ETH): {penalty_total / 10**18}")
+        log_saver.print(
+            f"Total Slippage deducted (ETH): {penalty_total / 10**18}",
+            category=Category.TOTALS,
+        )
         if self.overdrafts:
             accounts_owing = "\n".join(map(str, self.overdrafts.values()))
-            log_saver.print(f"Additional owed\n {accounts_owing}")
+            log_saver.print(
+                f"Additional owed\n {accounts_owing}", category=Category.OVERDRAFT
+            )
         return self.cow_transfers + self.eth_transfers
 
 
@@ -431,7 +441,7 @@ def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
 
 
 def post_to_slack(
-    slack_client: WebClient, channel: str, message: str, sub_message: str
+    slack_client: WebClient, channel: str, message: str, sub_messages: dict[str, str]
 ) -> None:
     """Posts message to slack channel and sub message inside thread of first message"""
     response = slack_client.chat_postMessage(
@@ -445,21 +455,20 @@ def post_to_slack(
     # since previous function can also return a Future
     assert isinstance(response, SlackResponse)
     # Post logs in thread.
-    slack_client.chat_postMessage(
-        channel=channel,
-        format="mrkdwn",
-        text=sub_message,
-        # According to https://api.slack.com/methods/conversations.replies
-        thread_ts=response.get("ts"),
-        unfurl_media=False,
-    )
+    for category, log in sub_messages.items():
+        slack_client.chat_postMessage(
+            channel=channel,
+            format="mrkdwn",
+            text=f"{category}:\n```{log}```",
+            # According to https://api.slack.com/methods/conversations.replies
+            thread_ts=response.get("ts"),
+            unfurl_media=False,
+        )
     # return response.get("ts"), sub_response.get("ts")
 
 
 def auto_propose(
-    dune: DuneAPI,
-    slack_client: WebClient,
-    period: AccountingPeriod,
+    dune: DuneAPI, slack_client: WebClient, period: AccountingPeriod, dry_run: bool
 ) -> None:
     """
     Entry point auto creation of rewards payout transaction.
@@ -472,30 +481,33 @@ def auto_propose(
     client = EthereumClient(URI(NODE_URL))
 
     transfers = consolidate_transfers(get_transfers(dune, period))
-    log_saver.print(summary(transfers))
-    nonce = post_multisend(
-        safe_address=SAFE_ADDRESS,
-        transfers=[t.as_multisend_tx() for t in transfers],
-        network=NETWORK,
-        signing_key=signing_key,
-        client=client,
-    )
-    post_to_slack(
-        slack_client,
-        channel=os.environ["SLACK_CHANNEL"],
-        message=(
-            f"Solver Rewards transaction with nonce {nonce} pending signatures.\n"
-            f"To sign and execute, visit:\n{SAFE_URL}\nMore details in thread"
-        ),
-        sub_message=log_saver.get_value(),
-    )
+    log_saver.print(summary(transfers), category=Category.TOTALS)
+    if not dry_run:
+        nonce = post_multisend(
+            safe_address=SAFE_ADDRESS,
+            transfers=[t.as_multisend_tx() for t in transfers],
+            network=NETWORK,
+            signing_key=signing_key,
+            client=client,
+        )
+        post_to_slack(
+            slack_client,
+            channel=os.environ["SLACK_CHANNEL"],
+            message=(
+                f"Solver Rewards transaction with nonce {nonce} pending signatures.\n"
+                f"To sign and execute, visit:\n{SAFE_URL}\n"
+                f"More details in thread"
+            ),
+            sub_messages=log_saver.get_values(),
+        )
 
 
 if __name__ == "__main__":
     args = generic_script_init(description="Fetch Complete Reimbursement")
     log_saver.print(
         f"The data being aggregated here is available for visualization at\n"
-        f"{dashboard_url(args.period)}"
+        f"{dashboard_url(args.period)}",
+        category=Category.GENERAL,
     )
     if args.post_tx:
         auto_propose(
@@ -506,6 +518,7 @@ if __name__ == "__main__":
                 ssl=ssl.create_default_context(cafile=certifi.where()),
             ),
             period=args.period,
+            dry_run=args.dry_run,
         )
     else:
         manual_propose(args.dune, args.period)

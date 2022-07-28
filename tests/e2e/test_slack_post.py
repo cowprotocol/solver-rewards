@@ -25,8 +25,8 @@ class TestSlackPost(unittest.TestCase):
             post_to_slack(
                 slack_client=bad_client,
                 channel=os.environ["SLACK_CHANNEL"],
-                message="Test Message",
-                sub_message="Test Reply in Thread",
+                message="",
+                sub_messages={},
             )
 
         # TODO - delete these posts (i.e. cleanup)
@@ -35,7 +35,11 @@ class TestSlackPost(unittest.TestCase):
                 slack_client=good_client,
                 channel=os.environ["SLACK_CHANNEL"],
                 message="Test Message",
-                sub_message="```Test Reply in Thread```",
+                sub_messages={
+                    "Test Category1": "First Inner Message",
+                    "Test Category 2": "Second Inner Message",
+                    "Example Code Block": "```Test Code Block```"
+                },
             ),
             None,
         )
