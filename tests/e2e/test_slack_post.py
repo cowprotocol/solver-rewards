@@ -38,7 +38,6 @@ class TestSlackPost(unittest.TestCase):
                 sub_messages={
                     "Test Category1": "First Inner Message",
                     "Test Category 2": "Second Inner Message",
-                    "Example Code Block": "```Test Code Block```"
                 },
             ),
             None,
