@@ -1,13 +1,17 @@
 """Common method for initializing setup for scripts"""
 import argparse
-from datetime import datetime, date, timedelta
+from datetime import date, timedelta
 from dataclasses import dataclass
 
 from duneapi.api import DuneAPI
 from src.models import AccountingPeriod
 
 
-def previous_tuesday(day: date = date.today()) -> datetime.date:
+def previous_tuesday(day: date = date.today()) -> date:
+    """
+    Returns the previous Tuesday for a given date (defaulting to today).
+    If the day is a Tuesday, then the previous Tuesday is the one before
+    """
     week_day = day.weekday()
     if week_day > 1:
         return day - timedelta(days=week_day - 1)

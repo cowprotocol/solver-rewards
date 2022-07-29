@@ -24,4 +24,4 @@ class TestPreviousTuesday(unittest.TestCase):
                 previous_tuesday(some_tuesday + timedelta(days=i)), forward_expected
             )
 
-        self.assertEqual(str(some_tuesday), '2020-03-10')
+        self.assertEqual(str(some_tuesday), "2020-03-10")
