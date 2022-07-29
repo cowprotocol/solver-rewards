@@ -1,9 +1,17 @@
 """Common method for initializing setup for scripts"""
 import argparse
+from datetime import datetime, date, timedelta
 from dataclasses import dataclass
 
 from duneapi.api import DuneAPI
 from src.models import AccountingPeriod
+
+
+def previous_tuesday(day: date = date.today()) -> datetime.date:
+    week_day = day.weekday()
+    if week_day > 1:
+        return day - timedelta(days=week_day - 1)
+    return day - timedelta(days=6 + week_day)
 
 
 @dataclass
@@ -24,7 +32,10 @@ def generic_script_init(description: str) -> ScriptArgs:
     """
     parser = argparse.ArgumentParser(description)
     parser.add_argument(
-        "--start", type=str, help="Accounting Period Start", required=True
+        "--start",
+        type=str,
+        help="Accounting Period Start. Defaults to previous Tuesday",
+        default=str(previous_tuesday(date.today())),
     )
     parser.add_argument(
         "--post-tx",
