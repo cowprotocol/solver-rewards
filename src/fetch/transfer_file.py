@@ -1,13 +1,17 @@
-"""Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Period"""
+"""
+Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Period
+"""
 from __future__ import annotations
 
 import os
+import ssl
 import urllib.parse
 from dataclasses import dataclass
 from datetime import timedelta
 from enum import Enum
 from typing import Optional
 
+import certifi
 from duneapi.api import DuneAPI
 from duneapi.file_io import File, write_to_csv
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
@@ -16,28 +20,30 @@ from eth_typing.encoding import HexStr
 from eth_typing.ethpm import URI
 from gnosis.eth.ethereum_client import EthereumClient
 from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
+from slack.web.client import WebClient
+from slack.web.slack_response import SlackResponse
 
-from src.constants import ERC20_TOKEN, COW_SAFE_ADDRESS, NETWORK, NODE_URL
+from src.constants import (
+    ERC20_TOKEN,
+    SAFE_ADDRESS,
+    NETWORK,
+    NODE_URL,
+    AIRDROP_URL,
+    SAFE_URL,
+)
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches, Vouch
 from src.models import AccountingPeriod, Token
 from src.multisend import post_multisend
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
+from src.utils.print_store import PrintStore, Category
 from src.utils.script_args import generic_script_init
 
 COW_PER_BATCH = 50
 COW_PER_TRADE = 35
 
-
-def safe_url() -> str:
-    """URL to CSV Airdrop App in CoW DAO Team Safe"""
-    safe_address = Address("0xA03be496e67Ec29bC62F01a428683D7F9c204930")
-    app_hash = "Qme49gESuwpSvwANmEqo34yfCkzyQehooJ5yL7aHmKJnpZ"
-    return (
-        f"https://gnosis-safe.io/app/eth:{safe_address}"
-        f"/apps?appUrl=https://cloudflare-ipfs.com/ipfs/{app_hash}/"
-    )
+log_saver = PrintStore()
 
 
 class TokenType(Enum):
@@ -122,9 +128,10 @@ class Transfer:
         """Adds Adjusts Transfer amount by Slippage amount"""
         assert self.receiver == slippage.solver_address, "receiver != solver"
         adjustment = slippage.amount_wei
-        print(
+        log_saver.print(
             f"Deducting slippage for solver {self.receiver}"
-            f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})"
+            f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})",
+            category=Category.SLIPPAGE,
         )
         new_amount = self.amount_wei + adjustment
         if new_amount <= 0:
@@ -222,9 +229,10 @@ class SplitTransfers:
                     penalty_total += slippage.amount_wei
                 except ValueError as err:
                     name, address = slippage.solver_name, slippage.solver_address
-                    print(
+                    log_saver.print(
                         f"Slippage for {address}({name}) exceeds reimbursement: {err}\n"
-                        f"Excluding payout and appending excess to overdraft"
+                        f"Excluding payout and appending excess to overdraft",
+                        category=Category.OVERDRAFT,
                     )
                     self.overdrafts[solver] = Overdraft.from_objects(
                         transfer, slippage, self.period
@@ -244,12 +252,16 @@ class SplitTransfers:
             overdraft = self.overdrafts.pop(solver, None)
             if overdraft is not None:
                 cow_deduction = eth_in_token(TokenId.COW, overdraft.wei, price_day)
-                print(f"Deducting {cow_deduction} COW from reward for {solver}")
+                log_saver.print(
+                    f"Deducting {cow_deduction} COW from reward for {solver}",
+                    category=Category.OVERDRAFT,
+                )
                 transfer.amount_wei -= cow_deduction
                 if transfer.amount_wei < 0:
-                    print(
+                    log_saver.print(
                         "Overdraft exceeds COW reward! "
-                        "Excluding reward and updating overdraft"
+                        "Excluding reward and updating overdraft",
+                        category=Category.OVERDRAFT,
                     )
                     overdraft.wei = token_in_eth(
                         TokenId.COW, abs(transfer.amount_wei), price_day
@@ -260,9 +272,10 @@ class SplitTransfers:
             if solver in cow_redirects:
                 # Redirect COW rewards to reward target specific by VouchRegistry
                 redirect_address = cow_redirects[solver].reward_target
-                print(
+                log_saver.print(
                     f"Redirecting solver {solver} COW tokens "
-                    f"({transfer.amount}) to {redirect_address}"
+                    f"({transfer.amount}) to {redirect_address}",
+                    category=Category.REDIRECT,
                 )
                 transfer.receiver = redirect_address
             self.cow_transfers.append(transfer)
@@ -281,9 +294,15 @@ class SplitTransfers:
         """
         penalty_total = self._process_native_transfers(indexed_slippage)
         self._process_token_transfers(cow_redirects)
-        print(f"Total Slippage deducted (ETH): {penalty_total / 10**18}")
+        log_saver.print(
+            f"Total Slippage deducted (ETH): {penalty_total / 10**18}",
+            category=Category.TOTALS,
+        )
         if self.overdrafts:
-            print("Additional owed", "\n".join(map(str, self.overdrafts.values())))
+            accounts_owing = "\n".join(map(str, self.overdrafts.values()))
+            log_saver.print(
+                f"Additional owed\n {accounts_owing}", category=Category.OVERDRAFT
+            )
         return self.cow_transfers + self.eth_transfers
 
 
@@ -389,15 +408,23 @@ def unusual_slippage_url(period: AccountingPeriod) -> str:
     return base + urllib.parse.quote_plus(query, safe="=&?")
 
 
+def summary(transfers: list[Transfer]) -> str:
+    """Summarizes transfers with totals"""
+    eth_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.NATIVE)
+    cow_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.ERC20)
+    return (
+        f"Total ETH Funds needed: {eth_total / 10 ** 18}\n"
+        f"Total COW Funds needed: {cow_total / 10 ** 18}\n"
+    )
+
+
 def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
     """
     Entry point to manual creation of rewards payout transaction.
     This function generates the CSV transfer file to be pasted into the COW Safe app
     """
     print(
-        f"While you are waiting, The data being compiled here can be visualized at\n"
-        f"{dashboard_url(period)}\n"
-        f"In particular, please double check the batches with unusual slippage: "
+        f"Please double check the batches with unusual slippage: "
         f"{unusual_slippage_url(period)}"
     )
     transfers = consolidate_transfers(get_transfers(dune, period))
@@ -405,19 +432,43 @@ def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
         data_list=[CSVTransfer.from_transfer(t) for t in transfers],
         outfile=File(name=f"transfers-{period}.csv"),
     )
-    eth_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.NATIVE)
-    cow_total = sum(t.amount_wei for t in transfers if t.token_type == TokenType.ERC20)
-
+    print(summary(transfers))
     print(
-        f"Total ETH Funds needed: {eth_total / 10 ** 18}\n"
-        f"Total COW Funds needed: {cow_total / 10 ** 18}\n"
         f"Please cross check these results with the dashboard linked above.\n "
         f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
-        f"{safe_url()}"
+        f"{AIRDROP_URL}"
     )
 
 
-def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
+def post_to_slack(
+    slack_client: WebClient, channel: str, message: str, sub_messages: dict[str, str]
+) -> None:
+    """Posts message to slack channel and sub message inside thread of first message"""
+    response = slack_client.chat_postMessage(
+        channel=channel,
+        text=message,
+        # Do not show link preview!
+        # https://api.slack.com/reference/messaging/link-unfurling
+        unfurl_media=False,
+    )
+    # This assertion is only for type safety,
+    # since previous function can also return a Future
+    assert isinstance(response, SlackResponse)
+    # Post logs in thread.
+    for category, log in sub_messages.items():
+        slack_client.chat_postMessage(
+            channel=channel,
+            format="mrkdwn",
+            text=f"{category}:\n```{log}```",
+            # According to https://api.slack.com/methods/conversations.replies
+            thread_ts=response.get("ts"),
+            unfurl_media=False,
+        )
+
+
+def auto_propose(
+    dune: DuneAPI, slack_client: WebClient, period: AccountingPeriod, dry_run: bool
+) -> None:
     """
     Entry point auto creation of rewards payout transaction.
     This function encodes the multisend of reward transfers and posts
@@ -427,27 +478,46 @@ def auto_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
     # so not to wait for query execution to realize it's not available.
     signing_key = os.environ["PROPOSER_PK"]
     client = EthereumClient(URI(NODE_URL))
-    network = NETWORK
 
     transfers = consolidate_transfers(get_transfers(dune, period))
-    post_multisend(
-        safe_address=COW_SAFE_ADDRESS,
-        transfers=[t.as_multisend_tx() for t in transfers],
-        network=network,
-        signing_key=signing_key,
-        client=client,
-    )
-    print(
-        f"Transaction successfully posted. Please visit "
-        f"https://gnosis-safe.io/app/eth:{COW_SAFE_ADDRESS}/transactions/queue "
-        f"to sign and execute"
-    )
+    log_saver.print(summary(transfers), category=Category.TOTALS)
+    if not dry_run:
+        nonce = post_multisend(
+            safe_address=SAFE_ADDRESS,
+            transfers=[t.as_multisend_tx() for t in transfers],
+            network=NETWORK,
+            signing_key=signing_key,
+            client=client,
+        )
+        post_to_slack(
+            slack_client,
+            channel=os.environ["SLACK_CHANNEL"],
+            message=(
+                f"Solver Rewards transaction with nonce {nonce} pending signatures.\n"
+                f"To sign and execute, visit:\n{SAFE_URL}\n"
+                f"More details in thread"
+            ),
+            sub_messages=log_saver.get_values(),
+        )
 
 
 if __name__ == "__main__":
     args = generic_script_init(description="Fetch Complete Reimbursement")
-
+    log_saver.print(
+        f"The data being aggregated here is available for visualization at\n"
+        f"{dashboard_url(args.period)}",
+        category=Category.GENERAL,
+    )
     if args.post_tx:
-        auto_propose(args.dune, args.period)
+        auto_propose(
+            dune=args.dune,
+            slack_client=WebClient(
+                token=os.environ["SLACK_TOKEN"],
+                # https://stackoverflow.com/questions/59808346/python-3-slack-client-ssl-sslcertverificationerror
+                ssl=ssl.create_default_context(cafile=certifi.where()),
+            ),
+            period=args.period,
+            dry_run=args.dry_run,
+        )
     else:
         manual_propose(args.dune, args.period)
