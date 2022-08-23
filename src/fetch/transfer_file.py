@@ -238,7 +238,7 @@ class SplitTransfers:
                         transfer, slippage, self.period
                     )
                     # Deduct entire transfer value.
-                    penalty_total += transfer.amount_wei
+                    penalty_total -= transfer.amount_wei
                     continue
             self.eth_transfers.append(transfer)
         return penalty_total
