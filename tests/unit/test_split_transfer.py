@@ -27,17 +27,18 @@ class TestSplitTransfers(unittest.TestCase):
         period = AccountingPeriod("2022-06-14")
         barn_zerox = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
         cow_token = Token(COW_TOKEN_ADDRESS)
+        amount_of_transfer = 185360274773133130
         mixed_transfers = [
             Transfer(
                 token=None,
                 receiver=barn_zerox,
-                amount_wei=185360274773133130,
+                amount_wei=amount_of_transfer,
             ),
             Transfer(token=cow_token, receiver=barn_zerox, amount_wei=600 * ONE_ETH),
         ]
 
         barn_slippage = SolverSlippage(
-            amount_wei=-195360274773133130,
+            amount_wei=-amount_of_transfer - ONE_ETH,
             solver_name="barn-0x",
             solver_address=barn_zerox,
         )
@@ -45,8 +46,8 @@ class TestSplitTransfers(unittest.TestCase):
         accounting = SplitTransfersTest(period, mixed_transfers)
 
         total_penalty = accounting.process_native_transfers(indexed_slippage)
-        expected_total_penality = -185360274773133130
-        self.assertEqual(total_penalty, expected_total_penality)
+        expected_total_penalty = -amount_of_transfer
+        self.assertEqual(total_penalty, expected_total_penalty)
 
 
 if __name__ == "__main__":
