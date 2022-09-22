@@ -1,6 +1,6 @@
 black==22.6.0
 certifi==2022.6.15
-duneapi==5.0.0
+duneapi==6.0.0
 mypy==0.961
 psycopg2==2.9.3
 pylint==2.14.4
