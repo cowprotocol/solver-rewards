@@ -5,13 +5,13 @@ from __future__ import annotations
 
 from datetime import datetime, timedelta
 
-
 # pylint: disable=too-few-public-methods
 from typing import Optional
 
 from duneapi.types import Address
 
 from src.constants import COW_TOKEN_ADDRESS
+from src.fetch.block_number import get_block, Closest
 from src.utils.token_details import get_token_decimals
 
 
@@ -21,6 +21,8 @@ class AccountingPeriod:
     def __init__(self, start: str, length_days: int = 7):
         self.start = datetime.strptime(start, "%Y-%m-%d")
         self.end = self.start + timedelta(days=length_days)
+        self.start_block = get_block(when=self.start, closest=Closest.AFTER)
+        self.end_block = get_block(when=self.end, closest=Closest.BEFORE)
 
     def __str__(self) -> str:
         return "-to-".join(
