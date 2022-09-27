@@ -6,8 +6,8 @@ join gnosis_protocol_v2.view_solvers
     on solver_address = address
 where block_time between '{{StartTime}}' and '{{EndTime}}'
   and environment not in ('services', 'test')
-group by solver
-order by eth_spent desc
+group by receiver
+order by amount desc
 
 -- --! They do not seem to agree!
 -- -- V2: https://dune.com/queries/1320174
