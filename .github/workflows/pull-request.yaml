@@ -29,3 +29,4 @@ jobs:
         env:
           # We make a rinkeby request in one unit test
           INFURA_KEY: ${{ secrets.INFURA_KEY }}
+          ETHERSCAN_API_KEY: ${{ secrets.ETHERSCAN_API_KEY }}
