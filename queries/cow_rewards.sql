@@ -18,11 +18,10 @@ select
     (10^18 * (batch_reward + trade_reward))::numeric::text    as amount
  from relevant_batch_info
 
-
--- V2: https://dune.com/queries/1320220
+-- -- V2: https://dune.com/queries/1320220
 -- with
 -- relevant_batch_info as (
---     select solver_address as solver,
+--     select solver_address,
 --            count(*) * '{{PerBatchReward}}'             as batch_reward,
 --            sum(num_trades) * '{{PerTradeReward}}'      as trade_reward
 --     from cow_protocol_ethereum.batches
@@ -30,14 +29,10 @@ select
 --         on solver_address = address
 --     where block_time between '{{StartTime}}' and '{{EndTime}}'
 --       and environment not in ('services', 'test')
---     group by solver
+--     group by solver_address
 -- )
 -- select
---     'erc20'                                      as token_type,
---     '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB' as token_address,
---     solver                                       as receiver,
---     -- TODO - fix Scientific notation.
---     -- https://discord.com/channels/757637422384283659/757641002138730588/1024247177901510656
---     (batch_reward + trade_reward) * pow(10, 18)  as amount
+--     '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB'                               as token_address,
+--     solver_address                                                             as receiver,
+--     cast((batch_reward + trade_reward) * pow(10, 18) as decimal(38,0))::string as amount
 --  from relevant_batch_info
---  order by amount desc
