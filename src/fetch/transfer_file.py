@@ -370,7 +370,7 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
 
 def get_eth_spent(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """
-    Fetches COW token rewards from orderbook database returning a list of Transfers
+    Fetches ETH spent on successful settlements by all solvers during `period`
     """
     query = DuneQuery.from_environment(
         raw_sql=open_query("./queries/eth_spent.sql"),
