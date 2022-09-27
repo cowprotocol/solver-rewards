@@ -13,3 +13,4 @@ safe-eth-py==4.1.3
 slackclient==2.9.4
 web3>=5.30.0
 SQLAlchemy>=1.4.41
+pandas==1.5.0
