@@ -27,16 +27,16 @@ def get_block(when: datetime, closest: Closest) -> int:
     """Fetches ethereum mainnet `closest` block number for a given datetime object"""
     epoch = int(time.mktime(when.timetuple()))
     load_dotenv()
+    params: dict[str, int | str] = {
+        "module": "block",
+        "action": "getblocknobytime",
+        "apikey": os.environ["ETHERSCAN_API_KEY"],
+        "timestamp": epoch,
+        "closest": closest.value,
+    }
     response = requests.get(
         url=ETHERSCAN_API_URL,
-        params={
-            "module": "block",
-            "action": "getblocknobytime",
-            "apikey": os.environ["ETHERSCAN_API_KEY"],
-            "timestamp": epoch,
-            "closest": closest.value,
-        },
-        # headers={"Content-Type": "application/x-www-form-urlencoded"},
+        params=params,
     )
     parsed_response = response.json()
     return int(parsed_response["result"])
