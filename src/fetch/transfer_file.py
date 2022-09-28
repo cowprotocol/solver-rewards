@@ -64,7 +64,7 @@ class TokenType(Enum):
             raise ValueError(f"No TokenType {type_str}!") from err
 
     def __str__(self) -> str:
-        return self.value
+        return str(self.value)
 
 
 @dataclass
@@ -101,7 +101,7 @@ class Transfer:
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> Transfer:
         """Converts Dune data dict to object with types"""
-        token_address = obj["token_address"]
+        token_address = obj.get("token_address", None)
         return cls(
             token=Token(token_address) if token_address else None,
             receiver=Address(obj["receiver"]),
@@ -349,12 +349,15 @@ class Overdraft:
         )
 
 
-def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
-    """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
+def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
+    """
+    Fetches COW token rewards from orderbook database returning a list of Transfers
+    """
+    # TODO - replace this with results of ORDERBOOK QUERY
     query = DuneQuery.from_environment(
-        raw_sql=open_query("./queries/period_transfers.sql"),
+        raw_sql=open_query("./queries/cow_rewards.sql"),
         network=Network.MAINNET,
-        name="ETH Reimbursement & COW Rewards",
+        name="COW Rewards",
         parameters=[
             QueryParameter.date_type("StartTime", period.start),
             QueryParameter.date_type("EndTime", period.end),
@@ -362,8 +365,30 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
             QueryParameter.number_type("PerTradeReward", COW_PER_TRADE),
         ],
     )
-    reimbursements_and_rewards = [Transfer.from_dict(t) for t in dune.fetch(query)]
-    split_transfers = SplitTransfers(period, reimbursements_and_rewards)
+    return [Transfer.from_dict(t) for t in dune.fetch(query)]
+
+
+def get_eth_spent(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
+    """
+    Fetches ETH spent on successful settlements by all solvers during `period`
+    """
+    query = DuneQuery.from_environment(
+        raw_sql=open_query("./queries/eth_spent.sql"),
+        network=Network.MAINNET,
+        name="ETH Reimbursement",
+        parameters=[
+            QueryParameter.date_type("StartTime", period.start),
+            QueryParameter.date_type("EndTime", period.end),
+        ],
+    )
+    return [Transfer.from_dict(t) for t in dune.fetch(query)]
+
+
+def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
+    """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
+    reimbursements = get_eth_spent(dune, period)
+    rewards = get_cow_rewards(dune, period)
+    split_transfers = SplitTransfers(period, reimbursements + rewards)
 
     negative_slippage = get_period_slippage(dune, period).negative
 
