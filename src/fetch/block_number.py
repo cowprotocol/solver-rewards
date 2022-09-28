@@ -2,7 +2,6 @@
 Fetches the closest block number for a given timestamp from Etherscan API
 Ref: https://docs.etherscan.io/api-endpoints/blocks#get-block-number-by-timestamp
 """
-import json
 import os
 import time
 from datetime import datetime
@@ -30,15 +29,14 @@ def get_block(when: datetime, closest: Closest) -> int:
     load_dotenv()
     response = requests.get(
         url=ETHERSCAN_API_URL,
-        params=json.dumps(
-            {
-                "module": "block",
-                "action": "getblocknobytime",
-                "apikey": os.environ["ETHERSCAN_API_KEY"],
-                "timestamp": epoch,
-                "closest": closest.value,
-            }
-        ),
+        params={
+            "module": "block",
+            "action": "getblocknobytime",
+            "apikey": os.environ["ETHERSCAN_API_KEY"],
+            "timestamp": epoch,
+            "closest": closest.value,
+        },
+        # headers={"Content-Type": "application/x-www-form-urlencoded"},
     )
     parsed_response = response.json()
     return int(parsed_response["result"])

@@ -111,14 +111,16 @@ class Transfer:
         )
 
     @classmethod
-    def from_dataframe(cls, pdf: pd.DataFrame) -> Transfer:
-        """Converts Dune data dict to object with types"""
-        token_address = pdf.get("token_address", None)
-        return cls(
-            token=Token(token_address) if token_address else None,
-            receiver=Address(pdf["receiver"]),
-            amount_wei=int(pdf["amount"]),
-        )
+    def from_dataframe(cls, pdf: pd.DataFrame) -> list[Transfer]:
+        """Converts Pandas Dataframe into list of Transfers"""
+        return [
+            cls(
+                token=Token(row["token_address"]) if row["token_address"] else None,
+                receiver=Address(row["receiver"]),
+                amount_wei=int(row["amount"]),
+            )
+            for _, row in pdf.iterrows()
+        ]
 
     @property
     def token_type(self) -> TokenType:
@@ -371,11 +373,12 @@ def get_cow_rewards(period: AccountingPeriod) -> list[Transfer]:
         .replace("{{end_block}}", period.end_block)
     )
     # Need to fetch results from both order-books (prod and barn)
-    prod_rewards_df = pd.read_sql(cow_reward_query, pg_engine(OrderbookEnv.PROD))
-    barn_rewards_df = pd.read_sql(cow_reward_query, pg_engine(OrderbookEnv.BARN))
-    # TODO - parse these (properly into transfers and consolidate)
-    prod_transfers = [Transfer.from_dataframe(t) for t in prod_rewards_df]
-    barn_transfers = [Transfer.from_dataframe(t) for t in barn_rewards_df]
+    prod_transfers = Transfer.from_dataframe(
+        pdf=pd.read_sql(sql=cow_reward_query, con=pg_engine(OrderbookEnv.PROD))
+    )
+    barn_transfers = Transfer.from_dataframe(
+        pdf=pd.read_sql(sql=cow_reward_query, con=pg_engine(OrderbookEnv.BARN))
+    )
 
     return consolidate_transfers(prod_transfers + barn_transfers)
 
