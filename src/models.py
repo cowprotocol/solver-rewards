@@ -28,14 +28,14 @@ class AccountingPeriod:
         )
 
     @property
-    def start_block(self) -> int:
+    def start_block(self) -> str:
         """Block number of start time."""
-        return get_block(when=self.start, closest=Closest.AFTER)
+        return str(get_block(when=self.start, closest=Closest.AFTER))
 
     @property
-    def end_block(self) -> int:
+    def end_block(self) -> str:
         """Block number of end time."""
-        return get_block(when=self.end, closest=Closest.BEFORE)
+        return str(get_block(when=self.end, closest=Closest.BEFORE))
 
 
 class Token:

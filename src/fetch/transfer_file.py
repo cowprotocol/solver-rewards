@@ -365,40 +365,19 @@ def get_cow_rewards(period: AccountingPeriod) -> list[Transfer]:
     """
     Fetches COW token rewards from orderbook database returning a list of Transfers
     """
-    cow_reward_query = f"""
-    select
-        '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB' as token_address,
-        concat('0x', encode(solver, 'hex')) as receiver,
-        -- TODO - use `rewards` column in solver_competitions (when available)
-        50 * count(distinct sc.tx_hash) + 35 * count(distinct order_uid) as amount
-    from settlements
-    join solver_competitions sc
-        on settlements.tx_hash = sc.tx_hash
-    join trades t on settlements.block_number = t.block_number
-    where block_number between {period.start_block} and {period.end_block}
-    group by solver
-    """
+    cow_reward_query = (
+        open_query("./queries/cow_rewards.sql")
+        .replace("{{start_block}}", period.start_block)
+        .replace("{{end_block}}", period.end_block)
+    )
     # Need to fetch results from both order-books (prod and barn)
     prod_rewards_df = pd.read_sql(cow_reward_query, pg_engine(OrderbookEnv.PROD))
     barn_rewards_df = pd.read_sql(cow_reward_query, pg_engine(OrderbookEnv.BARN))
-
+    # TODO - parse these (properly into transfers and consolidate)
     prod_transfers = [Transfer.from_dataframe(t) for t in prod_rewards_df]
     barn_transfers = [Transfer.from_dataframe(t) for t in barn_rewards_df]
 
     return consolidate_transfers(prod_transfers + barn_transfers)
-
-    # query = DuneQuery.from_environment(
-    #     raw_sql=open_query("./queries/cow_rewards.sql"),
-    #     network=Network.MAINNET,
-    #     name="COW Rewards",
-    #     parameters=[
-    #         QueryParameter.date_type("StartTime", period.start),
-    #         QueryParameter.date_type("EndTime", period.end),
-    #         QueryParameter.number_type("PerBatchReward", COW_PER_BATCH),
-    #         QueryParameter.number_type("PerTradeReward", COW_PER_TRADE),
-    #     ],
-    # )
-    # return [Transfer.from_dict(t) for t in dune.fetch(query)]
 
 
 def get_eth_spent(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:

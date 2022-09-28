@@ -36,7 +36,7 @@ def get_block(when: datetime, closest: Closest) -> int:
                 "action": "getblocknobytime",
                 "apikey": os.environ["ETHERSCAN_API_KEY"],
                 "timestamp": epoch,
-                "closest": str(closest.value),
+                "closest": closest.value,
             }
         ),
     )
