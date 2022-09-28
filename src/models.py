@@ -21,13 +21,21 @@ class AccountingPeriod:
     def __init__(self, start: str, length_days: int = 7):
         self.start = datetime.strptime(start, "%Y-%m-%d")
         self.end = self.start + timedelta(days=length_days)
-        self.start_block = get_block(when=self.start, closest=Closest.AFTER)
-        self.end_block = get_block(when=self.end, closest=Closest.BEFORE)
 
     def __str__(self) -> str:
         return "-to-".join(
             [self.start.strftime("%Y-%m-%d"), self.end.strftime("%Y-%m-%d")]
         )
+
+    @property
+    def start_block(self) -> int:
+        """Block number of start time."""
+        return get_block(when=self.start, closest=Closest.AFTER)
+
+    @property
+    def end_block(self) -> int:
+        """Block number of end time."""
+        return get_block(when=self.end, closest=Closest.BEFORE)
 
 
 class Token:
