@@ -30,8 +30,7 @@ class MyTestCase(unittest.TestCase):
         )
 
     def test_get_cow_rewards(self):
-        print(self.period.start_block)
-        cow_transfers = get_cow_rewards(self.period)
+        cow_transfers = get_cow_rewards(self.dune, self.period)
         dune_results = self.dune.fetch(
             query=DuneQuery.from_environment(
                 raw_sql=open_query("./tests/queries/dune_cow_rewards.sql"),

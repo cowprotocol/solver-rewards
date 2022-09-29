@@ -8,7 +8,9 @@ from datetime import datetime, timedelta
 # pylint: disable=too-few-public-methods
 from typing import Optional
 
-from duneapi.types import Address
+from duneapi.api import DuneAPI
+from duneapi.types import Address, DuneQuery, Network, QueryParameter
+from duneapi.util import open_query
 
 from src.constants import COW_TOKEN_ADDRESS
 from src.fetch.block_number import get_block, Closest
@@ -26,6 +28,22 @@ class AccountingPeriod:
         return "-to-".join(
             [self.start.strftime("%Y-%m-%d"), self.end.strftime("%Y-%m-%d")]
         )
+
+    def get_block_interval(self, dune: DuneAPI) -> tuple[str, str]:
+        """Returns block numbers corresponding to date interval"""
+        results = dune.fetch(
+            query=DuneQuery.from_environment(
+                raw_sql=open_query("./queries/period_block_interval.sql"),
+                name=f"Block Interval for Accounting Period {self}",
+                network=Network.MAINNET,
+                parameters=[
+                    QueryParameter.date_type("StartTime", self.start),
+                    QueryParameter.date_type("EndTime", self.end),
+                ],
+            )
+        )
+        assert len(results) == 1, "Block Interval Query should return only 1 result!"
+        return str(results[0]["start_block"]), str(results[0]["end_block"])
 
     @property
     def start_block(self) -> str:
