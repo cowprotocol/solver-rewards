@@ -13,7 +13,6 @@ from duneapi.types import Address, DuneQuery, Network, QueryParameter
 from duneapi.util import open_query
 
 from src.constants import COW_TOKEN_ADDRESS
-from src.fetch.block_number import get_block, Closest
 from src.utils.token_details import get_token_decimals
 
 
@@ -44,16 +43,6 @@ class AccountingPeriod:
         )
         assert len(results) == 1, "Block Interval Query should return only 1 result!"
         return str(results[0]["start_block"]), str(results[0]["end_block"])
-
-    @property
-    def start_block(self) -> str:
-        """Block number of start time."""
-        return str(get_block(when=self.start, closest=Closest.AFTER))
-
-    @property
-    def end_block(self) -> str:
-        """Block number of end time."""
-        return str(get_block(when=self.end, closest=Closest.BEFORE))
 
 
 class Token:
