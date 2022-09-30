@@ -11,28 +11,37 @@ with trade_hashes as (SELECT solver,
                           LIMIT 1
                           ) AS settlement ON true
                       where block_number between {{start_block}} and {{end_block}}),
+     -- Usually this would be sufficient. However some orders are not actually in the DB.
+     db_order_counts as (select solver, count(order_uid) as num_orders, tx_hash
+                         from trade_hashes
+                                  inner join orders
+                                             on order_uid = uid
+                         group by solver, tx_hash),
+     corrected_trade_counts as (select solver,
+                                       tx_hash,
+                                       num_orders,
+                                       num_trades,
+                                       num_trades - num_orders as missing_orders
+                                from db_order_counts tc
+                                         inner join lateral (
+                                    select count(order_uid) as num_trades,
+                                           tx_hash          as hash
+                                    from trade_hashes
+                                    group by tx_hash
+                                    ) as th on tc.tx_hash = th.hash),
 
-     db_specific_results as (
-         select solver, order_uid, tx_hash
-         from trade_hashes
-             inner join orders
-                on order_uid = uid
-     ),
-
-     trade_counts as (select solver, tx_hash, count(distinct order_uid) as num_trades
-                      from db_specific_results
-                      group by solver, tx_hash),
-
-     batch_and_trade_counts as (select concat('0x', encode(solver, 'hex')) as receiver,
-                                       count(*)        as num_batches,
-                                       sum(num_trades) as num_trades
-                                from trade_counts
-                                group by receiver)
+     final_counts as (select concat('0x', encode(solver, 'hex')) as receiver,
+                             count(tx_hash)                      as num_batches,
+                             sum(num_trades)                     as num_trades,
+                             sum(missing_orders)                 as missing_orders
+                      from corrected_trade_counts
+                      group by solver)
 
 select *,
-       '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB'                        as token_address,
-       ((50 * num_batches + 35 * num_trades) * pow(10, 18))::numeric::text as amount
-from batch_and_trade_counts;
+       ((50 * num_batches + 35 * num_trades) * pow(10, 18))::numeric::text as amount,
+       '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB'                        as token_address
+from final_counts
+order by receiver;
 
 -- There is currently a bug in orderbook (missing entries in solver_competitions table)
 -- with solver_solutions as (select concat('0x', encode(solver, 'hex'))    as receiver,
