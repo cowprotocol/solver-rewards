@@ -22,15 +22,15 @@ class MyTestCase(unittest.TestCase):
 
     def test_get_eth_spent(self):
         eth_transfers = get_eth_spent(self.dune, self.period)
-        print(t.amount_wei for t in eth_transfers)
         self.assertAlmostEqual(
             sum(t.amount for t in eth_transfers),
             16.745457506431146000,  # cf: https://dune.com/queries/1323288
-            delta=0.00001,
+            delta=0.0000000000001,
         )
 
     def test_get_cow_rewards(self):
-        cow_transfers = get_cow_rewards(self.dune, self.period)
+        start_block, end_block = self.period.get_block_interval(self.dune)
+        cow_transfers = get_cow_rewards(start_block, end_block)
         dune_results = self.dune.fetch(
             query=DuneQuery.from_environment(
                 raw_sql=open_query("./tests/queries/dune_cow_rewards.sql"),
@@ -46,10 +46,9 @@ class MyTestCase(unittest.TestCase):
         )
         expected_results = [Transfer.from_dict(d) for d in dune_results]
         self.assertAlmostEqual(
-            sum(ct.amount for ct in cow_transfers),
-            sum(t.amount for t in expected_results),
-            delta=0.001,
-        )  # add assertion here
+            sum(ct.amount_wei for ct in cow_transfers),
+            sum(t.amount_wei for t in expected_results),
+        )
 
 
 if __name__ == "__main__":

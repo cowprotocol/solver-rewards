@@ -363,11 +363,11 @@ class Overdraft:
         )
 
 
-def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
+def get_cow_rewards(start_block: str, end_block: str) -> list[Transfer]:
     """
     Fetches COW token rewards from orderbook database returning a list of Transfers
     """
-    start_block, end_block = period.get_block_interval(dune)
+
     cow_reward_query = (
         open_query("./queries/cow_rewards.sql")
         .replace("{{start_block}}", start_block)
@@ -403,7 +403,10 @@ def get_eth_spent(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
 def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
     reimbursements = get_eth_spent(dune, period)
-    rewards = get_cow_rewards(dune, period)
+
+    start_block, end_block = period.get_block_interval(dune)
+    rewards = get_cow_rewards(start_block, end_block)
+
     split_transfers = SplitTransfers(period, reimbursements + rewards)
 
     negative_slippage = get_period_slippage(dune, period).negative
