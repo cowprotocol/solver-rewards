@@ -22,10 +22,11 @@ class MyTestCase(unittest.TestCase):
 
     def test_get_eth_spent(self):
         eth_transfers = get_eth_spent(self.dune, self.period)
-        self.assertAlmostEqual(
+        self.assertEqual(
             sum(t.amount for t in eth_transfers),
-            16.745457506431146000,  # cf: https://dune.com/queries/1323288
-            delta=0.0000000000001,
+            16745457506431162000
+            # 16.745457506431146000,  # cf: https://dune.com/queries/1323288
+            # delta=0.0000000000001,
         )
 
     def test_get_cow_rewards(self):
