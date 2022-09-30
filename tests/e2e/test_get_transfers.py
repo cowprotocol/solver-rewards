@@ -25,7 +25,7 @@ class MyTestCase(unittest.TestCase):
         self.assertAlmostEqual(
             sum(t.amount_wei for t in eth_transfers),
             16745457506431162000,  # cf: https://dune.com/queries/1323288
-            delta=5 * 10**4  # WEI
+            delta=5 * 10**4,  # WEI
         )
 
     def test_get_cow_rewards(self):
