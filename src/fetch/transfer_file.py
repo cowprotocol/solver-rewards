@@ -12,6 +12,7 @@ from enum import Enum
 from typing import Optional
 
 import certifi
+import pandas as pd
 from duneapi.api import DuneAPI
 from duneapi.file_io import File, write_to_csv
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
@@ -35,6 +36,7 @@ from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches, Vouch
 from src.models import AccountingPeriod, Token
 from src.multisend import post_multisend
+from src.pg_client import pg_engine, OrderbookEnv
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
 from src.utils.print_store import PrintStore, Category
@@ -107,6 +109,18 @@ class Transfer:
             receiver=Address(obj["receiver"]),
             amount_wei=int(obj["amount"]),
         )
+
+    @classmethod
+    def from_dataframe(cls, pdf: pd.DataFrame) -> list[Transfer]:
+        """Converts Pandas Dataframe into list of Transfers"""
+        return [
+            cls(
+                token=Token(row["token_address"]) if row["token_address"] else None,
+                receiver=Address(row["receiver"]),
+                amount_wei=int(row["amount"]),
+            )
+            for _, row in pdf.iterrows()
+        ]
 
     @property
     def token_type(self) -> TokenType:
@@ -349,23 +363,25 @@ class Overdraft:
         )
 
 
-def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
+def get_cow_rewards(start_block: str, end_block: str) -> list[Transfer]:
     """
     Fetches COW token rewards from orderbook database returning a list of Transfers
     """
-    # TODO - replace this with results of ORDERBOOK QUERY
-    query = DuneQuery.from_environment(
-        raw_sql=open_query("./queries/cow_rewards.sql"),
-        network=Network.MAINNET,
-        name="COW Rewards",
-        parameters=[
-            QueryParameter.date_type("StartTime", period.start),
-            QueryParameter.date_type("EndTime", period.end),
-            QueryParameter.number_type("PerBatchReward", COW_PER_BATCH),
-            QueryParameter.number_type("PerTradeReward", COW_PER_TRADE),
-        ],
+
+    cow_reward_query = (
+        open_query("./queries/cow_rewards.sql")
+        .replace("{{start_block}}", start_block)
+        .replace("{{end_block}}", end_block)
     )
-    return [Transfer.from_dict(t) for t in dune.fetch(query)]
+    # Need to fetch results from both order-books (prod and barn)
+    prod_transfers = Transfer.from_dataframe(
+        pdf=pd.read_sql(sql=cow_reward_query, con=pg_engine(OrderbookEnv.PROD))
+    )
+    barn_transfers = Transfer.from_dataframe(
+        pdf=pd.read_sql(sql=cow_reward_query, con=pg_engine(OrderbookEnv.BARN))
+    )
+
+    return consolidate_transfers(prod_transfers + barn_transfers)
 
 
 def get_eth_spent(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
@@ -387,7 +403,10 @@ def get_eth_spent(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
 def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
     reimbursements = get_eth_spent(dune, period)
-    rewards = get_cow_rewards(dune, period)
+
+    start_block, end_block = period.get_block_interval(dune)
+    rewards = get_cow_rewards(start_block, end_block)
+
     split_transfers = SplitTransfers(period, reimbursements + rewards)
 
     negative_slippage = get_period_slippage(dune, period).negative

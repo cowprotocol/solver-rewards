@@ -1,5 +1,6 @@
 import unittest
 
+import pandas as pd
 from duneapi.types import Address
 from eth_typing import HexStr
 from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
@@ -238,87 +239,6 @@ class TestTransfer(unittest.TestCase):
             str(err.exception),
         )
 
-    def test_consolidation(self):
-        recipients = [
-            Address.from_int(0),
-            Address.from_int(1),
-        ]
-        tokens = [
-            Token(Address.from_int(2), 18),
-            Token(Address.from_int(3), 18),
-        ]
-        transfer_list = [
-            Transfer(
-                token=tokens[0],
-                receiver=recipients[0],
-                amount_wei=1 * ONE_ETH,
-            ),
-            Transfer(
-                token=tokens[0],
-                receiver=recipients[0],
-                amount_wei=2 * ONE_ETH,
-            ),
-            Transfer(
-                token=tokens[1],
-                receiver=recipients[0],
-                amount_wei=3 * ONE_ETH,
-            ),
-            Transfer(
-                token=tokens[0],
-                receiver=recipients[1],
-                amount_wei=4 * ONE_ETH,
-            ),
-            Transfer(
-                token=None,
-                receiver=recipients[0],
-                amount_wei=5 * ONE_ETH,
-            ),
-            Transfer(
-                token=None,
-                receiver=recipients[0],
-                amount_wei=6 * ONE_ETH,
-            ),
-            Transfer(
-                token=None,
-                receiver=recipients[1],
-                amount_wei=7 * ONE_ETH,
-            ),
-            Transfer(
-                token=None,
-                receiver=recipients[1],
-                amount_wei=8 * ONE_ETH,
-            ),
-        ]
-
-        expected = [
-            Transfer(
-                token=None,
-                receiver=recipients[1],
-                amount_wei=15 * ONE_ETH,
-            ),
-            Transfer(
-                token=None,
-                receiver=recipients[0],
-                amount_wei=11 * ONE_ETH,
-            ),
-            Transfer(
-                token=tokens[0],
-                receiver=recipients[1],
-                amount_wei=4 * ONE_ETH,
-            ),
-            Transfer(
-                token=tokens[0],
-                receiver=recipients[0],
-                amount_wei=3 * ONE_ETH,
-            ),
-            Transfer(
-                token=tokens[1],
-                receiver=recipients[0],
-                amount_wei=3 * ONE_ETH,
-            ),
-        ]
-        self.assertEqual(expected, consolidate_transfers(transfer_list))
-
     def test_receiver_error(self):
         transfer = Transfer(
             token=None,
@@ -366,6 +286,32 @@ class TestTransfer(unittest.TestCase):
                 amount_wei=1234 * 10**15,
             ),
         )
+
+    def test_from_dataframe(self):
+        receiver = Address.from_int(1)
+        token_address = COW_TOKEN_ADDRESS.address
+        transfer_df = pd.DataFrame(
+            {
+                "token_address": [None, token_address],
+                "receiver": [str(receiver.address), str(receiver.address)],
+                "amount": ["12345", "678910"],
+                "other_useless_column": [True, False],
+            }
+        )
+        expected = [
+            Transfer(
+                token=None,
+                receiver=receiver,
+                amount_wei=12345,
+            ),
+            Transfer(
+                token=Token(COW_TOKEN_ADDRESS),
+                receiver=receiver,
+                amount_wei=678910,
+            ),
+        ]
+
+        self.assertEqual(expected, Transfer.from_dataframe(transfer_df))
 
     def test_as_multisend_tx(self):
         receiver = Address("0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1")
