@@ -5,7 +5,6 @@ from duneapi.types import DuneQuery, QueryParameter, Network
 from duneapi.util import open_query
 
 from src.fetch.transfer_file import (
-    get_transfers,
     get_cow_rewards,
     get_eth_spent,
     COW_PER_BATCH,

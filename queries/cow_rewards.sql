@@ -33,12 +33,13 @@ with trade_hashes as (SELECT solver,
      final_counts as (select concat('0x', encode(solver, 'hex')) as receiver,
                              count(tx_hash)                      as num_batches,
                              sum(num_trades)                     as num_trades,
-                             sum(missing_orders)                 as missing_orders
+                             -- There represent JIT liquidity orders
+                             sum(missing_orders)                 as jit_orders
                       from corrected_trade_counts
                       group by solver)
 
 select *,
-       ((50 * num_batches + 35 * num_trades) * pow(10, 18))::numeric::text as amount,
+       ((50 * num_batches + 35 * (num_trades - jit_orders)) * pow(10, 18))::numeric::text as amount,
        '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB'                        as token_address
 from final_counts
 order by receiver;
