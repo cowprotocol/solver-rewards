@@ -46,7 +46,7 @@ class MyTestCase(unittest.TestCase):
         expected_results = [Transfer.from_dict(d) for d in dune_results]
         self.assertAlmostEqual(
             sum(ct.amount_wei for ct in cow_transfers),
-            sum(t.amount_wei for t in expected_results)
+            sum(t.amount_wei for t in expected_results),
         )
 
 
