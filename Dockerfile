@@ -1,11 +1,4 @@
-FROM python:alpine
-RUN apk add --update gcc libc-dev linux-headers postgresql-dev
-
-WORKDIR /app
-
-COPY requirements.txt requirements.txt
-RUN pip install -r requirements.txt
-
+FROM python
 COPY . .
-
+RUN pip install -r requirements.txt
 ENTRYPOINT [ "python3", "-m" , "src.fetch.transfer_file"]
