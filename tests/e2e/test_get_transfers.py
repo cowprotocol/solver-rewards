@@ -5,7 +5,6 @@ from duneapi.types import DuneQuery, QueryParameter, Network
 from duneapi.util import open_query
 
 from src.fetch.transfer_file import (
-    get_transfers,
     get_cow_rewards,
     get_eth_spent,
     COW_PER_BATCH,
@@ -45,10 +44,9 @@ class MyTestCase(unittest.TestCase):
             )
         )
         expected_results = [Transfer.from_dict(d) for d in dune_results]
-        num_jit_orders = 314 * pow(10, 18)
         self.assertAlmostEqual(
             sum(ct.amount_wei for ct in cow_transfers),
-            sum(t.amount_wei for t in expected_results) - 35 * num_jit_orders,
+            sum(t.amount_wei for t in expected_results)
         )
 
 
