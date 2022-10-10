@@ -9,6 +9,9 @@ from web3 import Web3
 
 COW_TOKEN_ADDRESS = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
 
+COW_PER_BATCH = 50
+COW_PER_TRADE = 35
+
 # Things requiring network
 load_dotenv()
 ENV = os.environ
