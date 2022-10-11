@@ -1,6 +1,7 @@
 select
     block_time,
     rpt.solver_name,
+    concat('<a href="https://dune.com/queries/663231?TxHash=', concat('0x', encode(rpt.tx_hash, 'hex')), '" target="_blank">link</a>') as token_breakdown,
     concat('0x', encode(rpt.tx_hash, 'hex')) as tx_hash,
     usd_value,
     batch_value,

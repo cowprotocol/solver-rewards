@@ -36,7 +36,7 @@ class TestSlackPost(unittest.TestCase):
                 channel=os.environ["SLACK_CHANNEL"],
                 message="Test Message",
                 sub_messages={
-                    "Test Category1": "First Inner Message",
+                    "Test Category 1": "First Inner Message",
                     "Test Category 2": "Second Inner Message",
                 },
             ),
