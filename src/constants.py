@@ -23,7 +23,6 @@ NETWORK_STRING = ENV.get("NETWORK", "mainnet")
 NODE_URL = f"https://{NETWORK_STRING}.infura.io/v3/{INFURA_KEY}"
 NETWORK = {
     "mainnet": EthereumNetwork.MAINNET,
-    "rinkeby": EthereumNetwork.RINKEBY,
     "gnosis": EthereumNetwork.XDAI,
     "goerli": EthereumNetwork.GOERLI,
 }[NETWORK_STRING]
