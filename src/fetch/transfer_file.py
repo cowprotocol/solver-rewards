@@ -42,9 +42,6 @@ from src.utils.prices import eth_in_token, TokenId, token_in_eth
 from src.utils.print_store import PrintStore, Category
 from src.utils.script_args import generic_script_init
 
-COW_PER_BATCH = 50
-COW_PER_TRADE = 35
-
 log_saver = PrintStore()
 
 

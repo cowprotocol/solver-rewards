@@ -8,6 +8,7 @@ from duneapi.api import DuneAPI
 from duneapi.types import QueryParameter, DuneQuery, Network
 from duneapi.util import open_query
 
+from src.constants import COW_PER_BATCH, COW_PER_TRADE
 from src.models import AccountingPeriod
 from src.utils.script_args import generic_script_init
 
@@ -27,12 +28,14 @@ def get_period_totals(dune: DuneAPI, period: AccountingPeriod) -> PeriodTotals:
     Fetches & Returns Dune Results for accounting period totals.
     """
     query = DuneQuery.from_environment(
-        raw_sql=open_query("./dashboards/period-totals.sql"),
+        raw_sql=open_query("./dashboards/solver-rewards-accounting/period-totals.sql"),
         network=Network.MAINNET,
         name="Accounting Period Totals",
         parameters=[
             QueryParameter.date_type("StartTime", period.start),
             QueryParameter.date_type("EndTime", period.end),
+            QueryParameter.number_type("PerBatchReward", COW_PER_BATCH),
+            QueryParameter.number_type("PerTradeReward", COW_PER_TRADE),
         ],
     )
     data_set = dune.fetch(query)

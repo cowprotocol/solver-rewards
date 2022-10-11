@@ -4,11 +4,10 @@ from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, QueryParameter, Network
 from duneapi.util import open_query
 
+from src.constants import COW_PER_BATCH, COW_PER_TRADE
 from src.fetch.transfer_file import (
     get_cow_rewards,
     get_eth_spent,
-    COW_PER_BATCH,
-    COW_PER_TRADE,
     Transfer,
 )
 from src.models import AccountingPeriod

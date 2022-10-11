@@ -15,16 +15,16 @@ class TestTransactionPost(unittest.TestCase):
     def setUp(self) -> None:
         # PK for deterministic ganache default account `ganache-cli -d`
         self.pk = "0x4f3edf983ac636a65a842ce7c78d9aa706d3b113bce9c46f30d7d21715b23b1d"
-        self.test_safe = "0x8990c564ec303C7b26d3d5556ef0910E58Be08Ce"
-        self.owl = Token("0xa7D1C04fAF998F9161fC9F800a99A809b84cfc9D", 18)
+        self.test_safe = "0xAb4178341C37e2307726361eEAE47FCA606cd458"
+        self.cow = Token("0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600", 18)
         self.receiver = Address("0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0")
         self.client = EthereumClient(
-            URI(f"https://rinkeby.infura.io/v3/{os.environ.get('INFURA_KEY')}")
+            URI(f"https://goerli.infura.io/v3/{os.environ.get('INFURA_KEY')}")
         )
 
     def test_token_decimals(self):
         token_transfer = Transfer(
-            token=self.owl,
+            token=self.cow,
             amount_wei=15,
             receiver=self.receiver,
         )
@@ -32,7 +32,7 @@ class TestTransactionPost(unittest.TestCase):
 
         post_multisend(
             safe_address=Web3().toChecksumAddress(self.test_safe),
-            network=EthereumNetwork.RINKEBY,
+            network=EthereumNetwork.GOERLI,
             transfers=[
                 token_transfer.as_multisend_tx(),
                 native_transfer.as_multisend_tx(),
