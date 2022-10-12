@@ -21,6 +21,7 @@ from eth_typing.encoding import HexStr
 from eth_typing.ethpm import URI
 from gnosis.eth.ethereum_client import EthereumClient
 from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
+from pandas import DataFrame
 from slack.web.client import WebClient
 from slack.web.slack_response import SlackResponse
 
@@ -360,7 +361,7 @@ class Overdraft:
         )
 
 
-def get_cow_rewards(start_block: str, end_block: str) -> list[Transfer]:
+def get_cow_rewards(dune: DuneAPI, start_block: str, end_block: str) -> list[Transfer]:
     """
     Fetches COW token rewards from orderbook database returning a list of Transfers
     """
@@ -370,15 +371,45 @@ def get_cow_rewards(start_block: str, end_block: str) -> list[Transfer]:
         .replace("{{start_block}}", start_block)
         .replace("{{end_block}}", end_block)
     )
-    # Need to fetch results from both order-books (prod and barn)
-    prod_transfers = Transfer.from_dataframe(
-        pdf=pd.read_sql(sql=cow_reward_query, con=pg_engine(OrderbookEnv.PROD))
-    )
-    barn_transfers = Transfer.from_dataframe(
-        pdf=pd.read_sql(sql=cow_reward_query, con=pg_engine(OrderbookEnv.BARN))
-    )
 
-    return consolidate_transfers(prod_transfers + barn_transfers)
+    # Need to fetch results from both order-books (prod and barn)
+    prod_df: DataFrame = pd.read_sql(
+        sql=cow_reward_query, con=pg_engine(OrderbookEnv.PROD)
+    )
+    print(f"got {prod_df} from production DB")
+    barn_df: DataFrame = pd.read_sql(
+        sql=cow_reward_query, con=pg_engine(OrderbookEnv.BARN)
+    )
+    print(f"got {barn_df} from staging DB")
+
+    cow_rewards_df = pd.concat([prod_df, barn_df])
+
+    dune_trade_counts = dune.fetch(
+        query=DuneQuery.from_environment(
+            raw_sql=open_query("./queries/dune_trade_counts.sql"),
+            network=Network.MAINNET,
+            name="Trade Counts",
+            parameters=[
+                QueryParameter.text_type("start_block", start_block),
+                QueryParameter.text_type("end_block", end_block),
+            ],
+        )
+    )
+    # Validation of results - using characteristics of results from two sources.
+    # Solvers do not appear in both environments!
+    assert set(prod_df.receiver).isdisjoint(set(barn_df.receiver)), "receiver overlap!"
+    # Number of trades per solver retrieved from orderbook agrees ethereum events.
+    solver_num_trades: dict[str, int] = {
+        row["solver"].lower(): int(row["num_trades"]) for row in dune_trade_counts
+    }
+    assert set(cow_rewards_df.receiver) == set(
+        solver_num_trades.keys()
+    ), "solver set != receiver set"
+    for row in cow_rewards_df.rows:
+        solver = row.receiver.lower()
+        assert row.num_trades == solver_num_trades[solver], "invalid trade count!"
+
+    return Transfer.from_dataframe(cow_rewards_df)
 
 
 def get_eth_spent(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
@@ -402,7 +433,7 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     reimbursements = get_eth_spent(dune, period)
 
     start_block, end_block = period.get_block_interval(dune)
-    rewards = get_cow_rewards(start_block, end_block)
+    rewards = get_cow_rewards(dune, start_block, end_block)
 
     split_transfers = SplitTransfers(period, reimbursements + rewards)
 
