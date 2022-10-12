@@ -14,7 +14,7 @@ with trade_hashes as (SELECT solver,
 
 select concat('0x', encode(solver, 'hex'))          as receiver,
        -- This column will be used to compare with Dune:
-       -- cross referencing that all trades ae accounted for in the orderbook
+       -- cross referencing that all trades are accounted for in the orderbook
        count(*) as num_trades,
        (sum(reward) * pow(10, 18))::numeric::text   as amount,
        '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB' as token_address
