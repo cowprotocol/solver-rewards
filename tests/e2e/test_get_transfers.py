@@ -1,15 +1,7 @@
 import unittest
 
 from duneapi.api import DuneAPI
-from duneapi.types import DuneQuery, QueryParameter, Network
-from duneapi.util import open_query
-
-from src.constants import COW_PER_BATCH, COW_PER_TRADE
-from src.fetch.transfer_file import (
-    get_cow_rewards,
-    get_eth_spent,
-    Transfer,
-)
+from src.fetch.transfer_file import get_cow_rewards, get_eth_spent
 from src.models import AccountingPeriod
 
 

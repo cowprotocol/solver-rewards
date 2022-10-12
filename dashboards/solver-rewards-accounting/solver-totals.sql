@@ -34,6 +34,5 @@ select
     concat(environment, '-', name) as solver_name, 
     execution_cost_eth, 
     batches_settled,
-    num_trades,
-    batches_settled * '{{PerBatchReward}}' + num_trades * '{{PerTradeReward}}' as cow_reward
+    num_trades
 from per_solver_results

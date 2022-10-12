@@ -10,8 +10,7 @@ solver_rewards as (
         count(*) as batches_settled,
         sum(num_trades) as num_trades
     from gnosis_protocol_v2.batches
-    where block_time >= '{{StartTime}}'
-    and block_time < '{{EndTime}}'
+    where block_time between '{{StartTime}}' and '{{EndTime}}'
 ),
 
 realized_fees as (
@@ -34,7 +33,8 @@ realized_fees as (
 select
     r.accounting_period,
     execution_cost_eth,
-    batches_settled * '{{PerBatchReward}}' + num_trades * '{{PerTradeReward}}' as cow_rewards,
+    batches_settled,
+    num_trades,
     realized_fees_eth
 from solver_rewards r
 join realized_fees f
