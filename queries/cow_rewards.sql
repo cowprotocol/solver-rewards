@@ -10,7 +10,7 @@ with trade_hashes as (SELECT solver,
                           ORDER BY s.log_index ASC
                           LIMIT 1
                           ) AS settlement ON true
-                      where block_number between 15719995 and 15727058)
+                      where block_number between {{start_block}} and {{end_block}})
 
 select concat('0x', encode(solver, 'hex'))          as receiver,
        -- This column will be used to compare with Dune:
