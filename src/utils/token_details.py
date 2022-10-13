@@ -3,12 +3,16 @@ Very basic Token Info Fetcher that gets token decimals
 """
 import functools
 import logging.config
+
 from duneapi.types import Address
 
-from src.constants import w3, ERC20_ABI
+from src.constants import w3, ERC20_ABI, LOG_CONFIG_FILE
 
 log = logging.getLogger(__name__)
-logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
+
+logging.config.fileConfig(
+    fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
+)
 
 
 @functools.cache
