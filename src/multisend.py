@@ -9,6 +9,7 @@ from gnosis.eth.ethereum_client import EthereumClient
 from gnosis.eth.ethereum_network import EthereumNetwork
 from gnosis.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
 from gnosis.safe.safe import Safe
+
 # This dependency can be removed once this issue is resolved:
 # https://github.com/safe-global/safe-eth-py/issues/284
 from safe_cli.api.transaction_service_api import TransactionServiceApi
