@@ -10,11 +10,14 @@ from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, Network
 from duneapi.util import open_query
 
+from constants import LOG_CONFIG_FILE
 from src.token_list import fetch_trusted_tokens
 from src.utils.script_args import generic_script_init
 
 log = logging.getLogger(__name__)
-logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
+logging.config.fileConfig(
+    fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
+)
 
 
 def update_token_list(dune: DuneAPI, token_list: list[str]) -> list[dict[str, str]]:
