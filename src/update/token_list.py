@@ -10,7 +10,7 @@ from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, Network
 from duneapi.util import open_query
 
-from constants import LOG_CONFIG_FILE
+from src.constants import LOG_CONFIG_FILE
 from src.token_list import fetch_trusted_tokens
 from src.utils.script_args import generic_script_init
 

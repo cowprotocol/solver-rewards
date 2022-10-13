@@ -13,7 +13,7 @@ from gnosis.safe.safe import Safe
 # https://github.com/safe-global/safe-eth-py/issues/284
 from safe_cli.api.transaction_service_api import TransactionServiceApi
 
-from constants import LOG_CONFIG_FILE
+from src.constants import LOG_CONFIG_FILE
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(

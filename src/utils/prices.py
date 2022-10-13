@@ -9,7 +9,7 @@ from enum import Enum
 
 from coinpaprika import client as cp
 
-from constants import LOG_CONFIG_FILE
+from src.constants import LOG_CONFIG_FILE
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(

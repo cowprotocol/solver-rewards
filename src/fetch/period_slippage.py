@@ -10,7 +10,7 @@ from duneapi.api import DuneAPI
 from duneapi.types import QueryParameter, DuneQuery, Network, Address, DuneRecord
 from duneapi.util import open_query
 
-from constants import LOG_CONFIG_FILE
+from src.constants import LOG_CONFIG_FILE
 from src.models import AccountingPeriod
 from src.token_list import fetch_trusted_tokens
 from src.update.token_list import update_token_list
