@@ -23,6 +23,16 @@ filtered_trades as (
               else replace('{{TxHash}}', '0x', '\x') :: bytea = t.tx_hash
         end
 ),
+
+batchwise_traders as (
+    select
+        tx_hash,
+        array_agg(trader_in) as traders_in,
+        array_agg(trader_out) as traders_out
+    from filtered_trades
+    group by tx_hash
+),
+
 user_in as (
     select block_time,
            tx_hash,
@@ -53,7 +63,7 @@ user_out as (
 ),
 other_transfers as (
     select block_time,
-           tx_hash,
+           b.tx_hash,
            dex_swaps,
            num_trades,
            solver_address,
@@ -70,20 +80,14 @@ other_transfers as (
                end            as transfer_type
     from erc20."ERC20_evt_Transfer" t
              inner join gnosis_protocol_v2."batches" b
-                        on evt_tx_hash = tx_hash
+                        on evt_tx_hash = b.tx_hash
+             inner join batchwise_traders bt
+                on evt_tx_hash = bt.tx_hash
     where b.block_time between '{{StartTime}}'
         and '{{EndTime}}'
       and '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' in ("to", "from")
-      and "from" not in (
-        select trader_in
-        from filtered_trades
-        where evt_tx_hash = tx_hash
-    )
-      and "to" not in (
-        select trader_out
-        from filtered_trades
-        where evt_tx_hash = tx_hash
-    )
+      and "from" not in (select unnest(traders_in))
+      and "to"  not in (select unnest(traders_out))
       and case
               when '{{TxHash}}' = '0x' then true
               else replace('{{TxHash}}', '0x', '\x') :: bytea = b.tx_hash
