@@ -39,16 +39,6 @@
           "type": "datetime"
         },
         {
-          "key": "PerBatchReward",
-          "value": 50,
-          "type": "number"
-        },
-        {
-          "key": "PerTradeReward",
-          "value": 35,
-          "type": "number"
-        },
-        {
           "key": "StartTime",
           "value": "2022-06-21 00:00:00",
           "type": "datetime"
@@ -66,16 +56,6 @@
           "key": "EndTime",
           "value": "2022-06-28 00:00:00",
           "type": "datetime"
-        },
-        {
-          "key": "PerBatchReward",
-          "value": 50,
-          "type": "number"
-        },
-        {
-          "key": "PerTradeReward",
-          "value": 35,
-          "type": "number"
         },
         {
           "key": "StartTime",
