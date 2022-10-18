@@ -7,15 +7,19 @@ import logging.config
 from eth_typing.evm import ChecksumAddress
 from gnosis.eth.ethereum_client import EthereumClient
 from gnosis.eth.ethereum_network import EthereumNetwork
-from gnosis.safe.safe import Safe
 from gnosis.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
+from gnosis.safe.safe import Safe
 
 # This dependency can be removed once this issue is resolved:
 # https://github.com/safe-global/safe-eth-py/issues/284
 from safe_cli.api.transaction_service_api import TransactionServiceApi
 
+from src.constants import LOG_CONFIG_FILE
+
 log = logging.getLogger(__name__)
-logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
+logging.config.fileConfig(
+    fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
+)
 
 # This contract address can be removed once this issue is resolved:
 # https://github.com/safe-global/safe-eth-py/issues/283
