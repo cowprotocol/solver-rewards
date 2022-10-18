@@ -77,10 +77,12 @@ other_transfers as (
       and "from" not in (
         select trader_in
         from filtered_trades
+        where evt_tx_hash = tx_hash
     )
       and "to" not in (
         select trader_out
         from filtered_trades
+        where evt_tx_hash = tx_hash
     )
       and case
               when '{{TxHash}}' = '0x' then true
