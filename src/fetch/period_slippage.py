@@ -10,13 +10,16 @@ from duneapi.api import DuneAPI
 from duneapi.types import QueryParameter, DuneQuery, Network, Address, DuneRecord
 from duneapi.util import open_query
 
+from src.constants import LOG_CONFIG_FILE
 from src.models import AccountingPeriod
 from src.token_list import fetch_trusted_tokens
 from src.update.token_list import update_token_list
 from src.utils.script_args import generic_script_init
 
 log = logging.getLogger(__name__)
-logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
+logging.config.fileConfig(
+    fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
+)
 
 
 class QueryType(Enum):

@@ -1,9 +1,10 @@
 """Project Global Constants. """
 import json
 import os
+from pathlib import Path
 
-from duneapi.types import Address
 from dotenv import load_dotenv
+from duneapi.types import Address
 from gnosis.eth.ethereum_network import EthereumNetwork
 from web3 import Web3
 
@@ -12,6 +13,8 @@ COW_TOKEN_ADDRESS = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
 COW_PER_BATCH = 50
 COW_PER_TRADE = 35
 
+
+LOG_CONFIG_FILE = Path(__file__).parent.parent / Path("logging.conf")
 # Things requiring network
 load_dotenv()
 ENV = os.environ

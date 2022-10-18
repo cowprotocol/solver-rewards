@@ -4,13 +4,17 @@ Currently, only price feed is CoinPaprika's Free tier API.
 """
 import functools
 import logging.config
-from enum import Enum
 from datetime import datetime
+from enum import Enum
 
 from coinpaprika import client as cp
 
+from src.constants import LOG_CONFIG_FILE
+
 log = logging.getLogger(__name__)
-logging.config.fileConfig(fname="logging.conf", disable_existing_loggers=False)
+logging.config.fileConfig(
+    fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
+)
 
 client = cp.Client()
 
