@@ -26,6 +26,11 @@ per_solver_results as (
         batches_settled,
         num_trades
     from solver_data sd
+),
+
+orderbook_data as (
+    select solver, num_trades as orderbook_trades, cow_reward
+    from dune_user_generated.cow_rewards_{{AccountingPeriodHash}}
 )
 
 -- -- END SOLVER REWARDS
@@ -34,5 +39,10 @@ select
     concat(environment, '-', name) as solver_name, 
     execution_cost_eth, 
     batches_settled,
-    num_trades
+    num_trades,
+    coalesce(jit_orders, 0) as jit_orders,
+    orderbook_trades,
+    cow_reward
 from per_solver_results
+left outer join orderbook_data -- Just in case its not there.
+    on solver_address = solver

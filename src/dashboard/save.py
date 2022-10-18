@@ -9,7 +9,7 @@ if __name__ == "__main__":
     dune_connection, args = arg_parse(description="Save Dashboard")
 
     dashboard = DuneDashboard.from_file(
-        dune_connection, f"dashboards/{args.dashboard_slug}/_config.json"
+        dune_connection, f"dashboards/{args.slug}/_config.json"
     )
     dashboard.update()
     print("Updated", dashboard)

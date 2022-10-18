@@ -12,7 +12,7 @@ def arg_parse(description: str) -> tuple[DuneAPI, argparse.Namespace]:
     """
     parser = argparse.ArgumentParser(description)
     parser.add_argument(
-        "--dashboard-slug",
+        "--slug",
         type=str,
         required=True,
         help="The hyphenated last part of the dashboard URL",

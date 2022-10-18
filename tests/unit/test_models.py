@@ -352,6 +352,10 @@ class TestAccountingPeriod(unittest.TestCase):
             "2022-01-01-to-2022-01-07", str(AccountingPeriod("2022-01-01", 6))
         )
 
+    def test_hash(self):
+        self.assertEqual(2022010120220108, hash(AccountingPeriod("2022-01-01")))
+        self.assertEqual(2022010120220107, hash(AccountingPeriod("2022-01-01", 6)))
+
     def test_invalid(self):
         bad_date_string = "Invalid date string"
         with self.assertRaises(ValueError) as err:

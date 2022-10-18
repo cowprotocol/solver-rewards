@@ -28,6 +28,12 @@ class AccountingPeriod:
             [self.start.strftime("%Y-%m-%d"), self.end.strftime("%Y-%m-%d")]
         )
 
+    def __hash__(self) -> int:
+        """Turns (1985-03-10, 1994-04-05) into only the digits 1985031019940405"""
+        return int(
+            "".join([self.start.strftime("%Y%m%d"), self.end.strftime("%Y%m%d")])
+        )
+
     def get_block_interval(self, dune: DuneAPI) -> tuple[str, str]:
         """Returns block numbers corresponding to date interval"""
         results = dune.fetch(

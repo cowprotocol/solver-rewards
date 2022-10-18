@@ -7,6 +7,13 @@
   },
   "queries": [
     {
+      "id": 1423296,
+      "name": "AccountingPeriodHash",
+      "description": "This is the Date Range as digits YYYYMMDDYYYYMMDD",
+      "query_file": "period-hash.sql",
+      "network": "Ethereum Mainnet"
+    },
+    {
       "id": 674947,
       "name": "Vouch Registry",
       "description": "",
