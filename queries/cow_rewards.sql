@@ -12,7 +12,7 @@ with trade_hashes as (SELECT solver,
                           LIMIT 1
                           ) AS settlement ON true
                       join solver_competitions on settlement.tx_hash = solver_competitions.tx_hash
-                      where block_number between 15719995 and 15727058)
+                      where block_number between {{start_block}} and {{end_block}})
 
 select concat('0x', encode(solver, 'hex'))          as receiver,
        -- Used to compare with Dune (cross referencing that all trades are accounted for in the orderbook)
