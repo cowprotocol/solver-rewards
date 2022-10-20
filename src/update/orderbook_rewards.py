@@ -14,7 +14,6 @@ def dune_repr(df_row: Series) -> str:
     This is the per row format for inserting entries in a table of VALUES
     Specific to a COW Reward Item
     """
-    # May need to pass bytea into view: '\\{df_row['receiver'].lower()[1:]}'::bytea
     return (
         f"('{df_row['receiver'].lower()}', {df_row['num_trades']}, {df_row['amount']})"
     )
@@ -49,5 +48,3 @@ def push_user_generated_view(
     )
     assert len(data) == len(results)
     print(f"Pushed User Generated view cow_rewards_{hash(period)}")
-    # if not success:
-    #     raise RuntimeError("Failed to push User Generated View to Dune - exiting!")

@@ -23,8 +23,6 @@ select concat('0x', encode(solver, 'hex'))          as receiver,
        (sum(coalesce(reward, 0)) * pow(10, 18))::numeric::text   as amount,
        '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB' as token_address
 from trade_hashes
-        -- outer join because there are missing records in order rewards:
-        -- e.g. order_uid 0x9CB39E52C3ABD20F38830E70E31E38DEBC12349CA680E7F1DAA4B47B704394D65FCDC32DFC361A32E9D5AB9A384B890C62D0B8AC634D8F38
          left outer join order_rewards
                     on trade_hashes.order_uid = order_rewards.order_uid
                     and trade_hashes.auction_id = order_rewards.auction_id
