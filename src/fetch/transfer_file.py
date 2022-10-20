@@ -470,8 +470,8 @@ def consolidate_transfers(transfer_list: list[Transfer]) -> list[Transfer]:
 def dashboard_url(period: AccountingPeriod) -> str:
     """Constructs Solver Accounting Dashboard URL for Period"""
     base = "https://dune.com/gnosis.protocol/"
-    slug = "solver-rewards-accounting"
-    query = f"?StartTime={period.start}&EndTime={period.end}&AccountingPeriodHash={hash(period)}"
+    slug = "solver-rewards-accounting-v2"
+    query = f"?StartTime={period.start}&EndTime={period.end}&PeriodHash={hash(period)}"
     return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
 

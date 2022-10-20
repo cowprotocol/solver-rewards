@@ -1,5 +1,5 @@
 """Pushes a new dune user generated view per Accounting Period
-with name dune_user_generated.cow_rewards_{{StartDate}}-{{EndDate}}
+with name dune_user_generated.cow_rewards_{{PeriodHash}}
 """
 from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery, Network
@@ -29,7 +29,7 @@ def orderbook_rewards_query(period: AccountingPeriod, data: DataFrame) -> str:
     """Returns query associated with the upsert of orderbook cow reward data"""
     return (
         open_query("./queries/user_generated_rewards.sql")
-        .replace("{{AccountingPeriodHash}}", str(hash(period)))
+        .replace("{{PeriodHash}}", str(hash(period)))
         .replace("{{SolverRewards}}", rewards_df_to_dune_list(data))
     )
 
