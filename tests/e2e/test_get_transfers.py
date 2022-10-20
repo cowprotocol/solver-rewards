@@ -18,10 +18,9 @@ class MyTestCase(unittest.TestCase):
         )
 
     def test_get_cow_rewards(self):
-        period = AccountingPeriod("2022-10-11")
-        start_block, end_block = period.get_block_interval(self.dune)
+        period = AccountingPeriod("2022-10-17", length_days=3)
         try:
-            get_cow_rewards(self.dune, start_block, end_block)
+            get_cow_rewards(self.dune, period)
         except AssertionError as err:
             self.fail(f"get_cow_rewards failed with {err}")
 

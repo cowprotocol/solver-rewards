@@ -40,12 +40,14 @@ def push_user_generated_view(
     """
     Upsert SQL query constructing  a user generated view to Dune V1
     """
-    success = dune.initiate_query(
+    results = dune.fetch(
         query=DuneQuery.from_environment(
             raw_sql=orderbook_rewards_query(period, data),
-            name="Updated Token List",
+            name="Orderbook Rewards",
             network=Network.MAINNET,
         )
     )
-    if not success:
-        raise RuntimeError("Failed to push User Generated View to Dune - exiting!")
+    assert len(data) == len(results)
+    print(f"Pushed User Generated view cow_rewards_{hash(period)}")
+    # if not success:
+    #     raise RuntimeError("Failed to push User Generated View to Dune - exiting!")

@@ -367,6 +367,7 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     Fetches COW token rewards from orderbook database returning a list of Transfers
     """
     start_block, end_block = period.get_block_interval(dune)
+    print(f"Fetching CoW Rewards for block interval {start_block}, {end_block}")
     cow_reward_query = (
         open_query("./queries/cow_rewards.sql")
         .replace("{{start_block}}", start_block)
@@ -384,9 +385,6 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     print(f"got {barn_df} from staging DB")
 
     cow_rewards_df = pd.concat([prod_df, barn_df])
-    # We write this to Dune Database (as a user generated view).
-    push_user_generated_view(dune, period, data=cow_rewards_df)
-
     dune_trade_counts = dune.fetch(
         query=DuneQuery.from_environment(
             raw_sql=open_query("./queries/dune_trade_counts.sql"),
@@ -405,13 +403,15 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     solver_num_trades: dict[str, int] = {
         row["solver"].lower(): int(row["num_trades"]) for row in dune_trade_counts
     }
-    assert set(cow_rewards_df.receiver) == set(
-        solver_num_trades.keys()
-    ), "solver set != receiver set"
-    for row in cow_rewards_df.rows:
+    db_solvers = set(cow_rewards_df.receiver)
+    dune_solvers = set(solver_num_trades.keys())
+    assert db_solvers == dune_solvers, f"{db_solvers} != {dune_solvers}"
+    for _, row in cow_rewards_df.iterrows():
         solver = row.receiver.lower()
         assert row.num_trades == solver_num_trades[solver], "invalid trade count!"
 
+    # Write this to Dune Database (as a user generated view).
+    push_user_generated_view(dune, period, data=cow_rewards_df)
     return Transfer.from_dataframe(cow_rewards_df)
 
 
