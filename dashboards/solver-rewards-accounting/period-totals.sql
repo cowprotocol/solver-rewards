@@ -20,22 +20,25 @@ realized_fees as (
             ' to ',
             to_char('{{EndTime}}'::timestamptz - interval '1 day', 'YYYY-MM-DD')
         ) as accounting_period,
-        sum(atoms_bought) / 10^18 as realized_fees_eth
-    from gnosis_protocol_v2."trades"
-    where trader in (
+        sum("buyAmount") / 10^18 as realized_fees_eth
+    from gnosis_protocol_v2."GPv2Settlement_evt_Trade"
+    where owner in (
         select address
         from gnosis_protocol_v2."view_solvers"
         where name = 'Withdraw'
     )
-    and block_time between '{{StartTime}}' and '{{EndTime}}'
+    and evt_block_time between '{{StartTime}}' and '{{EndTime}}'
 )
 
 select
     r.accounting_period,
     execution_cost_eth,
+    realized_fees_eth,
+    realized_fees_eth / execution_cost_eth as cost_coverage,
+    (select sum(cow_reward) from dune_user_generated.cow_rewards_{{PeriodHash}}) / pow(10, 18) as cow_rewards,
     batches_settled,
     num_trades,
-    realized_fees_eth
+    num_trades / batches_settled as average_batch_size
 from solver_rewards r
 join realized_fees f
     on r.accounting_period = f.accounting_period

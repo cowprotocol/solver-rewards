@@ -38,6 +38,7 @@ from src.fetch.reward_targets import get_vouches, Vouch
 from src.models import AccountingPeriod, Token
 from src.multisend import post_multisend
 from src.pg_client import pg_engine, OrderbookEnv
+from src.update.orderbook_rewards import push_user_generated_view
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
 from src.utils.print_store import PrintStore, Category
@@ -361,11 +362,12 @@ class Overdraft:
         )
 
 
-def get_cow_rewards(dune: DuneAPI, start_block: str, end_block: str) -> list[Transfer]:
+def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """
     Fetches COW token rewards from orderbook database returning a list of Transfers
     """
-
+    start_block, end_block = period.get_block_interval(dune)
+    print(f"Fetching CoW Rewards for block interval {start_block}, {end_block}")
     cow_reward_query = (
         open_query("./queries/cow_rewards.sql")
         .replace("{{start_block}}", start_block)
@@ -383,7 +385,6 @@ def get_cow_rewards(dune: DuneAPI, start_block: str, end_block: str) -> list[Tra
     print(f"got {barn_df} from staging DB")
 
     cow_rewards_df = pd.concat([prod_df, barn_df])
-
     dune_trade_counts = dune.fetch(
         query=DuneQuery.from_environment(
             raw_sql=open_query("./queries/dune_trade_counts.sql"),
@@ -402,13 +403,17 @@ def get_cow_rewards(dune: DuneAPI, start_block: str, end_block: str) -> list[Tra
     solver_num_trades: dict[str, int] = {
         row["solver"].lower(): int(row["num_trades"]) for row in dune_trade_counts
     }
-    assert set(cow_rewards_df.receiver) == set(
-        solver_num_trades.keys()
-    ), "solver set != receiver set"
-    for row in cow_rewards_df.rows:
+    db_solvers = set(cow_rewards_df.receiver)
+    dune_solvers = set(solver_num_trades.keys())
+    assert (
+        db_solvers == dune_solvers
+    ), f"solver sets disagree: {db_solvers.symmetric_difference(dune_solvers)}"
+    for _, row in cow_rewards_df.iterrows():
         solver = row.receiver.lower()
         assert row.num_trades == solver_num_trades[solver], "invalid trade count!"
 
+    # Write this to Dune Database (as a user generated view).
+    push_user_generated_view(dune, period, data=cow_rewards_df)
     return Transfer.from_dataframe(cow_rewards_df)
 
 
@@ -432,8 +437,7 @@ def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
     reimbursements = get_eth_spent(dune, period)
 
-    start_block, end_block = period.get_block_interval(dune)
-    rewards = get_cow_rewards(dune, start_block, end_block)
+    rewards = get_cow_rewards(dune, period)
 
     split_transfers = SplitTransfers(period, reimbursements + rewards)
 
@@ -468,8 +472,8 @@ def consolidate_transfers(transfer_list: list[Transfer]) -> list[Transfer]:
 def dashboard_url(period: AccountingPeriod) -> str:
     """Constructs Solver Accounting Dashboard URL for Period"""
     base = "https://dune.com/gnosis.protocol/"
-    slug = "solver-rewards-accounting"
-    query = f"?StartTime={period.start}&EndTime={period.end}"
+    slug = "solver-rewards-accounting-v2"
+    query = f"?StartTime={period.start}&EndTime={period.end}&PeriodHash={hash(period)}"
     return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
 

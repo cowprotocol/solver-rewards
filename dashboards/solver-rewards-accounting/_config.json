@@ -1,11 +1,30 @@
 {
   "meta": {
-    "name": "Solver Rewards Accounting",
-    "slug": "solver-rewards-accounting",
+    "name": "Solver Rewards Accounting V2",
+    "slug": "solver-rewards-accounting-v2",
     "user": "gnosis.protocol",
     "query_path": "./dashboards/solver-rewards-accounting"
   },
   "queries": [
+    {
+      "id": 1423296,
+      "name": "PeriodHash",
+      "description": "This is the Date Range as digits YYYYMMDDYYYYMMDD",
+      "query_file": "period-hash.sql",
+      "network": "Ethereum Mainnet",
+      "parameters": [
+        {
+          "key": "EndTime",
+          "value": "2022-06-28 00:00:00",
+          "type": "datetime"
+        },
+        {
+          "key": "StartTime",
+          "value": "2022-06-21 00:00:00",
+          "type": "datetime"
+        }
+      ]
+    },
     {
       "id": 674947,
       "name": "Vouch Registry",
@@ -27,8 +46,8 @@
       ]
     },
     {
-      "id": 448457,
-      "name": "Total Solver Rewards",
+      "id": 1431436,
+      "name": "Period Totals",
       "description": "",
       "query_file": "period-totals.sql",
       "network": "Ethereum Mainnet",
@@ -42,12 +61,17 @@
           "key": "StartTime",
           "value": "2022-06-21 00:00:00",
           "type": "datetime"
+        },
+        {
+          "key": "PeriodHash",
+          "value": "2022062120220628",
+          "type": "text"
         }
       ]
     },
     {
-      "id": 446799,
-      "name": "Solver Execution Costs",
+      "id": 1428181,
+      "name": "Solver Totals",
       "description": "",
       "query_file": "solver-totals.sql",
       "network": "Ethereum Mainnet",
@@ -61,6 +85,11 @@
           "key": "StartTime",
           "value": "2022-06-21 00:00:00",
           "type": "datetime"
+        },
+        {
+          "key": "PeriodHash",
+          "value": "2022062120220628",
+          "type": "text"
         }
       ]
     },
