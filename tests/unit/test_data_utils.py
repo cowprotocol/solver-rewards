@@ -15,7 +15,7 @@ class DummyDataClass:
 class TestDataUtils(unittest.TestCase):
     def test_dashboard_url(self):
         expected = (
-            "https://dune.com/gnosis.protocol/solver-rewards-accounting?"
+            "https://dune.com/gnosis.protocol/solver-rewards-accounting-v2?"
             "StartTime=2022-05-31+00%3A00%3A00&"
             "EndTime=2022-06-07+00%3A00%3A00&"
             "PeriodHash=2022053120220607"
