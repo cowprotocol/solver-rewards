@@ -384,7 +384,9 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     )
     print(f"got {barn_df} from staging DB")
 
-    cow_rewards_df = pd.concat([prod_df, barn_df])
+    # Validation of results - using characteristics of results from two sources.
+    # Solvers do not appear in both environments!
+    assert set(prod_df.receiver).isdisjoint(set(barn_df.receiver)), "receiver overlap!"
     dune_trade_counts = dune.fetch(
         query=DuneQuery.from_environment(
             raw_sql=open_query("./queries/dune_trade_counts.sql"),
@@ -396,13 +398,8 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
             ],
         )
     )
-    # Validation of results - using characteristics of results from two sources.
-    # Solvers do not appear in both environments!
-    assert set(prod_df.receiver).isdisjoint(set(barn_df.receiver)), "receiver overlap!"
+    cow_rewards_df = pd.concat([prod_df, barn_df])
     # Number of trades per solver retrieved from orderbook agrees ethereum events.
-    solver_num_trades: dict[str, int] = {
-        row["solver"].lower(): int(row["num_trades"]) for row in dune_trade_counts
-    }
     duplicates = pd.concat(
         [
             pd.DataFrame(dune_trade_counts),
@@ -412,9 +409,6 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
         ]
     ).drop_duplicates(keep=False)
     assert len(duplicates) == 0, f"solver sets disagree: {duplicates}"
-    for _, row in cow_rewards_df.iterrows():
-        solver = row.receiver.lower()
-        assert row.num_trades == solver_num_trades[solver], "invalid trade count!"
 
     # Write this to Dune Database (as a user generated view).
     push_user_generated_view(dune, period, data=cow_rewards_df)
