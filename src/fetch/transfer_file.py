@@ -405,7 +405,9 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     }
     db_solvers = set(cow_rewards_df.receiver)
     dune_solvers = set(solver_num_trades.keys())
-    assert db_solvers == dune_solvers, f"{db_solvers} != {dune_solvers}"
+    assert (
+        db_solvers == dune_solvers
+    ), f"solver sets disagree: {db_solvers.symmetric_difference(dune_solvers)}"
     for _, row in cow_rewards_df.iterrows():
         solver = row.receiver.lower()
         assert row.num_trades == solver_num_trades[solver], "invalid trade count!"
