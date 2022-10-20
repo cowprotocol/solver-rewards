@@ -53,7 +53,7 @@ select
     execution_cost_eth,
     batches_settled,
     num_trades,
-    coalesce(num_liquidity_orders, 0) as jit_orders,
+    coalesce(num_liquidity_orders, 0) as liquidity_orders,
     orderbook_trades,
     1.0 * cow_reward / pow(10, 18) as cow_reward
 from per_solver_results
