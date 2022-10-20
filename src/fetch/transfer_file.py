@@ -403,11 +403,15 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     solver_num_trades: dict[str, int] = {
         row["solver"].lower(): int(row["num_trades"]) for row in dune_trade_counts
     }
-    db_solvers = set(cow_rewards_df.receiver)
-    dune_solvers = set(solver_num_trades.keys())
-    assert (
-        db_solvers == dune_solvers
-    ), f"solver sets disagree: {db_solvers.symmetric_difference(dune_solvers)}"
+    duplicates = pd.concat(
+        [
+            pd.DataFrame(dune_trade_counts),
+            cow_rewards_df[["receiver", "num_trades"]].rename(
+                columns={"receiver": "solver"}
+            ),
+        ]
+    ).drop_duplicates(keep=False)
+    assert len(duplicates) == 0, f"solver sets disagree: {duplicates}"
     for _, row in cow_rewards_df.iterrows():
         solver = row.receiver.lower()
         assert row.num_trades == solver_num_trades[solver], "invalid trade count!"
