@@ -11,8 +11,7 @@ with trade_hashes as (SELECT solver,
                           ORDER BY s.log_index ASC
                           LIMIT 1
                           ) AS settlement ON true
-                      join solver_competitions
-                          on settlement.tx_hash = solver_competitions.tx_hash
+                      join solver_competitions on settlement.tx_hash = solver_competitions.tx_hash
                       where block_number between {{start_block}} and {{end_block}})
 
 select concat('0x', encode(solver, 'hex'))          as receiver,
