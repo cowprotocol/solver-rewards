@@ -55,7 +55,7 @@ select
     num_trades,
     coalesce(jit_orders, 0) as jit_orders,
     orderbook_trades,
-    cow_reward
+    1.0 * cow_reward / pow(10, 18) as cow_reward
 from per_solver_results
 left outer join jit_orders jo
     on solver_address = jo.solver

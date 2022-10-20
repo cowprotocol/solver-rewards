@@ -3,7 +3,7 @@
     "name": "Solver Rewards Accounting V2",
     "slug": "solver-rewards-accounting-v2",
     "user": "gnosis.protocol",
-    "query_path": "./dashboards/solver-rewards-accounting-v2"
+    "query_path": "./dashboards/solver-rewards-accounting"
   },
   "queries": [
     {
@@ -11,7 +11,19 @@
       "name": "PeriodHash",
       "description": "This is the Date Range as digits YYYYMMDDYYYYMMDD",
       "query_file": "period-hash.sql",
-      "network": "Ethereum Mainnet"
+      "network": "Ethereum Mainnet",
+      "parameters": [
+        {
+          "key": "EndTime",
+          "value": "2022-06-28 00:00:00",
+          "type": "datetime"
+        },
+        {
+          "key": "StartTime",
+          "value": "2022-06-21 00:00:00",
+          "type": "datetime"
+        }
+      ]
     },
     {
       "id": 674947,
@@ -73,6 +85,11 @@
           "key": "StartTime",
           "value": "2022-06-21 00:00:00",
           "type": "datetime"
+        },
+        {
+          "key": "PeriodHash",
+          "value": "2022062120220628",
+          "type": "text"
         }
       ]
     },

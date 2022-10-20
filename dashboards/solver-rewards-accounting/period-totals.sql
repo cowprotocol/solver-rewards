@@ -35,6 +35,7 @@ select
     execution_cost_eth,
     realized_fees_eth,
     realized_fees_eth / execution_cost_eth as cost_coverage,
+    (select sum(cow_reward) from dune_user_generated.cow_rewards_{{PeriodHash}}) as cow_rewards,
     batches_settled,
     num_trades,
     num_trades / batches_settled as average_batch_size
