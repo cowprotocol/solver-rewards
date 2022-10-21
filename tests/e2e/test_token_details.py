@@ -13,7 +13,7 @@ class TestTokenDecimals(unittest.TestCase):
         self.assertEqual(get_token_decimals(duneapi.types.Address(cow)), 18)
 
     def test_token_decimals_cache(self):
-        new_token = "0x10245515d35BC525e3C0977412322BFF32382EF1"
+        new_token = "0x40c92339fd9c0f59d976af127e82de61914efd0f"
         with self.assertLogs("src.utils.token_details", level="INFO"):
             get_token_decimals(new_token)
 
