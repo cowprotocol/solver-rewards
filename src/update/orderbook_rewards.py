@@ -15,13 +15,12 @@ def dune_repr(df_row: Series) -> str:
     Specific to a COW Reward Item
     """
     return (
-        f"('{df_row['receiver']}', {df_row['num_trades']}, {df_row['amount']})"
+        f"('{df_row['receiver'].lower()}', {df_row['num_trades']}, {df_row['amount']})"
     )
 
 
 def rewards_df_to_dune_list(data: DataFrame) -> str:
     """Joins a list of VALUES into the format for postgres VALUES list"""
-    data["receiver"] = data["receiver"].apply(lambda x: x.lower())
     return ",\n".join([dune_repr(row) for _, row in data.iterrows()])
 
 
