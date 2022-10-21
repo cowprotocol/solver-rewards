@@ -14,7 +14,9 @@ def dune_repr(df_row: Series) -> str:
     This is the per row format for inserting entries in a table of VALUES
     Specific to a COW Reward Item
     """
-    return f"('{df_row['receiver']}', {df_row['num_trades']}, {df_row['amount']})"
+    return (
+        f"('{df_row['receiver']}', {df_row['num_trades']}, {df_row['amount']})"
+    )
 
 
 def rewards_df_to_dune_list(data: DataFrame) -> str:
