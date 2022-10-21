@@ -363,11 +363,11 @@ class Overdraft:
         )
 
 
-def map_reward(amount: float, tx_hash: str, risk_free: set[str]) -> float:
+def map_reward(amount: float, risk_free: bool) -> float:
     """
     Converts orderbook rewards based on additional knowledge of "risk_free" transactions
     """
-    if amount > 0 and tx_hash in risk_free:
+    if amount > 0 and risk_free:
         # Risk Free Orders that are not liquidity orders get 37 COW tokens.
         return 37.0
     return amount
@@ -382,9 +382,9 @@ def aggregate_orderbook_rewards(
     the results are aggregated by solver as a sum of amounts and additional
     "transfer" related metadata is appended. The aggregated dataframe is returned.
     """
-    # TODO - passing large set in to function multiple times!
     per_order_df["amount"] = per_order_df[["amount", "tx_hash"]].apply(
-        lambda x: map_reward(x.amount, x.tx_hash, risk_free=risk_free_transactions), axis=1
+        lambda x: map_reward(x.amount, risk_free=x.tx_hash in risk_free_transactions),
+        axis=1,
     )
     result_agg = (
         per_order_df.groupby("solver")["amount"].agg(["count", "sum"]).reset_index()
