@@ -24,6 +24,7 @@ from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
 from pandas import DataFrame
 from slack.web.client import WebClient
 from slack.web.slack_response import SlackResponse
+from web3 import Web3
 
 from src.constants import (
     ERC20_TOKEN,
@@ -362,6 +363,46 @@ class Overdraft:
         )
 
 
+def map_reward(amount: float, tx_hash: str, risk_free: set[str]) -> float:
+    """
+    Converts orderbook rewards based on additional knowledge of "risk_free" transactions
+    """
+    if amount > 0 and tx_hash in risk_free:
+        # Risk Free Orders that are not liquidity orders get 37 COW tokens.
+        return 37.0
+    return amount
+
+
+def aggregate_orderbook_rewards(
+    per_order_df: DataFrame, risk_free_transactions: set[str]
+) -> DataFrame:
+    """
+    Takes rewards per order and adjusts them based on whether they were part of
+    a risk-free settlement or not. After the new amount mapping is complete,
+    the results are aggregated by solver as a sum of amounts and additional
+    "transfer" related metadata is appended. The aggregated dataframe is returned.
+    """
+    # TODO - passing large set in to function multiple times!
+    per_order_df["amount"] = per_order_df[["amount", "tx_hash"]].apply(
+        lambda x: map_reward(x.amount, x.tx_hash, risk_free=risk_free_transactions), axis=1
+    )
+    result_agg = (
+        per_order_df.groupby("solver")["amount"].agg(["count", "sum"]).reset_index()
+    )
+    del per_order_df  # We don't need this anymore!
+    # Add token address to each column
+    result_agg["token_address"] = "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
+    # Rename columns to align with "Transfer" Object
+    result_agg = result_agg.rename(
+        columns={"sum": "amount", "count": "num_trades", "solver": "receiver"}
+    )
+    # Convert float amounts to WEI
+    result_agg["amount"] = result_agg["amount"].apply(
+        lambda x: Web3().toWei(x, "ether")
+    )
+    return result_agg
+
+
 def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """
     Fetches COW token rewards from orderbook database returning a list of Transfers
@@ -384,7 +425,25 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     )
     print(f"got {barn_df} from staging DB")
 
-    cow_rewards_df = pd.concat([prod_df, barn_df])
+    # Solvers do not appear in both environments!
+    assert set(prod_df.solver).isdisjoint(set(barn_df.solver)), "receiver overlap!"
+
+    risk_free_batches = dune.fetch(
+        query=DuneQuery.from_environment(
+            raw_sql=open_query("./queries/risk_free_batches.sql"),
+            network=Network.MAINNET,
+            name="Risk Free Batches",
+            parameters=[
+                QueryParameter.date_type("StartTime", period.start),
+                QueryParameter.date_type("EndTime", period.end),
+            ],
+        )
+    )
+    cow_rewards_df = aggregate_orderbook_rewards(
+        per_order_df=pd.concat([prod_df, barn_df]),
+        risk_free_transactions={row["tx_hash"].lower() for row in risk_free_batches},
+    )
+
     dune_trade_counts = dune.fetch(
         query=DuneQuery.from_environment(
             raw_sql=open_query("./queries/dune_trade_counts.sql"),
@@ -397,8 +456,6 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
         )
     )
     # Validation of results - using characteristics of results from two sources.
-    # Solvers do not appear in both environments!
-    assert set(prod_df.receiver).isdisjoint(set(barn_df.receiver)), "receiver overlap!"
     # Number of trades per solver retrieved from orderbook agrees ethereum events.
     solver_num_trades: dict[str, int] = {
         row["solver"].lower(): int(row["num_trades"]) for row in dune_trade_counts
@@ -436,11 +493,8 @@ def get_eth_spent(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
 def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
     reimbursements = get_eth_spent(dune, period)
-
     rewards = get_cow_rewards(dune, period)
-
     split_transfers = SplitTransfers(period, reimbursements + rewards)
-
     negative_slippage = get_period_slippage(dune, period).negative
 
     return split_transfers.process(

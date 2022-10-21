@@ -17,13 +17,13 @@ with trade_hashes as (SELECT solver,
                           on settlement.tx_hash = solver_competitions.tx_hash
                       where block_number between {{start_block}} and {{end_block}})
 
-select concat('0x', encode(solver, 'hex'))          as receiver,
-       -- Used to compare with Dune (cross referencing that all trades are accounted for in the orderbook)
-       count(*) as num_trades,
-       (sum(coalesce(reward, 0)) * pow(10, 18))::numeric::text   as amount,
-       '0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB' as token_address
+select concat('0x', encode(solver, 'hex'))                as solver,
+       concat('0x', encode(tx_hash, 'hex'))               as tx_hash,
+--        concat('0x', encode(trade_hashes.order_uid, 'hex')) as order_uid,
+       coalesce(reward, 0.0) as amount
 from trade_hashes
+         -- Inner join because both prod and staging DB index trades and settlements,
+-- but the rewards for each environment are contained only in respective databases.
          left outer join order_rewards
-                    on trade_hashes.order_uid = order_rewards.order_uid
-                    and trade_hashes.auction_id = order_rewards.auction_id
-group by solver;
+                         on trade_hashes.order_uid = order_rewards.order_uid
+                             and trade_hashes.auction_id = order_rewards.auction_id;
