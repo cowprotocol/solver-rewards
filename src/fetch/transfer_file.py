@@ -364,14 +364,18 @@ class Overdraft:
         )
 
 
-def map_reward(amount: float, risk_free: bool) -> float:
+def map_reward(amount: float, risk_free: bool, tx_contains_jit_order: bool) -> float:
     """
     Converts orderbook rewards based on additional knowledge of "risk_free" transactions
     """
-    if amount > 0 and risk_free:
+    if amount > 0 and risk_free and not tx_contains_jit_order:
         # Risk Free Orders that are not liquidity orders get 37 COW tokens.
         return 37.0
     return amount
+
+
+def liquidity_order_batches(order_df: DataFrame) -> set[str]:
+    return set(order_df.loc[order_df["amount"] == 0]["tx_hash"].unique())
 
 
 def aggregate_orderbook_rewards(
@@ -383,8 +387,13 @@ def aggregate_orderbook_rewards(
     the results are aggregated by solver as a sum of amounts and additional
     "transfer" related metadata is appended. The aggregated dataframe is returned.
     """
+    just_in_time_liquidity_batches = liquidity_order_batches(per_order_df)
     per_order_df["amount"] = per_order_df[["amount", "tx_hash"]].apply(
-        lambda x: map_reward(x.amount, risk_free=x.tx_hash in risk_free_transactions),
+        lambda x: map_reward(
+            amount=x.amount,
+            risk_free=x.tx_hash in risk_free_transactions,
+            tx_contains_jit_order=x.tx_hash in just_in_time_liquidity_batches,
+        ),
         axis=1,
     )
     result_agg = (
