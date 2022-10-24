@@ -34,11 +34,12 @@ from src.constants import (
     AIRDROP_URL,
     SAFE_URL,
 )
+from src.fetch.orderbook_rewards import get_orderbook_rewards
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches, Vouch
+from src.fetch.risk_free_batches import get_risk_free_batches
 from src.models import AccountingPeriod, Token
 from src.multisend import post_multisend
-from src.pg_client import pg_engine, OrderbookEnv
 from src.update.orderbook_rewards import push_user_generated_view
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
@@ -409,38 +410,9 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """
     start_block, end_block = period.get_block_interval(dune)
     print(f"Fetching CoW Rewards for block interval {start_block}, {end_block}")
-    cow_reward_query = (
-        open_query("./queries/cow_rewards.sql")
-        .replace("{{start_block}}", start_block)
-        .replace("{{end_block}}", end_block)
-    )
-
-    # Need to fetch results from both order-books (prod and barn)
-    prod_df: DataFrame = pd.read_sql(
-        sql=cow_reward_query, con=pg_engine(OrderbookEnv.PROD)
-    )
-    print(f"got {prod_df} from production DB")
-    barn_df: DataFrame = pd.read_sql(
-        sql=cow_reward_query, con=pg_engine(OrderbookEnv.BARN)
-    )
-    print(f"got {barn_df} from staging DB")
-    # Solvers do not appear in both environments!
-    assert set(prod_df.solver).isdisjoint(set(barn_df.solver)), "receiver overlap!"
-
-    risk_free_batches = dune.fetch(
-        query=DuneQuery.from_environment(
-            raw_sql=open_query("./queries/risk_free_batches.sql"),
-            network=Network.MAINNET,
-            name="Risk Free Batches",
-            parameters=[
-                QueryParameter.date_type("StartTime", period.start),
-                QueryParameter.date_type("EndTime", period.end),
-            ],
-        )
-    )
     cow_rewards_df = aggregate_orderbook_rewards(
-        per_order_df=pd.concat([prod_df, barn_df]),
-        risk_free_transactions={row["tx_hash"].lower() for row in risk_free_batches},
+        per_order_df=get_orderbook_rewards(start_block, end_block),
+        risk_free_transactions=get_risk_free_batches(dune, period),
     )
 
     # Validation of results - using characteristics of results from two sources.
