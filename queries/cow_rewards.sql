@@ -19,7 +19,6 @@ with trade_hashes as (SELECT solver,
 
 select concat('0x', encode(solver, 'hex'))                as solver,
        concat('0x', encode(tx_hash, 'hex'))               as tx_hash,
---        concat('0x', encode(trade_hashes.order_uid, 'hex')) as order_uid,
        coalesce(reward, 0.0) as amount
 from trade_hashes
          -- Inner join because both prod and staging DB index trades and settlements,

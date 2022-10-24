@@ -1,3 +1,8 @@
+-- Query Here: https://dune.com/queries/1432733
+-- The following query shows a complete list of all different selectors
+-- used on cow protocol and so far there are no collisions.
+-- We can monitor this for new risk free events:
+-- https://dune.com/queries/1434731
 with interactions as (select selector,
                              target,
                              case
@@ -21,7 +26,7 @@ with interactions as (select selector,
 
      batch_interaction_counts as (select s.evt_tx_hash,
                                          count(*)                                          as num_interactions,
-                                         sum(case when risk_free = true then 1 else 0 end) as risk_free
+                                         sum(case when risk_free = true then 1 else 0 end) as num_risk_fee
                                   from gnosis_protocol_v2."GPv2Settlement_evt_Settlement" s
                                            inner join gnosis_protocol_v2."GPv2Settlement_evt_Interaction" i
                                                       on s.evt_tx_hash = i.evt_tx_hash
@@ -31,12 +36,12 @@ with interactions as (select selector,
                                   where s.evt_block_time between '{{StartTime}}' and '{{EndTime}}'
                                   group by s.evt_tx_hash),
 
-     combined_results as (select *
+     combined_risk_free_batches as (select *
                           from batch_interaction_counts
-                          where num_interactions = risk_free
+                          where num_interactions = num_risk_fee
                           union
                           select *, 0 as num_interactions, 0 as risk_free
                           from no_interactions)
 
 select concat('0x', encode(evt_tx_hash, 'hex')) as tx_hash
-from combined_results
+from combined_risk_free_batches
