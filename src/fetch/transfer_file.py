@@ -375,6 +375,10 @@ def map_reward(amount: float, risk_free: bool, tx_contains_jit_order: bool) -> f
 
 
 def liquidity_order_batches(order_df: DataFrame) -> set[str]:
+    """
+    Fetches the set of transaction hashes containing a
+    liquidity order as the unique tx_hash where reward `amount = 0`
+    """
     return set(order_df.loc[order_df["amount"] == 0]["tx_hash"].unique())
 
 
