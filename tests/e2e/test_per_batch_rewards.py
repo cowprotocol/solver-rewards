@@ -24,6 +24,11 @@ def reward_for_tx(
 
 
 class TestPerBatchRewards(unittest.TestCase):
+    """
+    These tests aren't actually necessary because their logic is captured by a unit test
+    tests/unit/test_reward_aggregation.py
+    cf: https://github.com/cowprotocol/solver-rewards/pull/107#issuecomment-1288566854
+    """
     def setUp(self) -> None:
         dune = DuneAPI.new_from_environment()
         period = AccountingPeriod("2022-10-18")

@@ -11,6 +11,11 @@ def to_wei(t) -> int:
 
 
 class MyTestCase(unittest.TestCase):
+    """
+    This test is a mock dataset capturing the real data from
+    cf: https://github.com/cowprotocol/solver-rewards/pull/107#issuecomment-1288566854
+    """
+    # TODO - add this: 0x82318dd23592f7ccba72fcad43c452c4c426d9e02c7cf3b1f9e7823a0c9a9fc0
     def test_aggregate_orderbook_rewards(self):
         # Tx 0x001 is 0x72e4c54e9c9dc2ee2a09dd242bf80abc39d122af0813ff4d570d3ce04eea8468
         # Tx 0x002 is 0x43bfe76d590966c7539f1ea0bb7989edc1289f989eaf8d84589c3508c5066c2c

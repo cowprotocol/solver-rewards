@@ -22,7 +22,7 @@ class MyTestCase(unittest.TestCase):
         )
 
     def test_get_cow_rewards(self):
-        period = AccountingPeriod("2022-10-18", length_days=7)
+        period = AccountingPeriod("2022-10-18", length_days=5)
         print(f"Check out results at: {dashboard_url(period)}")
         try:
             get_cow_rewards(self.dune, period)
