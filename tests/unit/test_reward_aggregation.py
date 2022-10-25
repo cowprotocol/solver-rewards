@@ -2,7 +2,11 @@ import unittest
 
 from web3 import Web3
 
-from src.fetch.transfer_file import aggregate_orderbook_rewards, map_reward
+from src.fetch.transfer_file import (
+    aggregate_orderbook_rewards,
+    map_reward,
+    unsafe_batches,
+)
 import pandas as pd
 
 
@@ -100,6 +104,18 @@ class MyTestCase(unittest.TestCase):
         self.assertEqual(map_reward(1, True, True), 1)
         self.assertEqual(map_reward(1, False, True), 1)
         self.assertEqual(map_reward(1, False, False), 1)
+
+    def test_unsafe_batches(self):
+        orderbook_rewards = pd.DataFrame(
+            {
+                "solver": [""] * 6,
+                "tx_hash": ["t1", "t2", "t3", "t3", "t4", "t4"],
+                "amount": [0] * 6,
+                "safe_liquidity": [True, False, False, True, False, False],
+            }
+        )
+
+        self.assertEqual(unsafe_batches(orderbook_rewards), {"t2", "t3", "t4"})
 
 
 if __name__ == "__main__":

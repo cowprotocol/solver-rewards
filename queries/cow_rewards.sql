@@ -21,6 +21,8 @@ with trade_hashes as (SELECT solver,
 select concat('0x', encode(solver, 'hex'))  as solver,
        concat('0x', encode(tx_hash, 'hex')) as tx_hash,
        coalesce(reward, 0.0)                as amount,
+       -- An order is a liquidity order if and only if reward is null.
+       -- A liquidity order is safe if and only if its fee_amount is > 0
        case
            when reward is null and fee_amount > 0 then True
            when reward is null and fee_amount = 0 then False

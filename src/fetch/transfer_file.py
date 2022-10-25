@@ -378,13 +378,14 @@ def map_reward(
     return amount
 
 
-def liquidity_order_batches(order_df: DataFrame) -> set[str]:
+def unsafe_batches(order_df: DataFrame) -> set[str]:
     """
-    Fetches the set of transaction hashes containing a
-    liquidity order as the unique tx_hash where reward `amount = 0`
+    Filters for tx_hashes corresponding to batches containing "unsafe"
+    liquidity orders. These are identified from the order reward dataframe as
+    entries with amount = 0 and safe_liquidity = False.
     """
-    order_df = order_df.astype({"safe_liquidity": "boolean"})
     liquidity = order_df.loc[order_df["amount"] == 0]
+    liquidity = liquidity.astype({"safe_liquidity": "boolean"})
     # Pandas doesn't seem to work with boolean types:
     # when using "is False" we get
     # KeyError: 'False: boolean label can not be used without a boolean index'
@@ -392,7 +393,7 @@ def liquidity_order_batches(order_df: DataFrame) -> set[str]:
     unsafe_liquidity = liquidity.loc[
         liquidity["safe_liquidity"] == False  # pylint: disable=singleton-comparison
     ]
-    return set(unsafe_liquidity["tx_hash"].unique())
+    return set(unsafe_liquidity["tx_hash"])
 
 
 def aggregate_orderbook_rewards(
@@ -405,7 +406,7 @@ def aggregate_orderbook_rewards(
     "transfer" related metadata is appended. The aggregated dataframe is returned.
     """
 
-    unsafe_liquidity_batches = liquidity_order_batches(per_order_df)
+    unsafe_liquidity_batches = unsafe_batches(per_order_df)
     per_order_df["amount"] = per_order_df[
         ["amount", "tx_hash", "safe_liquidity"]
     ].apply(
@@ -465,7 +466,6 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
             ),
         ]
     ).drop_duplicates(keep=False)
-    print(dune_trade_counts)
 
     assert len(duplicates) == 0, f"solver sets disagree: {duplicates}"
 

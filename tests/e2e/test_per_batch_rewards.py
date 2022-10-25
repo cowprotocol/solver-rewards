@@ -6,7 +6,7 @@ from src.fetch.orderbook_rewards import get_orderbook_rewards
 from src.fetch.risk_free_batches import get_risk_free_batches
 from src.fetch.transfer_file import (
     map_reward,
-    liquidity_order_batches,
+    unsafe_batches,
 )
 from src.models import AccountingPeriod
 
@@ -37,7 +37,7 @@ class TestPerBatchRewards(unittest.TestCase):
 
         self.rewards_df = get_orderbook_rewards(start_block, end_block)
         self.risk_free_batches = get_risk_free_batches(dune, period)
-        self.jit_batches = liquidity_order_batches(self.rewards_df)
+        self.jit_batches = unsafe_batches(self.rewards_df)
 
     def test_buffer_trade(self):
         tx_hash = "0x6b6181e95ae837376dd15adbe7801bffffee639dbc8f18b918ace9645a5c1be2"
