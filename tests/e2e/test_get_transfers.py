@@ -11,17 +11,6 @@ from src.fetch.transfer_file import (
 from src.models import AccountingPeriod
 
 
-def reward_for_tx(
-    df: pd.DataFrame, tx_hash: str, risk_free: bool, jit_batch: bool
-) -> tuple[int, float]:
-    batch_subset = df.loc[df["tx_hash"] == tx_hash]
-    order_rewards = batch_subset[["amount"]].apply(
-        lambda x: map_reward(x.amount, risk_free, jit_batch),
-        axis=1,
-    )
-    return order_rewards.size, order_rewards.sum()
-
-
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
         self.dune = DuneAPI.new_from_environment()
@@ -35,7 +24,7 @@ class MyTestCase(unittest.TestCase):
         )
 
     def test_get_cow_rewards(self):
-        period = AccountingPeriod("2022-10-18", length_days=2)
+        period = AccountingPeriod("2022-10-18", length_days=7)
         print(f"Check out results at: {dashboard_url(period)}")
         try:
             get_cow_rewards(self.dune, period)

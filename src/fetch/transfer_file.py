@@ -364,11 +364,15 @@ class Overdraft:
         )
 
 
-def map_reward(amount: float, risk_free: bool, tx_contains_jit_order: bool) -> float:
+def map_reward(
+    amount: float,
+    risk_free: bool,
+    batch_contains_unsafe_liquidity: bool,
+) -> float:
     """
     Converts orderbook rewards based on additional knowledge of "risk_free" transactions
     """
-    if amount > 0 and risk_free and not tx_contains_jit_order:
+    if amount > 0 and risk_free and not batch_contains_unsafe_liquidity:
         # Risk Free Orders that are not liquidity orders get 37 COW tokens.
         return 37.0
     return amount
@@ -379,7 +383,16 @@ def liquidity_order_batches(order_df: DataFrame) -> set[str]:
     Fetches the set of transaction hashes containing a
     liquidity order as the unique tx_hash where reward `amount = 0`
     """
-    return set(order_df.loc[order_df["amount"] == 0]["tx_hash"].unique())
+    order_df = order_df.astype({"safe_liquidity": "boolean"})
+    liquidity = order_df.loc[order_df["amount"] == 0]
+    # Pandas doesn't seem to work with boolean types:
+    # when using "is False" we get
+    # KeyError: 'False: boolean label can not be used without a boolean index'
+    # When using == False we get pylint error
+    unsafe_liquidity = liquidity.loc[
+        liquidity["safe_liquidity"] == False
+    ]  # pylint: disable=singleton-comparison
+    return set(unsafe_liquidity["tx_hash"].unique())
 
 
 def aggregate_orderbook_rewards(
@@ -391,12 +404,15 @@ def aggregate_orderbook_rewards(
     the results are aggregated by solver as a sum of amounts and additional
     "transfer" related metadata is appended. The aggregated dataframe is returned.
     """
-    just_in_time_liquidity_batches = liquidity_order_batches(per_order_df)
-    per_order_df["amount"] = per_order_df[["amount", "tx_hash"]].apply(
+
+    unsafe_liquidity_batches = liquidity_order_batches(per_order_df)
+    per_order_df["amount"] = per_order_df[
+        ["amount", "tx_hash", "safe_liquidity"]
+    ].apply(
         lambda x: map_reward(
             amount=x.amount,
             risk_free=x.tx_hash in risk_free_transactions,
-            tx_contains_jit_order=x.tx_hash in just_in_time_liquidity_batches,
+            batch_contains_unsafe_liquidity=x.tx_hash in unsafe_liquidity_batches,
         ),
         axis=1,
     )
@@ -449,6 +465,8 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
             ),
         ]
     ).drop_duplicates(keep=False)
+    print(dune_trade_counts)
+
     assert len(duplicates) == 0, f"solver sets disagree: {duplicates}"
 
     # Write this to Dune Database (as a user generated view).

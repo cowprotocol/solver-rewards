@@ -66,9 +66,8 @@ class TestPerBatchRewards(unittest.TestCase):
                 tx_hash in self.risk_free_batches,
                 tx_hash in self.jit_batches,
             ),
-            (2, 37.0),
+            (2, 39.51661869443983),
         )
-        self.assertEqual(1, 0)
 
 
 if __name__ == "__main__":
