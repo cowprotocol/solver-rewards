@@ -1,34 +1,57 @@
 import unittest
 
 from src.models import AccountingPeriod
-from src.update.orderbook_rewards import (
-    dune_repr,
-    rewards_df_to_dune_list,
-    orderbook_rewards_query,
-)
+from src.update.orderbook_rewards import RewardQuery
 import pandas as pd
 
 
 class TestCowRewardsUpsert(unittest.TestCase):
     def setUp(self) -> None:
-        self.example = pd.DataFrame(
+        self.aggregate_example = pd.DataFrame(
             {"receiver": ["0x1", "0x2"], "amount": [1234, 5678], "num_trades": [46, 2]}
         )
-        self.expected = [
+        self.agg_expected = [
             "('0x1', 46, 1234)",
             "('0x2', 2, 5678)",
         ]
+        self.per_order_example = pd.DataFrame(
+            {
+                "solver": ["s1", "s2", "s3"],
+                "tx_hash": ["t1", "t2", "t3"],
+                "amount": [1234, 5678, 91011],
+                "safe_liquidity": [True, False, None],
+            }
+        )
+        # See https://dune.com/queries/1456810 for Null Test Demonstration
+        self.per_order_expected = [
+            "('s1', 't1', 1234, True)",
+            "('s2', 't2', 5678, False)",
+            "('s3', 't3', 91011, Null)",
+        ]
+        print(self.per_order_example)
+        print(self.aggregate_example)
 
     def test_dune_repr(self):
-        for i, (_, row) in enumerate(self.example.iterrows()):
-            self.assertEqual(self.expected[i], dune_repr(row))
+        for i, (_, row) in enumerate(self.aggregate_example.iterrows()):
+            self.assertEqual(self.agg_expected[i], RewardQuery.AGGREGATE.dune_repr(row))
+
+        for i, (_, row) in enumerate(self.per_order_example.iterrows()):
+            self.assertEqual(
+                self.per_order_expected[i], RewardQuery.PER_ORDER.dune_repr(row)
+            )
 
     def test_rewards_df_to_dune_list(self):
         self.assertEqual(
-            rewards_df_to_dune_list(self.example), ",\n".join(self.expected)
+            RewardQuery.AGGREGATE.to_dune_list(self.aggregate_example),
+            ",\n".join(self.agg_expected),
         )
 
-    def test_rewards_user_generated_view_query(self):
+        self.assertEqual(
+            RewardQuery.PER_ORDER.to_dune_list(self.per_order_example),
+            ",\n".join(self.per_order_expected),
+        )
+
+    def test_aggregate_user_generated_view_query(self):
         period = AccountingPeriod("1985-03-10")
         # This is hideous I know... Sorry.
         expected = """
@@ -45,7 +68,32 @@ class TestCowRewardsUpsert(unittest.TestCase):
         """.strip().replace(
             "        ", ""
         )
-        self.assertEqual(expected, orderbook_rewards_query(period, self.example))
+        self.assertEqual(
+            expected, RewardQuery.AGGREGATE.dune_query(period, self.aggregate_example)
+        )
+
+    def test_per_order_user_generated_view_query(self):
+        period = AccountingPeriod("1985-03-10")
+        # This is hideous I know... Sorry.
+        expected = """
+        DROP MATERIALIZED VIEW IF EXISTS dune_user_generated.cow_per_order_rewards_1985031019850317 CASCADE;
+        CREATE MATERIALIZED VIEW dune_user_generated.cow_per_order_rewards_1985031019850317 (solver, tx_hash, amount, safe_liquidity) AS (
+          SELECT *
+          FROM (
+              VALUES
+        ('s1', 't1', 1234, True),
+        ('s2', 't2', 5678, False),
+        ('s3', 't3', 91011, Null)
+            ) as _
+        );
+        SELECT * FROM dune_user_generated.cow_per_order_rewards_1985031019850317
+        """.strip().replace(
+            "        ", ""
+        )
+        print(RewardQuery.PER_ORDER.dune_query(period, self.per_order_example))
+        self.assertEqual(
+            expected, RewardQuery.PER_ORDER.dune_query(period, self.per_order_example)
+        )
 
 
 if __name__ == "__main__":
