@@ -55,6 +55,14 @@ class RewardQuery(Enum):
             .replace("{{SolverRewards}}", self.to_dune_list(data))
         )
 
+    def view_name(self) -> str:
+        """Returns Name of the user generated view Dune table"""
+        if self == RewardQuery.AGGREGATE:
+            return f"cow_rewards"
+        if self == RewardQuery.PER_ORDER:
+            return f"cow_per_order_rewards"
+
+        raise ValueError(f"Invalid enum variant {self}")
 
 def push_user_generated_view(
     dune: DuneAPI, period: AccountingPeriod, data: DataFrame, data_type: RewardQuery
@@ -70,4 +78,4 @@ def push_user_generated_view(
         )
     )
     assert len(data) == len(results)
-    print(f"Pushed User Generated view cow_rewards_{hash(period)}")
+    print(f"Pushed User Generated view {data_type.view_name()}_{hash(period)}")
