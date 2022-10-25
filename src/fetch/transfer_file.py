@@ -390,8 +390,8 @@ def liquidity_order_batches(order_df: DataFrame) -> set[str]:
     # KeyError: 'False: boolean label can not be used without a boolean index'
     # When using == False we get pylint error
     unsafe_liquidity = liquidity.loc[
-        liquidity["safe_liquidity"] == False
-    ]  # pylint: disable=singleton-comparison
+        liquidity["safe_liquidity"] == False  # pylint: disable=singleton-comparison
+    ]
     return set(unsafe_liquidity["tx_hash"].unique())
 
 
