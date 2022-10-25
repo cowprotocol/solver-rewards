@@ -405,7 +405,7 @@ def aggregate_orderbook_rewards(
     """
 
     unsafe_liquidity_batches = unsafe_batches(per_order_df)
-    per_order_df["adjusted_amount"] = per_order_df[
+    per_order_df["amount"] = per_order_df[
         ["amount", "tx_hash", "safe_liquidity"]
     ].apply(
         lambda x: map_reward(
