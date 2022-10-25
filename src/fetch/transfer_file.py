@@ -386,13 +386,7 @@ def unsafe_batches(order_df: DataFrame) -> set[str]:
     """
     liquidity = order_df.loc[order_df["amount"] == 0]
     liquidity = liquidity.astype({"safe_liquidity": "boolean"})
-    # Pandas doesn't seem to work with boolean types:
-    # when using "is False" we get
-    # KeyError: 'False: boolean label can not be used without a boolean index'
-    # When using == False we get pylint error
-    unsafe_liquidity = liquidity.loc[
-        liquidity["safe_liquidity"] == False  # pylint: disable=singleton-comparison
-    ]
+    unsafe_liquidity = liquidity.loc[~liquidity["safe_liquidity"]]
     return set(unsafe_liquidity["tx_hash"])
 
 

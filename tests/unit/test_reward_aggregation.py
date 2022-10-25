@@ -108,10 +108,10 @@ class MyTestCase(unittest.TestCase):
     def test_unsafe_batches(self):
         orderbook_rewards = pd.DataFrame(
             {
-                "solver": [""] * 6,
-                "tx_hash": ["t1", "t2", "t3", "t3", "t4", "t4"],
-                "amount": [0] * 6,
-                "safe_liquidity": [True, False, False, True, False, False],
+                "solver": [""] * 7,
+                "tx_hash": ["t1", "t2", "t3", "t3", "t4", "t4", "t5"],
+                "amount": [0] * 7,
+                "safe_liquidity": [True, False, False, True, False, False, None],
             }
         )
 
