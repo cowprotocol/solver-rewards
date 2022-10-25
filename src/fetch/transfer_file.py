@@ -370,10 +370,14 @@ def map_reward(
     batch_contains_unsafe_liquidity: bool,
 ) -> float:
     """
-    Converts orderbook rewards based on additional knowledge of "risk_free" transactions
+    Converts orderbook rewards based on additional information of
+    "risk_free" batches and (un)safe liquidity orders.
+    - risk-free are batches contain only user and liquidity orders (i.e. no AMM interactions),
+    - liquidity orders are further classified as being safe or unsafe;
+        Examples: (unsafe) 0x and just in time orders which carry some revert risk
     """
     if amount > 0 and risk_free and not batch_contains_unsafe_liquidity:
-        # Risk Free Orders that are not liquidity orders get 37 COW tokens.
+        # Risk Free User Orders that are not contained in unsafe batches 37 COW tokens.
         return 37.0
     return amount
 
