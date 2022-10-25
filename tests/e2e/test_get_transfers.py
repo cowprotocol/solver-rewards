@@ -1,11 +1,8 @@
 import unittest
+
 from duneapi.api import DuneAPI
 
-from src.fetch.transfer_file import (
-    get_cow_rewards,
-    get_eth_spent,
-    dashboard_url,
-)
+from src.fetch.transfer_file import get_cow_rewards, get_eth_spent, dashboard_url
 from src.models import AccountingPeriod
 
 
