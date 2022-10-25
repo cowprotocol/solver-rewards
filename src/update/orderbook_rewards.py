@@ -58,9 +58,9 @@ class RewardQuery(Enum):
     def view_name(self) -> str:
         """Returns Name of the user generated view Dune table"""
         if self == RewardQuery.AGGREGATE:
-            return f"cow_rewards"
+            return "cow_rewards"
         if self == RewardQuery.PER_ORDER:
-            return f"cow_per_order_rewards"
+            return "cow_per_order_rewards"
 
         raise ValueError(f"Invalid enum variant {self}")
 
