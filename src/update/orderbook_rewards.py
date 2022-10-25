@@ -64,6 +64,7 @@ class RewardQuery(Enum):
 
         raise ValueError(f"Invalid enum variant {self}")
 
+
 def push_user_generated_view(
     dune: DuneAPI, period: AccountingPeriod, data: DataFrame, data_type: RewardQuery
 ) -> None:
