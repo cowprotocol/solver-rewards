@@ -29,6 +29,7 @@ class TestPerBatchRewards(unittest.TestCase):
     tests/unit/test_reward_aggregation.py
     cf: https://github.com/cowprotocol/solver-rewards/pull/107#issuecomment-1288566854
     """
+
     def setUp(self) -> None:
         dune = DuneAPI.new_from_environment()
         period = AccountingPeriod("2022-10-18")
