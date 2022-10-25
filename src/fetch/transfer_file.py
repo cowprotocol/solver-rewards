@@ -24,6 +24,7 @@ from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
 from pandas import DataFrame
 from slack.web.client import WebClient
 from slack.web.slack_response import SlackResponse
+from web3 import Web3
 
 from src.constants import (
     ERC20_TOKEN,
@@ -33,11 +34,12 @@ from src.constants import (
     AIRDROP_URL,
     SAFE_URL,
 )
+from src.fetch.orderbook_rewards import get_orderbook_rewards
 from src.fetch.period_slippage import SolverSlippage, get_period_slippage
 from src.fetch.reward_targets import get_vouches, Vouch
+from src.fetch.risk_free_batches import get_risk_free_batches
 from src.models import AccountingPeriod, Token
 from src.multisend import post_multisend
-from src.pg_client import pg_engine, OrderbookEnv
 from src.update.orderbook_rewards import push_user_generated_view
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
@@ -362,31 +364,86 @@ class Overdraft:
         )
 
 
+def map_reward(
+    amount: float,
+    risk_free: bool,
+    batch_contains_unsafe_liquidity: bool,
+) -> float:
+    """
+    Converts orderbook rewards based on additional information of
+    "risk_free" batches and (un)safe liquidity orders.
+    - risk-free are batches contain only user and liquidity orders (i.e. no AMM interactions),
+    - liquidity orders are further classified as being safe or unsafe;
+        Examples: (unsafe) 0x and just in time orders which carry some revert risk
+    """
+    if amount > 0 and risk_free and not batch_contains_unsafe_liquidity:
+        # Risk Free User Orders that are not contained in unsafe batches 37 COW tokens.
+        return 37.0
+    return amount
+
+
+def unsafe_batches(order_df: DataFrame) -> set[str]:
+    """
+    Filters for tx_hashes corresponding to batches containing "unsafe"
+    liquidity orders. These are identified from the order reward dataframe as
+    entries with amount = 0 and safe_liquidity = False.
+    """
+    liquidity = order_df.loc[order_df["amount"] == 0]
+    liquidity = liquidity.astype({"safe_liquidity": "boolean"})
+    unsafe_liquidity = liquidity.loc[~liquidity["safe_liquidity"]]
+    return set(unsafe_liquidity["tx_hash"])
+
+
+def aggregate_orderbook_rewards(
+    per_order_df: DataFrame, risk_free_transactions: set[str]
+) -> DataFrame:
+    """
+    Takes rewards per order and adjusts them based on whether they were part of
+    a risk-free settlement or not. After the new amount mapping is complete,
+    the results are aggregated by solver as a sum of amounts and additional
+    "transfer" related metadata is appended. The aggregated dataframe is returned.
+    """
+
+    unsafe_liquidity_batches = unsafe_batches(per_order_df)
+    per_order_df["amount"] = per_order_df[
+        ["amount", "tx_hash", "safe_liquidity"]
+    ].apply(
+        lambda x: map_reward(
+            amount=x.amount,
+            risk_free=x.tx_hash in risk_free_transactions,
+            batch_contains_unsafe_liquidity=x.tx_hash in unsafe_liquidity_batches,
+        ),
+        axis=1,
+    )
+    result_agg = (
+        per_order_df.groupby("solver")["amount"].agg(["count", "sum"]).reset_index()
+    )
+    del per_order_df  # We don't need this anymore!
+    # Add token address to each column
+    result_agg["token_address"] = "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
+    # Rename columns to align with "Transfer" Object
+    result_agg = result_agg.rename(
+        columns={"sum": "amount", "count": "num_trades", "solver": "receiver"}
+    )
+    # Convert float amounts to WEI
+    result_agg["amount"] = result_agg["amount"].apply(
+        lambda x: Web3().toWei(x, "ether")
+    )
+    return result_agg
+
+
 def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """
     Fetches COW token rewards from orderbook database returning a list of Transfers
     """
     start_block, end_block = period.get_block_interval(dune)
     print(f"Fetching CoW Rewards for block interval {start_block}, {end_block}")
-    cow_reward_query = (
-        open_query("./queries/cow_rewards.sql")
-        .replace("{{start_block}}", start_block)
-        .replace("{{end_block}}", end_block)
+    cow_rewards_df = aggregate_orderbook_rewards(
+        per_order_df=get_orderbook_rewards(start_block, end_block),
+        risk_free_transactions=get_risk_free_batches(dune, period),
     )
-
-    # Need to fetch results from both order-books (prod and barn)
-    prod_df: DataFrame = pd.read_sql(
-        sql=cow_reward_query, con=pg_engine(OrderbookEnv.PROD)
-    )
-    print(f"got {prod_df} from production DB")
-    barn_df: DataFrame = pd.read_sql(
-        sql=cow_reward_query, con=pg_engine(OrderbookEnv.BARN)
-    )
-    print(f"got {barn_df} from staging DB")
 
     # Validation of results - using characteristics of results from two sources.
-    # Solvers do not appear in both environments!
-    assert set(prod_df.receiver).isdisjoint(set(barn_df.receiver)), "receiver overlap!"
     dune_trade_counts = dune.fetch(
         query=DuneQuery.from_environment(
             raw_sql=open_query("./queries/dune_trade_counts.sql"),
@@ -398,7 +455,6 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
             ],
         )
     )
-    cow_rewards_df = pd.concat([prod_df, barn_df])
     # Number of trades per solver retrieved from orderbook agrees ethereum events.
     duplicates = pd.concat(
         [
@@ -408,6 +464,7 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
             ),
         ]
     ).drop_duplicates(keep=False)
+
     assert len(duplicates) == 0, f"solver sets disagree: {duplicates}"
 
     # Write this to Dune Database (as a user generated view).
@@ -434,11 +491,8 @@ def get_eth_spent(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
 def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
     reimbursements = get_eth_spent(dune, period)
-
     rewards = get_cow_rewards(dune, period)
-
     split_transfers = SplitTransfers(period, reimbursements + rewards)
-
     negative_slippage = get_period_slippage(dune, period).negative
 
     return split_transfers.process(

@@ -1,7 +1,5 @@
 import unittest
 
-from duneapi.util import open_query
-
 from src.models import AccountingPeriod
 from src.update.orderbook_rewards import (
     dune_repr,
