@@ -1,0 +1,49 @@
+#!/bin/sh
+
+
+STAGED_PY_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep ".py$")
+
+PASS=true
+# Would be cool if we could format and add the changes to the commit.
+#if [[ $STAGED_PY_FILES ]]; then
+#  # Run Black on project
+#  printf "\t\033[32mFormatting Project with Black\033[0m\n"
+#  black ./
+#fi
+
+for FILE in $STAGED_PY_FILES
+do
+  pylint "$FILE"
+  if [[ "$?" == 0 ]]; then
+    printf "\t\033[32mpylint Passed: $FILE\033[0m\n"
+  else
+    printf "\t\033[41mpylint Failed: $FILE\033[0m\n"
+    PASS=false
+  fi
+
+  black "$FILE" --check
+  if [[ "$?" == 0 ]]; then
+    printf "\t\033[32mformmating Passed: $FILE\033[0m\n"
+  else
+    printf "\t\033[41formatting Failed: $FILE\033[0m\n"
+    PASS=false
+  fi
+
+  mypy "$FILE" --strict
+  if [[ "$?" == 0 ]]; then
+    printf "\t\033[32mmypy Passed: $FILE\033[0m\n"
+  else
+    printf "\t\033[41mmypy Failed: $FILE\033[0m\n"
+    PASS=false
+  fi
+
+done
+
+if ! $PASS; then
+  printf "\033[41mCOMMIT FAILED:\033[0m Your commit contains files that should pass Linting but do not. Please fix the errors and try again.\n"
+  exit 1
+else
+  printf "\n\033[42mCOMMIT SUCCEEDED\033[0m\n"
+fi
+
+exit $?
