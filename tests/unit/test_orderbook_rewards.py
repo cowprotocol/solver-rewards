@@ -32,13 +32,23 @@ class TestCowRewardsUpsert(unittest.TestCase):
         print(self.aggregate_example)
 
     def test_dune_repr(self):
-        for i, (_, row) in enumerate(self.aggregate_example.iterrows()):
-            self.assertEqual(self.agg_expected[i], RewardQuery.AGGREGATE.dune_repr(row))
+        self.assertEqual(
+            self.agg_expected,
+            list(
+                self.aggregate_example.apply(
+                    lambda x: RewardQuery.AGGREGATE.dune_repr(x), axis=1
+                )
+            ),
+        )
 
-        for i, (_, row) in enumerate(self.per_order_example.iterrows()):
-            self.assertEqual(
-                self.per_order_expected[i], RewardQuery.PER_ORDER.dune_repr(row)
-            )
+        self.assertEqual(
+            self.per_order_expected,
+            list(
+                self.per_order_example.apply(
+                    lambda x: RewardQuery.PER_ORDER.dune_repr(x), axis=1
+                )
+            ),
+        )
 
     def test_rewards_df_to_dune_list(self):
         self.assertEqual(
