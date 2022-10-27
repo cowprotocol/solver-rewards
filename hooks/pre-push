@@ -6,7 +6,7 @@ PASS=true
 
 if [[ ("$CHANGED_PY_FILES" != "") ]]; then
     echo 'Running unit tests'
-    pytest tests/unit
+    python -m pytest tests/unit
     if [[ "$?" == 0 ]]; then
       printf "\t\033[32munit test Passed!\033[0m"
     else
@@ -14,7 +14,7 @@ if [[ ("$CHANGED_PY_FILES" != "") ]]; then
       PASS=false
     fi
 
-    pytest tests/e2e
+    python -m pytest tests/e2e
     if [[ "$?" == 0 ]]; then
       printf "\t\033[32me2e test Passed!\033[0m"
     else
