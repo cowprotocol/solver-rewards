@@ -55,7 +55,8 @@ select
     num_trades,
     coalesce(num_liquidity_orders, 0) as liquidity_orders,
     orderbook_trades,
-    1.0 * cow_reward / pow(10, 18) as cow_reward
+    1.0 * cow_reward / pow(10, 18) as cow_reward,
+    CONCAT('<a href="https://dune.com/queries/1468170?PeriodHash={{PeriodHash}}', '&SolverAddress=', solver_address, '" target="_blank">link</a>') as details
 from per_solver_results
 left outer join liquidity_orders lo
     on solver_address = lo.solver

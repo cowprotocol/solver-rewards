@@ -40,7 +40,7 @@ from src.fetch.reward_targets import get_vouches, Vouch
 from src.fetch.risk_free_batches import get_risk_free_batches
 from src.models import AccountingPeriod, Token
 from src.multisend import post_multisend
-from src.update.orderbook_rewards import push_user_generated_view
+from src.update.orderbook_rewards import push_user_generated_view, RewardQuery
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
 from src.utils.print_store import PrintStore, Category
@@ -438,8 +438,11 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """
     start_block, end_block = period.get_block_interval(dune)
     print(f"Fetching CoW Rewards for block interval {start_block}, {end_block}")
+    per_order_df = get_orderbook_rewards(start_block, end_block)
+    # Pushing the pre-adjusted orderbook rewards (right from the DB)
+    push_user_generated_view(dune, period, per_order_df, RewardQuery.PER_ORDER)
     cow_rewards_df = aggregate_orderbook_rewards(
-        per_order_df=get_orderbook_rewards(start_block, end_block),
+        per_order_df,
         risk_free_transactions=get_risk_free_batches(dune, period),
     )
 
@@ -468,7 +471,9 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     assert len(duplicates) == 0, f"solver sets disagree: {duplicates}"
 
     # Write this to Dune Database (as a user generated view).
-    push_user_generated_view(dune, period, data=cow_rewards_df)
+    push_user_generated_view(
+        dune, period, data=cow_rewards_df, data_type=RewardQuery.AGGREGATE
+    )
     return Transfer.from_dataframe(cow_rewards_df)
 
 
