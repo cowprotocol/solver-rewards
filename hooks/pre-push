@@ -8,17 +8,17 @@ if [[ ("$CHANGED_PY_FILES" != "") ]]; then
     echo 'Running unit tests'
     python -m pytest tests/unit
     if [[ "$?" == 0 ]]; then
-      printf "\t\033[32munit test Passed!\033[0m\n"
+      printf "\t\033[32munit test Passed!\033[0m"
     else
-      printf "\t\033[41munit test Failed.\033[0m\n"
+      printf "\t\033[41munit test Failed.\033[0m"
       PASS=false
     fi
 
     python -m pytest tests/e2e
     if [[ "$?" == 0 ]]; then
-      printf "\t\033[32me2e test Passed!\033[0m\n"
+      printf "\t\033[32me2e test Passed!\033[0m"
     else
-      printf "\t\033[41me2e test Failed.\033[0m\n"
+      printf "\t\033[41me2e test Failed.\033[0m"
       PASS=false
     fi
 else
