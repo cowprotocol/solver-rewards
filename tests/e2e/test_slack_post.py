@@ -11,7 +11,11 @@ from src.fetch.transfer_file import post_to_slack
 
 
 class TestSlackPost(unittest.TestCase):
-    @pytest.mark.skip(reason="Too many accidental slack posts - need to mock this!")
+    # TODO - Either mock #120 or cleanup #81 (ideally Mock).
+    @pytest.mark.skip(
+        reason="Too many accidental slack posts - need to mock this! "
+        "Issue https://github.com/cowprotocol/solver-rewards/issues/120"
+    )
     def test_post_to_slack(self):
         # Test Results here:
         # https://cowservices.slack.com/archives/C03PW4CR38A/p1658933310842469
