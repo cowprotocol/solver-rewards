@@ -3,6 +3,7 @@ import ssl
 import unittest
 
 import certifi
+import pytest
 from slack import WebClient
 from slack.errors import SlackApiError
 
@@ -10,6 +11,7 @@ from src.fetch.transfer_file import post_to_slack
 
 
 class TestSlackPost(unittest.TestCase):
+    @pytest.skip
     def test_post_to_slack(self):
         # Test Results here:
         # https://cowservices.slack.com/archives/C03PW4CR38A/p1658933310842469
