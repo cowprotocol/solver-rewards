@@ -1,0 +1,35 @@
+#!/bin/sh
+
+CHANGED_PY_FILES=$(git diff main --name-only | grep ".py$")
+
+PASS=true
+
+if [[ ("$CHANGED_PY_FILES" != "") ]]; then
+    echo 'Running unit tests'
+    python -m pytest tests/unit
+    if [[ "$?" == 0 ]]; then
+      printf "\t\033[32munit test Passed!\033[0m"
+    else
+      printf "\t\033[41munit test Failed.\033[0m"
+      PASS=false
+    fi
+
+    python -m pytest tests/e2e
+    if [[ "$?" == 0 ]]; then
+      printf "\t\033[32me2e test Passed!\033[0m"
+    else
+      printf "\t\033[41me2e test Failed.\033[0m"
+      PASS=false
+    fi
+else
+    echo 'Skipping pytest; Branch does not differ from main in a pythonic way!'
+fi
+
+if ! $PASS; then
+  printf "\033[41mPUSH FAILED:\033[0m Your changes contain failing tests. Please fix the errors and try again.\n"
+  exit 1
+else
+  printf "\033[42mPUSH SUCCEEDED\033[0m\n"
+fi
+
+exit $?

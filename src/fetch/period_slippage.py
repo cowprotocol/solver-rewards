@@ -33,7 +33,7 @@ class QueryType(Enum):
     UNUSUAL = "outliers"
 
     def __str__(self) -> str:
-        return self.value
+        return str(self.value)
 
     def select_statement(self) -> str:
         """Returns select statement to be used in slippage query."""

@@ -12,7 +12,7 @@ from duneapi.api import DuneAPI
 from duneapi.types import Address, DuneQuery, Network, QueryParameter
 from duneapi.util import open_query
 
-from src.constants import COW_TOKEN_ADDRESS
+from src.constants import COW_TOKEN_ADDRESS, w3
 from src.utils.token_details import get_token_decimals
 
 
@@ -70,7 +70,7 @@ class Token:
             decimals = 18
 
         self.decimals = (
-            decimals if decimals is not None else get_token_decimals(address)
+            decimals if decimals is not None else get_token_decimals(w3, address)
         )
 
     def __eq__(self, other: object) -> bool:
