@@ -14,6 +14,7 @@ from src.constants import LOG_CONFIG_FILE
 from src.models import AccountingPeriod
 from src.token_list import fetch_trusted_tokens
 from src.update.token_list import update_token_list
+from src.utils.query_file import dashboard_file, query_file
 from src.utils.script_args import generic_script_init
 
 log = logging.getLogger(__name__)
@@ -40,9 +41,7 @@ class QueryType(Enum):
         if self in (QueryType.PER_TX, QueryType.TOTAL):
             return f"select * from {self}"
         if self == QueryType.UNUSUAL:
-            return open_query(
-                "./dashboards/solver-rewards-accounting/unusual-slippage.sql"
-            )
+            return open_query(dashboard_file("unusual-slippage.sql"))
         # Can only happen if types are added to the enum and not accounted for.
         raise ValueError(f"Invalid Query Type! {self}")
 
@@ -54,7 +53,10 @@ def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
     per transaction results for testing
     """
     return "\n".join(
-        [open_query("./queries/period_slippage.sql"), query_type.select_statement()]
+        [
+            open_query(query_file("period_slippage.sql")),
+            query_type.select_statement(),
+        ]
     )
 
 

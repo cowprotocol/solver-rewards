@@ -9,6 +9,7 @@ from duneapi.types import DuneQuery, Network, QueryParameter, Address
 from duneapi.util import open_query
 
 from src.utils.dataset import index_by
+from src.utils.query_file import query_file
 from src.utils.script_args import generic_script_init
 
 # pylint: disable=line-too-long
@@ -48,7 +49,10 @@ def get_vouches(dune: DuneAPI, end_time: datetime) -> dict[Address, Vouch]:
     pool_values = ",\n           ".join(RECOGNIZED_BONDING_POOLS)
     query = DuneQuery.from_environment(
         raw_sql="\n".join(
-            [open_query("./queries/vouch_registry.sql"), "select * from valid_vouches"]
+            [
+                open_query(query_file("vouch_registry.sql")),
+                "select * from valid_vouches",
+            ]
         ),
         network=Network.MAINNET,
         name="Solver Reward Targets",

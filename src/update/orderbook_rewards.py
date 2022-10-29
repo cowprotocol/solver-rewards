@@ -9,6 +9,7 @@ from duneapi.util import open_query
 from pandas import DataFrame, Series
 
 from src.models import AccountingPeriod
+from src.utils.query_file import query_file
 
 
 class RewardQuery(Enum):
@@ -41,9 +42,9 @@ class RewardQuery(Enum):
     def query_file(self) -> str:
         """Returns the file containing the RAW SQL for Dune Query"""
         if self == RewardQuery.AGGREGATE:
-            return "./queries/user_generated_rewards.sql"
+            return query_file("user_generated_rewards.sql")
         if self == RewardQuery.PER_ORDER:
-            return "./queries/user_generated_per_order_rewards.sql"
+            return query_file("user_generated_per_order_rewards.sql")
 
         raise ValueError(f"Invalid enum variant {self}")
 

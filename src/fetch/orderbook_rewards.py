@@ -1,15 +1,17 @@
 """Fetching Per Order Rewards from Production and Staging Database"""
+
 import pandas as pd
 from duneapi.util import open_query
 from pandas import DataFrame
 
 from src.pg_client import pg_engine, OrderbookEnv
+from src.utils.query_file import query_file
 
 
 def get_orderbook_rewards(start_block: str, end_block: str) -> DataFrame:
     """Fetches and validates Orderbook Reward DataFrame as concatenation from Prod and Staging DB"""
     cow_reward_query = (
-        open_query("./queries/cow_rewards.sql")
+        open_query(query_file("cow_rewards.sql"))
         .replace("{{start_block}}", start_block)
         .replace("{{end_block}}", end_block)
     )

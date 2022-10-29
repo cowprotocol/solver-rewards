@@ -44,6 +44,7 @@ from src.update.orderbook_rewards import push_user_generated_view, RewardQuery
 from src.utils.dataset import index_by
 from src.utils.prices import eth_in_token, TokenId, token_in_eth
 from src.utils.print_store import PrintStore, Category
+from src.utils.query_file import query_file
 from src.utils.script_args import generic_script_init
 
 log_saver = PrintStore()
@@ -449,7 +450,7 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     # Validation of results - using characteristics of results from two sources.
     dune_trade_counts = dune.fetch(
         query=DuneQuery.from_environment(
-            raw_sql=open_query("./queries/dune_trade_counts.sql"),
+            raw_sql=open_query(query_file("dune_trade_counts.sql")),
             network=Network.MAINNET,
             name="Trade Counts",
             parameters=[
@@ -482,7 +483,7 @@ def get_eth_spent(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     Fetches ETH spent on successful settlements by all solvers during `period`
     """
     query = DuneQuery.from_environment(
-        raw_sql=open_query("./queries/eth_spent.sql"),
+        raw_sql=open_query(query_file("eth_spent.sql")),
         network=Network.MAINNET,
         name="ETH Reimbursement",
         parameters=[

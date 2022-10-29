@@ -5,6 +5,7 @@ from duneapi.types import DuneQuery, Network, QueryParameter, Address
 from duneapi.util import open_query
 
 from src.fetch.reward_targets import Vouch, parse_vouches, RECOGNIZED_BONDING_POOLS
+from src.utils.query_file import query_file
 from tests.db.pg_client import (
     ConnectionType,
     DBRouter,
@@ -88,7 +89,10 @@ def invalidate_vouch(
 def query_for(date_str: str, bonding_pools: list[str]) -> DuneQuery:
     return DuneQuery(
         raw_sql="\n".join(
-            [open_query("./queries/vouch_registry.sql"), "select * from valid_vouches"]
+            [
+                open_query(query_file("vouch_registry.sql")),
+                "select * from valid_vouches",
+            ]
         ),
         network=Network.MAINNET,
         name="Solver Reward Targets",
