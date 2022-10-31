@@ -2,8 +2,8 @@ import unittest
 
 from duneapi.api import DuneAPI
 
-from src.fetch.transfer_file import get_cow_rewards, get_eth_spent, dashboard_url
-from src.models import AccountingPeriod
+from src.fetch.transfer_file import get_cow_rewards, get_eth_spent
+from src.models.accounting_period import AccountingPeriod
 
 
 class MyTestCase(unittest.TestCase):
@@ -20,7 +20,7 @@ class MyTestCase(unittest.TestCase):
 
     def test_get_cow_rewards(self):
         period = AccountingPeriod("2022-10-18", length_days=5)
-        print(f"Check out results at: {dashboard_url(period)}")
+        print(f"Check out results at: {period.dashboard_url()}")
         try:
             get_cow_rewards(self.dune, period)
         except AssertionError as err:

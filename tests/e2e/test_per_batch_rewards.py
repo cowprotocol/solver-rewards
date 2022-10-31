@@ -2,13 +2,9 @@ import unittest
 import pandas as pd
 from duneapi.api import DuneAPI
 
-from src.fetch.cow_rewards import get_orderbook_rewards
+from src.fetch.cow_rewards import get_orderbook_rewards, map_reward, unsafe_batches
 from src.fetch.risk_free_batches import get_risk_free_batches
-from src.fetch.transfer_file import (
-    map_reward,
-    unsafe_batches,
-)
-from src.models import AccountingPeriod
+from src.models.accounting_period import AccountingPeriod
 
 
 def reward_for_tx(
