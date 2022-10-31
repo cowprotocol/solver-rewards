@@ -12,7 +12,6 @@ from src.models.accounting_period import AccountingPeriod
 from src.models.token import Token
 from src.utils.print_store import PrintStore
 
-# from src.models import AccountingPeriod, Token
 from tests.queries.test_internal_trades import TransferType
 
 ONE_ETH = 10**18

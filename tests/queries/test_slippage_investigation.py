@@ -5,7 +5,7 @@ from pprint import pprint
 from duneapi.types import DuneQuery, QueryParameter, Network
 
 from src.fetch.period_slippage import QueryType, slippage_query
-from src.models import AccountingPeriod
+from src.models.accounting_period import AccountingPeriod
 from tests.db.pg_client import (
     ConnectionType,
     DBRouter,

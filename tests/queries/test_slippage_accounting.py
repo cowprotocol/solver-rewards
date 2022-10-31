@@ -6,7 +6,7 @@ from src.fetch.period_slippage import (
     SplitSlippages,
     slippage_query,
 )
-from src.models import AccountingPeriod
+from src.models.accounting_period import AccountingPeriod
 from tests.db.pg_client import ConnectionType, DBRouter
 
 
