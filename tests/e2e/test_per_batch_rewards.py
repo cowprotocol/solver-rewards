@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 from duneapi.api import DuneAPI
 
-from src.fetch.orderbook_rewards import get_orderbook_rewards
+from src.fetch.cow_rewards import get_orderbook_rewards
 from src.fetch.risk_free_batches import get_risk_free_batches
 from src.fetch.transfer_file import (
     map_reward,

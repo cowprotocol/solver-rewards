@@ -3,18 +3,14 @@ Common location for shared resources throughout the project.
 """
 from __future__ import annotations
 
+import urllib.parse
 from datetime import datetime, timedelta
 
-# pylint: disable=too-few-public-methods
-from typing import Optional
-
 from duneapi.api import DuneAPI
-from duneapi.types import Address, DuneQuery, Network, QueryParameter
+from duneapi.types import DuneQuery, Network, QueryParameter
 from duneapi.util import open_query
 
-from src.constants import COW_TOKEN_ADDRESS, w3
 from src.utils.query_file import query_file
-from src.utils.token_details import get_token_decimals
 
 
 class AccountingPeriod:
@@ -51,38 +47,15 @@ class AccountingPeriod:
         assert len(results) == 1, "Block Interval Query should return only 1 result!"
         return str(results[0]["start_block"]), str(results[0]["end_block"])
 
+    def dashboard_url(self) -> str:
+        """Constructs Solver Accounting Dashboard URL for Period"""
+        base = "https://dune.com/gnosis.protocol/"
+        slug = "solver-rewards-accounting-v2"
+        query = f"?StartTime={self.start}&EndTime={self.end}&PeriodHash={hash(self)}"
+        return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
-class Token:
-    """
-    Token class consists of token `address` and additional `decimals` value.
-    The constructor exists in a way that we can either
-    - provide the decimals (for unit testing) which avoids making web3 calls
-    - fetch the token decimals with eth_call.
-    Since we primarily work with the COW token, the decimals are hardcoded here.
-    """
-
-    def __init__(self, address: str | Address, decimals: Optional[int] = None):
-        if isinstance(address, str):
-            address = Address(address)
-        self.address = address
-
-        if address == COW_TOKEN_ADDRESS:
-            # Avoid Web3 Calls for main branch of program.
-            decimals = 18
-
-        self.decimals = (
-            decimals if decimals is not None else get_token_decimals(w3, address)
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, Token):
-            return self.address == other.address and self.decimals == other.decimals
-        return False
-
-    def __lt__(self, other: object) -> bool:
-        if isinstance(other, Token):
-            return self.address < other.address
-        return False
-
-    def __hash__(self) -> int:
-        return self.address.__hash__()
+    def unusual_slippage_url(self) -> str:
+        """Returns a link to unusual slippage query for period"""
+        base = "https://dune.com/queries/645559"
+        query = f"?StartTime={self.start}&EndTime={self.end}"
+        return base + urllib.parse.quote_plus(query, safe="=&?")

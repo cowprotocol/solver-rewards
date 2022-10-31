@@ -1,12 +1,13 @@
 import unittest
+
 from duneapi.types import Address
 
 from src.constants import COW_TOKEN_ADDRESS
 from src.fetch.period_slippage import SolverSlippage
-from src.fetch.transfer_file import Transfer, SplitTransfers, Overdraft
-from src.models import AccountingPeriod, Token
-from duneapi.types import Address
-from eth_typing import URI
+from src.fetch.transfer_file import Transfer, SplitTransfers
+from src.models.accounting_period import AccountingPeriod
+from src.models.token import Token
+from src.utils.print_store import PrintStore
 
 ONE_ETH = 10**18
 
@@ -22,7 +23,9 @@ class TestSplitTransfers(unittest.TestCase):
             def process_native_transfers(
                 self, indexed_slippage: dict[Address, SolverSlippage]
             ) -> int:
-                return SplitTransfers._process_native_transfers(self, indexed_slippage)
+                return SplitTransfers._process_native_transfers(
+                    self, indexed_slippage, PrintStore()
+                )
 
         period = AccountingPeriod("2022-06-14")
         barn_zerox = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")

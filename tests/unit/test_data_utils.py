@@ -1,8 +1,7 @@
 import unittest
 from dataclasses import dataclass
 
-from src.fetch.transfer_file import dashboard_url
-from src.models import AccountingPeriod
+from src.models.accounting_period import AccountingPeriod
 from src.utils.dataset import index_by
 
 
@@ -20,7 +19,7 @@ class TestDataUtils(unittest.TestCase):
             "EndTime=2022-06-07+00%3A00%3A00&"
             "PeriodHash=2022053120220607"
         )
-        result = dashboard_url(AccountingPeriod("2022-05-31"))
+        result = AccountingPeriod("2022-05-31").dashboard_url()
         self.assertEqual(
             expected,
             result,

@@ -7,7 +7,7 @@ from enum import Enum
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
-from src.models import AccountingPeriod
+from src.models.accounting_period import AccountingPeriod
 from src.utils.query_file import query_file
 from tests.db.pg_client import ConnectionType, DBRouter
 

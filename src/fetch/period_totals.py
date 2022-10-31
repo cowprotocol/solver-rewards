@@ -8,7 +8,7 @@ from duneapi.api import DuneAPI
 from duneapi.types import QueryParameter, DuneQuery, Network
 from duneapi.util import open_query
 
-from src.models import AccountingPeriod
+from src.models.accounting_period import AccountingPeriod
 from src.utils.query_file import dashboard_file
 from src.utils.script_args import generic_script_init
 
@@ -49,7 +49,5 @@ def get_period_totals(dune: DuneAPI, period: AccountingPeriod) -> PeriodTotals:
 
 if __name__ == "__main__":
     args = generic_script_init(description="Fetch Accounting Period Totals")
-
     total_for_period = get_period_totals(dune=args.dune, period=args.period)
-
     pprint(total_for_period)
