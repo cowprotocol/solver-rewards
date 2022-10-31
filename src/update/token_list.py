@@ -12,6 +12,7 @@ from duneapi.util import open_query
 
 from src.constants import LOG_CONFIG_FILE
 from src.token_list import fetch_trusted_tokens
+from src.utils.query_file import query_file
 from src.utils.script_args import generic_script_init
 
 log = logging.getLogger(__name__)
@@ -24,9 +25,9 @@ def update_token_list(dune: DuneAPI, token_list: list[str]) -> list[dict[str, st
     """Fetches current trusted token list and builds a user generated view from it"""
     if not token_list:
         raise ValueError("Can't update and empty token list")
-    raw_sql = open_query("./queries/token_list.sql").replace(
+    raw_sql = open_query(query_file("token_list.sql")).replace(
         "'{{TokenList}}'",
-        ",\n             ".join(token_list),
+        ",\n".join(token_list),
     )
     query = DuneQuery.from_environment(
         raw_sql=raw_sql, name="Updated Token List", network=Network.MAINNET

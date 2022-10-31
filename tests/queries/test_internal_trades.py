@@ -8,6 +8,7 @@ from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
 from src.models import AccountingPeriod
+from src.utils.query_file import query_file
 from tests.db.pg_client import ConnectionType, DBRouter
 
 
@@ -91,7 +92,7 @@ class TestInternalTrades(unittest.TestCase):
     def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
         raw_sql = "\n".join(
             [
-                open_query("./queries/period_slippage.sql"),
+                open_query(query_file("period_slippage.sql")),
                 SELECT_INTERNAL_TRANSFERS,
             ]
         )

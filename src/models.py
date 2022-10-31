@@ -13,6 +13,7 @@ from duneapi.types import Address, DuneQuery, Network, QueryParameter
 from duneapi.util import open_query
 
 from src.constants import COW_TOKEN_ADDRESS, w3
+from src.utils.query_file import query_file
 from src.utils.token_details import get_token_decimals
 
 
@@ -38,7 +39,7 @@ class AccountingPeriod:
         """Returns block numbers corresponding to date interval"""
         results = dune.fetch(
             query=DuneQuery.from_environment(
-                raw_sql=open_query("./queries/period_block_interval.sql"),
+                raw_sql=open_query(query_file("period_block_interval.sql")),
                 name=f"Block Interval for Accounting Period {self}",
                 network=Network.MAINNET,
                 parameters=[
