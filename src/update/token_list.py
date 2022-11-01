@@ -11,9 +11,11 @@ from duneapi.types import DuneQuery, Network
 from duneapi.util import open_query
 
 from src.constants import LOG_CONFIG_FILE
-from src.token_list import fetch_trusted_tokens
+
+# from src.token_list import fetch_trusted_tokens
 from src.utils.query_file import query_file
-from src.utils.script_args import generic_script_init
+
+# from src.utils.script_args import generic_script_init
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(
@@ -44,6 +46,6 @@ def update_token_list(dune: DuneAPI, token_list: list[str]) -> list[dict[str, st
     return results
 
 
-if __name__ == "__main__":
-    dune_connection = generic_script_init(description="Update Token List").dune
-    update_token_list(dune_connection, fetch_trusted_tokens())
+# if __name__ == "__main__":
+#     dune_connection = generic_script_init(description="Update Token List").dune
+#     update_token_list(dune_connection, fetch_trusted_tokens())

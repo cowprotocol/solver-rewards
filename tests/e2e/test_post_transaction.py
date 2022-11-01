@@ -7,7 +7,7 @@ from gnosis.eth import EthereumNetwork, EthereumClient
 
 from web3 import Web3
 from src.fetch.transfer_file import Transfer
-from src.models import Token
+from src.models.token import Token
 from src.multisend import post_multisend
 
 

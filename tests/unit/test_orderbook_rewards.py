@@ -1,6 +1,6 @@
 import unittest
 
-from src.models import AccountingPeriod
+from src.models.accounting_period import AccountingPeriod
 from src.update.orderbook_rewards import RewardQuery
 import pandas as pd
 

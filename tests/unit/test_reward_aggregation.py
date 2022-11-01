@@ -2,12 +2,13 @@ import unittest
 
 from web3 import Web3
 
-from src.fetch.transfer_file import (
+import pandas as pd
+
+from src.fetch.cow_rewards import (
     aggregate_orderbook_rewards,
     map_reward,
     unsafe_batches,
 )
-import pandas as pd
 
 
 def to_wei(t) -> int:

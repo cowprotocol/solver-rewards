@@ -6,7 +6,7 @@ from gnosis.eth import EthereumClient
 
 from src.constants import COW_TOKEN_ADDRESS, INFURA_KEY
 from src.fetch.transfer_file import Transfer
-from src.models import Token
+from src.models.token import Token
 from src.multisend import build_encoded_multisend
 
 

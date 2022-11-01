@@ -8,7 +8,7 @@ from duneapi.types import DuneQuery, Network
 from duneapi.util import open_query
 from pandas import DataFrame, Series
 
-from src.models import AccountingPeriod
+from src.models.accounting_period import AccountingPeriod
 from src.utils.query_file import query_file
 
 

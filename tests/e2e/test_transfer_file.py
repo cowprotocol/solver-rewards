@@ -3,8 +3,11 @@ from duneapi.types import Address
 
 from src.constants import COW_TOKEN_ADDRESS
 from src.fetch.period_slippage import SolverSlippage
-from src.fetch.transfer_file import Transfer, SplitTransfers, Overdraft
-from src.models import AccountingPeriod, Token
+from src.fetch.transfer_file import Transfer, SplitTransfers
+from src.models.accounting_period import AccountingPeriod
+from src.models.overdraft import Overdraft
+from src.models.token import Token
+from src.utils.print_store import PrintStore
 
 ONE_ETH = 10**18
 
@@ -42,7 +45,7 @@ class TestPrices(unittest.TestCase):
 
         accounting = SplitTransfers(period, mixed_transfers)
 
-        transfers = accounting.process(indexed_slippage, cow_redirects)
+        transfers = accounting.process(indexed_slippage, cow_redirects, PrintStore())
         # The only remaining transfer is the other_solver's COW reward.
         self.assertEqual(
             transfers,

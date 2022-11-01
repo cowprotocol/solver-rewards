@@ -7,8 +7,11 @@ from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
 
 from src.constants import COW_TOKEN_ADDRESS, ERC20_TOKEN
 from src.fetch.period_slippage import SolverSlippage
-from src.fetch.transfer_file import Transfer, consolidate_transfers
-from src.models import AccountingPeriod, Token
+from src.fetch.transfer_file import Transfer
+from src.models.accounting_period import AccountingPeriod
+from src.models.token import Token
+from src.utils.print_store import PrintStore
+
 from tests.queries.test_internal_trades import TransferType
 
 ONE_ETH = 10**18
@@ -56,9 +59,9 @@ class TestTransfer(unittest.TestCase):
             solver_address=solver,
             amount_wei=-ONE_ETH // 2,
         )
-        transfer.add_slippage(positive_slippage)
+        transfer.add_slippage(positive_slippage, PrintStore())
         self.assertAlmostEqual(transfer.amount, 1.5, delta=0.0000000001)
-        transfer.add_slippage(negative_slippage)
+        transfer.add_slippage(negative_slippage, PrintStore())
         self.assertAlmostEqual(transfer.amount, 1.0, delta=0.0000000001)
 
         overdraft_slippage = SolverSlippage(
@@ -66,7 +69,7 @@ class TestTransfer(unittest.TestCase):
         )
 
         with self.assertRaises(ValueError) as err:
-            transfer.add_slippage(overdraft_slippage)
+            transfer.add_slippage(overdraft_slippage, PrintStore())
         self.assertEqual(
             str(err.exception),
             f"Invalid adjustment {transfer} "
@@ -152,7 +155,7 @@ class TestTransfer(unittest.TestCase):
                 amount_wei=3 * ONE_ETH,
             ),
         ]
-        self.assertEqual(expected, consolidate_transfers(transfer_list))
+        self.assertEqual(expected, Transfer.consolidate(transfer_list))
 
     def test_merge(self):
         receiver = Address.zero()
@@ -251,7 +254,8 @@ class TestTransfer(unittest.TestCase):
                     solver_name="Test Solver",
                     solver_address=Address.from_int(2),
                     amount_wei=0,
-                )
+                ),
+                PrintStore(),
             )
             self.assertEqual(err, "receiver != solver")
 

@@ -7,11 +7,13 @@ from enum import Enum
 from pprint import pprint
 
 from duneapi.api import DuneAPI
-from duneapi.types import QueryParameter, DuneQuery, Network, Address, DuneRecord
+from duneapi.types import QueryParameter, DuneQuery, Network, DuneRecord
 from duneapi.util import open_query
 
 from src.constants import LOG_CONFIG_FILE
-from src.models import AccountingPeriod
+from src.models.accounting_period import AccountingPeriod
+from src.models.slippage import SolverSlippage
+
 from src.token_list import fetch_trusted_tokens
 from src.update.token_list import update_token_list
 from src.utils.query_file import dashboard_file, query_file
@@ -21,62 +23,6 @@ log = logging.getLogger(__name__)
 logging.config.fileConfig(
     fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
 )
-
-
-class QueryType(Enum):
-    """
-    Determines type of slippage data to be fetched.
-    The slippage subquery allows us to select from either of the two result tables defined here.
-    """
-
-    PER_TX = "results_per_tx"
-    TOTAL = "results"
-    UNUSUAL = "outliers"
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-    def select_statement(self) -> str:
-        """Returns select statement to be used in slippage query."""
-        if self in (QueryType.PER_TX, QueryType.TOTAL):
-            return f"select * from {self}"
-        if self == QueryType.UNUSUAL:
-            return open_query(dashboard_file("unusual-slippage.sql"))
-        # Can only happen if types are added to the enum and not accounted for.
-        raise ValueError(f"Invalid Query Type! {self}")
-
-
-def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
-    """
-    Constructs our slippage query by joining sub-queries
-    Default query type input it total, but we can request
-    per transaction results for testing
-    """
-    return "\n".join(
-        [
-            open_query(query_file("period_slippage.sql")),
-            query_type.select_statement(),
-        ]
-    )
-
-
-@dataclass
-class SolverSlippage:
-    """Total amount reimbursed for accounting period"""
-
-    solver_address: Address
-    solver_name: str
-    # ETH amount (in WEI) to be deducted from Solver reimbursement
-    amount_wei: int
-
-    @classmethod
-    def from_dict(cls, obj: dict[str, str]) -> SolverSlippage:
-        """Converts Dune data dict to object with types"""
-        return cls(
-            solver_address=Address(obj["solver_address"]),
-            solver_name=obj["solver_name"],
-            amount_wei=int(obj["eth_slippage_wei"]),
-        )
 
 
 @dataclass
@@ -115,6 +61,43 @@ class SplitSlippages:
     def sum_positive(self) -> int:
         """Returns total positive slippage"""
         return sum(pos.amount_wei for pos in self.positive)
+
+
+class QueryType(Enum):
+    """
+    Determines type of slippage data to be fetched.
+    The slippage subquery allows us to select from either of the two result tables defined here.
+    """
+
+    PER_TX = "results_per_tx"
+    TOTAL = "results"
+    UNUSUAL = "outliers"
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def select_statement(self) -> str:
+        """Returns select statement to be used in slippage query."""
+        if self in (QueryType.PER_TX, QueryType.TOTAL):
+            return f"select * from {self}"
+        if self == QueryType.UNUSUAL:
+            return open_query(dashboard_file("unusual-slippage.sql"))
+        # Can only happen if types are added to the enum and not accounted for.
+        raise ValueError(f"Invalid Query Type! {self}")
+
+
+def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
+    """
+    Constructs our slippage query by joining sub-queries
+    Default query type input it total, but we can request
+    per transaction results for testing
+    """
+    return "\n".join(
+        [
+            open_query(query_file("period_slippage.sql")),
+            query_type.select_statement(),
+        ]
+    )
 
 
 def fetch_dune_slippage(

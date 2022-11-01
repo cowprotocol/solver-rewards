@@ -2,7 +2,7 @@ import unittest
 
 from duneapi.api import DuneAPI
 
-from src.models import AccountingPeriod
+from src.models.accounting_period import AccountingPeriod
 
 
 class MyTestCase(unittest.TestCase):
