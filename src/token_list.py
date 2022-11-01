@@ -3,6 +3,9 @@ import json
 
 import requests
 
+from src.update.token_list import update_token_list
+from src.utils.script_args import generic_script_init
+
 ALLOWED_TOKEN_LIST_URL = "https://files.cow.fi/token_list.json"
 
 
@@ -25,3 +28,8 @@ def fetch_trusted_tokens() -> list[str]:
     """Returns the list of trusted buffer tradable tokens"""
     response = requests.get(ALLOWED_TOKEN_LIST_URL)
     return parse_token_list(response.text)
+
+
+if __name__ == "__main__":
+    dune_connection = generic_script_init(description="Update Token List").dune
+    update_token_list(dune_connection, fetch_trusted_tokens())
