@@ -10,32 +10,9 @@ from web3 import Web3
 from src.fetch.risk_free_batches import get_risk_free_batches
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer
-
-from src.pg_client import pg_engine, OrderbookEnv
+from src.pg_client import DualEnvDataFrame
 from src.update.orderbook_rewards import push_user_generated_view, RewardQuery
 from src.utils.query_file import query_file
-
-
-def get_orderbook_rewards(start_block: str, end_block: str) -> DataFrame:
-    """Fetches and validates Orderbook Reward DataFrame as concatenation from Prod and Staging DB"""
-    cow_reward_query = (
-        open_query(query_file("cow_rewards.sql"))
-        .replace("{{start_block}}", start_block)
-        .replace("{{end_block}}", end_block)
-    )
-
-    # Need to fetch results from both order-books (prod and barn)
-    prod_df: DataFrame = pd.read_sql(
-        sql=cow_reward_query, con=pg_engine(OrderbookEnv.PROD)
-    )
-    print(f"got {prod_df} from production DB")
-    barn_df: DataFrame = pd.read_sql(
-        sql=cow_reward_query, con=pg_engine(OrderbookEnv.BARN)
-    )
-    print(f"got {barn_df} from staging DB")
-    # Solvers do not appear in both environments!
-    assert set(prod_df.solver).isdisjoint(set(barn_df.solver)), "receiver overlap!"
-    return pd.concat([prod_df, barn_df])
 
 
 def map_reward(
@@ -112,7 +89,7 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """
     start_block, end_block = period.get_block_interval(dune)
     print(f"Fetching CoW Rewards for block interval {start_block}, {end_block}")
-    per_order_df = get_orderbook_rewards(start_block, end_block)
+    per_order_df = DualEnvDataFrame.get_orderbook_rewards(start_block, end_block)
     # Pushing the pre-adjusted orderbook rewards (right from the DB)
     push_user_generated_view(dune, period, per_order_df, RewardQuery.PER_ORDER)
     cow_rewards_df = aggregate_orderbook_rewards(
