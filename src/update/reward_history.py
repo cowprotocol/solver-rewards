@@ -16,7 +16,6 @@ as long as the previous pages have not been tampered with.
 """
 from __future__ import annotations
 
-import logging
 import os
 from dataclasses import dataclass
 from typing import Optional
@@ -27,13 +26,11 @@ from duneapi.util import open_query
 from pandas import DataFrame
 
 from src.constants import QUERY_PATH
+from src.logger import set_log
 from src.pg_client import pg_hex2bytea, DualEnvDataframe
 from src.update.utils import Environment, multi_push_view, update_args
 
-log = logging.getLogger(__name__)
-log.level = logging.INFO
-
-ORDER_REWARDS_QUERY = int(os.environ.get("ORDER_REWARDS_QUERY", 1476356))
+log = set_log(__name__)
 
 
 @dataclass
@@ -96,14 +93,13 @@ def fetch_and_push_order_rewards(
     multi_push_view(
         dune,
         query_file="user_generated/order_rewards_page.sql",
-        aggregate_query_file="user_generated/order_rewards.sql",
+        aggregate_query_file="user_generated/dune_order_rewards.sql",
         base_table_name="cow_order_rewards",
         partitioned_values=[
             values[i : i + partition_size]
             for i in range(0, len(values), partition_size)
         ],
         env=env,
-        query_id=ORDER_REWARDS_QUERY,
         # skip=26,
     )
 

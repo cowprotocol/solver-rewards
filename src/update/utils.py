@@ -2,7 +2,6 @@
 A few project level Enums
 """
 import argparse
-import logging
 import os
 from enum import Enum
 
@@ -11,9 +10,9 @@ from duneapi.types import QueryParameter, DuneQuery, Network
 from duneapi.util import open_query
 
 from src.constants import QUERY_PATH
+from src.logger import set_log
 
-log = logging.getLogger(__name__)
-log.level = logging.INFO
+log = set_log(__name__)
 
 
 class Environment(Enum):
@@ -36,7 +35,6 @@ class Environment(Enum):
 def push_view(  # pylint: disable=too-many-arguments
     dune: DuneAPI,
     query_file: str,
-    query_id: int,
     values: list[str],
     query_params: list[QueryParameter],
     separator: str = ",\n",
@@ -46,12 +44,11 @@ def push_view(  # pylint: disable=too-many-arguments
     file_path = os.path.join(QUERY_PATH, query_file)
     raw_sql = open_query(file_path).replace("{{Values}}", separator.join(values))
     log.info(f"Pushing ~{len(raw_sql.encode('utf-8')) / 10 ** 6:.2f} Mb to Dune.")
-    query = DuneQuery(
+    query = DuneQuery.from_environment(
         raw_sql=raw_sql,
         name=query_file,
         parameters=query_params,
         network=Network.MAINNET,
-        query_id=query_id,
     )
     dune.fetch(query)
 
@@ -66,7 +63,6 @@ def multi_push_view(  # pylint: disable=too-many-arguments
     query_file: str,
     aggregate_query_file: str,
     base_table_name: str,
-    query_id: int,
     partitioned_values: list[list[str]],
     env: Environment,
     skip: int = 0,
@@ -85,7 +81,6 @@ def multi_push_view(  # pylint: disable=too-many-arguments
             push_view(
                 dune,
                 query_file,
-                query_id,
                 values=chunk,
                 query_params=[
                     QueryParameter.text_type("TableName", table_name),
@@ -105,7 +100,6 @@ def multi_push_view(  # pylint: disable=too-many-arguments
     push_view(
         dune,
         query_file=aggregate_query_file,
-        query_id=query_id,
         values=aggregate_tables,
         query_params=[env.as_query_param()],
         separator="\nunion\n",
