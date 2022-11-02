@@ -4,7 +4,10 @@ import sys
 from enum import Enum
 
 from src.fetch.transfer_file import run as solver_payout
+from src.logger import set_log
 from src.update.reward_history import run as dune_sync
+
+log = set_log(__name__)
 
 
 class RunCommand(Enum):
@@ -22,8 +25,8 @@ if __name__ == "__main__":
         type=RunCommand,
         choices=list(RunCommand),
     )
-    args, _ = parser.parse_known_args()
-
+    args, other = parser.parse_known_args()
+    log.info(f"Running main entry point with arguments {args} & {other}")
     if args.command == RunCommand.DUNE_SYNC:
         dune_sync()
         sys.exit()

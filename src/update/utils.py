@@ -40,7 +40,6 @@ def push_view(  # pylint: disable=too-many-arguments
     separator: str = ",\n",
 ) -> None:
     """Pushes a user generated view to Dune Analytics via Legacy API"""
-    # TODO - use this in update_appdata_view.py and update/user_retention.py
     file_path = os.path.join(QUERY_PATH, query_file)
     raw_sql = open_query(file_path).replace("{{Values}}", separator.join(values))
     log.info(f"Pushing ~{len(raw_sql.encode('utf-8')) / 10 ** 6:.2f} Mb to Dune.")
