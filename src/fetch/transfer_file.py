@@ -134,7 +134,8 @@ def auto_propose(
         )
 
 
-if __name__ == "__main__":
+def run() -> None:
+    """Logic for main entry of this script"""
     args = generic_script_init(description="Fetch Complete Reimbursement")
     log_saver.print(
         f"The data being aggregated here is available for visualization at\n"
@@ -154,3 +155,7 @@ if __name__ == "__main__":
         )
     else:
         manual_propose(args.dune, args.period)
+
+
+if __name__ == "__main__":
+    run()

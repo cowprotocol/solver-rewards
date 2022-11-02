@@ -123,4 +123,5 @@ def update_args() -> argparse.Namespace:
         type=bool,
         default=False,
     )
-    return parser.parse_args()
+    args, _ = parser.parse_known_args()
+    return args

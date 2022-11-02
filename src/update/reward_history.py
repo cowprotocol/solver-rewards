@@ -155,11 +155,15 @@ def drop_all_pages(dune: DuneAPI, env: Environment) -> None:
     drop_page_range(dune, env, 0, max_page)
 
 
-if __name__ == "__main__":
+def run() -> None:
+    """Logic for main entry of this script"""
     args = update_args()
-    print(args)
     fetch_and_push_order_rewards(
         dune=DuneAPI.new_from_environment(),
         env=args.environment,
         drop_first=args.drop_first,
     )
+
+
+if __name__ == "__main__":
+    run()
