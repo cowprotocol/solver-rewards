@@ -157,6 +157,7 @@ def drop_all_pages(dune: DuneAPI, env: Environment) -> None:
 
 if __name__ == "__main__":
     args = update_args()
+    print(args)
     fetch_and_push_order_rewards(
         dune=DuneAPI.new_from_environment(),
         env=args.environment,

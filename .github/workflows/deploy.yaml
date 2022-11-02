@@ -28,27 +28,11 @@ jobs:
           labels: |
             org.opencontainers.image.licenses=MIT OR Apache-2.0
 
-      - name: Push Payout Script Container
+      - name: Push Project Image
         uses: docker/build-push-action@v3
         with:
           context: .
-          file: docker/Dockerfile.payout
+          file: Dockerfile
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-
-      - id: meta_sync
-        uses: docker/metadata-action@v4
-        with:
-          images: ghcr.io/${{ github.repository }}-data-sync
-          labels: |
-            org.opencontainers.image.licenses=MIT OR Apache-2.0
-
-      - name: Push Dune Sync Container
-        uses: docker/build-push-action@v3
-        with:
-          context: .
-          file: docker/Dockerfile.sync
-          push: true
-          tags: ${{ steps.meta_sync.outputs.tags }}
-          labels: ${{ steps.meta_sync.outputs.labels }}

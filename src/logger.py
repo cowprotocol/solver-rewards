@@ -12,6 +12,6 @@ def set_log(name: str) -> Logger:
     log = logging.getLogger(name)
 
     logging.config.fileConfig(
-        fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=True
+        fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
     )
     return log
