@@ -10,7 +10,7 @@ from web3 import Web3
 from src.fetch.risk_free_batches import get_risk_free_batches
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer
-from src.pg_client import DualEnvDataFrame
+from src.pg_client import DualEnvDataframe
 from src.update.orderbook_rewards import push_user_generated_view, RewardQuery
 from src.utils.query_file import query_file
 
@@ -89,7 +89,7 @@ def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
     """
     start_block, end_block = period.get_block_interval(dune)
     print(f"Fetching CoW Rewards for block interval {start_block}, {end_block}")
-    per_order_df = DualEnvDataFrame.get_orderbook_rewards(start_block, end_block)
+    per_order_df = DualEnvDataframe.get_orderbook_rewards(start_block, end_block)
     # Pushing the pre-adjusted orderbook rewards (right from the DB)
     push_user_generated_view(dune, period, per_order_df, RewardQuery.PER_ORDER)
     cow_rewards_df = aggregate_orderbook_rewards(

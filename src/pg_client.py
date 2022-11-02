@@ -40,7 +40,7 @@ class OrderbookEnv(Enum):
 
 
 @dataclass
-class DualEnvDataFrame:
+class DualEnvDataframe:
     """
     A pair of Dataframes primarily intended to be store query results
     from production and staging orderbook databases
@@ -62,7 +62,7 @@ class DualEnvDataFrame:
         return create_engine(db_string)
 
     @classmethod
-    def from_query(cls, query: str) -> DualEnvDataFrame:
+    def from_query(cls, query: str) -> DualEnvDataframe:
         """Fetch results of DB query on both prod and barn and returns the results as a pair"""
         return cls(
             barn=pd.read_sql(sql=query, con=cls._pg_engine(OrderbookEnv.PROD)),

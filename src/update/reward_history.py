@@ -27,7 +27,7 @@ from duneapi.util import open_query
 from pandas import DataFrame
 
 from src.constants import QUERY_PATH
-from src.pg_client import pg_hex2bytea, DualEnvDataFrame
+from src.pg_client import pg_hex2bytea, DualEnvDataframe
 from src.update.utils import Environment, multi_push_view, update_args
 
 log = logging.getLogger(__name__)
@@ -76,7 +76,7 @@ def fetch_and_push_order_rewards(
         drop_all_pages(dune, env)
     log.info("Fetching and Merging Orderbook Rewards")
     rewards = OrderRewards.from_dataframe(
-        DualEnvDataFrame.get_orderbook_rewards(
+        DualEnvDataframe.get_orderbook_rewards(
             start_block="15771267",
             end_block="999999999",  # 320 years from now with 12-second block times
         )

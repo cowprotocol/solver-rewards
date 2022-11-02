@@ -2,9 +2,10 @@ import unittest
 import pandas as pd
 from duneapi.api import DuneAPI
 
-from src.fetch.cow_rewards import get_orderbook_rewards, map_reward, unsafe_batches
+from src.fetch.cow_rewards import map_reward, unsafe_batches
 from src.fetch.risk_free_batches import get_risk_free_batches
 from src.models.accounting_period import AccountingPeriod
+from src.pg_client import DualEnvDataframe
 
 
 def reward_for_tx(
@@ -31,7 +32,7 @@ class TestPerBatchRewards(unittest.TestCase):
         period = AccountingPeriod("2022-10-18")
         start_block, end_block = period.get_block_interval(dune)
 
-        self.rewards_df = get_orderbook_rewards(start_block, end_block)
+        self.rewards_df = DualEnvDataframe.get_orderbook_rewards(start_block, end_block)
         self.risk_free_batches = get_risk_free_batches(dune, period)
         self.jit_batches = unsafe_batches(self.rewards_df)
 
