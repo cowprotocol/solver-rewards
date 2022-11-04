@@ -28,7 +28,8 @@ jobs:
           labels: |
             org.opencontainers.image.licenses=MIT OR Apache-2.0
 
-      - uses: docker/build-push-action@v3
+      - name: Push Project Image
+        uses: docker/build-push-action@v3
         with:
           context: .
           file: Dockerfile
