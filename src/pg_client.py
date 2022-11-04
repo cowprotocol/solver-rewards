@@ -30,7 +30,7 @@ class OrderbookEnv(Enum):
 @dataclass
 class DualEnvDataframe:
     """
-    A pair of Dataframes primarily intended to be store query results
+    A pair of Dataframes primarily intended to store query results
     from production and staging orderbook databases
     """
 
@@ -84,8 +84,6 @@ class DualEnvDataframe:
 
 def pg_hex2bytea(hex_address: str) -> str:
     """
-    transforms hex address (beginning with 0x) to dune compatible
-    byeta by replacing `0x` with `\\x`.
     transforms hex string (beginning with 0x) to dune
     compatible bytea by replacing `0x` with `\\x`.
     """
