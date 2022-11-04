@@ -75,7 +75,8 @@ class DualEnvDataframe:
         dual_df = cls.from_query(cow_reward_query)
 
         # Solvers do not appear in both environments!
-        # TODO - move this assertion into merge (and make it more general).
+        # TODO - move this assertion into merge:
+        #  https://github.com/cowprotocol/solver-rewards/issues/125
         assert set(dual_df.prod.solver).isdisjoint(
             set(dual_df.barn.solver)
         ), "solver overlap!"
