@@ -27,18 +27,6 @@ class OrderbookEnv(Enum):
         return str(self.value)
 
 
-# def pg_engine(db_env: OrderbookEnv) -> engine:
-#     """Returns a connection to postgres database"""
-#     load_dotenv()
-#     host = os.environ[f"{db_env}_ORDERBOOK_HOST"]
-#     port = os.environ[f"{db_env}_ORDERBOOK_PORT"]
-#     database = os.environ[f"{db_env}_ORDERBOOK_DB"]
-#     user = os.environ[f"{db_env}_ORDERBOOK_USER"]
-#     password = os.environ[f"{db_env}_ORDERBOOK_PASSWORD"]
-#     db_string = f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
-#     return create_engine(db_string)
-
-
 @dataclass
 class DualEnvDataframe:
     """
