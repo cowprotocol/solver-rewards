@@ -38,5 +38,5 @@ def update_args() -> argparse.Namespace:
         choices=list(Environment),
         default=Environment.TEST,
     )
-    args, _ = parser.parse_known_args()
+    args = parser.parse_args()
     return args

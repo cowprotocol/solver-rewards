@@ -56,7 +56,7 @@ def generic_script_init(description: str) -> ScriptArgs:
         "Primarily intended for deployment in staging environment.",
         default=False,
     )
-    args, _ = parser.parse_known_args()
+    args = parser.parse_args()
     return ScriptArgs(
         dune=DuneAPI.new_from_environment(),
         period=AccountingPeriod(args.start),
