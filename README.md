@@ -140,7 +140,7 @@ docker run -it --rm \
   --env-file .env \
   -v $PWD:/app/out \
   ghcr.io/cowprotocol/solver-rewards:main \
-  --command PAYOUT \
+  src.fetch.transfer_file \
   --start 'YYYY-MM-DD'
 ```
 
@@ -153,6 +153,6 @@ docker run --pull=always -it --rm \
   --env-file .env \
   -v $PWD:/app/out \
   ghcr.io/cowprotocol/solver-rewards:main \
-  --command PAYOUT \
+  src.fetch.transfer_file \
   --start 'YYYY-MM-DD'
 ```
