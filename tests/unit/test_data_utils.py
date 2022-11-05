@@ -17,7 +17,6 @@ class TestDataUtils(unittest.TestCase):
             "https://dune.com/gnosis.protocol/solver-rewards-accounting-v2?"
             "StartTime=2022-05-31+00%3A00%3A00&"
             "EndTime=2022-06-07+00%3A00%3A00&"
-            "PeriodHash=2022053120220607"
         )
         result = AccountingPeriod("2022-05-31").dashboard_url()
         self.assertEqual(
