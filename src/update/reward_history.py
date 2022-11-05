@@ -73,13 +73,6 @@ def fetch_and_push_order_rewards(dune: DuneAPI, env: Environment) -> None:
             end_block="999999999",  # 320 years from now with 12-second block times
         )
     )
-    # TODO - In order to update less we can do a "checksum" of the pages being written
-    #  and only update those pages which fail.
-    #  Almost always, we should only have to update the last page.
-    #  Our checksum should be the results of this SQL query:
-    #  NOTE THAT: Checksum technique will require rewards to be sorted!
-    # This isn't necessary until we
-    # rewards.sort(key=lambda t: t.order_uid)
     log.info(f"Got {len(rewards)} records.")
     dune.push_view(
         table_name=f"cow_order_rewards_{env}",
@@ -87,8 +80,6 @@ def fetch_and_push_order_rewards(dune: DuneAPI, env: Environment) -> None:
             os.path.join(QUERY_PATH, "user_generated/order_rewards_template.sql")
         ),
         values=list(map(str, rewards)),
-        # TODO might be nice specify part_size (optionally - instead of having it chosen)
-        #  This was, we can ensure pages always have the same size.
     )
 
 
