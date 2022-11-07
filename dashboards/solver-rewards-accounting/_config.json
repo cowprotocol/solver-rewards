@@ -7,25 +7,6 @@
   },
   "queries": [
     {
-      "id": 1423296,
-      "name": "PeriodHash",
-      "description": "This is the Date Range as digits YYYYMMDDYYYYMMDD",
-      "query_file": "period-hash.sql",
-      "network": "Ethereum Mainnet",
-      "parameters": [
-        {
-          "key": "EndTime",
-          "value": "2022-06-28 00:00:00",
-          "type": "datetime"
-        },
-        {
-          "key": "StartTime",
-          "value": "2022-06-21 00:00:00",
-          "type": "datetime"
-        }
-      ]
-    },
-    {
       "id": 674947,
       "name": "Vouch Registry",
       "description": "",
@@ -35,7 +16,7 @@
       "parameters": [
         {
           "key": "EndTime",
-          "value": "2022-06-28 00:00:00",
+          "value": "2022-10-25 00:00:00",
           "type": "datetime"
         },
         {
@@ -54,18 +35,13 @@
       "parameters": [
         {
           "key": "EndTime",
-          "value": "2022-06-28 00:00:00",
+          "value": "2022-10-25 00:00:00",
           "type": "datetime"
         },
         {
           "key": "StartTime",
-          "value": "2022-06-21 00:00:00",
+          "value": "2022-10-18 00:00:00",
           "type": "datetime"
-        },
-        {
-          "key": "PeriodHash",
-          "value": "2022062120220628",
-          "type": "text"
         }
       ]
     },
@@ -78,18 +54,13 @@
       "parameters": [
         {
           "key": "EndTime",
-          "value": "2022-06-28 00:00:00",
+          "value": "2022-10-25 00:00:00",
           "type": "datetime"
         },
         {
           "key": "StartTime",
-          "value": "2022-06-21 00:00:00",
+          "value": "2022-10-18 00:00:00",
           "type": "datetime"
-        },
-        {
-          "key": "PeriodHash",
-          "value": "2022062120220628",
-          "type": "text"
         }
       ]
     },
@@ -103,7 +74,7 @@
       "parameters": [
         {
           "key": "EndTime",
-          "value": "2022-06-28 00:00:00",
+          "value": "2022-10-25 00:00:00",
           "type": "datetime"
         },
         {
@@ -123,7 +94,7 @@
         },
         {
           "key": "StartTime",
-          "value": "2022-06-21 00:00:00",
+          "value": "2022-10-18 00:00:00",
           "type": "datetime"
         },
         {
@@ -143,12 +114,12 @@
       "parameters": [
         {
           "key": "EndTime",
-          "value": "2022-06-28 00:00:00",
+          "value": "2022-10-25 00:00:00",
           "type": "datetime"
         },
         {
           "key": "StartTime",
-          "value": "2022-06-21 00:00:00",
+          "value": "2022-10-18 00:00:00",
           "type": "datetime"
         },
         {

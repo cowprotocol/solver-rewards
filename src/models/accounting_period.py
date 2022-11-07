@@ -51,7 +51,7 @@ class AccountingPeriod:
         """Constructs Solver Accounting Dashboard URL for Period"""
         base = "https://dune.com/gnosis.protocol/"
         slug = "solver-rewards-accounting-v2"
-        query = f"?StartTime={self.start}&EndTime={self.end}&PeriodHash={hash(self)}"
+        query = f"?StartTime={self.start}&EndTime={self.end}"
         return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
     def unusual_slippage_url(self) -> str:
