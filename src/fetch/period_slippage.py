@@ -14,8 +14,7 @@ from src.constants import LOG_CONFIG_FILE
 from src.models.accounting_period import AccountingPeriod
 from src.models.slippage import SolverSlippage
 
-from src.token_list import fetch_trusted_tokens
-from src.update.token_list import update_token_list
+from src.fetch.token_list import fetch_trusted_tokens
 from src.utils.query_file import dashboard_file, query_file
 from src.utils.script_args import generic_script_init
 
@@ -113,6 +112,7 @@ def fetch_dune_slippage(
             QueryParameter.date_type("StartTime", period.start),
             QueryParameter.date_type("EndTime", period.end),
             QueryParameter.text_type("TxHash", "0x"),
+            QueryParameter.text_type("TokenList", ",".join(fetch_trusted_tokens())),
         ],
     )
     return dune.fetch(query)
@@ -126,7 +126,6 @@ def get_period_slippage(
     Executes & Fetches results of slippage query per solver for specified accounting period.
     Returns a class representation of the results as two lists (positive & negative).
     """
-    update_token_list(dune, fetch_trusted_tokens())
     data_set = fetch_dune_slippage(dune, period)
     return SplitSlippages.from_data_set(data_set)
 
