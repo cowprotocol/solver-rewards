@@ -1,11 +1,13 @@
 import unittest
+
 from duneapi.types import Address
 
 from src.constants import COW_TOKEN_ADDRESS
-from src.fetch.period_slippage import SolverSlippage
-from src.fetch.transfer_file import Transfer, SplitTransfers
+from src.fetch.transfer_file import Transfer
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
+from src.models.slippage import SolverSlippage
+from src.models.split_transfers import SplitTransfers
 from src.models.token import Token
 from src.utils.print_store import PrintStore
 

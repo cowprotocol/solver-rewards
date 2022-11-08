@@ -4,8 +4,8 @@ from pprint import pprint
 
 from duneapi.types import DuneQuery, QueryParameter, Network
 
-from src.fetch.period_slippage import QueryType, slippage_query
-from src.fetch.token_list import fetch_trusted_tokens
+from src.models.slippage import QueryType, slippage_query
+from src.fetch.token_list import get_trusted_tokens
 from src.models.accounting_period import AccountingPeriod
 from tests.db.pg_client import (
     ConnectionType,
@@ -36,7 +36,7 @@ class TestDuneAnalytics(unittest.TestCase):
                     QueryParameter.date_type("EndTime", period.end),
                     QueryParameter.text_type("TxHash", "0x"),
                     QueryParameter.text_type(
-                        "TokenList", ",".join(fetch_trusted_tokens())
+                        "TokenList", ",".join(get_trusted_tokens())
                     ),
                 ],
                 description="",

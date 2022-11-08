@@ -7,7 +7,6 @@ import os
 import ssl
 
 import certifi
-from duneapi.api import DuneAPI
 from duneapi.file_io import File, write_to_csv
 from eth_typing.ethpm import URI
 from gnosis.eth.ethereum_client import EthereumClient
@@ -21,49 +20,26 @@ from src.constants import (
     AIRDROP_URL,
     SAFE_URL,
 )
-from src.fetch.period_slippage import get_period_slippage
-from src.fetch.reward_targets import get_vouches
-from src.fetch.eth_spent import get_eth_spent
-from src.fetch.cow_rewards import get_cow_rewards
-from src.models.accounting_period import AccountingPeriod
-from src.models.split_transfers import SplitTransfers
+from src.fetch.dune import DuneFetcher
 from src.models.transfer import Transfer, CSVTransfer
-
 from src.multisend import post_multisend
-from src.utils.dataset import index_by
-from src.utils.print_store import PrintStore, Category
+from src.utils.print_store import Category
 from src.utils.script_args import generic_script_init
 
-log_saver = PrintStore()
 
-
-def get_transfers(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
-    """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
-    reimbursements = get_eth_spent(dune, period)
-    rewards = get_cow_rewards(dune, period)
-    split_transfers = SplitTransfers(period, reimbursements + rewards)
-    negative_slippage = get_period_slippage(dune, period).negative
-
-    return split_transfers.process(
-        indexed_slippage=index_by(negative_slippage, "solver_address"),
-        cow_redirects=get_vouches(dune, period.end),
-        log_saver=log_saver,
-    )
-
-
-def manual_propose(dune: DuneAPI, period: AccountingPeriod) -> None:
+def manual_propose(dune: DuneFetcher) -> None:
     """
     Entry point to manual creation of rewards payout transaction.
     This function generates the CSV transfer file to be pasted into the COW Safe app
     """
     print(
         f"Please double check the batches with unusual slippage: "
-        f"{period.unusual_slippage_url()}"
+        f"{dune.period.unusual_slippage_url()}"
     )
-    transfers = Transfer.consolidate(get_transfers(dune, period))
+    transfers = Transfer.consolidate(dune.get_transfers())
     write_to_csv(
         data_list=[CSVTransfer.from_transfer(t) for t in transfers],
-        outfile=File(name=f"transfers-{period}.csv"),
+        outfile=File(name=f"transfers-{dune.period}.csv"),
     )
     print(Transfer.summarize(transfers))
     print(
@@ -99,9 +75,7 @@ def post_to_slack(
         )
 
 
-def auto_propose(
-    dune: DuneAPI, slack_client: WebClient, period: AccountingPeriod, dry_run: bool
-) -> None:
+def auto_propose(dune: DuneFetcher, slack_client: WebClient, dry_run: bool) -> None:
     """
     Entry point auto creation of rewards payout transaction.
     This function encodes the multisend of reward transfers and posts
@@ -112,8 +86,8 @@ def auto_propose(
     signing_key = os.environ["PROPOSER_PK"]
     client = EthereumClient(URI(NODE_URL))
 
-    transfers = Transfer.consolidate(get_transfers(dune, period))
-    log_saver.print(Transfer.summarize(transfers), category=Category.TOTALS)
+    transfers = Transfer.consolidate(dune.get_transfers())
+    dune.log_saver.print(Transfer.summarize(transfers), category=Category.TOTALS)
     if not dry_run:
         nonce = post_multisend(
             safe_address=SAFE_ADDRESS,
@@ -130,15 +104,15 @@ def auto_propose(
                 f"To sign and execute, visit:\n{SAFE_URL}\n"
                 f"More details in thread"
             ),
-            sub_messages=log_saver.get_values(),
+            sub_messages=dune.log_saver.get_values(),
         )
 
 
 if __name__ == "__main__":
     args = generic_script_init(description="Fetch Complete Reimbursement")
-    log_saver.print(
+    args.dune.log_saver.print(
         f"The data being aggregated here is available for visualization at\n"
-        f"{args.period.dashboard_url()}",
+        f"{args.dune.period.dashboard_url()}",
         category=Category.GENERAL,
     )
     if args.post_tx:
@@ -149,8 +123,7 @@ if __name__ == "__main__":
                 # https://stackoverflow.com/questions/59808346/python-3-slack-client-ssl-sslcertverificationerror
                 ssl=ssl.create_default_context(cafile=certifi.where()),
             ),
-            period=args.period,
             dry_run=args.dry_run,
         )
     else:
-        manual_propose(args.dune, args.period)
+        manual_propose(args.dune)
