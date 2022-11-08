@@ -35,7 +35,9 @@ class TestDuneAnalytics(unittest.TestCase):
                     QueryParameter.date_type("StartTime", period.start),
                     QueryParameter.date_type("EndTime", period.end),
                     QueryParameter.text_type("TxHash", "0x"),
-                    QueryParameter.text_type("TokenList", ",".join(fetch_trusted_tokens())),
+                    QueryParameter.text_type(
+                        "TokenList", ",".join(fetch_trusted_tokens())
+                    ),
                 ],
                 description="",
                 query_id=-1,
