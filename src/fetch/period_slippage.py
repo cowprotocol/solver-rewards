@@ -104,6 +104,7 @@ def fetch_dune_slippage(
     period: AccountingPeriod,
 ) -> list[DuneRecord]:
     """Constructs query and fetches results for solver slippage"""
+    token_list = fetch_trusted_tokens()
     query = DuneQuery.from_environment(
         raw_sql=slippage_query(),
         network=Network.MAINNET,
@@ -112,7 +113,7 @@ def fetch_dune_slippage(
             QueryParameter.date_type("StartTime", period.start),
             QueryParameter.date_type("EndTime", period.end),
             QueryParameter.text_type("TxHash", "0x"),
-            QueryParameter.text_type("TokenList", ",".join(fetch_trusted_tokens())),
+            QueryParameter.text_type("TokenList", ",".join(token_list)),
         ],
     )
     return dune.fetch(query)
