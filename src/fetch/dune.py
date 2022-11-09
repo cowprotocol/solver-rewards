@@ -40,12 +40,7 @@ class DuneFetcher:
                 raw_sql=open_query(query_file("period_block_interval.sql")),
                 name=f"Block Interval for Accounting Period {self.period}",
                 network=Network.MAINNET,
-                parameters=[
-                    # TODO - There are too many occurrences of this pair.
-                    #  Make AccountingPeriod.as_query_params
-                    QueryParameter.date_type("StartTime", self.period.start),
-                    QueryParameter.date_type("EndTime", self.period.end),
-                ],
+                parameters=self.period.as_query_params(),
             )
         )
         assert len(results) == 1, "Block Interval Query should return only 1 result!"
@@ -59,10 +54,7 @@ class DuneFetcher:
             raw_sql=open_query(query_file("eth_spent.sql")),
             network=Network.MAINNET,
             name="ETH Reimbursement",
-            parameters=[
-                QueryParameter.date_type("StartTime", self.period.start),
-                QueryParameter.date_type("EndTime", self.period.end),
-            ],
+            parameters=self.period.as_query_params(),
         )
         return [Transfer.from_dict(t) for t in self.dune.fetch(query)]
 
@@ -73,10 +65,7 @@ class DuneFetcher:
                 raw_sql=open_query(query_file("risk_free_batches.sql")),
                 network=Network.MAINNET,
                 name="Risk Free Batches",
-                parameters=[
-                    QueryParameter.date_type("StartTime", self.period.start),
-                    QueryParameter.date_type("EndTime", self.period.end),
-                ],
+                parameters=self.period.as_query_params(),
             )
         )
         return {row["tx_hash"].lower() for row in results}
@@ -148,10 +137,7 @@ class DuneFetcher:
             raw_sql=open_query(dashboard_file("period-totals.sql")),
             network=Network.MAINNET,
             name="Accounting Period Totals",
-            parameters=[
-                QueryParameter.date_type("StartTime", self.period.start),
-                QueryParameter.date_type("EndTime", self.period.end),
-            ],
+            parameters=self.period.as_query_params(),
         )
         data_set = self.dune.fetch(query)
         assert len(data_set) == 1
@@ -173,9 +159,8 @@ class DuneFetcher:
             raw_sql=slippage_query(),
             network=Network.MAINNET,
             name="Slippage Accounting",
-            parameters=[
-                QueryParameter.date_type("StartTime", self.period.start),
-                QueryParameter.date_type("EndTime", self.period.end),
+            parameters=self.period.as_query_params()
+            + [
                 QueryParameter.text_type("TxHash", "0x"),
                 QueryParameter.text_type("TokenList", ",".join(token_list)),
             ],
