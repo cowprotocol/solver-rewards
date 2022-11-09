@@ -36,8 +36,6 @@ class QueryData:
         return query_copy
 
 
-# raw_sql=open_query(query_file("dune_trade_counts.sql")),
-
 QUERIES = {
     "TRADE_COUNT": QueryData(
         name="Trade Counts",
