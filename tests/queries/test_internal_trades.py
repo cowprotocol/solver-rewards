@@ -7,7 +7,7 @@ from enum import Enum
 from duneapi.types import DuneQuery, QueryParameter, Network, Address
 from duneapi.util import open_query
 
-from src.fetch.token_list import fetch_trusted_tokens
+from src.fetch.token_list import get_trusted_tokens
 from src.models.accounting_period import AccountingPeriod
 from src.utils.query_file import query_file
 from tests.db.pg_client import ConnectionType, DBRouter
@@ -109,7 +109,7 @@ class TestInternalTrades(unittest.TestCase):
                 QueryParameter.text_type("TxHash", tx_hash),
                 QueryParameter.date_type("StartTime", self.period.start),
                 QueryParameter.date_type("EndTime", self.period.end),
-                QueryParameter.text_type("TokenList", ",".join(fetch_trusted_tokens())),
+                QueryParameter.text_type("TokenList", ",".join(get_trusted_tokens())),
             ],
             # These are irrelevant here.
             description="",

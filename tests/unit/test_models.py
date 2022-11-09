@@ -6,7 +6,7 @@ from eth_typing import HexStr
 from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
 
 from src.constants import COW_TOKEN_ADDRESS, ERC20_TOKEN
-from src.fetch.period_slippage import SolverSlippage
+from src.models.slippage import SolverSlippage
 from src.fetch.transfer_file import Transfer
 from src.models.accounting_period import AccountingPeriod
 from src.models.token import Token

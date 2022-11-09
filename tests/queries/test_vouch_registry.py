@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from duneapi.types import DuneQuery, Network, QueryParameter, Address
 from duneapi.util import open_query
 
-from src.fetch.reward_targets import Vouch, parse_vouches, RECOGNIZED_BONDING_POOLS
+from src.models.vouch import Vouch, parse_vouches, RECOGNIZED_BONDING_POOLS
 from src.utils.query_file import query_file
 from tests.db.pg_client import (
     ConnectionType,

@@ -1,7 +1,7 @@
 import unittest
 from datetime import datetime, timedelta
 
-from src.utils.prices import (
+from src.fetch.prices import (
     eth_in_token,
     TokenId,
     token_in_eth,
@@ -75,12 +75,12 @@ class TestPrices(unittest.TestCase):
         # First call logs
         day = datetime.strptime("2022-03-10", "%Y-%m-%d")  # A date we used yet!
         token = TokenId.USDC
-        with self.assertLogs("src.utils.prices", level="INFO") as cm:
+        with self.assertLogs("src.fetch.prices", level="INFO") as cm:
             usd_price(token, day)
         expected_msg = f"requesting price for token={token.value}, day={day.date()}"
         self.assertEqual(
             cm.output,
-            [f"INFO:src.utils.prices:{expected_msg}"],
+            [f"INFO:src.fetch.prices:{expected_msg}"],
         )
         # Second call does not log.
         with self.assertNoLogs("src.utils.prices", level="INFO"):
