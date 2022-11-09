@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from duneapi.types import Address
+from dune_client.types import Address
 
 from src.models.accounting_period import AccountingPeriod
 from src.models.slippage import SolverSlippage

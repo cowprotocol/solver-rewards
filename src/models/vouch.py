@@ -3,7 +3,7 @@ Script to query and display total funds distributed for specified accounting per
 """
 from dataclasses import dataclass
 
-from duneapi.types import Address
+from dune_client.types import Address
 
 from src.utils.dataset import index_by
 

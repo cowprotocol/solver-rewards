@@ -3,8 +3,8 @@ from __future__ import annotations
 import unittest
 from dataclasses import dataclass
 from enum import Enum
-
-from duneapi.types import DuneQuery, QueryParameter, Network, Address
+from dune_client.types import Address
+from duneapi.types import DuneQuery, QueryParameter, Network
 from duneapi.util import open_query
 
 from src.fetch.token_list import get_trusted_tokens

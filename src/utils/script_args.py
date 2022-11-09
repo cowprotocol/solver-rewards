@@ -1,8 +1,10 @@
 """Common method for initializing setup for scripts"""
 import argparse
+import os
 from datetime import date, timedelta
 from dataclasses import dataclass
 
+from dune_client.client import DuneClient
 from duneapi.api import DuneAPI
 
 from src.fetch.dune import DuneFetcher
@@ -60,7 +62,8 @@ def generic_script_init(description: str) -> ScriptArgs:
     args = parser.parse_args()
     return ScriptArgs(
         dune=DuneFetcher(
-            dune=DuneAPI.new_from_environment(),
+            dune_v1=DuneAPI.new_from_environment(),
+            dune=DuneClient(os.environ["DUNE_API_KEY"]),
             period=AccountingPeriod(args.start),
         ),
         post_tx=args.post_tx,

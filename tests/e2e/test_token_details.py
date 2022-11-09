@@ -1,6 +1,6 @@
 import unittest
 
-import duneapi.types
+import dune_client.types
 from web3 import Web3
 
 from src.constants import INFURA_KEY
@@ -14,7 +14,7 @@ class TestTokenDecimals(unittest.TestCase):
         # Goerli doesn't seem to have tokens with anything other than 18 decimals.
         cow = "0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600"
         self.assertEqual(get_token_decimals(W3, cow), 18)
-        self.assertEqual(get_token_decimals(W3, duneapi.types.Address(cow)), 18)
+        self.assertEqual(get_token_decimals(W3, dune_client.types.Address(cow)), 18)
 
     def test_token_decimals_cache(self):
         new_token = "0x40c92339fd9c0f59d976af127e82de61914efd0f"

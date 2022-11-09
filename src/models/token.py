@@ -6,7 +6,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional
 
-from duneapi.types import Address
+from dune_client.types import Address
 
 from src.constants import COW_TOKEN_ADDRESS, w3
 from src.utils.token_details import get_token_decimals

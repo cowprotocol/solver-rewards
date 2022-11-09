@@ -1,8 +1,9 @@
 """All Dune related query fetching is defined here in the DuneFetcherClass"""
 import pandas as pd
+from dune_client.client import DuneClient
+from dune_client.types import QueryParameter, Address
 from duneapi.api import DuneAPI
-from duneapi.types import DuneQuery, QueryParameter, Network, Address
-from duneapi.util import open_query
+from duneapi.types import DuneQuery, QueryParameter as LegacyParameter, Network
 
 from src.fetch.cow_rewards import aggregate_orderbook_rewards
 from src.fetch.token_list import get_trusted_tokens
@@ -13,9 +14,10 @@ from src.models.split_transfers import SplitTransfers
 from src.models.transfer import Transfer
 from src.models.vouch import Vouch, RECOGNIZED_BONDING_POOLS, parse_vouches
 from src.pg_client import DualEnvDataframe
+from src.query_tracker import QUERIES
 from src.utils.dataset import index_by
 from src.utils.print_store import PrintStore
-from src.utils.query_file import query_file, dashboard_file
+from src.utils.query_file import open_query
 
 
 class DuneFetcher:
@@ -24,25 +26,24 @@ class DuneFetcher:
     for various Dune Queries.
     """
 
-    dune: DuneAPI
+    dune_v1: DuneAPI
+    dune: DuneClient
     period: AccountingPeriod
     log_saver: PrintStore
 
-    def __init__(self, dune: DuneAPI, period: AccountingPeriod):
+    def __init__(self, dune_v1: DuneAPI, dune: DuneClient, period: AccountingPeriod):
+        self.dune_v1 = dune_v1
         self.dune = dune
         self.period = period
         self.log_saver = PrintStore()
 
     def get_block_interval(self) -> tuple[str, str]:
         """Returns block numbers corresponding to date interval"""
-        results = self.dune.fetch(
-            query=DuneQuery.from_environment(
-                raw_sql=open_query(query_file("period_block_interval.sql")),
-                name=f"Block Interval for Accounting Period {self.period}",
-                network=Network.MAINNET,
-                parameters=self.period.as_query_params(),
-            )
+        query = QUERIES["PERIOD_BLOCK_INTERVAL"].with_params(
+            self.period.as_query_params()
         )
+        query.name = f"Block Interval for Accounting Period {self}"
+        results = self.dune.refresh(query).get_rows()
         assert len(results) == 1, "Block Interval Query should return only 1 result!"
         return str(results[0]["start_block"]), str(results[0]["end_block"])
 
@@ -50,24 +51,15 @@ class DuneFetcher:
         """
         Fetches ETH spent on successful settlements by all solvers during `period`
         """
-        query = DuneQuery.from_environment(
-            raw_sql=open_query(query_file("eth_spent.sql")),
-            network=Network.MAINNET,
-            name="ETH Reimbursement",
-            parameters=self.period.as_query_params(),
-        )
-        return [Transfer.from_dict(t) for t in self.dune.fetch(query)]
+        query = QUERIES["ETH_SPENT"].with_params(self.period.as_query_params())
+        print(query)
+        return [Transfer.from_dict(t) for t in self.dune.refresh(query).get_rows()]
 
     def get_risk_free_batches(self) -> set[str]:
         """Fetches Risk Free Batches from Dune"""
-        results = self.dune.fetch(
-            query=DuneQuery.from_environment(
-                raw_sql=open_query(query_file("risk_free_batches.sql")),
-                network=Network.MAINNET,
-                name="Risk Free Batches",
-                parameters=self.period.as_query_params(),
-            )
-        )
+        results = self.dune.refresh(
+            QUERIES["RISK_FREE_BATCHES"].with_params(self.period.as_query_params())
+        ).get_rows()
         return {row["tx_hash"].lower() for row in results}
 
     def get_cow_rewards(self) -> list[Transfer]:
@@ -83,17 +75,13 @@ class DuneFetcher:
         )
 
         # Validation of results - using characteristics of results from two sources.
-        dune_trade_counts = self.dune.fetch(
-            query=DuneQuery.from_environment(
-                raw_sql=open_query(query_file("dune_trade_counts.sql")),
-                network=Network.MAINNET,
-                name="Trade Counts",
-                parameters=[
-                    QueryParameter.text_type("start_block", start_block),
-                    QueryParameter.text_type("end_block", end_block),
-                ],
-            )
+        query = QUERIES["TRADE_COUNT"].with_params(
+            [
+                QueryParameter.text_type("start_block", start_block),
+                QueryParameter.text_type("end_block", end_block),
+            ]
         )
+        dune_trade_counts = self.dune.refresh(query).get_rows()
         # Number of trades per solver retrieved from orderbook agrees ethereum events.
         duplicates = pd.concat(
             [
@@ -116,30 +104,25 @@ class DuneFetcher:
         query = DuneQuery.from_environment(
             raw_sql="\n".join(
                 [
-                    open_query(query_file("vouch_registry.sql")),
+                    open_query("vouch_registry.sql"),
                     "select * from valid_vouches",
                 ]
             ),
             network=Network.MAINNET,
             name="Solver Reward Targets",
             parameters=[
-                QueryParameter.date_type("EndTime", self.period.end),
-                QueryParameter.text_type("BondingPoolData", pool_values),
+                LegacyParameter.date_type("EndTime", self.period.end),
+                LegacyParameter.text_type("BondingPoolData", pool_values),
             ],
         )
-        return parse_vouches(self.dune.fetch(query))
+        return parse_vouches(self.dune_v1.fetch(query))
 
     def get_period_totals(self) -> PeriodTotals:
         """
         Fetches & Returns Dune Results for accounting period totals.
         """
-        query = DuneQuery.from_environment(
-            raw_sql=open_query(dashboard_file("period-totals.sql")),
-            network=Network.MAINNET,
-            name="Accounting Period Totals",
-            parameters=self.period.as_query_params(),
-        )
-        data_set = self.dune.fetch(query)
+        query = QUERIES["PERIOD_TOTALS"].with_params(self.period.as_query_params())
+        data_set = self.dune.refresh(query).get_rows()
         assert len(data_set) == 1
         rec = data_set[0]
         return PeriodTotals(
@@ -159,13 +142,14 @@ class DuneFetcher:
             raw_sql=slippage_query(),
             network=Network.MAINNET,
             name="Slippage Accounting",
-            parameters=self.period.as_query_params()
-            + [
-                QueryParameter.text_type("TxHash", "0x"),
-                QueryParameter.text_type("TokenList", ",".join(token_list)),
+            parameters=[
+                LegacyParameter.date_type("StartTime", self.period.start),
+                LegacyParameter.date_type("EndTime", self.period.end),
+                LegacyParameter.text_type("TxHash", "0x"),
+                LegacyParameter.text_type("TokenList", ",".join(token_list)),
             ],
         )
-        data_set = self.dune.fetch(query)
+        data_set = self.dune_v1.fetch(query)
         return SplitSlippages.from_data_set(data_set)
 
     def get_transfers(self) -> list[Transfer]:

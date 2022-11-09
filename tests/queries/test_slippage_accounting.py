@@ -1,6 +1,6 @@
 import unittest
 
-from duneapi.types import DuneQuery, Network, QueryParameter
+from duneapi.types import DuneQuery as LegacyDuneQuery, Network, QueryParameter
 
 from src.models.slippage import (
     SplitSlippages,
@@ -27,7 +27,7 @@ class TestDuneAnalytics(unittest.TestCase):
         there should be manual investigations
         """
         period = AccountingPeriod("2022-03-01", 1)
-        query = DuneQuery(
+        query = LegacyDuneQuery(
             raw_sql=slippage_query(),
             network=Network.MAINNET,
             name="Slippage Accounting",
