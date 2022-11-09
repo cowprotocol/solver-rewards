@@ -6,6 +6,7 @@ from src.fetch.period_slippage import (
     SplitSlippages,
     slippage_query,
 )
+from src.fetch.token_list import fetch_trusted_tokens
 from src.models.accounting_period import AccountingPeriod
 from tests.db.pg_client import ConnectionType, DBRouter
 
@@ -34,6 +35,7 @@ class TestDuneAnalytics(unittest.TestCase):
                 QueryParameter.date_type("StartTime", period.start),
                 QueryParameter.date_type("EndTime", period.end),
                 QueryParameter.text_type("TxHash", "0x"),
+                QueryParameter.text_type("TokenList", ",".join(fetch_trusted_tokens())),
             ],
             description="",
             query_id=-1,

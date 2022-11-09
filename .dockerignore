@@ -4,7 +4,10 @@
 dashboards/
 hooks/
 out/
-tests/
+tests/db
+tests/e2e
+tests/queries
+tests/unit
 venv/
 .env
 .env.sample
