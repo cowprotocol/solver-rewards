@@ -221,6 +221,13 @@ internal_buffer_trader_solvers as (
     -- Exclude services and test solvers
     and environment not in ('service', 'test')
 ),
+-- PoC Query For Token List: https://dune.com/queries/1547103
+token_list as (
+    SELECT decode(address_str, 'hex') as address
+  FROM (
+      VALUES {{TokenList}}
+    ) as _ (address_str)
+),
 buffer_trades as (
     Select a.block_time as block_time,
            a.tx_hash,
@@ -240,8 +247,8 @@ buffer_trades as (
     where (
               case
                   -- in order to classify as buffer trade, the positive surplus must be in an allow_listed token
-                  when ((a.amount > 0 and b.amount < 0 and a.token in (Select * from dune_user_generated.cow_trusted_tokens))
-                      or (b.amount > 0 and a.amount < 0 and b.token in (Select * from dune_user_generated.cow_trusted_tokens)))
+                  when ((a.amount > 0 and b.amount < 0 and a.token in (Select * from token_list))
+                      or (b.amount > 0 and a.amount < 0 and b.token in (Select * from token_list)))
                       and
                       -- We know that settlements - with at least one amm interaction - have internal buffer trades only if
                       -- the solution must come from a internal_buffer_trader_solvers solver
