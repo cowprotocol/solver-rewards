@@ -5,7 +5,7 @@ with trade_hashes as (SELECT solver,
                              auction_id
                       FROM trades t
                                LEFT OUTER JOIN LATERAL (
-                          SELECT tx_hash, solver, tx_nonce
+                          SELECT tx_hash, solver, tx_nonce, tx_from
                           FROM settlements s
                           WHERE s.block_number = t.block_number
                             AND s.log_index > t.log_index
@@ -15,7 +15,7 @@ with trade_hashes as (SELECT solver,
                                join auction_transaction
                           -- This join also eliminates overlapping
                           -- trades & settlements between barn and prod DB
-                                   on settlement.solver = auction_transaction.tx_from
+                                   on settlement.tx_from = auction_transaction.tx_from
                                        and settlement.tx_nonce = auction_transaction.tx_nonce
                       where block_number between {{start_block}} and {{end_block}})
 
