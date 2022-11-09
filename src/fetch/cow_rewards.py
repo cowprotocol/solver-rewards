@@ -1,17 +1,7 @@
 """Fetching Per Order Rewards from Production and Staging Database"""
 
-import pandas as pd
-from duneapi.api import DuneAPI
-from duneapi.types import DuneQuery, QueryParameter, Network
-from duneapi.util import open_query
 from pandas import DataFrame
 from web3 import Web3
-
-from src.fetch.risk_free_batches import get_risk_free_batches
-from src.models.accounting_period import AccountingPeriod
-from src.models.transfer import Transfer
-from src.pg_client import DualEnvDataframe
-from src.utils.query_file import query_file
 
 
 def map_reward(
@@ -80,41 +70,3 @@ def aggregate_orderbook_rewards(
         lambda x: Web3().toWei(x, "ether")
     )
     return result_agg
-
-
-def get_cow_rewards(dune: DuneAPI, period: AccountingPeriod) -> list[Transfer]:
-    """
-    Fetches COW token rewards from orderbook database returning a list of Transfers
-    """
-    start_block, end_block = period.get_block_interval(dune)
-    print(f"Fetching CoW Rewards for block interval {start_block}, {end_block}")
-    per_order_df = DualEnvDataframe.get_orderbook_rewards(start_block, end_block)
-    cow_rewards_df = aggregate_orderbook_rewards(
-        per_order_df,
-        risk_free_transactions=get_risk_free_batches(dune, period),
-    )
-
-    # Validation of results - using characteristics of results from two sources.
-    dune_trade_counts = dune.fetch(
-        query=DuneQuery.from_environment(
-            raw_sql=open_query(query_file("dune_trade_counts.sql")),
-            network=Network.MAINNET,
-            name="Trade Counts",
-            parameters=[
-                QueryParameter.text_type("start_block", start_block),
-                QueryParameter.text_type("end_block", end_block),
-            ],
-        )
-    )
-    # Number of trades per solver retrieved from orderbook agrees ethereum events.
-    duplicates = pd.concat(
-        [
-            pd.DataFrame(dune_trade_counts),
-            cow_rewards_df[["receiver", "num_trades"]].rename(
-                columns={"receiver": "solver"}
-            ),
-        ]
-    ).drop_duplicates(keep=False)
-
-    assert len(duplicates) == 0, f"solver sets disagree: {duplicates}"
-    return Transfer.from_dataframe(cow_rewards_df)

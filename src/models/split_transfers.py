@@ -10,13 +10,13 @@ from typing import Optional
 
 from duneapi.types import Address
 
-from src.fetch.reward_targets import Vouch
+from src.models.vouch import Vouch
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
 from src.models.slippage import SolverSlippage
 from src.models.token import TokenType
 from src.models.transfer import Transfer
-from src.utils.prices import eth_in_token, TokenId, token_in_eth
+from src.fetch.prices import eth_in_token, TokenId, token_in_eth
 from src.utils.print_store import Category, PrintStore
 
 

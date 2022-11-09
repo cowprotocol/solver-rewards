@@ -3,7 +3,7 @@ import pandas as pd
 from duneapi.api import DuneAPI
 
 from src.fetch.cow_rewards import map_reward, unsafe_batches
-from src.fetch.risk_free_batches import get_risk_free_batches
+from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
 from src.pg_client import DualEnvDataframe
 
@@ -28,12 +28,13 @@ class TestPerBatchRewards(unittest.TestCase):
     """
 
     def setUp(self) -> None:
-        dune = DuneAPI.new_from_environment()
-        period = AccountingPeriod("2022-10-18")
-        start_block, end_block = period.get_block_interval(dune)
+        dune = DuneFetcher(
+            DuneAPI.new_from_environment(), AccountingPeriod("2022-10-18")
+        )
+        start_block, end_block = dune.get_block_interval()
 
         self.rewards_df = DualEnvDataframe.get_orderbook_rewards(start_block, end_block)
-        self.risk_free_batches = get_risk_free_batches(dune, period)
+        self.risk_free_batches = dune.get_risk_free_batches()
         self.jit_batches = unsafe_batches(self.rewards_df)
 
     def test_buffer_trade(self):

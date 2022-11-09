@@ -6,8 +6,12 @@ of SolverSlippage objects.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
 
 from duneapi.types import Address
+from duneapi.util import open_query
+
+from src.utils.query_file import dashboard_file, query_file
 
 
 @dataclass
@@ -27,3 +31,78 @@ class SolverSlippage:
             solver_name=obj["solver_name"],
             amount_wei=int(obj["eth_slippage_wei"]),
         )
+
+
+@dataclass
+class SplitSlippages:
+    """Basic class to store the output of slippage fetching"""
+
+    negative: list[SolverSlippage]
+    positive: list[SolverSlippage]
+
+    def __init__(self) -> None:
+        self.negative = []
+        self.positive = []
+
+    @classmethod
+    def from_data_set(cls, data_set: list[dict[str, str]]) -> SplitSlippages:
+        """Constructs an object based on provided dataset"""
+        results = cls()
+        for row in data_set:
+            results.append(slippage=SolverSlippage.from_dict(row))
+        return results
+
+    def append(self, slippage: SolverSlippage) -> None:
+        """Appends the Slippage to the appropriate half based on signature of amount"""
+        if slippage.amount_wei < 0:
+            self.negative.append(slippage)
+        else:
+            self.positive.append(slippage)
+
+    def __len__(self) -> int:
+        return len(self.negative) + len(self.positive)
+
+    def sum_negative(self) -> int:
+        """Returns total negative slippage"""
+        return sum(neg.amount_wei for neg in self.negative)
+
+    def sum_positive(self) -> int:
+        """Returns total positive slippage"""
+        return sum(pos.amount_wei for pos in self.positive)
+
+
+class QueryType(Enum):
+    """
+    Determines type of slippage data to be fetched.
+    The slippage subquery allows us to select from either of the two result tables defined here.
+    """
+
+    PER_TX = "results_per_tx"
+    TOTAL = "results"
+    UNUSUAL = "outliers"
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    def select_statement(self) -> str:
+        """Returns select statement to be used in slippage query."""
+        if self in (QueryType.PER_TX, QueryType.TOTAL):
+            return f"select * from {self}"
+        if self == QueryType.UNUSUAL:
+            return open_query(dashboard_file("unusual-slippage.sql"))
+        # Can only happen if types are added to the enum and not accounted for.
+        raise ValueError(f"Invalid Query Type! {self}")
+
+
+def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
+    """
+    Constructs our slippage query by joining sub-queries
+    Default query type input it total, but we can request
+    per transaction results for testing
+    """
+    return "\n".join(
+        [
+            open_query(query_file("period_slippage.sql")),
+            query_type.select_statement(),
+        ]
+    )

@@ -37,7 +37,7 @@ def parse_token_list(token_list_json: str) -> list[str]:
     ]
 
 
-def fetch_trusted_tokens() -> list[str]:
+def get_trusted_tokens() -> list[str]:
     """Returns the list of trusted buffer tradable tokens"""
     response = requests.get(ALLOWED_TOKEN_LIST_URL, timeout=10)
     return parse_token_list(response.text)

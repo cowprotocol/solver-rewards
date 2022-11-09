@@ -4,6 +4,8 @@ from datetime import date, timedelta
 from dataclasses import dataclass
 
 from duneapi.api import DuneAPI
+
+from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
 
 
@@ -22,8 +24,7 @@ def previous_tuesday(day: date = date.today()) -> date:
 class ScriptArgs:
     """A collection of common script arguments relevant to this project"""
 
-    dune: DuneAPI
-    period: AccountingPeriod
+    dune: DuneFetcher
     post_tx: bool
     dry_run: bool
 
@@ -58,8 +59,10 @@ def generic_script_init(description: str) -> ScriptArgs:
     )
     args = parser.parse_args()
     return ScriptArgs(
-        dune=DuneAPI.new_from_environment(),
-        period=AccountingPeriod(args.start),
+        dune=DuneFetcher(
+            dune=DuneAPI.new_from_environment(),
+            period=AccountingPeriod(args.start),
+        ),
         post_tx=args.post_tx,
         dry_run=args.dry_run,
     )

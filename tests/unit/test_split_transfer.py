@@ -3,10 +3,11 @@ import unittest
 from duneapi.types import Address
 
 from src.constants import COW_TOKEN_ADDRESS
-from src.fetch.period_slippage import SolverSlippage
-from src.fetch.transfer_file import Transfer, SplitTransfers
 from src.models.accounting_period import AccountingPeriod
+from src.models.slippage import SolverSlippage
+from src.models.split_transfers import SplitTransfers
 from src.models.token import Token
+from src.models.transfer import Transfer
 from src.utils.print_store import PrintStore
 
 ONE_ETH = 10**18
