@@ -104,7 +104,7 @@ class DuneFetcher:
         query = DuneQuery.from_environment(
             raw_sql="\n".join(
                 [
-                    open_query("vouch_registry.sql"),
+                    open_query("dune_v1/vouch_registry.sql"),
                     "select * from valid_vouches",
                 ]
             ),

@@ -104,7 +104,7 @@ def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
     """
     return "\n".join(
         [
-            open_query("period_slippage.sql"),
+            open_query("dune_v1/period_slippage.sql"),
             query_type.select_statement(),
         ]
     )

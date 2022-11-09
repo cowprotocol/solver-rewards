@@ -1,0 +1,9 @@
+-- V2: https://dune.com/queries/1320174
+select solver_address                                            as receiver,
+       cast(sum(gas_price * gas_used) as decimal(38, 0))::string as eth_spent
+from cow_protocol_ethereum.batches
+         join cow_protocol_ethereum.solvers
+              on solver_address = address
+where block_time between '{{StartTime}}' and '{{EndTime}}'
+  and environment not in ('services', 'test')
+group by receiver
