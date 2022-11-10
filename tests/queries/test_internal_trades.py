@@ -93,7 +93,7 @@ class TestInternalTrades(unittest.TestCase):
     def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
         raw_sql = "\n".join(
             [
-                open_query(query_file("period_slippage.sql")),
+                open_query(query_file("dune_v1/period_slippage.sql")),
                 SELECT_INTERNAL_TRANSFERS,
             ]
         )

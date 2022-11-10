@@ -91,7 +91,7 @@ def query_for(date_str: str, bonding_pools: list[str]) -> DuneQuery:
     return DuneQuery(
         raw_sql="\n".join(
             [
-                open_query(query_file("vouch_registry.sql")),
+                open_query(query_file("dune_v1/vouch_registry.sql")),
                 "select * from valid_vouches",
             ]
         ),
