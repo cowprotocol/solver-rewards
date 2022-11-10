@@ -54,9 +54,7 @@ class DuneFetcher:
         if exec_result.result is not None:
             log.debug(f"Execution result metadata {exec_result.result.metadata}")
         else:
-            log.warning(
-                f"No execution results found for {exec_result.execution_id}"
-            )
+            log.warning(f"No execution results found for {exec_result.execution_id}")
         return exec_result.get_rows()
 
     def get_block_interval(self) -> tuple[str, str]:
