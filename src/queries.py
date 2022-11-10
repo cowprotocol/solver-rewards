@@ -17,13 +17,12 @@ class QueryData:
     """Stores name and a version of the query for each query."""
 
     name: str
-    filename: str
     v1_query: Query
     v2_query: Query
 
-    def __init__(self, name: str, v1_id: int, v2_id: int, filename: str) -> None:
+    def __init__(self, name: str, v1_id: int, v2_id: int, filepath: str) -> None:
         self.name = name
-        self.filename = filename
+        self.filepath = filepath
         self.v1_query = Query(v1_id, name)
         self.v2_query = Query(v2_id, name)
 
@@ -42,35 +41,35 @@ QUERIES = {
         name="Trade Counts",
         v1_id=1393627,
         v2_id=1393633,
-        filename="trade_counts.sql",
+        filepath="dune_trade_counts.sql",
     ),
     "PERIOD_BLOCK_INTERVAL": QueryData(
         name="Block Interval for Accounting Period",
-        filename="period_block_interval.sql",
+        filepath="period_block_interval.sql",
         v1_id=1328116,
         v2_id=1541504,
     ),
     "RISK_FREE_BATCHES": QueryData(
         name="Risk Free Batches",
-        filename="risk_free_batches.sql",
+        filepath="risk_free_batches.sql",
         v1_id=1432733,
         v2_id=1541507,
     ),
     "VOUCH_REGISTRY": QueryData(
         name="Vouch Registry",
-        filename="vouch_registry.sql",
+        filepath="vouch_registry.sql",
         v1_id=674947,
         v2_id=1541516,
     ),
     "ETH_SPENT": QueryData(
         name="ETH Reimbursement",
-        filename="eth_spent.sql",
+        filepath="eth_spent.sql",
         v1_id=1320169,
         v2_id=1320174,
     ),
     "PERIOD_TOTALS": QueryData(
         name="Accounting Period Totals",
-        filename=dashboard_file("period-totals.sql"),
+        filepath=dashboard_file("period-totals.sql"),
         v1_id=448457,
         v2_id=-1,  # Not implemented
     ),
