@@ -16,7 +16,7 @@ from src.models.split_transfers import SplitTransfers
 from src.models.transfer import Transfer
 from src.models.vouch import Vouch, RECOGNIZED_BONDING_POOLS, parse_vouches
 from src.pg_client import DualEnvDataframe
-from src.query_tracker import QUERIES
+from src.queries import QUERIES
 from src.utils.dataset import index_by
 from src.utils.print_store import PrintStore
 from src.utils.query_file import open_query
