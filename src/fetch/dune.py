@@ -8,6 +8,7 @@ from duneapi.types import DuneQuery, QueryParameter as LegacyParameter, Network
 
 from src.fetch.cow_rewards import aggregate_orderbook_rewards
 from src.fetch.token_list import get_trusted_tokens
+from src.logger import set_log
 from src.models.accounting_period import AccountingPeriod
 from src.models.period_totals import PeriodTotals
 from src.models.slippage import SplitSlippages, slippage_query
@@ -20,6 +21,7 @@ from src.utils.dataset import index_by
 from src.utils.print_store import PrintStore
 from src.utils.query_file import open_query
 
+log = set_log(__name__)
 
 # TODO - eliminate the use of Address class (or refactor)
 #  because Web3.toChecksumAddress is very SLOW and should be replaced by str.lower()
@@ -46,7 +48,16 @@ class DuneFetcher:
 
     def _get_query_results(self, query: Query) -> list[dict[str, str]]:
         """Internally every dune query execution is routed through here."""
-        return self.dune.refresh(query).get_rows()
+        exec_result = self.dune.refresh(query)
+        # TODO - use a real logger:
+        #  https://github.com/cowprotocol/dune-client/issues/34
+        if exec_result.result is not None:
+            log.debug(f"Execution result metadata {exec_result.result.metadata}")
+        else:
+            log.warning(
+                f"No execution results found for {exec_result.execution_id}"
+            )
+        return exec_result.get_rows()
 
     def get_block_interval(self) -> tuple[str, str]:
         """Returns block numbers corresponding to date interval"""
