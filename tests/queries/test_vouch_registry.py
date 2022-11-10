@@ -1,7 +1,8 @@
 import unittest
 from dataclasses import dataclass
 
-from duneapi.types import DuneQuery, Network, QueryParameter, Address
+from dune_client.types import Address
+from duneapi.types import DuneQuery, Network, QueryParameter
 from duneapi.util import open_query
 
 from src.models.vouch import Vouch, parse_vouches, RECOGNIZED_BONDING_POOLS

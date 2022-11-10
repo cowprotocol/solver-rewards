@@ -1,5 +1,4 @@
 """Fetching Per Order Rewards from Production and Staging Database"""
-
 from pandas import DataFrame
 from web3 import Web3
 

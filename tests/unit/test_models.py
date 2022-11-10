@@ -1,7 +1,7 @@
 import unittest
 
 import pandas as pd
-from duneapi.types import Address
+from dune_client.types import Address
 from eth_typing import HexStr
 from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
 

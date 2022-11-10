@@ -16,18 +16,16 @@ as long as the previous pages have not been tampered with.
 """
 from __future__ import annotations
 
-import os
 from dataclasses import dataclass
 from typing import Optional
 
 from duneapi.api import DuneAPI
-from duneapi.util import open_query
 from pandas import DataFrame
 
-from src.constants import QUERY_PATH
 from src.logger import set_log
 from src.pg_client import pg_hex2bytea, DualEnvDataframe
 from src.update.utils import Environment, update_args
+from src.utils.query_file import open_query
 
 log = set_log(__name__)
 
@@ -76,9 +74,7 @@ def fetch_and_push_order_rewards(dune: DuneAPI, env: Environment) -> None:
     log.info(f"Got {len(rewards)} records.")
     dune.push_view(
         table_name=f"cow_order_rewards_{env}",
-        select_template=open_query(
-            os.path.join(QUERY_PATH, "user_generated/order_rewards_template.sql")
-        ),
+        select_template=open_query("user_generated/order_rewards_template.sql"),
         values=list(map(str, rewards)),
     )
 

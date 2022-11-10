@@ -1,5 +1,8 @@
+import os
 import unittest
 import pandas as pd
+from dotenv import load_dotenv
+from dune_client.client import DuneClient
 from duneapi.api import DuneAPI
 
 from src.fetch.cow_rewards import map_reward, unsafe_batches
@@ -28,8 +31,11 @@ class TestPerBatchRewards(unittest.TestCase):
     """
 
     def setUp(self) -> None:
+        load_dotenv()
         dune = DuneFetcher(
-            DuneAPI.new_from_environment(), AccountingPeriod("2022-10-18")
+            DuneAPI.new_from_environment(),
+            DuneClient(os.environ["DUNE_API_KEY"]),
+            AccountingPeriod("2022-10-18"),
         )
         start_block, end_block = dune.get_block_interval()
 

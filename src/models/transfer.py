@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from typing import Optional
 
 import pandas as pd
-from duneapi.types import Address
+from dune_client.types import Address
 from eth_typing.encoding import HexStr
 from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
 

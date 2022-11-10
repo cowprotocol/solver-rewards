@@ -1,6 +1,6 @@
 import unittest
 
-from duneapi.types import Address
+from dune_client.types import Address
 
 from src.constants import COW_TOKEN_ADDRESS
 from src.models.accounting_period import AccountingPeriod
