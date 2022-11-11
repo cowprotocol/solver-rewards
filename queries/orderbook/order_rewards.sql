@@ -2,20 +2,21 @@ with trade_hashes as (SELECT solver,
                              order_uid,
                              fee_amount,
                              settlement.tx_hash,
-                             solver_competitions.id as auction_id
+                             auction_id
                       FROM trades t
                                LEFT OUTER JOIN LATERAL (
-                          SELECT tx_hash, solver
+                          SELECT tx_hash, solver, tx_nonce, tx_from
                           FROM settlements s
                           WHERE s.block_number = t.block_number
                             AND s.log_index > t.log_index
                           ORDER BY s.log_index ASC
                           LIMIT 1
                           ) AS settlement ON true
-                               join solver_competitions
+                               join auction_transaction
                           -- This join also eliminates overlapping
                           -- trades & settlements between barn and prod DB
-                                    on settlement.tx_hash = solver_competitions.tx_hash
+                                   on settlement.tx_from = auction_transaction.tx_from
+                                       and settlement.tx_nonce = auction_transaction.tx_nonce
                       where block_number between {{start_block}} and {{end_block}})
 
 -- Most efficient column order for sorting would be having tx_hash or order_uid first
