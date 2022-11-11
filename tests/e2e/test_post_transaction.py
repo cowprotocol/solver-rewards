@@ -1,7 +1,7 @@
 import os
 import unittest
 
-from duneapi.types import Address
+from dune_client.types import Address
 from eth_typing import URI
 from gnosis.eth import EthereumNetwork, EthereumClient
 

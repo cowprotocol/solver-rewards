@@ -6,7 +6,7 @@ from __future__ import annotations
 import urllib.parse
 from datetime import datetime, timedelta
 
-from duneapi.types import QueryParameter
+from dune_client.types import QueryParameter
 
 
 class AccountingPeriod:

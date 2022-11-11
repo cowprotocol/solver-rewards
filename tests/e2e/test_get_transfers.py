@@ -1,5 +1,8 @@
+import os
 import unittest
 
+from dotenv import load_dotenv
+from dune_client.client import DuneClient
 from duneapi.api import DuneAPI
 
 from src.fetch.dune import DuneFetcher
@@ -8,12 +11,16 @@ from src.models.accounting_period import AccountingPeriod
 
 class MyTestCase(unittest.TestCase):
     def setUp(self) -> None:
-        self.dune = DuneFetcher(
-            dune=DuneAPI.new_from_environment(), period=AccountingPeriod("2022-09-20")
+        load_dotenv()
+        self.fetcher = DuneFetcher(
+            DuneAPI.new_from_environment(),
+            DuneClient(os.environ["DUNE_API_KEY"]),
+            AccountingPeriod("2022-10-18"),
         )
 
     def test_get_eth_spent(self):
-        eth_transfers = self.dune.get_eth_spent()
+        self.fetcher.period = AccountingPeriod("2022-09-20")
+        eth_transfers = self.fetcher.get_eth_spent()
         self.assertAlmostEqual(
             sum(t.amount_wei for t in eth_transfers),
             16745457506431162000,  # cf: https://dune.com/queries/1323288
@@ -21,10 +28,10 @@ class MyTestCase(unittest.TestCase):
         )
 
     def test_get_cow_rewards(self):
-        self.dune.period = AccountingPeriod("2022-10-18", length_days=5)
-        print(f"Check out results at: {self.dune.period.dashboard_url()}")
+        self.fetcher.period = AccountingPeriod("2022-10-18", length_days=5)
+        print(f"Check out results at: {self.fetcher.period.dashboard_url()}")
         try:
-            self.dune.get_cow_rewards()
+            self.fetcher.get_cow_rewards()
         except AssertionError as err:
             self.fail(f"get_cow_rewards failed with {err}")
 

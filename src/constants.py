@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 
 from dotenv import load_dotenv
-from duneapi.types import Address
+from dune_client.types import Address
 from gnosis.eth.ethereum_network import EthereumNetwork
 from web3 import Web3
 

@@ -7,12 +7,11 @@ from enum import Enum
 
 import pandas as pd
 from dotenv import load_dotenv
-from duneapi.util import open_query
 from pandas import DataFrame
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
-from src.utils.query_file import query_file
+from src.utils.query_file import open_query
 
 
 class OrderbookEnv(Enum):
@@ -68,7 +67,7 @@ class DualEnvDataframe:
         Fetches and validates Orderbook Reward DataFrame as concatenation from Prod and Staging DB
         """
         cow_reward_query = (
-            open_query(query_file("orderbook/order_rewards.sql"))
+            open_query("orderbook/order_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
         )

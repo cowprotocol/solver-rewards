@@ -8,10 +8,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from enum import Enum
 
-from duneapi.types import Address
-from duneapi.util import open_query
+from dune_client.types import Address
 
-from src.utils.query_file import dashboard_file, query_file
+from src.utils.query_file import (
+    open_dashboard_query,
+    open_query,
+)
 
 
 @dataclass
@@ -89,7 +91,7 @@ class QueryType(Enum):
         if self in (QueryType.PER_TX, QueryType.TOTAL):
             return f"select * from {self}"
         if self == QueryType.UNUSUAL:
-            return open_query(dashboard_file("unusual-slippage.sql"))
+            return open_dashboard_query("unusual-slippage.sql")
         # Can only happen if types are added to the enum and not accounted for.
         raise ValueError(f"Invalid Query Type! {self}")
 
@@ -102,7 +104,7 @@ def slippage_query(query_type: QueryType = QueryType.TOTAL) -> str:
     """
     return "\n".join(
         [
-            open_query(query_file("period_slippage.sql")),
+            open_query("dune_v1/period_slippage.sql"),
             query_type.select_statement(),
         ]
     )

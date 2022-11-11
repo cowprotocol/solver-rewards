@@ -1,3 +1,4 @@
+-- V1 Query: https://dune.com/queries/448457
 with
 solver_rewards as (
     select

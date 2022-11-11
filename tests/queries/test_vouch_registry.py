@@ -1,7 +1,8 @@
 import unittest
 from dataclasses import dataclass
 
-from duneapi.types import DuneQuery, Network, QueryParameter, Address
+from dune_client.types import Address
+from duneapi.types import DuneQuery, Network, QueryParameter
 from duneapi.util import open_query
 
 from src.models.vouch import Vouch, parse_vouches, RECOGNIZED_BONDING_POOLS
@@ -90,7 +91,7 @@ def query_for(date_str: str, bonding_pools: list[str]) -> DuneQuery:
     return DuneQuery(
         raw_sql="\n".join(
             [
-                open_query(query_file("vouch_registry.sql")),
+                open_query(query_file("dune_v1/vouch_registry.sql")),
                 "select * from valid_vouches",
             ]
         ),

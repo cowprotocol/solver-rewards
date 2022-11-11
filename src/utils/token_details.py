@@ -4,7 +4,7 @@ Very basic Token Info Fetcher that gets token decimals
 import functools
 import logging.config
 
-from duneapi.types import Address
+from dune_client.types import Address
 from web3 import Web3
 
 from src.constants import ERC20_ABI, LOG_CONFIG_FILE
