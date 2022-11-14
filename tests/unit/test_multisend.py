@@ -12,7 +12,7 @@ from src.multisend import build_encoded_multisend
 
 class TestMultiSend(unittest.TestCase):
     def setUp(self) -> None:
-        node_url = f"https://goerli.infura.io/v3/{INFURA_KEY}"
+        node_url = f"https://cloudflare-eth.com/v1/mainnet"
         self.client = EthereumClient(URI(node_url))
 
     def test_multisend_encoding(self):

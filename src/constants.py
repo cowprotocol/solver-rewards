@@ -24,7 +24,8 @@ SAFE_ADDRESS = Web3.toChecksumAddress(
 )
 INFURA_KEY = ENV.get("INFURA_KEY")
 NETWORK_STRING = ENV.get("NETWORK", "mainnet")
-NODE_URL = f"https://{NETWORK_STRING}.infura.io/v3/{INFURA_KEY}"
+# NODE_URL = f"https://{NETWORK_STRING}.infura.io/v3/{INFURA_KEY}"
+NODE_URL = f"https://cloudflare-eth.com/v1/{NETWORK_STRING}"
 NETWORK = {
     "mainnet": EthereumNetwork.MAINNET,
     "gnosis": EthereumNetwork.XDAI,
