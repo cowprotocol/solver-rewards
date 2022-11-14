@@ -22,10 +22,10 @@ ENV = os.environ
 SAFE_ADDRESS = Web3.toChecksumAddress(
     ENV.get("SAFE_ADDRESS", "0xA03be496e67Ec29bC62F01a428683D7F9c204930")
 )
-INFURA_KEY = ENV.get("INFURA_KEY")
+# Found this exposed infura key on https://rpc.info/
+INFURA_KEY = ENV.get("INFURA_KEY", "9aa3d95b3bc440fa88ea12eaa4456161")
 NETWORK_STRING = ENV.get("NETWORK", "mainnet")
-# NODE_URL = f"https://{NETWORK_STRING}.infura.io/v3/{INFURA_KEY}"
-NODE_URL = f"https://cloudflare-eth.com/v1/{NETWORK_STRING}"
+NODE_URL = f"https://{NETWORK_STRING}.infura.io/v3/{INFURA_KEY}"
 NETWORK = {
     "mainnet": EthereumNetwork.MAINNET,
     "gnosis": EthereumNetwork.XDAI,
