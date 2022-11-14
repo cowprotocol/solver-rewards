@@ -7,6 +7,8 @@ $(VENV)/bin/activate: requirements.txt
 	python3 -m venv $(VENV)
 	$(PIP) install -r requirements.txt
 
+install:
+	make $(VENV)/bin/activate
 
 clean:
 	rm -rf __pycache__
@@ -21,6 +23,7 @@ types:
 	mypy src/ --strict
 
 check:
+	make install
 	make fmt
 	make lint
 	make types
