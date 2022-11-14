@@ -35,3 +35,7 @@ test-db:
 	python -m pytest tests/db
 	python -m pytest tests/queries
 
+test-all:
+	make test-unit
+	make test-e2e
+	make test-db
