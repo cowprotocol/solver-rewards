@@ -3,7 +3,6 @@ import unittest
 from dune_client.types import Address
 from eth_typing import URI
 from gnosis.eth import EthereumClient
-from gnosis.safe.multi_send import MultiSendTx
 from web3 import Web3
 
 from src.abis.load import weth9
