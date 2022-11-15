@@ -26,7 +26,7 @@ def get_token_decimals(web3: Web3, address: str | Address) -> int:
         checksum_address = web3.toChecksumAddress(address.address)
     else:
         checksum_address = web3.toChecksumAddress(address)
-    token = erc20(checksum_address)
+    token = erc20(web3, checksum_address)
     # This "trick" is because of the unknown type returned from the contract call.
     token_decimals: int = token.functions.decimals().call()
     return token_decimals
