@@ -5,7 +5,8 @@ from dune_client.types import Address
 from eth_typing import HexStr
 from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
 
-from src.constants import COW_TOKEN_ADDRESS, ERC20_TOKEN
+from src.abis.load import erc20
+from src.constants import COW_TOKEN_ADDRESS
 from src.models.slippage import SolverSlippage
 from src.fetch.transfer_file import Transfer
 from src.models.accounting_period import AccountingPeriod
@@ -340,9 +341,7 @@ class TestTransfer(unittest.TestCase):
                 operation=MultiSendOperation.CALL,
                 to=COW_TOKEN_ADDRESS.address,
                 value=0,
-                data=ERC20_TOKEN.encodeABI(
-                    fn_name="transfer", args=[receiver.address, 15]
-                ),
+                data=erc20().encodeABI(fn_name="transfer", args=[receiver.address, 15]),
             ),
         )
 

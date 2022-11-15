@@ -11,9 +11,7 @@ from dune_client.types import Address
 from eth_typing.encoding import HexStr
 from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
 
-from src.constants import (
-    ERC20_TOKEN,
-)
+from src.abis.load import erc20
 from src.models.slippage import SolverSlippage
 from src.models.token import TokenType, Token
 from src.utils.print_store import Category, PrintStore
@@ -171,7 +169,7 @@ class Transfer:
                 operation=MultiSendOperation.CALL,
                 to=str(self.token.address),
                 value=0,
-                data=ERC20_TOKEN.encodeABI(
+                data=erc20().encodeABI(
                     fn_name="transfer", args=[self.receiver.address, self.amount_wei]
                 ),
             )

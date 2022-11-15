@@ -1,5 +1,4 @@
 """Project Global Constants. """
-import json
 import os
 from pathlib import Path
 
@@ -45,36 +44,5 @@ AIRDROP_URL = (
 )
 SAFE_URL = f"https://gnosis-safe.io/app/{SHORT_NAME}:{SAFE_ADDRESS}/transactions/queue"
 
-# Things requiring dummy Web3 instance
-ERC20_ABI = json.loads(
-    """[
-    {
-        "inputs": [
-            {"internalType": "address", "name": "recipient", "type": "address"},
-            {"internalType": "uint256", "name": "amount", "type": "uint256"}
-        ],
-        "name": "transfer",
-        "outputs": [{"internalType": "bool", "name": "", "type": "bool"}],
-        "stateMutability": "nonpayable",
-        "type": "function"
-    },
-    {
-        "constant": true,
-        "inputs": [],
-        "name": "decimals",
-        "outputs": [
-          {
-            "name": "",
-            "type": "uint8"
-          }
-        ],
-        "payable": false,
-        "stateMutability": "view",
-        "type": "function"
-  }
-]
-"""
-)
-ERC20_TOKEN = Web3().eth.contract(abi=ERC20_ABI)
 # Real Web3 Instance
 w3 = Web3(Web3.HTTPProvider(NODE_URL))
