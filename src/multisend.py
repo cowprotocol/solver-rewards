@@ -79,12 +79,11 @@ def prepend_unwrap_if_necessary(
 def post_multisend(
     safe_address: ChecksumAddress,
     network: EthereumNetwork,
-    transfers: list[MultiSendTx],
+    transactions: list[MultiSendTx],
     client: EthereumClient,
     signing_key: str,
 ) -> int:
     """Posts a MultiSend Transaction from a list of Transfers."""
-    transactions = prepend_unwrap_if_necessary(client, safe_address, transfers)
 
     encoded_multisend = build_encoded_multisend(transactions, client=client)
     safe = Safe(address=safe_address, ethereum_client=client)

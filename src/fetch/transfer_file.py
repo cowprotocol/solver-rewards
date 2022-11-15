@@ -22,7 +22,7 @@ from src.constants import (
 )
 from src.fetch.dune import DuneFetcher
 from src.models.transfer import Transfer, CSVTransfer
-from src.multisend import post_multisend
+from src.multisend import post_multisend, prepend_unwrap_if_necessary
 from src.utils.print_store import Category
 from src.utils.script_args import generic_script_init
 
@@ -88,10 +88,16 @@ def auto_propose(dune: DuneFetcher, slack_client: WebClient, dry_run: bool) -> N
 
     transfers = Transfer.consolidate(dune.get_transfers())
     dune.log_saver.print(Transfer.summarize(transfers), category=Category.TOTALS)
+    transactions = prepend_unwrap_if_necessary(
+        client, SAFE_ADDRESS, transactions=[t.as_multisend_tx() for t in transfers]
+    )
+    if len(transactions) > len(transfers):
+        dune.log_saver.print("Prepended WETH unwrap", Category.GENERAL)
+
     if not dry_run:
         nonce = post_multisend(
             safe_address=SAFE_ADDRESS,
-            transfers=[t.as_multisend_tx() for t in transfers],
+            transactions=transactions,
             network=NETWORK,
             signing_key=signing_key,
             client=client,
