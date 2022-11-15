@@ -40,24 +40,30 @@ def build_encoded_multisend(
 
 def prepend_unwrap_if_necessary(
     client: EthereumClient,
-    safe_address: ChecksumAddress,
+    safe_address: str | ChecksumAddress,
     transactions: list[MultiSendTx],
+    skip_validation: bool = False,
 ) -> list[MultiSendTx]:
     """
-    Given a list of multisend transactions,
-    this checks that the total outgoing ETH is sufficient and unwraps entire WETH balance when it isn't.
+    Given a list of multisend transactions, this checks that
+    the total outgoing ETH is sufficient and unwraps entire WETH balance when it isn't.
     Raises if the ETH + WETH balance is still insufficient.
     """
-    eth_balance = client.w3.eth.get_balance(safe_address)
+    eth_balance = client.get_balance(safe_address)
     # Amount of outgoing ETH from transfer
     eth_needed = sum(t.value for t in transactions)
     if eth_balance < eth_needed:
-        weth = weth9()
+        weth = weth9(client.w3)
         weth_balance = weth.functions.balanceOf(safe_address).call()
-        assert (
-            weth_balance + eth_balance >= eth_needed
-        ), f"{safe_address} has insufficient WETH + ETH balance for transaction!"
-        print(f"Prepending Unwrap of {weth_balance/10**18}")
+        if weth_balance + eth_balance < eth_needed:
+            message = (
+                f"{safe_address} has insufficient WETH + ETH balance for transaction!"
+            )
+            if not skip_validation:
+                raise ValueError(message)
+            log.warning(f"{message} - proceeding to build transaction anyway")
+
+        log.info(f"prepending unwrap of {weth_balance/10**18}")
         transactions.insert(
             0,
             MultiSendTx(

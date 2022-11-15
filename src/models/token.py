@@ -8,7 +8,7 @@ from typing import Optional
 
 from dune_client.types import Address
 
-from src.constants import COW_TOKEN_ADDRESS, w3
+from src.constants import COW_TOKEN_ADDRESS, web3
 from src.utils.token_details import get_token_decimals
 
 
@@ -52,7 +52,7 @@ class Token:
             decimals = 18
 
         self.decimals = (
-            decimals if decimals is not None else get_token_decimals(w3, address)
+            decimals if decimals is not None else get_token_decimals(web3, address)
         )
 
     def __eq__(self, other: object) -> bool:

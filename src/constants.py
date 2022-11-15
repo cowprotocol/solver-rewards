@@ -45,4 +45,4 @@ AIRDROP_URL = (
 SAFE_URL = f"https://gnosis-safe.io/app/{SHORT_NAME}:{SAFE_ADDRESS}/transactions/queue"
 
 # Real Web3 Instance
-w3 = Web3(Web3.HTTPProvider(NODE_URL))
+web3 = Web3(Web3.HTTPProvider(NODE_URL))
