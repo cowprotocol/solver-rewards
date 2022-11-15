@@ -39,12 +39,12 @@ SHORT_NAME = {
 }[NETWORK_STRING]
 
 CSV_APP_HASH = "Qme49gESuwpSvwANmEqo34yfCkzyQehooJ5yL7aHmKJnpZ"
+SAFE_URL = "https://app.safe.global"
 AIRDROP_URL = (
-    f"https://gnosis-safe.io/app/eth:{SAFE_ADDRESS}"
+    f"{SAFE_URL}/{SHORT_NAME}:{SAFE_ADDRESS}"
     f"/apps?appUrl=https://cloudflare-ipfs.com/ipfs/{CSV_APP_HASH}/"
 )
-SAFE_URL = f"https://gnosis-safe.io/app/{SHORT_NAME}:{SAFE_ADDRESS}/transactions/queue"
-
+SAFE_URL = f"{SAFE_URL}/{SHORT_NAME}:{SAFE_ADDRESS}/transactions/queue"
 # Things requiring dummy Web3 instance
 ERC20_ABI = json.loads(
     """[
