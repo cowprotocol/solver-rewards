@@ -15,6 +15,7 @@ from gnosis.safe.safe import Safe
 from safe_cli.api.transaction_service_api import TransactionServiceApi
 
 from src.constants import LOG_CONFIG_FILE
+from src.abis.load import weth9
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(
@@ -37,15 +38,54 @@ def build_encoded_multisend(
     return tx_bytes
 
 
+def prepend_unwrap_if_necessary(
+    client: EthereumClient,
+    safe_address: str | ChecksumAddress,
+    transactions: list[MultiSendTx],
+    skip_validation: bool = False,
+) -> list[MultiSendTx]:
+    """
+    Given a list of multisend transactions, this checks that
+    the total outgoing ETH is sufficient and unwraps entire WETH balance when it isn't.
+    Raises if the ETH + WETH balance is still insufficient.
+    """
+    eth_balance = client.get_balance(safe_address)
+    # Amount of outgoing ETH from transfer
+    eth_needed = sum(t.value for t in transactions)
+    if eth_balance < eth_needed:
+        weth = weth9(client.w3)
+        weth_balance = weth.functions.balanceOf(safe_address).call()
+        if weth_balance + eth_balance < eth_needed:
+            message = (
+                f"{safe_address} has insufficient WETH + ETH balance for transaction!"
+            )
+            if not skip_validation:
+                raise ValueError(message)
+            log.warning(f"{message} - proceeding to build transaction anyway")
+
+        log.info(f"prepending unwrap of {weth_balance/10**18}")
+        transactions.insert(
+            0,
+            MultiSendTx(
+                operation=MultiSendOperation.CALL,
+                to=weth.address,
+                value=0,
+                data=weth.encodeABI(fn_name="withdraw", args=[weth_balance]),
+            ),
+        )
+    return transactions
+
+
 def post_multisend(
     safe_address: ChecksumAddress,
     network: EthereumNetwork,
-    transfers: list[MultiSendTx],
+    transactions: list[MultiSendTx],
     client: EthereumClient,
     signing_key: str,
 ) -> int:
     """Posts a MultiSend Transaction from a list of Transfers."""
-    encoded_multisend = build_encoded_multisend(transactions=transfers, client=client)
+
+    encoded_multisend = build_encoded_multisend(transactions, client=client)
     safe = Safe(address=safe_address, ethereum_client=client)
     safe_tx = safe.build_multisig_tx(
         to=MULTISEND_CONTRACT,

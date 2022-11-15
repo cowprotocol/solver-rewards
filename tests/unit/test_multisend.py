@@ -3,17 +3,64 @@ import unittest
 from dune_client.types import Address
 from eth_typing import URI
 from gnosis.eth import EthereumClient
+from gnosis.safe.multi_send import MultiSendTx
+from web3 import Web3
 
+from src.abis.load import weth9
 from src.constants import COW_TOKEN_ADDRESS, INFURA_KEY
 from src.fetch.transfer_file import Transfer
 from src.models.token import Token
-from src.multisend import build_encoded_multisend
+from src.multisend import build_encoded_multisend, prepend_unwrap_if_necessary
 
 
 class TestMultiSend(unittest.TestCase):
     def setUp(self) -> None:
-        node_url = f"https://cloudflare-eth.com/v1/mainnet"
+        node_url = f"https://mainnet.infura.io/v3/{INFURA_KEY}"
         self.client = EthereumClient(URI(node_url))
+
+    def test_prepend_unwrap(self):
+        many_eth = 99999999 * 10**18
+        safe_address = Web3().toChecksumAddress(
+            "0xA03be496e67Ec29bC62F01a428683D7F9c204930"
+        )
+        big_native_transfer = Transfer(
+            token=None, receiver=Address.zero(), amount_wei=many_eth
+        ).as_multisend_tx()
+
+        with self.assertRaises(ValueError):
+            # Nobody has that much ETH!
+            prepend_unwrap_if_necessary(
+                client=self.client,
+                safe_address=safe_address,
+                transactions=[big_native_transfer],
+            )
+
+        eth_balance = self.client.get_balance(safe_address)
+        weth = weth9(self.client.w3)
+        weth_balance = weth.functions.balanceOf(safe_address).call()
+
+        transactions = [
+            Transfer(
+                token=None,
+                receiver=Address.zero(),
+                amount_wei=eth_balance + 1,  # More ETH than account has!
+            ).as_multisend_tx()
+        ]
+        transactions = prepend_unwrap_if_necessary(
+            self.client, safe_address, transactions, skip_validation=True
+        )
+
+        self.assertEqual(2, len(transactions))
+        unwrap = transactions[0]
+        self.assertEqual(weth.address, unwrap.to)
+
+        unwrap_method_id = "0x2e1a7d4d"
+        # 32-byte hex encoding of weth balance
+        hex_weth_balance = hex(weth_balance)[2:].rjust(64, "0")
+        self.assertEqual(
+            f"{unwrap_method_id}{hex_weth_balance}",
+            unwrap.data.hex(),
+        )
 
     def test_multisend_encoding(self):
         receiver = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
