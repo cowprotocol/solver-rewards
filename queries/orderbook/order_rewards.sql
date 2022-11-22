@@ -31,6 +31,6 @@ select concat('0x', encode(trade_hashes.order_uid, 'hex')) as order_uid,
            when reward is null and fee_amount = 0 then False
            end                              as safe_liquidity
 from trade_hashes
-         left outer join order_rewards
-                         on trade_hashes.order_uid = order_rewards.order_uid
-                             and trade_hashes.auction_id = order_rewards.auction_id;
+         left outer join {{reward_table}} o
+                         on trade_hashes.order_uid = o.order_uid
+                             and trade_hashes.auction_id = o.auction_id;
