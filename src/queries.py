@@ -5,11 +5,19 @@ from __future__ import annotations
 
 from copy import copy
 from dataclasses import dataclass
+from enum import Enum
 
 from dune_client.query import Query
 from dune_client.types import QueryParameter
 
 from src.utils.query_file import dashboard_file
+
+
+class DuneVersion(Enum):
+    """Dune Version Identifier"""
+
+    V1 = 1
+    V2 = 2
 
 
 @dataclass
@@ -26,12 +34,17 @@ class QueryData:
         self.v1_query = Query(v1_id, name)
         self.v2_query = Query(v2_id, name)
 
-    def with_params(self, params: list[QueryParameter]) -> Query:
+    def with_params(
+        self, params: list[QueryParameter], dune_version: DuneVersion = DuneVersion.V1
+    ) -> Query:
         """
         Copies the query and adds parameters to it, returning the copy.
         """
         # We currently default to the V1 Queries, soon to switch them out.
         query_copy = copy(self.v1_query)
+        if dune_version == DuneVersion.V2:
+            query_copy = copy(self.v2_query)
+
         query_copy.params = params
         return query_copy
 
@@ -72,5 +85,11 @@ QUERIES = {
         filepath=dashboard_file("period-totals.sql"),
         v1_id=448457,
         v2_id=-1,  # Not implemented
+    ),
+    "PERIOD_SLIPPAGE": QueryData(
+        name="Solver Slippage for Period",
+        filepath="period_slippage.sql",
+        v1_id=1570227,
+        v2_id=1570561,
     ),
 }
