@@ -8,6 +8,7 @@ from enum import Enum
 import pandas as pd
 from dotenv import load_dotenv
 from pandas import DataFrame
+from sqlalchemy.exc import ProgrammingError
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
@@ -24,12 +25,6 @@ class OrderbookEnv(Enum):
 
     def __str__(self) -> str:
         return str(self.value)
-
-    def reward_table(self) -> str:
-        return {
-            OrderbookEnv.PROD: "order_rewards",
-            OrderbookEnv.BARN: "order_executions",
-        }[self]
 
 
 @dataclass
@@ -55,19 +50,28 @@ class DualEnvDataframe:
         return create_engine(db_string)
 
     @classmethod
+    def _exec_query(cls, query: str, engine: Engine) -> DataFrame:
+        # TODO - once both environments have been migrated, this will no longer be necessary.
+        try:
+            # New Query
+            return pd.read_sql(
+                sql=query.replace("{{reward_table}}", "order_executions"), con=engine
+            )
+        except ProgrammingError:
+            # Use Old Query
+            # Unfortunately it appears impossible to capture the Base Error:
+            # psycopg2.errors.UndefinedTable
+            # But we know what it is.
+            return pd.read_sql(
+                sql=query.replace("{{reward_table}}", "order_rewards"), con=engine
+            )
+
+    @classmethod
     def from_query(cls, query: str) -> DualEnvDataframe:
         """Fetch results of DB query on both prod and barn and returns the results as a pair"""
-        barn_env = OrderbookEnv.BARN
-        prod_env = OrderbookEnv.PROD
         return cls(
-            barn=pd.read_sql(
-                sql=query.replace("{{reward_table}}", barn_env.reward_table()),
-                con=cls._pg_engine(barn_env),
-            ),
-            prod=pd.read_sql(
-                sql=query.replace("{{reward_table}}", prod_env.reward_table()),
-                con=cls._pg_engine(prod_env),
-            ),
+            barn=cls._exec_query(query, cls._pg_engine(OrderbookEnv.BARN)),
+            prod=cls._exec_query(query, cls._pg_engine(OrderbookEnv.PROD)),
         )
 
     def merge(self) -> DataFrame:
