@@ -55,7 +55,7 @@ class DualEnvDataframe:
         try:
             # New Query
             return pd.read_sql(
-                sql=query.replace("{{reward_table}}", "order_executions"), con=engine
+                sql=query.replace("{{reward_table}}", "order_execution"), con=engine
             )
         except ProgrammingError:
             # Use Old Query
