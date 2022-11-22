@@ -25,6 +25,12 @@ class OrderbookEnv(Enum):
     def __str__(self) -> str:
         return str(self.value)
 
+    def reward_table(self) -> str:
+        return {
+            OrderbookEnv.PROD: "order_rewards",
+            OrderbookEnv.BARN: "order_executions",
+        }[self]
+
 
 @dataclass
 class DualEnvDataframe:
@@ -51,9 +57,17 @@ class DualEnvDataframe:
     @classmethod
     def from_query(cls, query: str) -> DualEnvDataframe:
         """Fetch results of DB query on both prod and barn and returns the results as a pair"""
+        barn_env = OrderbookEnv.BARN
+        prod_env = OrderbookEnv.PROD
         return cls(
-            barn=pd.read_sql(sql=query, con=cls._pg_engine(OrderbookEnv.PROD)),
-            prod=pd.read_sql(sql=query, con=cls._pg_engine(OrderbookEnv.BARN)),
+            barn=pd.read_sql(
+                sql=query.replace("{{reward_table}}", barn_env.reward_table()),
+                con=cls._pg_engine(barn_env),
+            ),
+            prod=pd.read_sql(
+                sql=query.replace("{{reward_table}}", prod_env.reward_table()),
+                con=cls._pg_engine(prod_env),
+            ),
         )
 
     def merge(self) -> DataFrame:
