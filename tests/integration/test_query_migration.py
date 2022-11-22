@@ -15,17 +15,11 @@ class MyTestCase(unittest.TestCase):
         self.dune_v2 = DuneClient(os.environ["DUNE_API_KEY"])
 
     def test_similar_slippage(self):
-        v1_fetcher = DuneFetcher(
-            dune_v1=self.dune_v1,
-            dune=self.dune_v2,
-            period=AccountingPeriod("2022-11-01"),
-        )
-        v2_fetcher = DuneFetcher(
-            dune_v1=self.dune_v1,
-            dune=self.dune_v2,
-            period=AccountingPeriod("2022-11-01"),
-            dune_version=DuneVersion.V2,
-        )
+        period = AccountingPeriod("2022-11-01")
+        dune_v1 = self.dune_v1
+        dune = self.dune_v2
+        v1_fetcher = DuneFetcher(dune_v1, dune, period, dune_version=DuneVersion.V1)
+        v2_fetcher = DuneFetcher(dune_v1, dune, period, dune_version=DuneVersion.V2)
         # Takes about 2-3 minutes each. Could be parallelized!
         v1_slippage = v1_fetcher.get_period_slippage()
         v2_slippage = v2_fetcher.get_period_slippage()
