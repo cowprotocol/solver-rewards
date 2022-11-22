@@ -4,7 +4,11 @@ with
 filtered_trades as (
     select t.block_time,
            t.tx_hash,
-           dex_swaps,
+           -- 1inch Solver has NULL DEX SWAPS.
+           -- This is the last remaining discrepancy between the two queries.
+           -- We need an estimation of dex_swaps for these solvers.
+           -- https://github.com/duneanalytics/spellbook/blob/2a7122f931900d754767df9359aa844af20c41ff/models/cow_protocol/ethereum/cow_protocol_ethereum_batches.sql#L70-L80
+           coalesce(dex_swaps, 0) as dex_swaps ,
            num_trades,
            solver_address,
            trader                                              as trader_in,
