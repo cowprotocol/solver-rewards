@@ -19,10 +19,7 @@ filtered_trades as (
             on t.tx_hash = b.tx_hash
     where b.block_time between '{{StartTime}}' and '{{EndTime}}'
     and t.block_time between '{{StartTime}}' and '{{EndTime}}'
-    and case
-            when '{{TxHash}}' = '0x' then true
-            else lower('{{TxHash}}') = t.tx_hash
-        end
+    and (t.tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
 ),
 
 batchwise_traders as (
@@ -85,10 +82,7 @@ other_transfers as (
       and '0x9008d19f58aabd9ed0d60971565aa8510560ab41' in (to, from)
       and not array_contains(traders_in, from)
       and not array_contains(traders_out, to)
-      and case
-              when '{{TxHash}}' = '0x' then true
-              else lower('{{TxHash}}') = b.tx_hash
-        end
+      and (t.evt_tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
 ),
 batch_transfers as (
     select * from user_in
@@ -136,7 +130,6 @@ incoming_and_outgoing as (
       -- Settlements with dex_swaps = 0 and num_trades = 0 can be handled in the following
       -- and we want to consider them in order to filter out illegal behaviour
         (dex_swaps = 0 and num_trades < 2) or dex_swaps > 0
---! TODO - dex_swaps can sometimes be NULL! because dex trades table isn't finished yet!
         and tx_hash not in (select tx_hash from exluded_batches)
 ),
 -- Benchmark takes 3 minuites to get here for ONE DAY interval!
