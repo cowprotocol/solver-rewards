@@ -47,7 +47,7 @@ class TestQueryMigration(unittest.TestCase):
         )
 
     @pytest.mark.skip(
-        reason="This test takes FOREVER to run, use the Cached version above."
+        reason="This test takes FOREVER (~8m) to run, use the Cached version above."
     )
     def test_similar_slippage_for_period(self):
         period = AccountingPeriod("2022-11-01", length_days=1)
