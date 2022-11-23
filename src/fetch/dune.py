@@ -4,7 +4,6 @@ from dune_client.client import DuneClient
 from dune_client.query import Query
 from dune_client.types import QueryParameter, Address
 from duneapi.api import DuneAPI
-from duneapi.types import DuneQuery, QueryParameter as LegacyParameter, Network
 
 from src.fetch.cow_rewards import aggregate_orderbook_rewards
 from src.fetch.token_list import get_trusted_tokens
@@ -19,7 +18,6 @@ from src.pg_client import DualEnvDataframe
 from src.queries import QUERIES, DuneVersion, QueryData
 from src.utils.dataset import index_by
 from src.utils.print_store import PrintStore
-from src.utils.query_file import open_query
 
 log = set_log(__name__)
 
