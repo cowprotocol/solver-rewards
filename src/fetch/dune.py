@@ -11,12 +11,12 @@ from src.fetch.token_list import get_trusted_tokens
 from src.logger import set_log
 from src.models.accounting_period import AccountingPeriod
 from src.models.period_totals import PeriodTotals
-from src.models.slippage import SplitSlippages, slippage_query
+from src.models.slippage import SplitSlippages
 from src.models.split_transfers import SplitTransfers
 from src.models.transfer import Transfer
 from src.models.vouch import Vouch, RECOGNIZED_BONDING_POOLS, parse_vouches
 from src.pg_client import DualEnvDataframe
-from src.queries import QUERIES
+from src.queries import QUERIES, DuneVersion, QueryData
 from src.utils.dataset import index_by
 from src.utils.print_store import PrintStore
 from src.utils.query_file import open_query
@@ -36,19 +36,31 @@ class DuneFetcher:
     period: AccountingPeriod
     log_saver: PrintStore
 
-    def __init__(self, dune_v1: DuneAPI, dune: DuneClient, period: AccountingPeriod):
+    def __init__(
+        self,
+        dune_v1: DuneAPI,
+        dune: DuneClient,
+        period: AccountingPeriod,
+        dune_version: DuneVersion = DuneVersion.V1,
+    ):
         self.dune_v1 = dune_v1
         self.dune = dune
         self.period = period
         self.log_saver = PrintStore()
+        self.dune_version = dune_version
 
     def _period_params(self) -> list[QueryParameter]:
         """Easier access to these parameters."""
         return self.period.as_query_params()
 
+    def _parameterized_query(
+        self, query_data: QueryData, params: list[QueryParameter]
+    ) -> Query:
+        return query_data.with_params(params, dune_version=self.dune_version)
+
     def _get_query_results(self, query: Query) -> list[dict[str, str]]:
         """Internally every dune query execution is routed through here."""
-        exec_result = self.dune.refresh(query)
+        exec_result = self.dune.refresh(query, ping_frequency=20)
         # TODO - use a real logger:
         #  https://github.com/cowprotocol/dune-client/issues/34
         if exec_result.result is not None:
@@ -59,7 +71,9 @@ class DuneFetcher:
 
     def get_block_interval(self) -> tuple[str, str]:
         """Returns block numbers corresponding to date interval"""
-        query = QUERIES["PERIOD_BLOCK_INTERVAL"].with_params(self._period_params())
+        query = self._parameterized_query(
+            QUERIES["PERIOD_BLOCK_INTERVAL"], self._period_params()
+        )
         query.name = f"Block Interval for Accounting Period {self}"
         results = self._get_query_results(query)
         assert len(results) == 1, "Block Interval Query should return only 1 result!"
@@ -70,14 +84,16 @@ class DuneFetcher:
         Fetches ETH spent on successful settlements by all solvers during `period`
         """
         results = self._get_query_results(
-            QUERIES["ETH_SPENT"].with_params(self._period_params())
+            self._parameterized_query(QUERIES["ETH_SPENT"], self._period_params())
         )
         return [Transfer.from_dict(t) for t in results]
 
     def get_risk_free_batches(self) -> set[str]:
         """Fetches Risk Free Batches from Dune"""
         results = self._get_query_results(
-            QUERIES["RISK_FREE_BATCHES"].with_params(self._period_params())
+            self._parameterized_query(
+                QUERIES["RISK_FREE_BATCHES"], self._period_params()
+            )
         )
         return {row["tx_hash"].lower() for row in results}
 
@@ -95,11 +111,12 @@ class DuneFetcher:
 
         # Validation of results - using characteristics of results from two sources.
         trade_counts = self._get_query_results(
-            QUERIES["TRADE_COUNT"].with_params(
-                [
+            query=self._parameterized_query(
+                query_data=QUERIES["TRADE_COUNT"],
+                params=[
                     QueryParameter.text_type("start_block", start_block),
                     QueryParameter.text_type("end_block", end_block),
-                ]
+                ],
             )
         )
         # Number of trades per solver retrieved from orderbook agrees ethereum events.
@@ -142,7 +159,9 @@ class DuneFetcher:
         Fetches & Returns Dune Results for accounting period totals.
         """
         data_set = self._get_query_results(
-            QUERIES["PERIOD_TOTALS"].with_params(self._period_params())
+            query=self._parameterized_query(
+                query_data=QUERIES["PERIOD_TOTALS"], params=self._period_params()
+            )
         )
         assert len(data_set) == 1
         rec = data_set[0]
@@ -159,18 +178,16 @@ class DuneFetcher:
         Returns a class representation of the results as two lists (positive & negative).
         """
         token_list = get_trusted_tokens()
-        query = DuneQuery.from_environment(
-            raw_sql=slippage_query(),
-            network=Network.MAINNET,
-            name="Slippage Accounting",
-            parameters=[
-                LegacyParameter.date_type("StartTime", self.period.start),
-                LegacyParameter.date_type("EndTime", self.period.end),
-                LegacyParameter.text_type("TxHash", "0x"),
-                LegacyParameter.text_type("TokenList", ",".join(token_list)),
-            ],
+        data_set = self._get_query_results(
+            self._parameterized_query(
+                QUERIES["PERIOD_SLIPPAGE"],
+                params=self._period_params()
+                + [
+                    QueryParameter.text_type("TxHash", "0x"),
+                    QueryParameter.text_type("TokenList", ",".join(token_list)),
+                ],
+            )
         )
-        data_set = self.dune_v1.fetch(query)
         return SplitSlippages.from_data_set(data_set)
 
     def get_transfers(self) -> list[Transfer]:

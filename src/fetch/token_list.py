@@ -31,9 +31,7 @@ def parse_token_list(token_list_json: str) -> list[str]:
         print("Could not parse JSON data!")
         raise
     return [
-        f"('{t['address'].replace('0x', '')}')"
-        for t in token_list["tokens"]
-        if t["chainId"] == 1
+        f"('{t['address'].lower()}')" for t in token_list["tokens"] if t["chainId"] == 1
     ]
 
 

@@ -223,7 +223,7 @@ internal_buffer_trader_solvers as (
 ),
 -- PoC Query For Token List: https://dune.com/queries/1547103
 token_list as (
-    SELECT decode(address_str, 'hex') as address
+    SELECT replace(address_str, '0x', '\x')::bytea as address
   FROM (
       VALUES {{TokenList}}
     ) as _ (address_str)
