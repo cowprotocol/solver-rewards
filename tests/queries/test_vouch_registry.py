@@ -15,17 +15,14 @@ from tests.db.pg_client import (
 
 
 def pool_from(num: int) -> str:
-    return f"0xb{num}"
+    return f"\\xb{num}"
 
 
 def sender_from(num: int) -> str:
-    return f"0xf{num}"
+    return f"\\xf{num}"
 
 
-TEST_BONDING_POOLS = [
-    f"('{pool_from(i)}'::bytea, 'Pool {i}', '{sender_from(i)}'::bytea)"
-    for i in range(5)
-]
+TEST_BONDING_POOLS = [f"('0xb{i}', 'Pool {i}', '0xf{i}')" for i in range(5)]
 
 
 @dataclass
@@ -95,7 +92,7 @@ def query_for(date_str: str, bonding_pools: list[str]) -> DuneQuery:
         parameters=[
             QueryParameter.date_type("EndTime", date_str),
             QueryParameter.text_type("BondingPoolData", ",".join(bonding_pools)),
-            QueryParameter.text_type("VOUCH_CTE_NAME", "valid_vouches")
+            QueryParameter.text_type("VOUCH_CTE_NAME", "valid_vouches"),
         ],
         query_id=-1,
         description="",
