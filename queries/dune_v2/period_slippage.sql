@@ -4,7 +4,12 @@ with
 filtered_trades as (
     select t.block_time,
            t.tx_hash,
-           dex_swaps,
+           case
+            when dex_swaps is null
+            -- Estimation made here: https://dune.com/queries/1646084
+                then ((gas_used - 73688 - (70528 * num_trades)) / 90000)::int
+                else dex_swaps
+            end as dex_swaps,
            num_trades,
            solver_address,
            trader                                              as trader_in,
@@ -19,6 +24,7 @@ filtered_trades as (
             on t.tx_hash = b.tx_hash
     where b.block_time between '{{StartTime}}' and '{{EndTime}}'
     and t.block_time between '{{StartTime}}' and '{{EndTime}}'
+    and (solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
     and (t.tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
 ),
 
@@ -60,7 +66,12 @@ user_out as (
 other_transfers as (
     select block_time,
           b.tx_hash,
-          dex_swaps,
+          case
+            when dex_swaps is null
+            -- Estimation made here: https://dune.com/queries/1646084
+                then ((gas_used - 73688 - (70528 * num_trades)) / 90000)::int
+                else dex_swaps
+        end as dex_swaps,
           num_trades,
           solver_address,
           from               as sender,
@@ -83,12 +94,13 @@ other_transfers as (
       and not array_contains(traders_in, from)
       and not array_contains(traders_out, to)
       and (t.evt_tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
+      and (solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
 ),
 batch_transfers as (
     select * from user_in
-    union
+    union all
     select * from user_out
-    union
+    union all
     select * from other_transfers
 ),
 -- These batches involve a token AXS (Old)
