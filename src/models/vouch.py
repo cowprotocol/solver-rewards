@@ -8,10 +8,8 @@ from dune_client.types import Address
 from src.utils.dataset import index_by
 
 RECOGNIZED_BONDING_POOLS = [
-    "('\\x8353713b6D2F728Ed763a04B886B16aAD2b16eBD'::bytea, 'Gnosis', "
-    "'\\x6c642cafcbd9d8383250bb25f67ae409147f78b2'::bytea)",
-    "('\\x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6'::bytea, 'CoW Services', "
-    "'\\x423cec87f19f0778f549846e0801ee267a917935'::bytea)",
+    "('0x8353713b6D2F728Ed763a04B886B16aAD2b16eBD', 'Gnosis', '0x6c642cafcbd9d8383250bb25f67ae409147f78b2')",
+    "('0x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6', 'CoW Services', '0x423cec87f19f0778f549846e0801ee267a917935')",
 ]
 
 
