@@ -212,11 +212,11 @@ internal_buffer_trader_solvers as (
     from gnosis_protocol_v2."view_solvers"
     -- Exclude Single Order Solvers
     where name not in (
-        '1inch',
-        '0x',
-        'ParaSwap',
+        'Gnosis_1inch',
+        'Gnosis_0x',
+        'Gnosis_ParaSwap',
         'Baseline',
-        'BalancerSOR'
+        'Gnosis_BalancerSOR'
     )
     -- Exclude services and test solvers
     and environment not in ('service', 'test')
