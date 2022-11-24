@@ -11,6 +11,7 @@ from web3 import Web3
 COW_TOKEN_ADDRESS = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
 
 PROJECT_ROOT = Path(__file__).parent.parent
+FILE_OUT_DIR = PROJECT_ROOT / Path("out")
 LOG_CONFIG_FILE = PROJECT_ROOT / Path("logging.conf")
 QUERY_PATH = PROJECT_ROOT / Path("queries")
 DASHBOARD_PATH = PROJECT_ROOT / Path("dashboards/solver-rewards-accounting")
