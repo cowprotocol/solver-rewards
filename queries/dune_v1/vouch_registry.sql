@@ -3,9 +3,13 @@ with
 -- Contract events queried here are from the VouchRegister verified at
 -- https://etherscan.io/address/0xb422f2520b0b7fd86f7da61b32cc631a59ed7e8f#code
 bonding_pools (pool, name, initial_funder) as (
-  select * from (
+  select
+    replace(pool, '0x', '\x')::bytea,
+    name,
+    replace(funder, '0x', '\x')::bytea
+  from (
     values {{BondingPoolData}}
-  ) as _
+  ) as _ (pool, name, funder)
 ),
 
 last_block_before_timestamp as (
@@ -81,4 +85,19 @@ valid_vouches as (
     pool
   from current_active_vouches
   where time_rank = 1
+),
+complete_results as (
+    select
+     concat('0x', encode(solver, 'hex')) as solver,
+     concat(environment, '-', s.name) as solver_name,
+     concat('0x', encode(reward_target, 'hex')) as reward_target,
+     concat('0x', encode(vv.pool, 'hex')) as bonding_pool,
+     bp.name as pool_name
+    from valid_vouches vv
+    join gnosis_protocol_v2."view_solvers" s
+        on address = solver
+    join bonding_pools bp
+        on vv.pool = bp.pool
 )
+
+select * from {{VOUCH_CTE_NAME}}

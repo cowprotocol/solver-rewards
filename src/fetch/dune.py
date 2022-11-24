@@ -4,7 +4,6 @@ from dune_client.client import DuneClient
 from dune_client.query import Query
 from dune_client.types import QueryParameter, Address
 from duneapi.api import DuneAPI
-from duneapi.types import DuneQuery, QueryParameter as LegacyParameter, Network
 
 from src.fetch.cow_rewards import aggregate_orderbook_rewards
 from src.fetch.token_list import get_trusted_tokens
@@ -19,7 +18,6 @@ from src.pg_client import DualEnvDataframe
 from src.queries import QUERIES, DuneVersion, QueryData
 from src.utils.dataset import index_by
 from src.utils.print_store import PrintStore
-from src.utils.query_file import open_query
 
 log = set_log(__name__)
 
@@ -60,6 +58,7 @@ class DuneFetcher:
 
     def _get_query_results(self, query: Query) -> list[dict[str, str]]:
         """Internally every dune query execution is routed through here."""
+        log.info(f"Fetching {query.name} from query: {query}")
         exec_result = self.dune.refresh(query, ping_frequency=10)
         # TODO - use a real logger:
         #  https://github.com/cowprotocol/dune-client/issues/34
@@ -71,11 +70,11 @@ class DuneFetcher:
 
     def get_block_interval(self) -> tuple[str, str]:
         """Returns block numbers corresponding to date interval"""
-        query = self._parameterized_query(
-            QUERIES["PERIOD_BLOCK_INTERVAL"], self._period_params()
+        results = self._get_query_results(
+            self._parameterized_query(
+                QUERIES["PERIOD_BLOCK_INTERVAL"], self._period_params()
+            )
         )
-        query.name = f"Block Interval for Accounting Period {self}"
-        results = self._get_query_results(query)
         assert len(results) == 1, "Block Interval Query should return only 1 result!"
         return str(results[0]["start_block"]), str(results[0]["end_block"])
 
@@ -136,23 +135,18 @@ class DuneFetcher:
         """
         Fetches & Returns Parsed Results for VouchRegistry query.
         """
-
-        pool_values = ",\n           ".join(RECOGNIZED_BONDING_POOLS)
-        query = DuneQuery.from_environment(
-            raw_sql="\n".join(
-                [
-                    open_query("dune_v1/vouch_registry.sql"),
-                    "select * from valid_vouches",
-                ]
-            ),
-            network=Network.MAINNET,
-            name="Solver Reward Targets",
-            parameters=[
-                LegacyParameter.date_type("EndTime", self.period.end),
-                LegacyParameter.text_type("BondingPoolData", pool_values),
-            ],
+        pool_values = ",\n".join(RECOGNIZED_BONDING_POOLS)
+        data_set = self._get_query_results(
+            query=self._parameterized_query(
+                query_data=QUERIES["VOUCH_REGISTRY"],
+                params=[
+                    QueryParameter.date_type("EndTime", self.period.end),
+                    QueryParameter.text_type("BondingPoolData", pool_values),
+                    QueryParameter.enum_type("VOUCH_CTE_NAME", "valid_vouches"),
+                ],
+            )
         )
-        return parse_vouches(self.dune_v1.fetch(query))
+        return parse_vouches(data_set)
 
     def get_period_totals(self) -> PeriodTotals:
         """

@@ -51,6 +51,9 @@ test-db:
 	python -m pytest tests/db
 	python -m pytest tests/queries
 
+test-integration:
+	python -m pytest tests/integration
+
 test-all:
 	make test-unit
 	make test-e2e

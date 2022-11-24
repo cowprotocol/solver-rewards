@@ -22,10 +22,7 @@ def sender_from(num: int) -> str:
     return f"\\xf{num}"
 
 
-TEST_BONDING_POOLS = [
-    f"('{pool_from(i)}'::bytea, 'Pool {i}', '{sender_from(i)}'::bytea)"
-    for i in range(5)
-]
+TEST_BONDING_POOLS = [f"('0xb{i}', 'Pool {i}', '0xf{i}')" for i in range(5)]
 
 
 @dataclass
@@ -89,17 +86,13 @@ def invalidate_vouch(
 
 def query_for(date_str: str, bonding_pools: list[str]) -> DuneQuery:
     return DuneQuery(
-        raw_sql="\n".join(
-            [
-                open_query(query_file("dune_v1/vouch_registry.sql")),
-                "select * from valid_vouches",
-            ]
-        ),
+        raw_sql=open_query(query_file("dune_v1/vouch_registry.sql")),
         network=Network.MAINNET,
         name="Solver Reward Targets",
         parameters=[
             QueryParameter.date_type("EndTime", date_str),
             QueryParameter.text_type("BondingPoolData", ",".join(bonding_pools)),
+            QueryParameter.text_type("VOUCH_CTE_NAME", "valid_vouches"),
         ],
         query_id=-1,
         description="",
