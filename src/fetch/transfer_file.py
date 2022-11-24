@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import os
 import ssl
+from dataclasses import asdict
 
 import certifi
-from duneapi.file_io import write_to_csv, File
+from dune_client.file.interface import FileIO
 from eth_typing.ethpm import URI
 from gnosis.eth.ethereum_client import EthereumClient
 from slack.web.client import WebClient
@@ -19,6 +20,7 @@ from src.constants import (
     NODE_URL,
     AIRDROP_URL,
     SAFE_URL,
+    FILE_OUT_DIR,
 )
 from src.fetch.dune import DuneFetcher
 from src.models.transfer import Transfer, CSVTransfer
@@ -37,10 +39,9 @@ def manual_propose(dune: DuneFetcher) -> None:
         f"{dune.period.unusual_slippage_url()}"
     )
     transfers = Transfer.consolidate(dune.get_transfers())
-    write_to_csv(
-        data_list=[CSVTransfer.from_transfer(t) for t in transfers],
-        outfile=File(name=f"transfers-{dune.period}.csv"),
-    )
+    csv_transfers = [asdict(CSVTransfer.from_transfer(t)) for t in transfers]
+    FileIO(FILE_OUT_DIR).write_csv(csv_transfers, f"transfers-{dune.period}.csv")
+
     print(Transfer.summarize(transfers))
     print(
         f"Please cross check these results with the dashboard linked above.\n "
