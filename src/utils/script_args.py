@@ -5,7 +5,6 @@ from datetime import date, timedelta
 from dataclasses import dataclass
 
 from dune_client.client import DuneClient
-from duneapi.api import DuneAPI
 
 from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
@@ -62,7 +61,6 @@ def generic_script_init(description: str) -> ScriptArgs:
     args = parser.parse_args()
     return ScriptArgs(
         dune=DuneFetcher(
-            dune_v1=DuneAPI.new_from_environment(),
             dune=DuneClient(os.environ["DUNE_API_KEY"]),
             period=AccountingPeriod(args.start),
         ),

@@ -3,7 +3,6 @@ import unittest
 
 from dotenv import load_dotenv
 from dune_client.client import DuneClient
-from duneapi.api import DuneAPI
 
 from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
@@ -13,7 +12,6 @@ class TestGetBlockNumber(unittest.TestCase):
     def setUp(self) -> None:
         load_dotenv()
         self.fetcher = DuneFetcher(
-            DuneAPI.new_from_environment(),
             DuneClient(os.environ["DUNE_API_KEY"]),
             AccountingPeriod("2022-10-18"),
         )

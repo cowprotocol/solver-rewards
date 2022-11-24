@@ -7,7 +7,7 @@ import os
 import ssl
 
 import certifi
-from duneapi.file_io import File, write_to_csv
+from duneapi.file_io import write_to_csv, File
 from eth_typing.ethpm import URI
 from gnosis.eth.ethereum_client import EthereumClient
 from slack.web.client import WebClient

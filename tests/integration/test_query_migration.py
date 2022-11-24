@@ -3,24 +3,22 @@ import unittest
 
 import pytest
 from dune_client.client import DuneClient
-from duneapi.api import DuneAPI
 
 from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
-from src.models.slippage import SolverSlippage, SplitSlippages
+from src.models.slippage import SplitSlippages
 from src.queries import DuneVersion
 
 
 class TestQueryMigration(unittest.TestCase):
     def setUp(self) -> None:
-        dune_v1 = DuneAPI("", "")
         self.dune = DuneClient(os.environ["DUNE_API_KEY"])
         period = AccountingPeriod("2022-11-01", length_days=7)
         self.v1_fetcher = DuneFetcher(
-            dune_v1, dune=self.dune, period=period, dune_version=DuneVersion.V1
+            dune=self.dune, period=period, dune_version=DuneVersion.V1
         )
         self.v2_fetcher = DuneFetcher(
-            dune_v1, dune=self.dune, period=period, dune_version=DuneVersion.V2
+            dune=self.dune, period=period, dune_version=DuneVersion.V2
         )
 
     def test_similar_slippage_cached_results_one_day(self):

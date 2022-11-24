@@ -1,8 +1,6 @@
 from enum import Enum
-from typing import Any
 
 import psycopg2
-from duneapi.api import DuneAPI
 from duneapi.types import DuneQuery
 from psycopg2._psycopg import connection, cursor
 from psycopg2.extras import RealDictCursor, RealDictRow
@@ -21,7 +19,9 @@ class DBRouter:
         if self.route == ConnectionType.LOCAL:
             self.conn, self.cur = connect_and_populate_db()
         elif self.route == ConnectionType.REMOTE:
-            self.dune = DuneAPI.new_from_environment()
+            # TODO - Change DB setup to use Hive instead of postgres.
+            #  I don't believe this code path is currently used
+            NotImplemented
         else:
             raise ValueError("Must provide valid connection type")
 
@@ -30,7 +30,7 @@ class DBRouter:
         if self.route == ConnectionType.LOCAL:
             return execute_dune_query(query, self.cur)
         elif self.route == ConnectionType.REMOTE:
-            return self.dune.fetch(query)
+            NotImplemented
 
     def close(self):
         if self.route == ConnectionType.LOCAL:
