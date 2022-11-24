@@ -13,16 +13,20 @@ from src.queries import DuneVersion
 
 class TestQueryMigration(unittest.TestCase):
     def setUp(self) -> None:
-        self.dune_v1 = DuneAPI("", "")
-        self.dune_v2 = DuneClient(os.environ["DUNE_API_KEY"])
+        dune_v1 = DuneAPI("", "")
+        self.dune = DuneClient(os.environ["DUNE_API_KEY"])
+        period = AccountingPeriod("2022-11-01", length_days=7)
+        self.v1_fetcher = DuneFetcher(
+            dune_v1, dune=self.dune, period=period, dune_version=DuneVersion.V1
+        )
+        self.v2_fetcher = DuneFetcher(
+            dune_v1, dune=self.dune, period=period, dune_version=DuneVersion.V2
+        )
 
     def test_similar_slippage_cached_results_one_day(self):
-        period = AccountingPeriod("2022-11-01", length_days=1)
-        dune_v1 = self.dune_v1
-        dune = self.dune_v2
         # These results expire at 2024-11-22
-        v1_result = dune.get_result("01GJJBP5E0CE4XM8FJ7KBVB8KW")
-        v2_result = dune.get_result("01GJJBNWMZNTTB6VQCFZMK7JCN")
+        v1_result = self.dune.get_result("01GJJBP5E0CE4XM8FJ7KBVB8KW")
+        v2_result = self.dune.get_result("01GJJBNWMZNTTB6VQCFZMK7JCN")
         print(v1_result)
         print(v2_result)
 
@@ -50,15 +54,9 @@ class TestQueryMigration(unittest.TestCase):
         reason="This test takes FOREVER (~8m) to run, use the Cached version above."
     )
     def test_similar_slippage_for_period(self):
-        period = AccountingPeriod("2022-11-01", length_days=1)
-        dune_v1 = self.dune_v1
-        dune = self.dune_v2
-
-        v1_fetcher = DuneFetcher(dune_v1, dune, period, dune_version=DuneVersion.V1)
-        v2_fetcher = DuneFetcher(dune_v1, dune, period, dune_version=DuneVersion.V2)
         # Takes about 2-3 minutes each. Could be parallelized!
-        v1_slippage = v1_fetcher.get_period_slippage()
-        v2_slippage = v2_fetcher.get_period_slippage()
+        v1_slippage = self.v1_fetcher.get_period_slippage()
+        v2_slippage = self.v2_fetcher.get_period_slippage()
         # Cached Results available at
         # V1: 01GJJD92TNQE0476SSWP2EMC34
         # V2: 01GJJDAZFKMNP7KKZWFWQKY05S
@@ -74,6 +72,12 @@ class TestQueryMigration(unittest.TestCase):
             v2_slippage.sum_positive() / 10**18,
             delta,
         )
+
+    def test_identical_vouch_registry(self):
+        v1_vouches = self.v1_fetcher.get_vouches()
+        v2_vouches = self.v2_fetcher.get_vouches()
+
+        self.assertEqual(v1_vouches, v2_vouches)
 
 
 if __name__ == "__main__":
