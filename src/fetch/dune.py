@@ -2,7 +2,7 @@
 import pandas as pd
 from dune_client.client import DuneClient
 from dune_client.query import Query
-from dune_client.types import QueryParameter, Address
+from dune_client.types import QueryParameter, Address, DuneRecord
 
 from src.fetch.cow_rewards import aggregate_orderbook_rewards
 from src.fetch.token_list import get_trusted_tokens
@@ -42,6 +42,10 @@ class DuneFetcher:
         self.period = period
         self.log_saver = PrintStore()
         self.dune_version = dune_version
+        # Already have period set, so we might as well store this upon construction.
+        # This may become an issue when we make the fetchers async;
+        # since python does not allow async constructors
+        self.start_block, self.end_block = self.get_block_interval()
 
     def _period_params(self) -> list[QueryParameter]:
         """Easier access to these parameters."""
@@ -55,11 +59,12 @@ class DuneFetcher:
     def _get_query_results(self, query: Query) -> list[dict[str, str]]:
         """Internally every dune query execution is routed through here."""
         log.info(f"Fetching {query.name} from query: {query}")
-        exec_result = self.dune.refresh(query, ping_frequency=10)
+        exec_result = self.dune.refresh(query, ping_frequency=5)
+        log.info(f"Fetch completed for execution {exec_result.execution_id}")
         # TODO - use a real logger:
         #  https://github.com/cowprotocol/dune-client/issues/34
         if exec_result.result is not None:
-            log.debug(f"Execution result metadata {exec_result.result.metadata}")
+            log.info(f"Execution result metadata {exec_result.result.metadata}")
         else:
             log.warning(f"No execution results found for {exec_result.execution_id}")
         return exec_result.get_rows()
@@ -92,28 +97,35 @@ class DuneFetcher:
         )
         return {row["tx_hash"].lower() for row in results}
 
+    def get_trade_counts(self) -> list[DuneRecord]:
+        """Fetches Trade Counts for Period"""
+        return self._get_query_results(
+            query=self._parameterized_query(
+                query_data=QUERIES["TRADE_COUNT"],
+                params=[
+                    QueryParameter.text_type("start_block", self.start_block),
+                    QueryParameter.text_type("end_block", self.end_block),
+                ],
+            )
+        )
+
     def get_cow_rewards(self) -> list[Transfer]:
         """
         Fetches COW token rewards from orderbook database returning a list of Transfers
         """
-        start_block, end_block = self.get_block_interval()
-        print(f"Fetching CoW Rewards for block interval {start_block}, {end_block}")
-        per_order_df = DualEnvDataframe.get_orderbook_rewards(start_block, end_block)
+        print(
+            f"Fetching CoW Rewards for block interval {self.start_block}, {self.end_block}"
+        )
+        per_order_df = DualEnvDataframe.get_orderbook_rewards(
+            self.start_block, self.end_block
+        )
         cow_rewards_df = aggregate_orderbook_rewards(
             per_order_df,
             risk_free_transactions=self.get_risk_free_batches(),
         )
 
         # Validation of results - using characteristics of results from two sources.
-        trade_counts = self._get_query_results(
-            query=self._parameterized_query(
-                query_data=QUERIES["TRADE_COUNT"],
-                params=[
-                    QueryParameter.text_type("start_block", start_block),
-                    QueryParameter.text_type("end_block", end_block),
-                ],
-            )
-        )
+        trade_counts = self.get_trade_counts()
         # Number of trades per solver retrieved from orderbook agrees ethereum events.
         duplicates = pd.concat(
             [
