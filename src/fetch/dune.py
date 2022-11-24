@@ -3,7 +3,6 @@ import pandas as pd
 from dune_client.client import DuneClient
 from dune_client.query import Query
 from dune_client.types import QueryParameter, Address
-from duneapi.api import DuneAPI
 
 from src.fetch.cow_rewards import aggregate_orderbook_rewards
 from src.fetch.token_list import get_trusted_tokens
@@ -29,19 +28,16 @@ class DuneFetcher:
     for various Dune Queries.
     """
 
-    dune_v1: DuneAPI
     dune: DuneClient
     period: AccountingPeriod
     log_saver: PrintStore
 
     def __init__(
         self,
-        dune_v1: DuneAPI,
         dune: DuneClient,
         period: AccountingPeriod,
         dune_version: DuneVersion = DuneVersion.V1,
     ):
-        self.dune_v1 = dune_v1
         self.dune = dune
         self.period = period
         self.log_saver = PrintStore()
