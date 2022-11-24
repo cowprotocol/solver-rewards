@@ -64,7 +64,7 @@ class DuneFetcher:
         # TODO - use a real logger:
         #  https://github.com/cowprotocol/dune-client/issues/34
         if exec_result.result is not None:
-            log.info(f"Execution result metadata {exec_result.result.metadata}")
+            log.debug(f"Execution result metadata {exec_result.result.metadata}")
         else:
             log.warning(f"No execution results found for {exec_result.execution_id}")
         return exec_result.get_rows()
