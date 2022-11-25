@@ -6,3 +6,4 @@ from gnosis_protocol_v2_ethereum.GPv2Settlement_evt_Trade t
               on t.evt_tx_hash = s.evt_tx_hash
 where t.evt_block_number between {{start_block}} and {{end_block}}
 group by solver
+order by num_trades desc, solver
