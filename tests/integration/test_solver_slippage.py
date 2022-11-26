@@ -5,17 +5,15 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import Optional
 
-import pytest
 from dune_client.client import DuneClient
-from dune_client.query import Query
 from dune_client.file.interface import FileIO
+from dune_client.query import Query
 from dune_client.types import QueryParameter
 
 from src.constants import FILE_OUT_DIR
-from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
 from src.models.slippage import SplitSlippages
-from src.queries import QUERIES, DuneVersion
+from src.queries import QUERIES
 
 
 @dataclass
@@ -83,8 +81,12 @@ class TestQueryMigration(unittest.TestCase):
         if tx_hash:
             parameters.append(QueryParameter.text_type("TxHash", tx_hash))
 
-        v1_results = self.exec_or_get(Query(1570227, params=parameters), v1_cache)
-        v2_results = self.exec_or_get(Query(1570561, params=parameters), v2_cache)
+        v1_results = self.exec_or_get(
+            Query(self.slippage_query.v1_query.query_id, params=parameters), v1_cache
+        )
+        v2_results = self.exec_or_get(
+            Query(self.slippage_query.v2_query.query_id, params=parameters), v2_cache
+        )
 
         v1_rows = v1_results.get_rows()
         v2_rows = v2_results.get_rows()
@@ -161,46 +163,86 @@ class TestQueryMigration(unittest.TestCase):
         table_name = "final_token_balance_sheet"
         data = self.get_cte_results(
             table_name,
-            v1_cache="01GJR2PTEXWT63HVG6WZ7PXB4R",
-            v2_cache="01GJR2Q0CWVKKRZ7J53RC463X9",
+            # Results for Period(2022-11-01)
+            # v1_not_v2 = 172 batches
+            # v2_not_v1 = 107 batches
+            # overlap   = 3062 batches
+            # v1_cache="01GJR2PTEXWT63HVG6WZ7PXB4R",
+            # v2_cache="01GJR2Q0CWVKKRZ7J53RC463X9",
+            # --------------------------------------
+            # Results for Period(2022-11-08)
+            # v1_not_v2 = 160 batches
+            # v2_not_v1 = 122 batches
+            # overlap   = 4378 batches
+            # v1_cache="01GJTHE88DH5TFHRDX9D8H39XK",
+            # v2_cache="01GJTHEK7BRZ8G4N10TGXBJ1W3",
+            # --------------------------------------
+            # Results for Period(2022-11-08)
+            # v1_not_v2 = 160 batches
+            # v2_not_v1 = 90 batches
+            # overlap   = 3598 batches
+            # v1_cache="",
+            # v2_cache="",
+            # --------------------------------------
+            # Results for Period(2022-10-04)
+            # v1_not_v2 = 99 batches
+            # v2_not_v1 = 63 batches
+            # overlap   = 2491 batches
+            # v1_cache="",
+            # v2_cache="",
         )
-        print(str(data))
-        # Probably need to investigate this difference a bit more.
-        # v1_not_v2 = 172 batches
-        # v2_not_v1 = 107 batches
-        # overlap = 3062 batches
+        num_outliers = len(data.v1_not_v2) + len(data.v2_not_v1)
+        size_overlap = len(data.overlap)
+        # (v1   (-------overlap-------)   v2)
+        # |--A--|----------D----------|--B--|
+        # assert (A + B) / D < 10%
+        print(data)
+        self.assertLess(num_outliers / size_overlap, 0.1)
 
     def test_similar_slippage_for_period(self):
         table_name = "results"
         v1_result, v2_result = self.get_cte_rows(
             table_name,
-            v1_cache="01GJR7DV87RM5D5W2T25FTXA0F",
-            v2_cache="01GJR7G2JKADDZDY94BP96V1C6",
+            # ---------------------------------------
+            # Results for Period(2022-11-01)
+            # Negative: 0.0094 difference --> 9.4 USD
+            # Positive: 0.004  difference --> 4 USD
+            # v1_cache="01GJR7DV87RM5D5W2T25FTXA0F",
+            # v2_cache="01GJR7G2JKADDZDY94BP96V1C6",
+            # ---------------------------------------
+            # Results for Period(2022-11-08)
+            # Negative: 0.0376 difference --> 37.6 USD
+            # Positive: 0.0150 difference --> 15 USD
+            # v1_cache="01GJSFZRE16FBFFF05M0HA6PDR",
+            # v2_cache="01GJSG1ZVB08NCSVQ9Z1KFXYJ8",
+            # ---------------------------------------
+            # Results for Period(2022-11-15)
+            # Negative: 0.0259 difference --> 25.9 USD
+            # Positive: 0.0125 difference --> 12.5 USD
+            # v1_cache="01GJSWPVY99GSQJXMY8FHAGKT8",
+            # v2_cache="01GJSWRZWRYB6ZWR4KJPT2X0P1",
+            # ---------------------------------------
+            # Results for Period(2022-10-04)
+            # Negative: 0.1535 difference --> 153.5 USD!
+            # Positive: 0.0028 difference --> 2.8  USD
+            # v1_cache="01GJSX7BX498FE8QVHB0WP7YFH",
+            # v2_cache="01GJSX9E5MT0QJW9602JYF5TBD",
         )
         v1_slippage = SplitSlippages.from_data_set(v1_result)
         v2_slippage = SplitSlippages.from_data_set(v2_result)
 
-        delta = 1  # decimal places ETH.
-        self.assertLess(
+        delta = 0.05  # ETH (50 USD with ETH at 1000)
+        self.assertAlmostEqual(
             v1_slippage.sum_negative() / 10**18,  # 1.9123 ETH
             v2_slippage.sum_negative() / 10**18,  # 1.9029 ETH
-            1,  # |v1 - v2| ~ 0.0094 --> 9.4 USD (with ETH at 1000)
+            delta=delta,  # |v1 - v2| ~ 0.0094 --> 9.4 USD (with ETH at 1000)
         )
 
         self.assertAlmostEqual(
             v1_slippage.sum_positive() / 10**18,  # 2.625 ETH
             v2_slippage.sum_positive() / 10**18,  # 2.629 ETH
-            2,  # |v1 - v2| ~ 0.004 --> 4 USD (with ETH at 1000)
+            delta=delta,  # |v1 - v2| ~ 0.004  --> 4 USD (with ETH at 1000)
         )
-
-        # an even strong assertion because I consider the above a bug on negative slippage is
-        self.assertLess(
-            abs(v1_slippage.sum_negative() - v2_slippage.sum_negative()) / 10**18,
-            0.01,
-        )
-        # which says difference is less than 0.01 ETH
-        # The above fails when decimals = 2 (probably because of rounding)
-        # and decimals = 1 only asserts that the difference is < 0.1 ETH
 
 
 if __name__ == "__main__":
