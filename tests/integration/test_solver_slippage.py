@@ -123,10 +123,6 @@ class TestQueryMigration(unittest.TestCase):
                 f"{table_name} failed at {tx_hash} on\n {data.to_json(tx_hash)}",
             )
 
-    def test_excluded_batches(self):
-        data = self.get_cte_results("excluded_batches")
-        self.assertEqual(len(data.v1), len(data.v2))
-
     def test_incoming_and_outgoing(self):
         # This test demonstrates that records are "essentially" matching up to this table.
         table_name = "incoming_and_outgoing"
@@ -160,8 +156,6 @@ class TestQueryMigration(unittest.TestCase):
                 len(y),
                 f"Failed {table_name} at {tx_hash} on\n {json.dumps(prepped_items)}",
             )
-            # TODO - could also check amounts are ~ equal,
-            #  but we will do this later anyway
 
     def test_final_token_balance_sheet(self):
         table_name = "final_token_balance_sheet"
