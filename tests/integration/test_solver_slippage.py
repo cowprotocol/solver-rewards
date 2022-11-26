@@ -45,6 +45,16 @@ class Comparison:
             overlap=set(v2.keys()).intersection(set(v1.keys())),
         )
 
+    def describe_missing(self):
+        print(
+            json.dumps(
+                {
+                    "V1/V2": {k: self.v1[k] for k in self.v1_not_v2},
+                    "V2/V1": {k: self.v2[k] for k in self.v2_not_v1},
+                }
+            )
+        )
+
     def __str__(self):
         return (
             f"v1_not_v2={len(self.v1_not_v2)}\n"
@@ -130,8 +140,8 @@ class TestQueryMigration(unittest.TestCase):
         table_name = "incoming_and_outgoing"
         data = self.get_cte_results(
             table_name,
-            # v1_cache="01GJR1HKR37V7HRPTRJCDMZBAX",
-            # v2_cache="01GJR1HTNS87RKTV90WKH4TVSC",
+            v1_cache="01GJR1HKR37V7HRPTRJCDMZBAX",
+            v2_cache="01GJR1HTNS87RKTV90WKH4TVSC",
         )
 
         # There are 14 records in missing_v2 for the specified accounting period.
@@ -167,8 +177,8 @@ class TestQueryMigration(unittest.TestCase):
             # v1_not_v2 = 172 batches
             # v2_not_v1 = 107 batches
             # overlap   = 3062 batches
-            # v1_cache="01GJR2PTEXWT63HVG6WZ7PXB4R",
-            # v2_cache="01GJR2Q0CWVKKRZ7J53RC463X9",
+            v1_cache="01GJR2PTEXWT63HVG6WZ7PXB4R",
+            v2_cache="01GJR2Q0CWVKKRZ7J53RC463X9",
             # --------------------------------------
             # Results for Period(2022-11-08)
             # v1_not_v2 = 160 batches
@@ -196,8 +206,9 @@ class TestQueryMigration(unittest.TestCase):
         # (v1   (-------overlap-------)   v2)
         # |--A--|----------D----------|--B--|
         # assert (A + B) / D < 10%
-        print(data)
         self.assertLess(num_outliers / size_overlap, 0.1)
+        print(data)
+        data.describe_missing()
 
     def test_similar_slippage_for_period(self):
         table_name = "results"
@@ -207,8 +218,8 @@ class TestQueryMigration(unittest.TestCase):
             # Results for Period(2022-11-01)
             # Negative: 0.0094 difference --> 9.4 USD
             # Positive: 0.004  difference --> 4 USD
-            # v1_cache="01GJR7DV87RM5D5W2T25FTXA0F",
-            # v2_cache="01GJR7G2JKADDZDY94BP96V1C6",
+            v1_cache="01GJR7DV87RM5D5W2T25FTXA0F",
+            v2_cache="01GJR7G2JKADDZDY94BP96V1C6",
             # ---------------------------------------
             # Results for Period(2022-11-08)
             # Negative: 0.0376 difference --> 37.6 USD
