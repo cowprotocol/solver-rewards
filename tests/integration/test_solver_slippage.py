@@ -174,9 +174,9 @@ class TestQueryMigration(unittest.TestCase):
         )
         print(str(data))
         # Probably need to investigate this difference a bit more.
-        # v1_not_v2 = 172
-        # v2_not_v1 = 107
-        # overlap = 3062
+        # v1_not_v2 = 172 batches
+        # v2_not_v1 = 107 batches
+        # overlap = 3062 batches
 
     def test_similar_slippage_for_period(self):
         table_name = "results"
@@ -189,17 +189,23 @@ class TestQueryMigration(unittest.TestCase):
         v2_slippage = SplitSlippages.from_data_set(v2_result)
 
         delta = 1  # decimal places ETH.
-        self.assertAlmostEqual(
+        self.assertLess(
             v1_slippage.sum_negative() / 10**18,  # 1.9123 ETH
             v2_slippage.sum_negative() / 10**18,  # 1.9029 ETH
-            delta,  # |v1 - v2| ~ 0.0094 --> 9.4 USD (with ETH at 1000)
+            1,  # |v1 - v2| ~ 0.0094 --> 9.4 USD (with ETH at 1000)
         )
 
         self.assertAlmostEqual(
             v1_slippage.sum_positive() / 10**18,  # 2.625 ETH
             v2_slippage.sum_positive() / 10**18,  # 2.629 ETH
-            5,  # |v1 - v2| ~ 0.004 --> 4 USD (with ETH at 1000)
+            2,  # |v1 - v2| ~ 0.004 --> 4 USD (with ETH at 1000)
         )
+
+        # an even strong assertion because I consider the above a bug on negative slippage is
+        self.assertLess(abs(v1_slippage.sum_negative() - v2_slippage.sum_negative()) / 10**18, 0.01)
+        # which says difference is less than 0.01 ETH
+        # The above fails when decimals = 2 (probably because of rounding)
+        # and decimals = 1 only asserts that the difference is < 0.1 ETH
 
 
 if __name__ == "__main__":
