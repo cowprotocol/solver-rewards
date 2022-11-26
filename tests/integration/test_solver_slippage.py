@@ -177,6 +177,8 @@ class TestQueryMigration(unittest.TestCase):
             # v1_not_v2 = 172 batches
             # v2_not_v1 = 107 batches
             # overlap   = 3062 batches
+            # Check out the missing records for this period:
+            # http://jsonblob.com/1046134755808264192
             v1_cache="01GJR2PTEXWT63HVG6WZ7PXB4R",
             v2_cache="01GJR2Q0CWVKKRZ7J53RC463X9",
             # --------------------------------------

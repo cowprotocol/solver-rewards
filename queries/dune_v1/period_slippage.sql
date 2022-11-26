@@ -468,3 +468,4 @@ results as (
         solver_address,
         solver_name
 )
+select * from {{CTE_NAME}}
