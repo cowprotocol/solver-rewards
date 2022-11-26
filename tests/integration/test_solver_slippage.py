@@ -202,7 +202,10 @@ class TestQueryMigration(unittest.TestCase):
         )
 
         # an even strong assertion because I consider the above a bug on negative slippage is
-        self.assertLess(abs(v1_slippage.sum_negative() - v2_slippage.sum_negative()) / 10**18, 0.01)
+        self.assertLess(
+            abs(v1_slippage.sum_negative() - v2_slippage.sum_negative()) / 10**18,
+            0.01,
+        )
         # which says difference is less than 0.01 ETH
         # The above fails when decimals = 2 (probably because of rounding)
         # and decimals = 1 only asserts that the difference is < 0.1 ETH
