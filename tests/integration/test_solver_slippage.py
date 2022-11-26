@@ -97,8 +97,6 @@ class TestQueryMigration(unittest.TestCase):
         v1_cache: Optional[str] = None,
         v2_cache: Optional[str] = None,
     ):
-        # tokens.erc20 broken because of: https://github.com/duneanalytics/spellbook/pull/2083
-        # Had to make query forks.
         v1_rows, v2_rows = self.get_cte_rows(cte_name, tx_hash, v1_cache, v2_cache)
         self.writer.write_csv(v1_rows, f"{cte_name}_{tx_hash}_v1.csv")
         self.writer.write_csv(v2_rows, f"{cte_name}_{tx_hash}_v2.csv")
@@ -124,10 +122,6 @@ class TestQueryMigration(unittest.TestCase):
                 len(y),
                 f"{table_name} failed at {tx_hash} on\n {data.to_json(tx_hash)}",
             )
-
-    def test_excluded_batches(self):
-        data = self.get_cte_results("excluded_batches")
-        self.assertEqual(len(data.v1), len(data.v2))
 
     def test_incoming_and_outgoing(self):
         # This test demonstrates that records are "essentially" matching up to this table.
@@ -162,8 +156,6 @@ class TestQueryMigration(unittest.TestCase):
                 len(y),
                 f"Failed {table_name} at {tx_hash} on\n {json.dumps(prepped_items)}",
             )
-            # TODO - could also check amounts are ~ equal,
-            #  but we will do this later anyway
 
     def test_final_token_balance_sheet(self):
         table_name = "final_token_balance_sheet"
