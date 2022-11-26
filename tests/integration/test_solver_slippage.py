@@ -97,8 +97,6 @@ class TestQueryMigration(unittest.TestCase):
         v1_cache: Optional[str] = None,
         v2_cache: Optional[str] = None,
     ):
-        # tokens.erc20 broken because of: https://github.com/duneanalytics/spellbook/pull/2083
-        # Had to make query forks.
         v1_rows, v2_rows = self.get_cte_rows(cte_name, tx_hash, v1_cache, v2_cache)
         self.writer.write_csv(v1_rows, f"{cte_name}_{tx_hash}_v1.csv")
         self.writer.write_csv(v2_rows, f"{cte_name}_{tx_hash}_v2.csv")
