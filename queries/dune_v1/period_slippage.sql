@@ -453,8 +453,7 @@ results_per_tx as (
         tx_hash
     having
         bool_and(price is not null)
-),
-results as (
+)
     select
         solver_address,
         solver_name,
@@ -467,5 +466,3 @@ results as (
     group by
         solver_address,
         solver_name
-)
-select * from {{CTE_NAME}}
