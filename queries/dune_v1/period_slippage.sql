@@ -107,7 +107,7 @@ batch_transfers as (
 ),
 -- These batches involve a token AXS (Old)
 -- whose transfer function doesn't align with the emitted transfer event.
-exluded_batches as (
+excluded_batches as (
     select tx_hash
     from filtered_trades
     where '\xf5d669627376ebd411e34b98f19c868c8aba5ada'
@@ -139,7 +139,7 @@ incoming_and_outgoing as (
            transfer_type
     from batch_transfers i
              left outer join erc20.tokens t on i.token = t.contract_address
-    where tx_hash not in (select tx_hash from exluded_batches)
+    where tx_hash not in (select tx_hash from excluded_batches)
        -- We exclude settlements that have zero AMM interactions and settle several trades,
        -- as our query is not good enough to handle these cases accurately.
        -- Settlements with dex_swaps = 0 and num_trades = 0 can be handled in the following
