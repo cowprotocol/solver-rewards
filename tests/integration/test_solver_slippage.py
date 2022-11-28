@@ -14,6 +14,7 @@ from src.constants import FILE_OUT_DIR
 from src.models.accounting_period import AccountingPeriod
 from src.models.slippage import SplitSlippages
 from src.queries import QUERIES
+from tests.integration.common import exec_or_get
 
 
 @dataclass
@@ -74,11 +75,6 @@ class TestQueryMigration(unittest.TestCase):
         self.parameters = self.period.as_query_params()
         self.writer = FileIO(FILE_OUT_DIR)
 
-    def exec_or_get(self, query: Query, result_id: Optional[str] = None):
-        if not result_id:
-            return self.dune.refresh(query)
-        return self.dune.get_result(result_id)
-
     def get_cte_rows(
         self,
         cte_name: str,
@@ -91,11 +87,15 @@ class TestQueryMigration(unittest.TestCase):
         if tx_hash:
             parameters.append(QueryParameter.text_type("TxHash", tx_hash))
 
-        v1_results = self.exec_or_get(
-            Query(self.slippage_query.v1_query.query_id, params=parameters), v1_cache
+        v1_results = exec_or_get(
+            self.dune,
+            Query(self.slippage_query.v1_query.query_id, params=parameters),
+            v1_cache,
         )
-        v2_results = self.exec_or_get(
-            Query(self.slippage_query.v2_query.query_id, params=parameters), v2_cache
+        v2_results = exec_or_get(
+            self.dune,
+            Query(self.slippage_query.v2_query.query_id, params=parameters),
+            v2_cache,
         )
 
         v1_rows = v1_results.get_rows()

@@ -1,4 +1,5 @@
 """All Dune related query fetching is defined here in the DuneFetcherClass"""
+
 import pandas as pd
 from dune_client.client import DuneClient
 from dune_client.query import Query
