@@ -1,11 +1,9 @@
--- noinspection SqlNoDataSourceInspectionForFile
-
 with
 filtered_trades as (
     select t.block_time,
            t.tx_hash,
            case
-            when dex_swaps is null
+            when dex_swaps = 0
             -- Estimation made here: https://dune.com/queries/1646084
                 then ((gas_used - 73688 - (70528 * num_trades)) / 90000)::int
                 else dex_swaps
@@ -27,7 +25,6 @@ filtered_trades as (
     and (solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
     and (t.tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
 ),
-
 batchwise_traders as (
     select
         tx_hash,
@@ -67,7 +64,7 @@ other_transfers as (
     select block_time,
           b.tx_hash,
           case
-            when dex_swaps is null
+            when dex_swaps = 0
             -- Estimation made here: https://dune.com/queries/1646084
                 then ((gas_used - 73688 - (70528 * num_trades)) / 90000)::int
                 else dex_swaps
@@ -105,7 +102,7 @@ batch_transfers as (
 ),
 -- These batches involve a token AXS (Old)
 -- whose transfer function doesn't align with the emitted transfer event.
-exluded_batches as (
+excluded_batches as (
     select tx_hash from filtered_trades
     where '0xf5d669627376ebd411e34b98f19c868c8aba5ada' in (buy_token, sell_token)
 ),
@@ -136,13 +133,12 @@ incoming_and_outgoing as (
         left outer join tokens.erc20 t
             on i.token = t.contract_address
             and blockchain = 'ethereum'
-    where
+    where tx_hash not in (select tx_hash from excluded_batches)
       -- We exclude settlements that have zero AMM interactions and settle several trades,
       -- as our query is not good enough to handle these cases accurately.
       -- Settlements with dex_swaps = 0 and num_trades = 0 can be handled in the following
       -- and we want to consider them in order to filter out illegal behaviour
-        (dex_swaps = 0 and num_trades < 2) or dex_swaps > 0
-        and tx_hash not in (select tx_hash from exluded_batches)
+      and ((dex_swaps = 0 and num_trades < 2) or dex_swaps > 0)
 ),
 -- Benchmark takes 3 minuites to get here for ONE DAY interval!
 
@@ -447,7 +443,7 @@ results_per_tx as (
         solver_address,
         sum(token_imbalance_wei * price / pow(10, p.decimals)) as usd_value,
         sum(token_imbalance_wei * price / pow(10, p.decimals) / eth_price) * pow(10, 18) as eth_slippage_wei,
-        tx_hash
+        count(*) as num_entries
     from
         final_token_balance_sheet ftbs
     left join prices p
@@ -462,8 +458,6 @@ results_per_tx as (
     having
         bool_and(price is not null)
 ),
--- Benchmark: 10 minutes for ONE DAY with non-pro account.
--- select * from results_per_tx limit 10
 results as (
     select
         solver_address,
@@ -480,23 +474,4 @@ results as (
         solver_address,
         solver_name
 )
-select * from results
-
--- -- select
--- --     block_time,
--- --     rpt.solver_name,
--- --     concat('<a href="https://dune.com/queries/663231?TxHash=', concat('0x', encode(rpt.tx_hash, 'hex')), '" target="_blank">link</a>') as token_breakdown,
--- --     concat('0x', encode(rpt.tx_hash, 'hex')) as tx_hash,
--- --     usd_value,
--- --     batch_value,
--- --     100 * usd_value / batch_value as relative_slippage
--- -- from results_per_tx rpt
--- -- join gnosis_protocol_v2."batches" b
--- --     on rpt.tx_hash = b.tx_hash
--- -- where (
--- --     abs(usd_value) > '{{MinAbsoluteSlippageTolerance}}'
--- --     and
--- --     100.0 * abs(usd_value) / batch_value > '{{RelativeSlippageTolerance}}'
--- -- ) or
--- --     abs(usd_value) > '{{SignificantSlippageValue}}'
--- -- order by relative_slippage
+select * from {{CTE_NAME}}
