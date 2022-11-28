@@ -33,7 +33,7 @@ class TestTransactionPost(unittest.TestCase):
         post_multisend(
             safe_address=Web3().toChecksumAddress(self.test_safe),
             network=EthereumNetwork.GOERLI,
-            transfers=[
+            transactions=[
                 token_transfer.as_multisend_tx(),
                 native_transfer.as_multisend_tx(),
             ],
