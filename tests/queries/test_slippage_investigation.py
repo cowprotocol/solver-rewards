@@ -49,6 +49,7 @@ class TestDuneAnalytics(unittest.TestCase):
                 # Default values (on the query definition) do not need to be provided!
                 # QueryParameter.text_type("TxHash", "0x")
                 # QueryParameter.text_type("Solver", "0x")
+                # QueryParameter.text_type("TokenList", ",".join(get_trusted_tokens())),
                 QueryParameter.text_type("CTE_NAME", "results_per_tx")
             ],
             dune_version=DuneVersion.V2,
