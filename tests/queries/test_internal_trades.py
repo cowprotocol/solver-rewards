@@ -1,28 +1,17 @@
 from __future__ import annotations
 
+import os
 import unittest
 from dataclasses import dataclass
 from enum import Enum
-from dune_client.types import Address
-from duneapi.types import DuneQuery, QueryParameter, Network
-from duneapi.util import open_query
+from typing import Optional
 
-from src.fetch.token_list import get_trusted_tokens
+from dune_client.client import DuneClient
+from dune_client.types import Address, QueryParameter
+
 from src.models.accounting_period import AccountingPeriod
-from src.utils.query_file import query_file
-from tests.db.pg_client import ConnectionType, DBRouter
-
-
-SELECT_INTERNAL_TRANSFERS = """
-select block_time,
-       CONCAT('0x', ENCODE(tx_hash, 'hex')) as tx_hash,
-       solver_address,
-       solver_name,
-       CONCAT('0x', ENCODE(token, 'hex'))   as token,
-       amount,
-       transfer_type
-from incoming_and_outgoing_with_buffer_trades
-"""
+from src.queries import QUERIES, DuneVersion
+from tests.integration.common import exec_or_get
 
 
 class TransferType(Enum):
@@ -51,7 +40,7 @@ class InternalTransfer:
 
     transfer_type: TransferType
     token: Address
-    amount: int
+    amount: float
 
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> InternalTransfer:
@@ -59,7 +48,7 @@ class InternalTransfer:
         return cls(
             transfer_type=TransferType.from_str(obj["transfer_type"]),
             token=Address(obj["token"]),
-            amount=int(obj["amount"]),
+            amount=float(obj["amount"]),
         )
 
     @staticmethod
@@ -78,48 +67,44 @@ class InternalTransfer:
 def token_slippage(
     token_str: str,
     internal_trade_list: list[InternalTransfer],
-) -> int:
+) -> float:
     return sum(a.amount for a in internal_trade_list if a.token == Address(token_str))
 
 
 class TestInternalTrades(unittest.TestCase):
     def setUp(self) -> None:
-        self.dune = DBRouter(ConnectionType.LOCAL)
+        # We used to use this local postgres instance.
+        # self.dune = DBRouter(ConnectionType.LOCAL)
+        self.dune = DuneClient(os.environ["DUNE_API_KEY"])
+
         self.period = AccountingPeriod("2022-03-01", length_days=10)
+        self.slippage_query = QUERIES["PERIOD_SLIPPAGE"]
 
-    def tearDown(self) -> None:
-        self.dune.close()
+    # def tearDown(self) -> None:
+    #     self.dune.close()
 
-    def get_internal_transfers(self, tx_hash: str) -> list[InternalTransfer]:
-        raw_sql = "\n".join(
-            [
-                open_query(query_file("dune_v1/period_slippage.sql")),
-                SELECT_INTERNAL_TRANSFERS,
-            ]
-        )
-        query = DuneQuery(
-            # TODO - this field should be renamed to `query_template`.
-            #  `raw_sql` should be constructed from template and parameters
-            #  as in `fill_parameterized_query`. This is a task for duneapi:
-            # https://github.com/bh2smith/duneapi/issues/46
-            raw_sql=raw_sql,
-            network=Network.MAINNET,
-            name="Internal Token Transfer Accounting",
-            parameters=[
+    def get_internal_transfers(
+        self, tx_hash: str, result_id: Optional[str] = None
+    ) -> list[InternalTransfer]:
+        query = self.slippage_query.with_params(
+            self.period.as_query_params()
+            + [
+                # Default values (on the query definition) do not need to be provided!
                 QueryParameter.text_type("TxHash", tx_hash),
-                QueryParameter.date_type("StartTime", self.period.start),
-                QueryParameter.date_type("EndTime", self.period.end),
-                QueryParameter.text_type("TokenList", ",".join(get_trusted_tokens())),
+                # QueryParameter.text_type("Solver", "0x")
+                QueryParameter.text_type(
+                    "CTE_NAME", "incoming_and_outgoing_with_buffer_trades"
+                ),
             ],
-            # These are irrelevant here.
-            description="",
-            query_id=-1,
+            dune_version=DuneVersion.V2,
         )
-        data_set = self.dune.fetch(query)
+        data_set = exec_or_get(self.dune, query, result_id).get_rows()
         return [InternalTransfer.from_dict(row) for row in data_set]
 
-    def internal_trades_for_tx(self, tx_hash: str) -> list[InternalTransfer]:
-        internal_transfers = self.get_internal_transfers(tx_hash)
+    def internal_trades_for_tx(
+        self, tx_hash: str, result_id: Optional[str] = None
+    ) -> list[InternalTransfer]:
+        internal_transfers = self.get_internal_transfers(tx_hash, result_id)
         return InternalTransfer.internal_trades(internal_transfers)
 
     def test_one_buffer_trade(self):
@@ -128,16 +113,17 @@ class TestInternalTrades(unittest.TestCase):
         This transaction has 1 buffer trade wNXM for Ether
         """
         internal_transfers = self.get_internal_transfers(
-            "0xd6b85ada980d10a11a5b6989c72e0232015ce16e7331524b38180b85f1aea6c8"
+            "0xd6b85ada980d10a11a5b6989c72e0232015ce16e7331524b38180b85f1aea6c8",
+            result_id="01GJXD0NK4AWS2ZVGWFDR5SXHX",
         )
         internal_trades = InternalTransfer.internal_trades(internal_transfers)
         self.assertEqual(1 * 2, len(internal_trades))
         # We had 0.91 USDT positive slippage
         self.assertEqual(
+            916698,
             token_slippage(
                 "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", internal_transfers
             ),
-            916698,
         )
 
     def test_one_buffer_trade_with_big_deviation_from_clearing_prices(self):
@@ -151,6 +137,7 @@ class TestInternalTrades(unittest.TestCase):
         """
         internal_trades = self.internal_trades_for_tx(
             "0x9a318d1abd997bcf8afed55b2946a7b1bd919d227f094cdcc99d8d6155808d7c",
+            result_id="01GJXDCT8JY04FAZZC31K1ZKJM",
         )
         self.assertEqual(len(internal_trades), 1 * 2)
 
@@ -159,14 +146,15 @@ class TestInternalTrades(unittest.TestCase):
     ):
         """
         tx: 0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7
-        In this transaction, the solver sells too much USDC and buys to much ETH.
+        In this transaction, the solver sells too much USDC and buys too much ETH.
         These trades could be seen as buffer trades, but they should not:
         These kinds of trades can drain the buffers over time, as the prices of trading
         includes the AMM fees and hence are unfavourable for the buffers. Also, they are avoidable
         by using buyOrder on the AMMs.
         """
         internal_trades = self.internal_trades_for_tx(
-            "0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7"
+            "0x63e234a1a0d657f5725817f8d829c4e14d8194fdc49b5bc09322179ff99619e7",
+            result_id="01GJXDG7WT3B6S3RTJFT13166Y",
         )
         self.assertEqual(len(internal_trades), 0 * 2)
 
@@ -180,14 +168,17 @@ class TestInternalTrades(unittest.TestCase):
         """
         internal_transfers = self.get_internal_transfers(
             "0x0ae4775b0a352f7ba61f5ec301aa6ac4de19b43f90d8a8674b6e5c8116eda96b",
+            result_id="01GJXDQE1X33N6Y9HTR1G2J16Y",
         )
         internal_trades = InternalTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
-        self.assertEqual(
+        self.assertAlmostEqual(
             token_slippage(
                 "0x6B175474E89094C44Da98b954EedeAC495271d0F", internal_transfers
-            ),
-            4494166090057377749,
+            )
+            / 10**18,
+            4494166090057377749 / 10**18,
+            places=12,
         )
 
     def test_does_recognize_slippage_due_to_buffer_token_list(self):
@@ -199,14 +190,16 @@ class TestInternalTrades(unittest.TestCase):
         """
         internal_transfers = self.get_internal_transfers(
             "0x0bd527494e8efbf4c3013d1e355976ed90fa4e3b79d1f2c2a2690b02baae4abe",
+            result_id="01GJXDJ57JTGCCPN6FDKK4Y41N",
         )
         internal_trades = InternalTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
         self.assertEqual(
             token_slippage(
                 "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2", internal_transfers
-            ),
-            -678305196269132000,
+            )
+            / 10**18,
+            -678305196269132000 / 10**18,
         )
 
     def test_zero_buffer_trade(self):
@@ -217,6 +210,7 @@ class TestInternalTrades(unittest.TestCase):
         """
         internal_trades = self.internal_trades_for_tx(
             "0x31ab7acdadc65944a3f9507793ba9c3c58a1add35de338aa840ac951a24dc5bc",
+            result_id="01GJXDXWYSBW982X26WTV6HZHE",
         )
         self.assertEqual(len(internal_trades), 0 * 2)
 
@@ -227,6 +221,7 @@ class TestInternalTrades(unittest.TestCase):
         """
         internal_transfers = self.get_internal_transfers(
             tx_hash="0x80ae1c6a5224da60a1bf188f2101bd154e29ef71d54d136bfd1f6cc529f9d7ef",
+            result_id="01GJXE1WHP39XXHGPKX4NMW12N",
         )
         internal_trades = InternalTransfer.internal_trades(internal_transfers)
 
@@ -252,15 +247,19 @@ class TestInternalTrades(unittest.TestCase):
         """
         internal_transfers = self.get_internal_transfers(
             tx_hash="0x1b4a299bfd2bb97e2289260495f566b750b9b62856b061f31d5186ae3b5ddce7",
+            result_id="01GJXE3S8VS6GBB21YZST2Z9HY",
         )
         internal_trades = InternalTransfer.internal_trades(internal_transfers)
 
         self.assertEqual(len(internal_trades), 0 * 2)
-        self.assertEqual(
-            token_slippage(
-                "0xDd1Ad9A21Ce722C151A836373baBe42c868cE9a4", internal_transfers
+        self.assertAlmostEqual(
+            int(
+                token_slippage(
+                    "0xDd1Ad9A21Ce722C151A836373baBe42c868cE9a4", internal_transfers
+                )
             ),
             3262425415624260124672,
+            delta=10**6,
         )
         self.assertEqual(
             token_slippage(
@@ -277,6 +276,7 @@ class TestInternalTrades(unittest.TestCase):
         """
         internal_trades = self.internal_trades_for_tx(
             "0x20ae31d11dba93d372ecf9d0cb387ea446e88572ce2d3d8e3d410871cfe6ec49",
+            result_id="01GJXEA4VFPSAJHQGNXYN3BKKF",
         )
         self.assertEqual(len(internal_trades), 1 * 2)
 
@@ -287,13 +287,15 @@ class TestInternalTrades(unittest.TestCase):
         """
         internal_transfers = self.get_internal_transfers(
             tx_hash="0x703474ed43faadc35364254e4f9448e275c7cfe9cf60beddbdd68a462bf7f433",
+            result_id="01GJXECYGGT3TMA95F91SB9VM3",
         )
         # We lost 58 UST dollars:
-        self.assertEqual(
+        self.assertAlmostEqual(
             token_slippage(
                 "0xa47c8bf37f92aBed4A126BDA807A7b7498661acD", internal_transfers
             ),
             -57980197374074949357,
+            delta=10**9,
         )
         internal_trades = InternalTransfer.internal_trades(internal_transfers)
         self.assertEqual(len(internal_trades), 0 * 2)
@@ -308,7 +310,8 @@ class TestInternalTrades(unittest.TestCase):
          0x31ab7acdadc65944a3f9507793ba9c3c58a1add35de338aa840ac951a24dc5bc
         """
         internal_trades = self.internal_trades_for_tx(
-            "0x07e91a80955eac0ea2292efe13fa694aea9ba5ae575ced8532e61d5e4806e8b4",
+            tx_hash="0x07e91a80955eac0ea2292efe13fa694aea9ba5ae575ced8532e61d5e4806e8b4",
+            result_id="01GJXEKT30Y3Z569EEP2W9D50X",
         )
         self.assertEqual(len(internal_trades), 0 * 2)
 
@@ -320,6 +323,7 @@ class TestInternalTrades(unittest.TestCase):
         """
         internal_transfers = self.get_internal_transfers(
             tx_hash="0x007a8534959a027c81f20c32dc3572f47cb7f19043d4a8d1e44379f363cb4c0f",
+            result_id="01GJXEN4R97NDV72QQ8C986HK7",
         )
         self.assertEqual(
             token_slippage(
@@ -341,7 +345,8 @@ class TestInternalTrades(unittest.TestCase):
         """
         self.assertEqual(
             self.get_internal_transfers(
-                "0x5d74fde18840e02a0ca49cd3caff37b4c9b4b20c254692a629d75d93b5d69f89",
+                tx_hash="0x5d74fde18840e02a0ca49cd3caff37b4c9b4b20c254692a629d75d93b5d69f89",
+                result_id="01GJXEP6DPVD7BGY3HKW23PPHB",
             ),
             [],
         )
