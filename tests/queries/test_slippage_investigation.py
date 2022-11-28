@@ -2,6 +2,7 @@ import os
 import unittest
 from pprint import pprint
 
+import pytest
 from dune_client.client import DuneClient
 from dune_client.types import QueryParameter
 
@@ -16,7 +17,9 @@ class TestDuneAnalytics(unittest.TestCase):
         self.dune = DuneClient(os.environ["DUNE_API_KEY"])
         self.slippage_query = QUERIES["PERIOD_SLIPPAGE"]
 
-    # @pytest.skip(reason="This takes a while to run and should probably be avoided without local testing.")
+    @pytest.mark.skip(
+        reason="This takes a while to run and should probably be avoided without local testing."
+    )
     def test_no_solver_has_huge_slippage_values(self):
         """
         This test makes sure that no solver had big slippage (bigger than 2 ETH).
