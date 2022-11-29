@@ -37,7 +37,7 @@ class DuneFetcher:
         self,
         dune: DuneClient,
         period: AccountingPeriod,
-        dune_version: DuneVersion = DuneVersion.V1,
+        dune_version: DuneVersion = DuneVersion.V2,
     ):
         self.dune = dune
         self.period = period
