@@ -10,8 +10,6 @@ from enum import Enum
 from dune_client.query import Query
 from dune_client.types import QueryParameter
 
-from src.utils.query_file import dashboard_file
-
 
 class DuneVersion(Enum):
     """Dune Version Identifier"""
