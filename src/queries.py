@@ -10,8 +10,6 @@ from enum import Enum
 from dune_client.query import Query
 from dune_client.types import QueryParameter
 
-from src.utils.query_file import dashboard_file
-
 
 class DuneVersion(Enum):
     """Dune Version Identifier"""
@@ -35,7 +33,7 @@ class QueryData:
         self.v2_query = Query(v2_id, name)
 
     def with_params(
-        self, params: list[QueryParameter], dune_version: DuneVersion = DuneVersion.V1
+        self, params: list[QueryParameter], dune_version: DuneVersion = DuneVersion.V2
     ) -> Query:
         """
         Copies the query and adds parameters to it, returning the copy.
@@ -82,9 +80,9 @@ QUERIES = {
     ),
     "PERIOD_TOTALS": QueryData(
         name="Accounting Period Totals",
-        filepath=dashboard_file("period-totals.sql"),
-        v1_id=448457,
-        v2_id=-1,  # Not implemented
+        filepath="period_totals.sql",
+        v1_id=1687752,
+        v2_id=1687870,
     ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",

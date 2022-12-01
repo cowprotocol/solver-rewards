@@ -36,13 +36,13 @@ class AccountingPeriod:
 
     def dashboard_url(self) -> str:
         """Constructs Solver Accounting Dashboard URL for Period"""
-        base = "https://dune.com/gnosis.protocol/"
-        slug = "solver-rewards-accounting-v2"
+        base = "https://dune.com/bh2smith/"
+        slug = "cow-solver-rewards"
         query = f"?StartTime={self.start}&EndTime={self.end}"
         return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
     def unusual_slippage_url(self) -> str:
         """Returns a link to unusual slippage query for period"""
-        base = "https://dune.com/queries/645559"
+        base = "https://dune.com/queries/1688044"
         query = f"?StartTime={self.start}&EndTime={self.end}"
         return base + urllib.parse.quote_plus(query, safe="=&?")
