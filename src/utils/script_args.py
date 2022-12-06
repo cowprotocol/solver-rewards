@@ -8,6 +8,7 @@ from dune_client.client import DuneClient
 
 from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
+from src.queries import DuneVersion
 
 
 def previous_tuesday(day: date = date.today()) -> date:
@@ -51,6 +52,13 @@ def generic_script_init(description: str) -> ScriptArgs:
         default=False,
     )
     parser.add_argument(
+        "--dune-version",
+        type=DuneVersion,
+        help="Which Dune Client version to use (legacy or official)",
+        default=DuneVersion.V2,
+        choices=list(DuneVersion),
+    )
+    parser.add_argument(
         "--dry-run",
         type=bool,
         help="Flag indicating whether script should not post alerts or transactions. "
@@ -63,6 +71,7 @@ def generic_script_init(description: str) -> ScriptArgs:
         dune=DuneFetcher(
             dune=DuneClient(os.environ["DUNE_API_KEY"]),
             period=AccountingPeriod(args.start),
+            dune_version=args.dune_version,
         ),
         post_tx=args.post_tx,
         dry_run=args.dry_run,
