@@ -37,6 +37,7 @@ class OrderRewards:
     solver: str
     tx_hash: str
     order_uid: str
+    surplus_fee: int
     amount: float
     safe_liquidity: Optional[bool]
 
@@ -48,6 +49,7 @@ class OrderRewards:
                 solver=row["solver"],
                 tx_hash=row["tx_hash"],
                 order_uid=row["order_uid"],
+                surplus_fee=int(row["surplus_fee"]),
                 amount=float(row["amount"]),
                 safe_liquidity=row["safe_liquidity"],
             )
@@ -59,7 +61,7 @@ class OrderRewards:
             map(pg_hex2bytea, [self.solver, self.tx_hash, self.order_uid])
         )
         safe = self.safe_liquidity if self.safe_liquidity is not None else "Null"
-        return f"('{order_id}','{solver}','{tx_hash}',{self.amount},{safe})"
+        return f"('{order_id}','{solver}','{tx_hash}', {self.surplus_fee},{self.amount},{safe})"
 
 
 def fetch_and_push_order_rewards(dune: DuneAPI, env: Environment) -> None:
