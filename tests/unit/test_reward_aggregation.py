@@ -53,6 +53,7 @@ class MyTestCase(unittest.TestCase):
             "0x007",
         ]
         amounts = [39, 0, 40, 0, 41, 50, 60, 70, 40, 50, 0]
+        surplus_fees = [None] * len(amounts)
         safe_liquidity = [
             None,
             True,
@@ -70,6 +71,7 @@ class MyTestCase(unittest.TestCase):
             {
                 "solver": solvers,
                 "tx_hash": tx_hashes,
+                "surplus_fee": surplus_fees,
                 "amount": amounts,
                 "safe_liquidity": safe_liquidity,
             }
@@ -111,6 +113,7 @@ class MyTestCase(unittest.TestCase):
             {
                 "solver": [""] * 7,
                 "tx_hash": ["t1", "t2", "t3", "t3", "t4", "t4", "t5"],
+                "surplus_fee": [None] * 7,
                 "amount": [0] * 7,
                 "safe_liquidity": [True, False, False, True, False, False, None],
             }

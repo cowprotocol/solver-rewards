@@ -18,7 +18,7 @@ class TestGetBlockNumber(unittest.TestCase):
 
     def test_get_block_number(self):
         self.fetcher.period = AccountingPeriod("1970-01-01")  # Before Time
-        self.assertEqual(self.fetcher.get_block_interval(), ("0", "0"))
+        self.assertEqual(self.fetcher.get_block_interval(), ("None", "None"))
 
         self.fetcher.period = AccountingPeriod(
             "2015-07-30", length_days=1
