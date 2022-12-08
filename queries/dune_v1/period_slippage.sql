@@ -11,11 +11,14 @@ filtered_trades as (
            receiver                                              as trader_out,
            sell_token_address                                    as "sellToken",
            buy_token_address                                     as "buyToken",
-           atoms_sold                                            as "sellAmount",
+           atoms_sold - coalesce(surplus_fee, 0)                 as "sellAmount",
            atoms_bought                                          as "buyAmount",
            '\x9008D19f58AAbD9eD0D60971565AA8510560ab41' :: bytea as contract_address
     from gnosis_protocol_v2."trades" t
              join gnosis_protocol_v2."batches" b on t.tx_hash = b.tx_hash
+    left outer join dune_user_generated.cow_order_rewards_test f
+        on f.tx_hash = t.tx_hash
+        and f.order_uid = t.order_uid
     where b.block_time between '{{StartTime}}'
         and '{{EndTime}}'
       and case
