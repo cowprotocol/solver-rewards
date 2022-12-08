@@ -14,8 +14,16 @@ from dune_client.types import QueryParameter
 class DuneVersion(Enum):
     """Dune Version Identifier"""
 
-    V1 = 1
-    V2 = 2
+    V1 = "1"
+    V2 = "2"
+
+    @staticmethod
+    def from_string(version_str: str) -> DuneVersion:
+        """Constructor of Dune version from string"""
+        try:
+            return DuneVersion[version_str]
+        except KeyError as err:
+            raise ValueError(f"Invalid DuneVersion string {version_str}") from err
 
 
 @dataclass
