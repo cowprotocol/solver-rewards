@@ -16,7 +16,7 @@ filtered_trades as (
            case
                 when receiver = '0x0000000000000000000000000000000000000000'
                 then trader
-            else receiver end                                    as trader_out,
+            else receiver end                                  as trader_out,
            sell_token_address                                  as sell_token,
            buy_token_address                                   as buy_token,
            atoms_sold,
