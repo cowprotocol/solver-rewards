@@ -78,11 +78,14 @@ class TestQueryMigration(unittest.TestCase):
     def get_cte_rows(
         self,
         cte_name: str,
+        period: Optional[AccountingPeriod] = None,
         tx_hash: Optional[str] = None,
         v1_cache: Optional[str] = None,
         v2_cache: Optional[str] = None,
     ):
-        parameters = self.period.as_query_params()
+        parameters = (
+            self.period.as_query_params() if not period else period.as_query_params()
+        )
         parameters.append(QueryParameter.enum_type("CTE_NAME", cte_name))
         if tx_hash:
             parameters.append(QueryParameter.text_type("TxHash", tx_hash))
@@ -256,6 +259,45 @@ class TestQueryMigration(unittest.TestCase):
             v2_slippage.sum_positive() / 10**18,  # 2.629 ETH
             delta=delta,  # |v1 - v2| ~ 0.004  --> 4 USD (with ETH at 1000)
         )
+
+    def test_limit_order_slippage(self):
+        """This is an internal buffer trade containing a limit order (with a surplus_fee)"""
+        table_name = "incoming_and_outgoing"
+        v1_result, v2_result = self.get_cte_rows(
+            table_name,
+            period=AccountingPeriod("2022-11-29", 1),
+            tx_hash="0xfe4589525c1ed764273fbca9120b0e5f7f101d5d4996939ead95a50312f4d8b3",
+            v1_cache="01GKS1X2Y18ECYRRJPCSGEE57X",
+            v2_cache="01GKS1X8BPMXMD9FQ4T1ER22YW",
+        )
+
+        known_surplus_fee = 1323758338760117
+        # One incoming WETH and outgoing COW
+        self.assertEqual(2, len(v1_result))
+        self.assertEqual(2, len(v2_result))
+        weth_in = 82259811452690960
+        cow_out = -1342108379340087200000
+
+        parsed_v1 = {v["symbol"]: v["amount"] for v in v1_result}
+        parsed_v2 = {v["symbol"]: float(v["amount"]) for v in v2_result}
+
+        expected_tokens = {"WETH", "COW"}
+        self.assertEqual(expected_tokens, set(parsed_v1.keys()))
+        self.assertEqual(expected_tokens, set(parsed_v2.keys()))
+        # Something very weird about these types.
+        # Expected :-1342108379340087200000
+        # Actual   :-1.3421083793400872e+21
+        self.assertAlmostEqual(cow_out, parsed_v1["COW"], places=18)
+        self.assertAlmostEqual(cow_out, parsed_v2["COW"], places=18)
+
+        self.assertAlmostEqual(
+            # 13 WEI difference
+            weth_in - known_surplus_fee,
+            parsed_v1["WETH"],
+            delta=13,
+        )
+        # V2 Query does not yet implement surplus fee.
+        self.assertAlmostEqual(weth_in, parsed_v2["WETH"], places=18)
 
 
 if __name__ == "__main__":

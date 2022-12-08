@@ -87,7 +87,7 @@ QUERIES = {
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
         filepath="period_slippage.sql",
-        v1_id=1570227,
-        v2_id=1570561,
+        v1_id=1728478,
+        v2_id=1729274,
     ),
 }

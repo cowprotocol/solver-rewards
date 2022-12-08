@@ -8,7 +8,11 @@ filtered_trades as (
            solver_name,
            solver_address,
            trader                                                as trader_in,
-           receiver                                              as trader_out,
+           -- Null Receiver: https://dune.com/queries/1729130
+           case
+                when receiver = '\x0000000000000000000000000000000000000000'
+                then trader
+            else receiver end                                    as trader_out,
            sell_token_address                                    as "sellToken",
            buy_token_address                                     as "buyToken",
            atoms_sold - coalesce(surplus_fee, 0)                 as "sellAmount",
