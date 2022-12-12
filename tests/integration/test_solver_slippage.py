@@ -7,14 +7,12 @@ from typing import Optional
 
 from dune_client.client import DuneClient
 from dune_client.file.interface import FileIO
-from dune_client.query import Query
-from dune_client.types import QueryParameter
 
 from src.constants import FILE_OUT_DIR
 from src.models.accounting_period import AccountingPeriod
 from src.models.slippage import SplitSlippages
 from src.queries import QUERIES
-from tests.integration.common import exec_or_get
+from tests.integration.common import get_slippage_cte_rows
 
 
 @dataclass
@@ -75,36 +73,6 @@ class TestQueryMigration(unittest.TestCase):
         self.parameters = self.period.as_query_params()
         self.writer = FileIO(FILE_OUT_DIR)
 
-    def get_cte_rows(
-        self,
-        cte_name: str,
-        period: Optional[AccountingPeriod] = None,
-        tx_hash: Optional[str] = None,
-        v1_cache: Optional[str] = None,
-        v2_cache: Optional[str] = None,
-    ):
-        parameters = (
-            self.period.as_query_params() if not period else period.as_query_params()
-        )
-        parameters.append(QueryParameter.enum_type("CTE_NAME", cte_name))
-        if tx_hash:
-            parameters.append(QueryParameter.text_type("TxHash", tx_hash))
-
-        v1_results = exec_or_get(
-            self.dune,
-            Query(self.slippage_query.v1_query.query_id, params=parameters),
-            v1_cache,
-        )
-        v2_results = exec_or_get(
-            self.dune,
-            Query(self.slippage_query.v2_query.query_id, params=parameters),
-            v2_cache,
-        )
-
-        v1_rows = v1_results.get_rows()
-        v2_rows = v2_results.get_rows()
-        return v1_rows, v2_rows
-
     def get_cte_results(
         self,
         cte_name: str,
@@ -112,15 +80,19 @@ class TestQueryMigration(unittest.TestCase):
         v1_cache: Optional[str] = None,
         v2_cache: Optional[str] = None,
     ):
-        v1_rows, v2_rows = self.get_cte_rows(cte_name, tx_hash, v1_cache, v2_cache)
+        v1_rows, v2_rows = get_slippage_cte_rows(
+            self.dune, cte_name, self.period, tx_hash, v1_cache, v2_cache
+        )
         self.writer.write_csv(v1_rows, f"{cte_name}_{tx_hash}_v1.csv")
         self.writer.write_csv(v2_rows, f"{cte_name}_{tx_hash}_v2.csv")
         return Comparison.from_dune_results(v1_rows, v2_rows)
 
     def test_batch_transfers(self):
         table_name = "batch_transfers"
-        data = self.get_cte_results(
+        data = get_slippage_cte_rows(
+            self.dune,
             table_name,
+            self.period,
             v1_cache="01GJQNSER0PYSMGHMEBDT03805",
             v2_cache="01GJQNSER0PYSMGHMEBDT03805",
         )
@@ -141,8 +113,10 @@ class TestQueryMigration(unittest.TestCase):
     def test_incoming_and_outgoing(self):
         # This test demonstrates that records are "essentially" matching up to this table.
         table_name = "incoming_and_outgoing"
-        data = self.get_cte_results(
+        data = get_slippage_cte_rows(
+            self.dune,
             table_name,
+            self.period,
             v1_cache="01GJR1HKR37V7HRPTRJCDMZBAX",
             v2_cache="01GJR1HTNS87RKTV90WKH4TVSC",
         )
@@ -174,8 +148,10 @@ class TestQueryMigration(unittest.TestCase):
 
     def test_final_token_balance_sheet(self):
         table_name = "final_token_balance_sheet"
-        data = self.get_cte_results(
+        data = get_slippage_cte_rows(
+            self.dune,
             table_name,
+            self.period,
             # Results for Period(2022-11-01)
             # v1_not_v2 = 172 batches
             # v2_not_v1 = 107 batches
@@ -217,8 +193,10 @@ class TestQueryMigration(unittest.TestCase):
 
     def test_similar_slippage_for_period(self):
         table_name = "results"
-        v1_result, v2_result = self.get_cte_rows(
+        v1_result, v2_result = get_slippage_cte_rows(
+            self.dune,
             table_name,
+            self.period,
             # ---------------------------------------
             # Results for Period(2022-11-01)
             # Negative: 0.0094 difference --> 9.4 USD
@@ -263,7 +241,8 @@ class TestQueryMigration(unittest.TestCase):
     def test_limit_order_slippage(self):
         """This is an internal buffer trade containing a limit order (with a surplus_fee)"""
         table_name = "incoming_and_outgoing"
-        v1_result, v2_result = self.get_cte_rows(
+        v1_result, v2_result = get_slippage_cte_rows(
+            self.dune,
             table_name,
             period=AccountingPeriod("2022-11-29", 1),
             tx_hash="0xfe4589525c1ed764273fbca9120b0e5f7f101d5d4996939ead95a50312f4d8b3",
