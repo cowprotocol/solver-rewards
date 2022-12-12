@@ -3,11 +3,7 @@ from pandas import DataFrame
 from web3 import Web3
 
 
-def map_reward(
-    amount: float,
-    risk_free: bool,
-    batch_contains_unsafe_liquidity: bool,
-) -> float:
+def map_reward(amount: float, risk_free: bool) -> float:
     """
     Converts orderbook rewards based on additional information of
     "risk_free" batches and (un)safe liquidity orders.
@@ -15,22 +11,10 @@ def map_reward(
     - liquidity orders are further classified as being safe or unsafe;
         Examples: (unsafe) 0x and just in time orders which carry some revert risk
     """
-    if amount > 0 and risk_free and not batch_contains_unsafe_liquidity:
+    if amount > 0 and risk_free:
         # Risk Free User Orders that are not contained in unsafe batches 37 COW tokens.
         return 37.0
     return amount
-
-
-def unsafe_batches(order_df: DataFrame) -> set[str]:
-    """
-    Filters for tx_hashes corresponding to batches containing "unsafe"
-    liquidity orders. These are identified from the order reward dataframe as
-    entries with amount = 0 and safe_liquidity = False.
-    """
-    liquidity = order_df.loc[order_df["amount"] == 0]
-    liquidity = liquidity.astype({"safe_liquidity": "boolean"})
-    unsafe_liquidity = liquidity.loc[~liquidity["safe_liquidity"]]
-    return set(unsafe_liquidity["tx_hash"])
 
 
 def aggregate_orderbook_rewards(
@@ -42,15 +26,10 @@ def aggregate_orderbook_rewards(
     the results are aggregated by solver as a sum of amounts and additional
     "transfer" related metadata is appended. The aggregated dataframe is returned.
     """
-
-    unsafe_liquidity_batches = unsafe_batches(per_order_df)
-    per_order_df["amount"] = per_order_df[
-        ["amount", "tx_hash", "safe_liquidity"]
-    ].apply(
+    per_order_df["amount"] = per_order_df[["amount", "tx_hash"]].apply(
         lambda x: map_reward(
             amount=x.amount,
             risk_free=x.tx_hash in risk_free_transactions,
-            batch_contains_unsafe_liquidity=x.tx_hash in unsafe_liquidity_batches,
         ),
         axis=1,
     )

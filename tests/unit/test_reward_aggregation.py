@@ -4,11 +4,7 @@ from web3 import Web3
 
 import pandas as pd
 
-from src.fetch.cow_rewards import (
-    aggregate_orderbook_rewards,
-    map_reward,
-    unsafe_batches,
-)
+from src.fetch.cow_rewards import aggregate_orderbook_rewards, map_reward
 
 
 def to_wei(t) -> int:
@@ -54,26 +50,12 @@ class MyTestCase(unittest.TestCase):
         ]
         amounts = [39, 0, 40, 0, 41, 50, 60, 70, 40, 50, 0]
         surplus_fees = [None] * len(amounts)
-        safe_liquidity = [
-            None,
-            True,
-            None,
-            False,
-            None,
-            None,
-            None,
-            None,
-            None,
-            None,
-            True,
-        ]
         orderbook_rewards = pd.DataFrame(
             {
                 "solver": solvers,
                 "tx_hash": tx_hashes,
                 "surplus_fee": surplus_fees,
                 "amount": amounts,
-                "safe_liquidity": safe_liquidity,
             }
         )
         results = aggregate_orderbook_rewards(
@@ -98,28 +80,10 @@ class MyTestCase(unittest.TestCase):
         self.assertIsNone(pd.testing.assert_frame_equal(expected, results))
 
     def test_map_reward(self):
-        self.assertEqual(map_reward(0, True, True), 0)
-        self.assertEqual(map_reward(0, True, False), 0)
-        self.assertEqual(map_reward(0, False, True), 0)
-        self.assertEqual(map_reward(0, False, False), 0)
-
-        self.assertEqual(map_reward(1, True, False), 37)
-        self.assertEqual(map_reward(1, True, True), 1)
-        self.assertEqual(map_reward(1, False, True), 1)
-        self.assertEqual(map_reward(1, False, False), 1)
-
-    def test_unsafe_batches(self):
-        orderbook_rewards = pd.DataFrame(
-            {
-                "solver": [""] * 7,
-                "tx_hash": ["t1", "t2", "t3", "t3", "t4", "t4", "t5"],
-                "surplus_fee": [None] * 7,
-                "amount": [0] * 7,
-                "safe_liquidity": [True, False, False, True, False, False, None],
-            }
-        )
-
-        self.assertEqual(unsafe_batches(orderbook_rewards), {"t2", "t3", "t4"})
+        self.assertEqual(map_reward(0, True), 0)
+        self.assertEqual(map_reward(1, True), 37)
+        self.assertEqual(map_reward(0, False), 0)
+        self.assertEqual(map_reward(1, False), 1)
 
 
 if __name__ == "__main__":
