@@ -17,7 +17,6 @@ as long as the previous pages have not been tampered with.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from duneapi.api import DuneAPI
 from pandas import DataFrame
