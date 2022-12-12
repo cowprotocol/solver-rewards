@@ -66,7 +66,7 @@ class MyTestCase(unittest.TestCase):
             {
                 "receiver": ["0x1", "0x2", "0x3", "0x4"],
                 "num_trades": [3, 3, 2, 3],
-                "amount": [to_wei(87), to_wei(100), to_wei(107), to_wei(74)],
+                "amount": [to_wei(87), to_wei(97), to_wei(107), to_wei(74)],
                 "token_address": [
                     "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB",
                     "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB",
