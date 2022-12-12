@@ -5,11 +5,8 @@ from web3 import Web3
 
 def map_reward(amount: float, risk_free: bool) -> float:
     """
-    Converts orderbook rewards based on additional information of
-    "risk_free" batches and (un)safe liquidity orders.
-    - risk-free are batches contain only user and liquidity orders (i.e. no AMM interactions),
-    - liquidity orders are further classified as being safe or unsafe;
-        Examples: (unsafe) 0x and just in time orders which carry some revert risk
+    Converts orderbook rewards based on additional information of "risk_free" batches
+    - risk-free are batches containing only user and liquidity orders (i.e. no AMM interactions),
     """
     if amount > 0 and risk_free:
         # Risk Free User Orders that are not contained in unsafe batches 37 COW tokens.
