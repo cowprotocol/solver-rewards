@@ -23,14 +23,8 @@ with trade_hashes as (SELECT solver,
 select concat('0x', encode(trade_hashes.order_uid, 'hex')) as order_uid,
        concat('0x', encode(solver, 'hex'))  as solver,
        concat('0x', encode(tx_hash, 'hex')) as tx_hash,
-       coalesce(surplus_fee, 0) as surplus_fee,
-       coalesce(reward, 0.0)                as amount,
-       -- An order is a liquidity order if and only if reward is null.
-       -- A liquidity order is safe if and only if its fee_amount is > 0
-       case
-           when reward is null and fee_amount > 0 then True
-           when reward is null and fee_amount = 0 then False
-           end                              as safe_liquidity
+       coalesce(surplus_fee, 0)             as surplus_fee,
+       coalesce(reward, 0.0)                as amount
 from trade_hashes
          left outer join {{reward_table}} o
                          on trade_hashes.order_uid = o.order_uid
