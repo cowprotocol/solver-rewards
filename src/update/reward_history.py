@@ -57,9 +57,7 @@ class OrderRewards:
         solver, tx_hash, order_id = list(
             map(pg_hex2bytea, [self.solver, self.tx_hash, self.order_uid])
         )
-        return (
-            f"('{order_id}','{solver}','{tx_hash}', {self.surplus_fee},{self.amount})"
-        )
+        return f"('{order_id}','{solver}','{tx_hash}',{self.surplus_fee},{self.amount})"
 
 
 def fetch_and_push_order_rewards(dune: DuneAPI, env: Environment) -> None:

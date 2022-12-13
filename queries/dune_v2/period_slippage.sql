@@ -11,7 +11,12 @@ filtered_trades as (
            num_trades,
            solver_address,
            trader                                              as trader_in,
-           receiver                                            as trader_out,
+           -- Null Receiver: https://dune.com/queries/1729130
+           -- TODO - This could also be fixed in the spellbook!
+           case
+                when receiver = '0x0000000000000000000000000000000000000000'
+                then trader
+            else receiver end                                  as trader_out,
            sell_token_address                                  as sell_token,
            buy_token_address                                   as buy_token,
            atoms_sold,
