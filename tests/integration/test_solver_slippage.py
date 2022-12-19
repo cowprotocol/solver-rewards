@@ -277,9 +277,7 @@ class TestQueryMigration(unittest.TestCase):
         )
         # V2 Query does not yet implement surplus fee.
         self.assertAlmostEqual(
-            weth_in - known_surplus_fee,
-            parsed_v2["WETH"],
-            places=18
+            weth_in - known_surplus_fee, parsed_v2["WETH"], places=18
         )
 
 
