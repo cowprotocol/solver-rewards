@@ -10,7 +10,7 @@ filtered_trades as (
                 else dex_swaps
            end as dex_swaps,
            num_trades,
-           solver_address,
+           b.solver_address,
            trader                                       as trader_in,
            receiver                                     as trader_out,
            sell_token_address                           as sell_token,
@@ -26,7 +26,7 @@ filtered_trades as (
         and f.order_uid = t.order_uid
     where b.block_time between '{{StartTime}}' and '{{EndTime}}'
     and t.block_time between '{{StartTime}}' and '{{EndTime}}'
-    and (solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
+    and (b.solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
     and (t.tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
 ),
 batchwise_traders as (
