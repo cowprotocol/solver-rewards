@@ -1,3 +1,4 @@
+-- Query here: https://dune.com/queries/1777559
 with
 filtered_trades as (
     select t.block_time,
@@ -7,27 +8,25 @@ filtered_trades as (
             -- Estimation made here: https://dune.com/queries/1646084
                 then ((gas_used - 73688 - (70528 * num_trades)) / 90000)::int
                 else dex_swaps
-            end as dex_swaps,
+           end as dex_swaps,
            num_trades,
-           solver_address,
-           trader                                              as trader_in,
-           -- Null Receiver: https://dune.com/queries/1729130
-           -- TODO - This could also be fixed in the spellbook!
-           case
-                when receiver = '0x0000000000000000000000000000000000000000'
-                then trader
-            else receiver end                                  as trader_out,
-           sell_token_address                                  as sell_token,
-           buy_token_address                                   as buy_token,
-           atoms_sold,
+           b.solver_address,
+           trader                                       as trader_in,
+           receiver                                     as trader_out,
+           sell_token_address                           as sell_token,
+           buy_token_address                            as buy_token,
+           atoms_sold - coalesce(surplus_fee, 0)        as atoms_sold,
            atoms_bought,
            '0x9008d19f58aabd9ed0d60971565aa8510560ab41' as contract_address
     from cow_protocol_ethereum.trades t
          join cow_protocol_ethereum.batches b
             on t.tx_hash = b.tx_hash
+    left outer join cow_protocol_ethereum.order_rewards f
+        on f.tx_hash = t.tx_hash
+        and f.order_uid = t.order_uid
     where b.block_time between '{{StartTime}}' and '{{EndTime}}'
     and t.block_time between '{{StartTime}}' and '{{EndTime}}'
-    and (solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
+    and (b.solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
     and (t.tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
 ),
 batchwise_traders as (

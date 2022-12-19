@@ -246,8 +246,8 @@ class TestQueryMigration(unittest.TestCase):
             table_name,
             period=AccountingPeriod("2022-11-29", 1),
             tx_hash="0xfe4589525c1ed764273fbca9120b0e5f7f101d5d4996939ead95a50312f4d8b3",
-            v1_cache="01GKS1X2Y18ECYRRJPCSGEE57X",
-            v2_cache="01GKS1X8BPMXMD9FQ4T1ER22YW",
+            v1_cache="01GMMZWQC8MGGHSPQP2RY9G00G",
+            v2_cache="01GMMZWWW0E28Q78S2K29NMHK0",
         )
 
         known_surplus_fee = 1323758338760117
@@ -276,7 +276,9 @@ class TestQueryMigration(unittest.TestCase):
             delta=13,
         )
         # V2 Query does not yet implement surplus fee.
-        self.assertAlmostEqual(weth_in, parsed_v2["WETH"], places=18)
+        self.assertAlmostEqual(
+            weth_in - known_surplus_fee, parsed_v2["WETH"], places=18
+        )
 
 
 if __name__ == "__main__":
