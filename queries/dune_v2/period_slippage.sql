@@ -21,7 +21,7 @@ filtered_trades as (
     from cow_protocol_ethereum.trades t
          join cow_protocol_ethereum.batches b
             on t.tx_hash = b.tx_hash
-    left outer join cowswap.cow_order_rewards_barn f
+    left outer join cow_protocol_ethereum.order_rewards f
         on f.tx_hash = t.tx_hash
         and f.order_uid = t.order_uid
     where b.block_time between '{{StartTime}}' and '{{EndTime}}'
