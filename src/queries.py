@@ -96,6 +96,6 @@ QUERIES = {
         name="Solver Slippage for Period",
         filepath="period_slippage.sql",
         v1_id=1728478,
-        v2_id=1777559,
+        v2_id=1783854,
     ),
 }
