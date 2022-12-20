@@ -94,6 +94,10 @@ other_transfers as (
       and '0x9008d19f58aabd9ed0d60971565aa8510560ab41' in (to, from)
       and not array_contains(traders_in, from)
       and not array_contains(traders_out, to)
+      and from not in ( -- ETH FLOW ORDERS ARE NOT AMM TRANSFERS!
+          select distinct contract_address
+          from cow_protocol_ethereum.CoWSwapEthFlow_evt_OrderPlacement
+      )
       and (t.evt_tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
       and (solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
 ),
