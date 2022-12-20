@@ -14,6 +14,7 @@ from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
 from src.abis.load import erc20
 from src.models.slippage import SolverSlippage
 from src.models.token import TokenType, Token
+from src.models.vouch import Vouch
 from src.utils.print_store import Category, PrintStore
 
 
@@ -186,3 +187,33 @@ class Transfer:
                 f"amount_wei={self.amount})"
             )
         raise ValueError(f"Invalid Token Type {self.token_type}")
+
+    def redirect_from(
+        self, redirects: dict[Address, Vouch], log_saver: PrintStore
+    ) -> None:
+        """
+        Redirects Transfers via Address => Vouch.redirect_address
+        This function modifies self!
+        """
+        recipient = self.receiver
+        if recipient in redirects:
+            # Redirect COW rewards to reward target specific by VouchRegistry
+            redirect_address = redirects[recipient].reward_target
+            log_saver.print(
+                f"Redirecting {recipient} Transfer of {self.token}"
+                f"({self.amount}) to {redirect_address}",
+                category=Category.REDIRECT,
+            )
+            self.receiver = redirect_address
+
+    @classmethod
+    def from_slippage(cls, slippage: SolverSlippage) -> Transfer:
+        """
+        Slippage is always in ETH, so this converts
+        Slippage into an ETH Transfer with Null token address
+        """
+        return cls(
+            token=None,
+            receiver=slippage.solver_address,
+            amount_wei=slippage.amount_wei,
+        )

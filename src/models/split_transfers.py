@@ -13,10 +13,11 @@ from dune_client.types import Address
 from src.models.vouch import Vouch
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
-from src.models.slippage import SolverSlippage
+from src.models.slippage import SolverSlippage, SplitSlippages
 from src.models.token import TokenType
 from src.models.transfer import Transfer
 from src.fetch.prices import eth_in_token, TokenId, token_in_eth
+from src.utils.dataset import index_by
 from src.utils.print_store import Category, PrintStore
 
 
@@ -71,8 +72,11 @@ class SplitTransfers:
             self.eth_transfers.append(transfer)
         return penalty_total
 
-    def _process_token_transfers(
-        self, cow_redirects: dict[Address, Vouch], log_saver: PrintStore
+    def _process_rewards(
+        self,
+        cow_redirects: dict[Address, Vouch],
+        positive_slippage: list[SolverSlippage],
+        log_saver: PrintStore,
     ) -> None:
         price_day = self.period.end - timedelta(days=1)
         while self.unprocessed_cow:
@@ -99,32 +103,38 @@ class SplitTransfers:
                     # Reinsert since there is still an amount owed.
                     self.overdrafts[solver] = overdraft
                     continue
-            if solver in cow_redirects:
-                # Redirect COW rewards to reward target specific by VouchRegistry
-                redirect_address = cow_redirects[solver].reward_target
-                log_saver.print(
-                    f"Redirecting solver {solver} COW tokens "
-                    f"({transfer.amount}) to {redirect_address}",
-                    category=Category.REDIRECT,
-                )
-                transfer.receiver = redirect_address
+            transfer.redirect_from(cow_redirects, log_saver)
             self.cow_transfers.append(transfer)
+        # We do not need to worry about any controversy between overdraft
+        # and positive slippage adjustments, because positive/negative slippage
+        # is disjoint between solvers.
+        while positive_slippage:
+            slippage_transfer = Transfer.from_slippage(positive_slippage.pop())
+            slippage_transfer.redirect_from(cow_redirects, log_saver)
+            self.eth_transfers.append(slippage_transfer)
 
     def process(
         self,
-        indexed_slippage: dict[Address, SolverSlippage],
+        slippage: SplitSlippages,
         cow_redirects: dict[Address, Vouch],
         log_saver: PrintStore,
     ) -> list[Transfer]:
         """
         This is the public interface to construct the final transfer file based on
-        raw (unpenalized) results, slippage penalty, redirected rewards and overdrafts.
+        raw (unpenalized) results, positive, negative slippage, rewards and overdrafts.
         It is very important that the native token transfers are processed first,
         so that and overdraft from slippage can be carried over and deducted from
         the COW rewards.
         """
-        penalty_total = self._process_native_transfers(indexed_slippage, log_saver)
-        self._process_token_transfers(cow_redirects, log_saver)
+        negative_slippage = index_by(slippage.negative, "solver_address")
+        penalty_total = self._process_native_transfers(negative_slippage, log_saver)
+        # Note that positive and negative slippage is DISJOINT.
+        # So no overdraft computations will overlap with the positive slippage perturbations.
+        self._process_rewards(
+            cow_redirects,
+            positive_slippage=slippage.positive,
+            log_saver=log_saver,
+        )
         log_saver.print(
             f"Total Slippage deducted (ETH): {penalty_total / 10**18}",
             category=Category.TOTALS,

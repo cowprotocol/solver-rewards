@@ -16,7 +16,6 @@ from src.models.transfer import Transfer
 from src.models.vouch import Vouch, RECOGNIZED_BONDING_POOLS, parse_vouches
 from src.pg_client import DualEnvDataframe
 from src.queries import QUERIES, DuneVersion, QueryData
-from src.utils.dataset import index_by
 from src.utils.print_store import PrintStore
 
 log = set_log(__name__)
@@ -199,10 +198,8 @@ class DuneFetcher:
         reimbursements = self.get_eth_spent()
         rewards = self.get_cow_rewards()
         split_transfers = SplitTransfers(self.period, reimbursements + rewards)
-        negative_slippage = self.get_period_slippage().negative
-
         return split_transfers.process(
-            indexed_slippage=index_by(negative_slippage, "solver_address"),
+            slippage=self.get_period_slippage(),
             cow_redirects=self.get_vouches(),
             log_saver=self.log_saver,
         )
