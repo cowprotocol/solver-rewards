@@ -10,9 +10,7 @@ from src.models.accounting_period import AccountingPeriod
 from src.pg_client import DualEnvDataframe
 
 
-def reward_for_tx(
-    df: pd.DataFrame, tx_hash: str, risk_free: bool
-) -> tuple[int, float]:
+def reward_for_tx(df: pd.DataFrame, tx_hash: str, risk_free: bool) -> tuple[int, float]:
     print(df, tx_hash, risk_free)
     batch_subset = df.loc[df["tx_hash"] == tx_hash]
     order_rewards = batch_subset[["amount"]].apply(
@@ -70,7 +68,7 @@ class TestPerBatchRewards(unittest.TestCase):
                 tx_hash,
                 tx_hash in self.risk_free_batches,
             ),
-            (2, 39.51661869443983),
+            (2, 37.0),
         )
 
 
