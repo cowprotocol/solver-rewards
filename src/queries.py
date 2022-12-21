@@ -59,7 +59,7 @@ QUERIES = {
     "TRADE_COUNT": QueryData(
         name="Trade Counts",
         v1_id=1393627,
-        v2_id=1393633,
+        v2_id=1785586,
         filepath="dune_trade_counts.sql",
     ),
     "PERIOD_BLOCK_INTERVAL": QueryData(
@@ -72,7 +72,7 @@ QUERIES = {
         name="Risk Free Batches",
         filepath="risk_free_batches.sql",
         v1_id=1432733,
-        v2_id=1541507,
+        v2_id=1788450,
     ),
     "VOUCH_REGISTRY": QueryData(
         name="Vouch Registry",
