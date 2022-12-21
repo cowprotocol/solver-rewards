@@ -4,19 +4,17 @@ import pandas as pd
 from dotenv import load_dotenv
 from dune_client.client import DuneClient
 
-from src.fetch.cow_rewards import map_reward, unsafe_batches
+from src.fetch.cow_rewards import map_reward
 from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
 from src.pg_client import DualEnvDataframe
 
 
-def reward_for_tx(
-    df: pd.DataFrame, tx_hash: str, risk_free: bool, jit_batch: bool
-) -> tuple[int, float]:
-    print(df, tx_hash, risk_free, jit_batch)
+def reward_for_tx(df: pd.DataFrame, tx_hash: str, risk_free: bool) -> tuple[int, float]:
+    print(df, tx_hash, risk_free)
     batch_subset = df.loc[df["tx_hash"] == tx_hash]
     order_rewards = batch_subset[["amount"]].apply(
-        lambda x: map_reward(x.amount, risk_free, jit_batch),
+        lambda x: map_reward(x.amount, risk_free),
         axis=1,
     )
     return order_rewards.size, order_rewards.sum()
@@ -39,7 +37,6 @@ class TestPerBatchRewards(unittest.TestCase):
 
         self.rewards_df = DualEnvDataframe.get_orderbook_rewards(start_block, end_block)
         self.risk_free_batches = dune.get_risk_free_batches()
-        self.jit_batches = unsafe_batches(self.rewards_df)
 
     def test_buffer_trade(self):
         tx_hash = "0x6b6181e95ae837376dd15adbe7801bffffee639dbc8f18b918ace9645a5c1be2"
@@ -48,7 +45,6 @@ class TestPerBatchRewards(unittest.TestCase):
                 self.rewards_df,
                 tx_hash,
                 tx_hash in self.risk_free_batches,
-                tx_hash in self.jit_batches,
             ),
             (1, 37.0),
         )
@@ -60,7 +56,6 @@ class TestPerBatchRewards(unittest.TestCase):
                 self.rewards_df,
                 tx_hash,
                 tx_hash in self.risk_free_batches,
-                tx_hash in self.jit_batches,
             ),
             (2, 37.0),
         )
@@ -72,9 +67,8 @@ class TestPerBatchRewards(unittest.TestCase):
                 self.rewards_df,
                 tx_hash,
                 tx_hash in self.risk_free_batches,
-                tx_hash in self.jit_batches,
             ),
-            (2, 39.51661869443983),
+            (2, 37.0),
         )
 
 
