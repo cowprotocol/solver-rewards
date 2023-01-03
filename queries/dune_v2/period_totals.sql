@@ -3,7 +3,7 @@ with
 execution_costs as (
     SELECT
         success,
-        sum((gas_used * gas_price)/ pow(10, 18)) as gas_cost_eth
+        sum((gas_price * gas_used) / pow(10, 18)) as gas_cost_eth
     FROM ethereum.transactions as tx
     where block_time between '{{StartTime}}' and '{{EndTime}}'
     AND position('0x13d79a0b' in data) > 0 --! settle method ID
