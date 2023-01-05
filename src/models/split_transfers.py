@@ -53,12 +53,19 @@ class SplitTransfers:
     def _process_native_transfers(
         self, indexed_slippage: dict[Address, SolverSlippage]
     ) -> int:
+        """
+        Draining the `unprocessed_native` (ETH) transfers into processed
+        versions as `eth_transfers`. Processing adjusts for negative slippage by deduction.
+        """
         penalty_total = 0
         while self.unprocessed_native:
             transfer = self.unprocessed_native.pop(0)
             solver = transfer.receiver
             slippage: Optional[SolverSlippage] = indexed_slippage.get(solver)
             if slippage is not None:
+                assert (
+                    slippage.amount_wei < 0
+                ), f"Expected negative slippage! Got {slippage}"
                 try:
                     transfer.add_slippage(slippage, self.log_saver)
                     penalty_total += slippage.amount_wei
@@ -80,7 +87,7 @@ class SplitTransfers:
 
     def _process_rewards(
         self,
-        cow_redirects: dict[Address, Vouch],
+        redirect_map: dict[Address, Vouch],
         positive_slippage: list[SolverSlippage],
     ) -> None:
         price_day = self.period.end - timedelta(days=1)
@@ -108,14 +115,14 @@ class SplitTransfers:
                     # Reinsert since there is still an amount owed.
                     self.overdrafts[solver] = overdraft
                     continue
-            transfer.redirect_to(cow_redirects, self.log_saver)
+            transfer.redirect_to(redirect_map, self.log_saver)
             self.cow_transfers.append(transfer)
         # We do not need to worry about any controversy between overdraft
         # and positive slippage adjustments, because positive/negative slippage
         # is disjoint between solvers.
         while positive_slippage:
             slippage_transfer = Transfer.from_slippage(positive_slippage.pop())
-            slippage_transfer.redirect_to(cow_redirects, self.log_saver)
+            slippage_transfer.redirect_to(redirect_map, self.log_saver)
             self.eth_transfers.append(slippage_transfer)
 
     def process(
@@ -130,8 +137,9 @@ class SplitTransfers:
         so that and overdraft from slippage can be carried over and deducted from
         the COW rewards.
         """
-        negative_slippage = index_by(slippage.negative, "solver_address")
-        penalty_total = self._process_native_transfers(negative_slippage)
+        penalty_total = self._process_native_transfers(
+            indexed_slippage=index_by(slippage.negative, "solver_address")
+        )
         # Note that positive and negative slippage is DISJOINT.
         # So no overdraft computations will overlap with the positive slippage perturbations.
         self._process_rewards(

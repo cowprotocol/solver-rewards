@@ -55,6 +55,9 @@ class Token:
             decimals if decimals is not None else get_token_decimals(web3, address)
         )
 
+    def __repr__(self) -> str:
+        return str(self.address)
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Token):
             return self.address == other.address and self.decimals == other.decimals
