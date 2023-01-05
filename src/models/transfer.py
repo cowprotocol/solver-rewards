@@ -192,7 +192,7 @@ class Transfer:
         self, redirects: dict[Address, Vouch], log_saver: PrintStore
     ) -> None:
         """
-        Redirects Transfers via Address => Vouch.redirect_address
+        Redirects Transfers via Address => Vouch.reward_target
         This function modifies self!
         """
         recipient = self.receiver
