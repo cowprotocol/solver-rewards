@@ -77,17 +77,22 @@ class TestDuneAnalytics(unittest.TestCase):
             period.as_query_params()
             + [
                 # Default values (on the query definition) do not need to be provided!
-                QueryParameter.text_type("TxHash", "0x5c4e410ce5d741f60e06a8621c6f12839ad39273f5abf78d4bbc1cd3b31de46c"),
+                QueryParameter.text_type(
+                    "TxHash",
+                    "0x5c4e410ce5d741f60e06a8621c6f12839ad39273f5abf78d4bbc1cd3b31de46c",
+                ),
                 # QueryParameter.text_type("SolverAddress", "0x97ec0a17432d71a3234ef7173c6b48a2c0940896"),
                 # QueryParameter.text_type("TokenList", ",".join(get_trusted_tokens())),
-                QueryParameter.text_type("CTE_NAME", "results_per_tx")
+                QueryParameter.text_type("CTE_NAME", "results_per_tx"),
             ],
             dune_version=DuneVersion.V2,
         )
         results = exec_or_get(self.dune, query, result_id="01GP11D7FH4WAEFW1Z46Q79VBC")
         tx_slippage = results.get_rows()[0]
         self.assertEqual(tx_slippage["eth_slippage_wei"], 148427839329771300)
-        self.assertAlmostEqual(tx_slippage["usd_value"], 177.37732880251593, delta=0.000000001)
+        self.assertAlmostEqual(
+            tx_slippage["usd_value"], 177.37732880251593, delta=0.000000001
+        )
         # When looking at the pure batch token imbalance:
         # https://dune.com/queries/1380984?TxHash=0x5c4e410ce5d741f60e06a8621c6f12839ad39273f5abf78d4bbc1cd3b31de46c
         # One sees 5 tokens listed. However, this calculation merges ETH/WETH together
