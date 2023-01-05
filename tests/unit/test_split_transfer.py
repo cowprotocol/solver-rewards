@@ -15,6 +15,27 @@ ONE_ETH = 10**18
 
 
 class TestSplitTransfers(unittest.TestCase):
+
+    def construct_split_transfers(self, solvers: list[Address], eth_amounts: list[int], cow_rewards: list[int], ) -> SplitTransfers:
+        eth_transfers = [
+            Transfer(
+                token=None,
+                receiver=solvers[i],
+                amount_wei=eth_amounts[i],
+            )
+            for i in range(len(solvers))
+        ]
+        cow_transfers = [
+            Transfer(
+                token=self.cow_token, receiver=solvers[i], amount_wei=cow_rewards[i]
+            )
+            for i in range(len(solvers))
+        ]
+        return SplitTransfers(
+            self.period,
+            mixed_transfers=eth_transfers + cow_transfers,
+            log_saver=PrintStore(),
+        )
     def setUp(self) -> None:
         self.period = AccountingPeriod("2022-06-14")
         self.solver = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
@@ -117,44 +138,20 @@ class TestSplitTransfers(unittest.TestCase):
             -1 * ONE_ETH,
         ]
 
-        accounting = SplitTransfers(
-            self.period,
-            mixed_transfers=[
-                Transfer(
-                    token=None,
-                    receiver=solvers[0],
-                    amount_wei=eth_amounts[0],
-                ),
-                Transfer(
-                    token=None,
-                    receiver=solvers[1],
-                    amount_wei=eth_amounts[1],
-                ),
-                Transfer(
-                    token=self.cow_token, receiver=solvers[0], amount_wei=cow_rewards[0]
-                ),
-                Transfer(
-                    token=self.cow_token, receiver=solvers[1], amount_wei=cow_rewards[1]
-                ),
-            ],
-            log_saver=PrintStore(),
-        )
-        reward_targets = [
-            Address.from_int(3),
-            Address.from_int(4),
-        ]
         redirect_map = {
             solvers[0]: Vouch(
                 solver=solvers[0],
-                reward_target=reward_targets[0],
+                reward_target=Address.from_int(3),
                 bonding_pool=Address.zero(),
             ),
             solvers[1]: Vouch(
                 solver=solvers[1],
-                reward_target=reward_targets[1],
+                reward_target=Address.from_int(4),
                 bonding_pool=Address.zero(),
             ),
         }
+        accounting = self.construct_split_transfers(solvers, eth_amounts, cow_rewards)
+
         accounting.process(
             slippage=SplitSlippages.from_data_set(
                 [
@@ -172,7 +169,7 @@ class TestSplitTransfers(unittest.TestCase):
             ),
             cow_redirects=redirect_map,
         )
-        # Although we haven't called process_native_transfers, we are appending positive slippage inside
+
         self.assertEqual(
             accounting.eth_transfers,
             [
@@ -210,6 +207,90 @@ class TestSplitTransfers(unittest.TestCase):
                 ),
             ],
         )
+        self.assertEqual(accounting.unprocessed_cow, [])
+        self.assertEqual(accounting.unprocessed_native, [])
+
+
+    def test_full_process_with_overdraft(self):
+        """
+        This scenario involves three solvers - all with some form of overdraft.
+            1. Overdraft not exceeding ETH reimbursement
+            2. Overdraft exceeding ETH reimbursement, but not COW
+            3. Overdraft exceeding both.
+        All amounts (execution costs, cow rewards and slippage) are declared at the top of the test.
+        The expected outcome is
+        - 1 ETH transfer: Only for the solver whose slippage does not exceed ETH.
+        - 2 COW transfers (one for each solver whose slippage does not exceed ETH and COW).
+        """
+        n = 3
+        solvers = [Address.from_int(i) for i in range(n)]
+        eth_amounts = [
+            1 * ONE_ETH,
+            2 * ONE_ETH,
+            3 * ONE_ETH,
+        ]
+        cow_rewards = [
+            1000 * ONE_ETH,
+            100_000 * ONE_ETH,  # This is huge so COW is not exceeded!
+            3000 * ONE_ETH,
+        ]
+        slippage_amounts = [
+            -3 * ONE_ETH,  # Exceeding both ETH and COW
+            -3 * ONE_ETH,  # Exceeding only ETH
+            -1 * ONE_ETH   # Not Exceeding ETH
+        ]
+
+        redirect_map = {
+            solvers[i]: Vouch(
+                solver=solvers[i],
+                reward_target=Address.from_int(n + i),
+                bonding_pool=Address.zero(),
+            ) for i in range(n)
+        }
+        accounting = self.construct_split_transfers(solvers, eth_amounts, cow_rewards)
+
+        accounting.process(
+            slippage=SplitSlippages.from_data_set(
+                [
+                    {
+                        "eth_slippage_wei": slippage_amounts[i],
+                        "solver_address": solvers[i].address,
+                        "solver_name": "irrelevant",
+                    } for i in range(n)
+                ]
+            ),
+            cow_redirects=redirect_map,
+        )
+
+        self.assertEqual(
+            accounting.eth_transfers,
+            [
+                Transfer(
+                    token=None,
+                    receiver=solvers[2],
+                    amount_wei=eth_amounts[2] + slippage_amounts[2],
+                ),
+            ],
+        )
+        self.assertEqual(
+            accounting.cow_transfers,
+            [
+                Transfer(
+                    token=self.cow_token,
+                    receiver=redirect_map[solvers[1]].reward_target,
+                    # This is the amount of COW deducted based on a "deterministic" price
+                    # on the date of the fixed accounting period.
+                    amount_wei=cow_rewards[1] - 11549056229718590750720,
+                ),
+                Transfer(
+                    token=self.cow_token,
+                    receiver=redirect_map[solvers[2]].reward_target,
+                    amount_wei=cow_rewards[2],
+                ),
+            ],
+        )
+        self.assertEqual(accounting.unprocessed_cow, [])
+        self.assertEqual(accounting.unprocessed_native, [])
 
 
 if __name__ == "__main__":
