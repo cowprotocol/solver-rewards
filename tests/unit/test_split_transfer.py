@@ -15,8 +15,12 @@ ONE_ETH = 10**18
 
 
 class TestSplitTransfers(unittest.TestCase):
-
-    def construct_split_transfers(self, solvers: list[Address], eth_amounts: list[int], cow_rewards: list[int], ) -> SplitTransfers:
+    def construct_split_transfers(
+        self,
+        solvers: list[Address],
+        eth_amounts: list[int],
+        cow_rewards: list[int],
+    ) -> SplitTransfers:
         eth_transfers = [
             Transfer(
                 token=None,
@@ -36,6 +40,7 @@ class TestSplitTransfers(unittest.TestCase):
             mixed_transfers=eth_transfers + cow_transfers,
             log_saver=PrintStore(),
         )
+
     def setUp(self) -> None:
         self.period = AccountingPeriod("2022-06-14")
         self.solver = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
@@ -210,7 +215,6 @@ class TestSplitTransfers(unittest.TestCase):
         self.assertEqual(accounting.unprocessed_cow, [])
         self.assertEqual(accounting.unprocessed_native, [])
 
-
     def test_full_process_with_overdraft(self):
         """
         This scenario involves three solvers - all with some form of overdraft.
@@ -237,7 +241,7 @@ class TestSplitTransfers(unittest.TestCase):
         slippage_amounts = [
             -3 * ONE_ETH,  # Exceeding both ETH and COW
             -3 * ONE_ETH,  # Exceeding only ETH
-            -1 * ONE_ETH   # Not Exceeding ETH
+            -1 * ONE_ETH,  # Not Exceeding ETH
         ]
 
         redirect_map = {
@@ -245,7 +249,8 @@ class TestSplitTransfers(unittest.TestCase):
                 solver=solvers[i],
                 reward_target=Address.from_int(n + i),
                 bonding_pool=Address.zero(),
-            ) for i in range(n)
+            )
+            for i in range(n)
         }
         accounting = self.construct_split_transfers(solvers, eth_amounts, cow_rewards)
 
@@ -256,7 +261,8 @@ class TestSplitTransfers(unittest.TestCase):
                         "eth_slippage_wei": slippage_amounts[i],
                         "solver_address": solvers[i].address,
                         "solver_name": "irrelevant",
-                    } for i in range(n)
+                    }
+                    for i in range(n)
                 ]
             ),
             cow_redirects=redirect_map,
