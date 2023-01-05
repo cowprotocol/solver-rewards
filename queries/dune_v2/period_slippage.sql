@@ -1,4 +1,4 @@
--- Query here: https://dune.com/queries/1777559
+-- https://github.com/cowprotocol/solver-rewards/pull/169
 with
 filtered_trades as (
     select t.block_time,
@@ -20,7 +20,8 @@ filtered_trades as (
            '0x9008d19f58aabd9ed0d60971565aa8510560ab41' as contract_address
     from cow_protocol_ethereum.trades t
          join cow_protocol_ethereum.batches b
-            on t.tx_hash = b.tx_hash
+            on t.block_number = b.block_number
+            and t.tx_hash = b.tx_hash
     left outer join cow_protocol_ethereum.order_rewards f
         on f.tx_hash = t.tx_hash
         and f.order_uid = t.order_uid
@@ -87,7 +88,8 @@ other_transfers as (
               end            as transfer_type
     from erc20_ethereum.evt_Transfer t
              inner join cow_protocol_ethereum.batches b
-                on evt_tx_hash = b.tx_hash
+                on evt_block_number = b.block_number
+                and evt_tx_hash = b.tx_hash
              inner join batchwise_traders bt
                 on evt_tx_hash = bt.tx_hash
     where b.block_time between '{{StartTime}}' and '{{EndTime}}'
