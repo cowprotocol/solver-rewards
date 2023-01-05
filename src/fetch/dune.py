@@ -197,9 +197,12 @@ class DuneFetcher:
         # TODO - fetch these three results asynchronously!
         reimbursements = self.get_eth_spent()
         rewards = self.get_cow_rewards()
-        split_transfers = SplitTransfers(self.period, reimbursements + rewards)
+        split_transfers = SplitTransfers(
+            period=self.period,
+            mixed_transfers=reimbursements + rewards,
+            log_saver=self.log_saver,
+        )
         return split_transfers.process(
             slippage=self.get_period_slippage(),
             cow_redirects=self.get_vouches(),
-            log_saver=self.log_saver,
         )
