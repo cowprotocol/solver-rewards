@@ -188,7 +188,7 @@ class Transfer:
             )
         raise ValueError(f"Invalid Token Type {self.token_type}")
 
-    def redirect_from(
+    def redirect_to(
         self, redirects: dict[Address, Vouch], log_saver: PrintStore
     ) -> None:
         """

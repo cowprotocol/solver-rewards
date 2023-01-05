@@ -103,14 +103,14 @@ class SplitTransfers:
                     # Reinsert since there is still an amount owed.
                     self.overdrafts[solver] = overdraft
                     continue
-            transfer.redirect_from(cow_redirects, log_saver)
+            transfer.redirect_to(cow_redirects, log_saver)
             self.cow_transfers.append(transfer)
         # We do not need to worry about any controversy between overdraft
         # and positive slippage adjustments, because positive/negative slippage
         # is disjoint between solvers.
         while positive_slippage:
             slippage_transfer = Transfer.from_slippage(positive_slippage.pop())
-            slippage_transfer.redirect_from(cow_redirects, log_saver)
+            slippage_transfer.redirect_to(cow_redirects, log_saver)
             self.eth_transfers.append(slippage_transfer)
 
     def process(
