@@ -138,7 +138,7 @@ class SplitTransfers:
         This is the public interface to construct the final transfer file based on
         raw (unpenalized) results, positive, negative slippage, rewards and overdrafts.
         It is very important that the native token transfers are processed first,
-        so that and overdraft from slippage can be carried over and deducted from
+        so that any overdraft from slippage can be carried over and deducted from
         the COW rewards.
         """
         penalty_total = self._process_native_transfers(
