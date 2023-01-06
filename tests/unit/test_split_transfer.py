@@ -276,6 +276,60 @@ class TestSplitTransfers(unittest.TestCase):
         self.assertEqual(accounting.unprocessed_cow, [])
         self.assertEqual(accounting.unprocessed_native, [])
 
+    def test_process_with_missing_redirect(self):
+        """
+        Solver has 1 ETH of positive slippage and COW reward but no redirect address is supplied.
+        The solver itself should receive 2 ETH transfers + 1 COW transfer.
+        Note that the 2 ETH transfers get "consolidated" (or squashed) in to
+        one only later in the process via `Transfer.consolidate`
+        """
+
+        eth_amount = 1 * ONE_ETH
+        cow_reward = 100 * ONE_ETH
+        slippage_amount = 1 * ONE_ETH
+        accounting = self.construct_split_transfers_and_process(
+            solvers=[self.solver],
+            eth_amounts=[eth_amount],
+            cow_rewards=[cow_reward],
+            slippage_amounts=[slippage_amount],
+            redirects={},  # Note the empty Redirect mapping!
+        )
+
+        self.assertEqual(
+            accounting.eth_transfers,
+            [
+                Transfer(
+                    token=None,
+                    receiver=self.solver,
+                    amount_wei=eth_amount,
+                ),
+                Transfer(
+                    token=None,
+                    receiver=self.solver,
+                    amount_wei=slippage_amount,
+                ),
+            ],
+        )
+        self.assertEqual(
+            accounting.cow_transfers,
+            [
+                Transfer(
+                    token=self.cow_token,
+                    receiver=self.solver,
+                    amount_wei=cow_reward,
+                ),
+            ],
+        )
+        self.assertEqual(accounting.unprocessed_cow, [])
+        self.assertEqual(accounting.unprocessed_native, [])
+
+        # Just for info, but not relevant to this test - demonstrating that these transfers are squashed.
+        consolidated_transfers = Transfer.consolidate(accounting.eth_transfers)
+        self.assertEqual(len(consolidated_transfers), 1)
+        self.assertEqual(
+            consolidated_transfers[0].amount_wei, eth_amount + slippage_amount
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
