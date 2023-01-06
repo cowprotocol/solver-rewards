@@ -203,6 +203,6 @@ class DuneFetcher:
             log_saver=self.log_saver,
         )
         return split_transfers.process(
-            slippage=self.get_period_slippage(),
+            slippages=self.get_period_slippage(),
             cow_redirects=self.get_vouches(),
         )

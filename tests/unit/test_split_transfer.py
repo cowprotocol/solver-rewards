@@ -158,7 +158,7 @@ class TestSplitTransfers(unittest.TestCase):
         accounting = self.construct_split_transfers(solvers, eth_amounts, cow_rewards)
 
         accounting.process(
-            slippage=SplitSlippages.from_data_set(
+            slippages=SplitSlippages.from_data_set(
                 [
                     {
                         "eth_slippage_wei": slippage_amounts[0],
@@ -255,7 +255,7 @@ class TestSplitTransfers(unittest.TestCase):
         accounting = self.construct_split_transfers(solvers, eth_amounts, cow_rewards)
 
         accounting.process(
-            slippage=SplitSlippages.from_data_set(
+            slippages=SplitSlippages.from_data_set(
                 [
                     {
                         "eth_slippage_wei": slippage_amounts[i],

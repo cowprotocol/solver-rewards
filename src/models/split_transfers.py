@@ -131,7 +131,7 @@ class SplitTransfers:
 
     def process(
         self,
-        slippage: SplitSlippages,
+        slippages: SplitSlippages,
         cow_redirects: dict[Address, Vouch],
     ) -> list[Transfer]:
         """
@@ -142,13 +142,15 @@ class SplitTransfers:
         the COW rewards.
         """
         penalty_total = self._process_native_transfers(
-            indexed_slippage=index_by(slippage.negative, "solver_address")
+            indexed_slippage=index_by(
+                slippages.solvers_with_negative_total, "solver_address"
+            )
         )
         # Note that positive and negative slippage is DISJOINT.
         # So no overdraft computations will overlap with the positive slippage perturbations.
         self._process_rewards(
             cow_redirects,
-            positive_slippage=slippage.positive,
+            positive_slippage=slippages.solvers_with_positive_total,
         )
         self.log_saver.print(
             f"Total Slippage deducted (ETH): {penalty_total / 10**18}",
