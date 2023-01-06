@@ -19,7 +19,7 @@ class TestSplitTransfers(unittest.TestCase):
     def setUp(self) -> None:
         self.period = AccountingPeriod("2022-06-14")
         self.solver = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
-        self.solver_name = "barn-0x"
+        self.solver_name = "solver_0"
         self.redirect_map = {
             self.solver: Vouch(
                 solver=self.solver,
@@ -235,13 +235,15 @@ class TestSplitTransfers(unittest.TestCase):
         )
         self.assertEqual(
             accounting.cow_transfers,
-            Transfer(
-                token=self.cow_token,
-                receiver=self.redirect_map[self.solver].reward_target,
-                # This is the amount of COW deducted based on a "deterministic" price
-                # on the date of the fixed accounting period.
-                amount_wei=cow_reward - 11549056229718590750720,
-            ),
+            [
+                Transfer(
+                    token=self.cow_token,
+                    receiver=self.redirect_map[self.solver].reward_target,
+                    # This is the amount of COW deducted based on a "deterministic" price
+                    # on the date of the fixed accounting period.
+                    amount_wei=cow_reward - 11549056229718590750720,
+                )
+            ],
         )
         self.assertEqual(accounting.unprocessed_cow, [])
         self.assertEqual(accounting.unprocessed_native, [])
