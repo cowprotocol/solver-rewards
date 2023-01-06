@@ -121,7 +121,11 @@ class SplitTransfers:
         # and positive slippage adjustments, because positive/negative slippage
         # is disjoint between solvers.
         while positive_slippage:
-            slippage_transfer = Transfer.from_slippage(positive_slippage.pop())
+            slippage = positive_slippage.pop()
+            assert (
+                slippage.amount_wei > 0
+            ), f"Expected positive slippage got {slippage.amount_wei}"
+            slippage_transfer = Transfer.from_slippage(slippage)
             slippage_transfer.redirect_to(redirect_map, self.log_saver)
             self.eth_transfers.append(slippage_transfer)
 
