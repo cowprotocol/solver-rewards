@@ -64,7 +64,7 @@ class TestSplitTransfers(unittest.TestCase):
                         "solver_address": solvers[i].address,
                         "solver_name": f"solver_{i}",
                     }
-                    for i in range(len(solvers))
+                    for i in range(len(slippage_amounts))
                 ]
             ),
             cow_redirects=redirects,
@@ -329,6 +329,67 @@ class TestSplitTransfers(unittest.TestCase):
         self.assertEqual(
             consolidated_transfers[0].amount_wei, eth_amount + slippage_amount
         )
+
+    def test_process_multiple_solver_same_reward_target(self):
+        """
+        Two solvers having their eth reimbursement sent to themselves,
+        but COW rewards going to the same target.
+        """
+        solvers = [Address.from_int(1), Address.from_int(2)]
+        reward_target = Address.from_int(3)
+        eth_amounts = [1 * ONE_ETH, 2 * ONE_ETH]
+        cow_rewards = [100 * ONE_ETH, 200 * ONE_ETH]
+        accounting = self.construct_split_transfers_and_process(
+            solvers,
+            eth_amounts,
+            cow_rewards,
+            slippage_amounts=[],
+            redirects={
+                solvers[0]: Vouch(
+                    solver=solvers[0],
+                    reward_target=reward_target,
+                    bonding_pool=Address.zero(),
+                ),
+                solvers[1]: Vouch(
+                    solver=solvers[1],
+                    reward_target=reward_target,
+                    bonding_pool=Address.zero(),
+                ),
+            },
+        )
+
+        self.assertEqual(
+            accounting.eth_transfers,
+            [
+                Transfer(
+                    token=None,
+                    receiver=solvers[0],
+                    amount_wei=eth_amounts[0],
+                ),
+                Transfer(
+                    token=None,
+                    receiver=solvers[1],
+                    amount_wei=eth_amounts[1],
+                ),
+            ],
+        )
+        self.assertEqual(
+            accounting.cow_transfers,
+            [
+                Transfer(
+                    token=self.cow_token,
+                    receiver=reward_target,
+                    amount_wei=cow_rewards[0],
+                ),
+                Transfer(
+                    token=self.cow_token,
+                    receiver=reward_target,
+                    amount_wei=cow_rewards[1],
+                ),
+            ],
+        )
+        self.assertEqual(accounting.unprocessed_cow, [])
+        self.assertEqual(accounting.unprocessed_native, [])
 
 
 if __name__ == "__main__":
