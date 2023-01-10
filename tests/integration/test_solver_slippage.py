@@ -94,8 +94,8 @@ class TestQueryMigration(unittest.TestCase):
                 self.dune,
                 table_name,
                 self.period,
-                v1_cache="01GJQNSER0PYSMGHMEBDT03805",
-                v2_cache="01GJQNSER0PYSMGHMEBDT03805",
+                v1_cache="01GPDRF9C3S4EESEA6525NAJA1",
+                v2_cache="01GPDRFZ8230XZ03DA2RT8QCC4",
             )
         )
 
