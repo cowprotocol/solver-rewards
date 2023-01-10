@@ -86,7 +86,6 @@ class TestDuneAnalytics(unittest.TestCase):
         )
         results = exec_or_get(self.dune, query, result_id="01GP3A0QV1BNWF55Z5N362RK8M")
         tx_slippage = results.get_rows()[0]
-        print(tx_slippage)
         self.assertEqual(tx_slippage["eth_slippage_wei"], 71151929005056890)
         self.assertAlmostEqual(
             tx_slippage["usd_value"], 83.37280645114296, delta=0.00001
