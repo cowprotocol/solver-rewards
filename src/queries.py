@@ -71,7 +71,7 @@ QUERIES = {
     "RISK_FREE_BATCHES": QueryData(
         name="Risk Free Batches",
         filepath="risk_free_batches.sql",
-        v1_id=1432733,
+        v1_id=1870864,
         v2_id=1788438,
     ),
     "VOUCH_REGISTRY": QueryData(
