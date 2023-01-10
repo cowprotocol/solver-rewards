@@ -10,7 +10,6 @@ from enum import Enum
 
 from dune_client.types import Address
 
-# from src.models.transfer import Transfer
 from src.utils.query_file import (
     open_dashboard_query,
     open_query,
