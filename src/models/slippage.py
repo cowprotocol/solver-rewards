@@ -39,12 +39,12 @@ class SolverSlippage:
 class SplitSlippages:
     """Basic class to store the output of slippage fetching"""
 
-    negative: list[SolverSlippage]
-    positive: list[SolverSlippage]
+    solvers_with_negative_total: list[SolverSlippage]
+    solvers_with_positive_total: list[SolverSlippage]
 
     def __init__(self) -> None:
-        self.negative = []
-        self.positive = []
+        self.solvers_with_negative_total = []
+        self.solvers_with_positive_total = []
 
     @classmethod
     def from_data_set(cls, data_set: list[dict[str, str]]) -> SplitSlippages:
@@ -57,20 +57,22 @@ class SplitSlippages:
     def append(self, slippage: SolverSlippage) -> None:
         """Appends the Slippage to the appropriate half based on signature of amount"""
         if slippage.amount_wei < 0:
-            self.negative.append(slippage)
+            self.solvers_with_negative_total.append(slippage)
         else:
-            self.positive.append(slippage)
+            self.solvers_with_positive_total.append(slippage)
 
     def __len__(self) -> int:
-        return len(self.negative) + len(self.positive)
+        return len(self.solvers_with_negative_total) + len(
+            self.solvers_with_positive_total
+        )
 
     def sum_negative(self) -> int:
         """Returns total negative slippage"""
-        return sum(neg.amount_wei for neg in self.negative)
+        return sum(neg.amount_wei for neg in self.solvers_with_negative_total)
 
     def sum_positive(self) -> int:
         """Returns total positive slippage"""
-        return sum(pos.amount_wei for pos in self.positive)
+        return sum(pos.amount_wei for pos in self.solvers_with_positive_total)
 
 
 class QueryType(Enum):
