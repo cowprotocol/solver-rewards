@@ -89,12 +89,14 @@ class TestQueryMigration(unittest.TestCase):
 
     def test_batch_transfers(self):
         table_name = "batch_transfers"
-        data = get_slippage_cte_rows(
-            self.dune,
-            table_name,
-            self.period,
-            v1_cache="01GJQNSER0PYSMGHMEBDT03805",
-            v2_cache="01GJQNSER0PYSMGHMEBDT03805",
+        data = Comparison.from_dune_results(
+            *get_slippage_cte_rows(
+                self.dune,
+                table_name,
+                self.period,
+                v1_cache="01GJQNSER0PYSMGHMEBDT03805",
+                v2_cache="01GJQNSER0PYSMGHMEBDT03805",
+            )
         )
 
         # No missing transactions.
@@ -113,12 +115,14 @@ class TestQueryMigration(unittest.TestCase):
     def test_incoming_and_outgoing(self):
         # This test demonstrates that records are "essentially" matching up to this table.
         table_name = "incoming_and_outgoing"
-        data = get_slippage_cte_rows(
-            self.dune,
-            table_name,
-            self.period,
-            v1_cache="01GJR1HKR37V7HRPTRJCDMZBAX",
-            v2_cache="01GJR1HTNS87RKTV90WKH4TVSC",
+        data = Comparison.from_dune_results(
+            *get_slippage_cte_rows(
+                self.dune,
+                table_name,
+                self.period,
+                v1_cache="01GJR1HKR37V7HRPTRJCDMZBAX",
+                v2_cache="01GJR1HTNS87RKTV90WKH4TVSC",
+            )
         )
 
         # There are 14 records in missing_v2 for the specified accounting period.
@@ -148,39 +152,41 @@ class TestQueryMigration(unittest.TestCase):
 
     def test_final_token_balance_sheet(self):
         table_name = "final_token_balance_sheet"
-        data = get_slippage_cte_rows(
-            self.dune,
-            table_name,
-            self.period,
-            # Results for Period(2022-11-01)
-            # v1_not_v2 = 172 batches
-            # v2_not_v1 = 107 batches
-            # overlap   = 3062 batches
-            # Check out the missing records for this period:
-            # http://jsonblob.com/1046134755808264192
-            v1_cache="01GJR2PTEXWT63HVG6WZ7PXB4R",
-            v2_cache="01GJR2Q0CWVKKRZ7J53RC463X9",
-            # --------------------------------------
-            # Results for Period(2022-11-08)
-            # v1_not_v2 = 160 batches
-            # v2_not_v1 = 122 batches
-            # overlap   = 4378 batches
-            # v1_cache="01GJTHE88DH5TFHRDX9D8H39XK",
-            # v2_cache="01GJTHEK7BRZ8G4N10TGXBJ1W3",
-            # --------------------------------------
-            # Results for Period(2022-11-08)
-            # v1_not_v2 = 160 batches
-            # v2_not_v1 = 90 batches
-            # overlap   = 3598 batches
-            # v1_cache="",
-            # v2_cache="",
-            # --------------------------------------
-            # Results for Period(2022-10-04)
-            # v1_not_v2 = 99 batches
-            # v2_not_v1 = 63 batches
-            # overlap   = 2491 batches
-            # v1_cache="",
-            # v2_cache="",
+        data = Comparison.from_dune_results(
+            *get_slippage_cte_rows(
+                self.dune,
+                table_name,
+                self.period,
+                # Results for Period(2022-11-01)
+                # v1_not_v2 = 172 batches
+                # v2_not_v1 = 107 batches
+                # overlap   = 3062 batches
+                # Check out the missing records for this period:
+                # http://jsonblob.com/1046134755808264192
+                v1_cache="01GJR2PTEXWT63HVG6WZ7PXB4R",
+                v2_cache="01GJR2Q0CWVKKRZ7J53RC463X9",
+                # --------------------------------------
+                # Results for Period(2022-11-08)
+                # v1_not_v2 = 160 batches
+                # v2_not_v1 = 122 batches
+                # overlap   = 4378 batches
+                # v1_cache="01GJTHE88DH5TFHRDX9D8H39XK",
+                # v2_cache="01GJTHEK7BRZ8G4N10TGXBJ1W3",
+                # --------------------------------------
+                # Results for Period(2022-11-08)
+                # v1_not_v2 = 160 batches
+                # v2_not_v1 = 90 batches
+                # overlap   = 3598 batches
+                # v1_cache="",
+                # v2_cache="",
+                # --------------------------------------
+                # Results for Period(2022-10-04)
+                # v1_not_v2 = 99 batches
+                # v2_not_v1 = 63 batches
+                # overlap   = 2491 batches
+                # v1_cache="",
+                # v2_cache="",
+            )
         )
         num_outliers = len(data.v1_not_v2) + len(data.v2_not_v1)
         size_overlap = len(data.overlap)
@@ -188,7 +194,6 @@ class TestQueryMigration(unittest.TestCase):
         # |--A--|----------D----------|--B--|
         # assert (A + B) / D < 10%
         self.assertLess(num_outliers / size_overlap, 0.1)
-        print(data)
         data.describe_missing()
 
     def test_similar_slippage_for_period(self):

@@ -6,7 +6,7 @@ from src.constants import COW_TOKEN_ADDRESS
 from src.fetch.transfer_file import Transfer
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
-from src.models.slippage import SolverSlippage
+from src.models.slippage import SplitSlippages
 from src.models.split_transfers import SplitTransfers
 from src.models.token import Token
 from src.utils.print_store import PrintStore
@@ -31,23 +31,27 @@ class TestPrices(unittest.TestCase):
             Transfer(token=cow_token, receiver=barn_zerox, amount_wei=600 * ONE_ETH),
             Transfer(token=cow_token, receiver=other_solver, amount_wei=2000 * ONE_ETH),
         ]
-
-        barn_slippage = SolverSlippage(
-            amount_wei=-324697366789535540,
-            solver_name="barn-0x",
-            solver_address=barn_zerox,
+        slippages = SplitSlippages.from_data_set(
+            [
+                # Barn Slippage
+                {
+                    "eth_slippage_wei": -324697366789535540,
+                    "solver_name": "barn-0x",
+                    "solver_address": barn_zerox.address,
+                },
+                # Other Slippage
+                {
+                    "eth_slippage_wei": -11 * 10**17,
+                    "solver_name": "Other Solver",
+                    "solver_address": other_solver.address,
+                },
+            ]
         )
-        other_slippage = SolverSlippage(
-            amount_wei=-11 * 10**17,
-            solver_name="Other Solver",
-            solver_address=other_solver,
-        )
-        indexed_slippage = {barn_zerox: barn_slippage, other_solver: other_slippage}
         cow_redirects = {}
 
-        accounting = SplitTransfers(period, mixed_transfers)
+        accounting = SplitTransfers(period, mixed_transfers, PrintStore())
 
-        transfers = accounting.process(indexed_slippage, cow_redirects, PrintStore())
+        transfers = accounting.process(slippages, cow_redirects)
         # The only remaining transfer is the other_solver's COW reward.
         self.assertEqual(
             transfers,
