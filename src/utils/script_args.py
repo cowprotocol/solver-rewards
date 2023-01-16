@@ -11,17 +11,6 @@ from src.models.accounting_period import AccountingPeriod
 from src.queries import DuneVersion
 
 
-def previous_tuesday(day: date = date.today()) -> date:
-    """
-    Returns the previous Tuesday for a given date (defaulting to today).
-    If the day is a Tuesday, then the previous Tuesday is the one before
-    """
-    week_day = day.weekday()
-    if week_day > 1:
-        return day - timedelta(days=week_day - 1)
-    return day - timedelta(days=6 + week_day)
-
-
 @dataclass
 class ScriptArgs:
     """A collection of common script arguments relevant to this project"""
