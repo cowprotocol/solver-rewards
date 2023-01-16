@@ -42,7 +42,7 @@ def generic_script_init(description: str) -> ScriptArgs:
         "--start",
         type=str,
         help="Accounting Period Start. Defaults to previous Tuesday",
-        default=str(previous_tuesday(date.today())),
+        default=str(date.today() - timedelta(days=7)),
     )
     parser.add_argument(
         "--post-tx",
