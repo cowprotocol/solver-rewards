@@ -12,7 +12,6 @@ from dune_client.file.interface import FileIO
 from eth_typing.ethpm import URI
 from gnosis.eth.ethereum_client import EthereumClient
 from slack.web.client import WebClient
-from slack.web.slack_response import SlackResponse
 
 from src.constants import (
     SAFE_ADDRESS,
@@ -25,6 +24,7 @@ from src.constants import (
 from src.fetch.dune import DuneFetcher
 from src.models.transfer import Transfer, CSVTransfer
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
+from src.slack import post_to_slack
 from src.utils.print_store import Category
 from src.utils.script_args import generic_script_init
 
@@ -48,32 +48,6 @@ def manual_propose(dune: DuneFetcher) -> None:
         f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
         f"{AIRDROP_URL}"
     )
-
-
-def post_to_slack(
-    slack_client: WebClient, channel: str, message: str, sub_messages: dict[str, str]
-) -> None:
-    """Posts message to Slack channel and sub message inside thread of first message"""
-    response = slack_client.chat_postMessage(
-        channel=channel,
-        text=message,
-        # Do not show link preview!
-        # https://api.slack.com/reference/messaging/link-unfurling
-        unfurl_media=False,
-    )
-    # This assertion is only for type safety,
-    # since previous function can also return a Future
-    assert isinstance(response, SlackResponse)
-    # Post logs in thread.
-    for category, log in sub_messages.items():
-        slack_client.chat_postMessage(
-            channel=channel,
-            format="mrkdwn",
-            text=f"{category}:\n```{log}```",
-            # According to https://api.slack.com/methods/conversations.replies
-            thread_ts=response.get("ts"),
-            unfurl_media=False,
-        )
 
 
 def auto_propose(dune: DuneFetcher, slack_client: WebClient, dry_run: bool) -> None:
@@ -118,7 +92,7 @@ def auto_propose(dune: DuneFetcher, slack_client: WebClient, dry_run: bool) -> N
 if __name__ == "__main__":
     args = generic_script_init(description="Fetch Complete Reimbursement")
     args.dune.log_saver.print(
-        f"The data being aggregated here is available for visualization at\n"
+        f"The data aggregated can be visualized at\n"
         f"{args.dune.period.dashboard_url()}",
         category=Category.GENERAL,
     )

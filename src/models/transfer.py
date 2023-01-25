@@ -200,9 +200,10 @@ class Transfer:
             # Redirect COW rewards to reward target specific by VouchRegistry
             redirect_address = redirects[recipient].reward_target
             log_saver.print(
-                f"Redirecting {recipient} Transfer of {self.token or 'ETH'}"
-                f"({self.amount}) to {redirect_address}",
-                category=Category.REDIRECT,
+                f"Redirecting {recipient} Transfer of {self.amount} to {redirect_address}",
+                category=Category.ETH_REDIRECT
+                if self.token is None
+                else Category.COW_REDIRECT,
             )
             self.receiver = redirect_address
 
