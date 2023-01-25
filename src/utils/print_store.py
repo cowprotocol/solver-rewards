@@ -8,11 +8,12 @@ from enum import Enum
 class Category(Enum):
     """Known Categories for PrintStore"""
 
-    GENERAL = ""
+    GENERAL = "Overview"
     TOTALS = "Totals"
     OVERDRAFT = "Overdraft"
-    REDIRECT = "Redirect"
-    SLIPPAGE = "Slippage"
+    COW_REDIRECT = "COW Redirects"
+    ETH_REDIRECT = "ETH Redirects (Positive Slippage)"
+    SLIPPAGE = "Negative Slippage"
 
 
 class PrintStore:
