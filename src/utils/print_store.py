@@ -12,8 +12,8 @@ class Category(Enum):
     TOTALS = "Totals"
     OVERDRAFT = "Overdraft"
     COW_REDIRECT = "COW Redirects"
-    ETH_REDIRECT = "ETH Redirects"
-    SLIPPAGE = "Slippage"
+    ETH_REDIRECT = "ETH Redirects (Positive Slippage)"
+    SLIPPAGE = "Negative Slippage"
 
 
 class PrintStore:
