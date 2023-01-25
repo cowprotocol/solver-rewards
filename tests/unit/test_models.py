@@ -345,6 +345,25 @@ class TestTransfer(unittest.TestCase):
             ),
         )
 
+    def test_summarize(self):
+        receiver = Address.from_int(1)
+        eth_amount = 123456789101112131415
+        cow_amount = 9999999999999999999999999
+        result = Transfer.summarize(
+            [
+                Transfer(token=None, receiver=receiver, amount_wei=eth_amount),
+                Transfer(
+                    token=Token(COW_TOKEN_ADDRESS),
+                    receiver=receiver,
+                    amount_wei=cow_amount,
+                ),
+            ]
+        )
+        self.assertEqual(
+            result,
+            "Total ETH Funds needed: 123.4568\nTotal COW Funds needed: 10000000.0000\n",
+        )
+
 
 class TestAccountingPeriod(unittest.TestCase):
     def test_str(self):

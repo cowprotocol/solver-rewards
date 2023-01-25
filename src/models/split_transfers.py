@@ -156,7 +156,7 @@ class SplitTransfers:
             )
         )
         self.log_saver.print(
-            f"Total Negative Slippage (ETH): {total_penalty / 10**18}",
+            f"Total Negative Slippage (ETH): {total_penalty / 10**18:.4f}",
             category=Category.TOTALS,
         )
         # Note that positive and negative slippage is DISJOINT.
@@ -166,7 +166,7 @@ class SplitTransfers:
             positive_slippage=slippages.solvers_with_positive_total,
         )
         self.log_saver.print(
-            f"Total Positive Slippage (ETH): {total_positive_slippage / 10**18}",
+            f"Total Positive Slippage (ETH): {total_positive_slippage / 10**18:.4f}",
             category=Category.TOTALS,
         )
         if self.overdrafts:
