@@ -6,6 +6,9 @@ on:
 jobs:
   python:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./compute
     steps:
       - uses: actions/checkout@v3
       - name: Setup Python 3.10
@@ -13,19 +16,19 @@ jobs:
         with:
           python-version: '3.10'
       - name: Install Requirements
-        run:
-          pip install -r requirements.txt
+        run: pip install -r requirements.txt
+
       - name: Pylint
-        run:
-          pylint src/
+        run: pylint src/
+
       - name: Black
-        run:
-          black --check ./
+        run: black --check ./
+        working-directory: ./compute
+
       - name: Type Check (mypy)
         run: mypy src --strict
       - name: Unit Tests
-        run:
-          python -m pytest tests/unit
+        run: python -m pytest tests/unit
         env:
           # We make a rinkeby request in one unit test
           INFURA_KEY: ${{ secrets.INFURA_KEY }}
