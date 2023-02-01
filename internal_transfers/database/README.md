@@ -11,7 +11,7 @@ source .env
 ## [Optional] Empty Local Instance of Postgres
 
 ```sh
-docker run -d --env-file .env -p 5432:5432 docker.io/postgres
+docker run -e POSTGRES_PASSWORD=password -p 5432:5432 docker.io/postgres
 ```
 
 ## Perform Migration
@@ -20,12 +20,22 @@ docker run -d --env-file .env -p 5432:5432 docker.io/postgres
 cd internal_transfers/database
 source .env
 docker build --tag migration-image .
-docker run --add-host=host.docker.internal:host-gateway --rm migration-image -url=jdbc:postgresql://$POSTGRES_URL/$POSTGRES_DB -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD migrate
+# REMOTE DB
+docker run --add-host=host.docker.internal:host-gateway --rm migration-image -url=jdbc:postgresql://$POSTGRES_HOST/$POSTGRES_DB -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD migrate
+# Local Instance DB (from above)
+docker run --network host --add-host=localhost:host-gateway --rm migration-image -url=jdbc:postgresql://$POSTGRES_HOST/$POSTGRES_DB -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD migrate
 ```
 
 ### Troubleshooting
+
 * In case you run into `java.net.UnknownHostException: host.docker.internal`
-add `--add-host=host.docker.internal:host-gateway` right after `docker run`.
+  add `--add-host=host.docker.internal:host-gateway` right after `docker run`.
 
 * If you're combining a local postgres installation with docker flyway you have to add to the above `--network host` and
-change `host.docker.internal` to `localhost`.
+  change `host.docker.internal` to `localhost`.
+
+So to test migration with optional local DB described above, use:
+
+```shell
+docker run --network host --add-host=localhost:host-gateway --rm migration-image -url=jdbc:postgresql://$POSTGRES_HOST/$POSTGRES_DB -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD migrate
+```
