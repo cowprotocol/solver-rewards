@@ -4,6 +4,7 @@ from pprint import pprint
 
 import pytest
 from dune_client.client import DuneClient
+from dune_client.query import Query
 from dune_client.types import QueryParameter
 
 from src.fetch.dune import DuneFetcher
@@ -16,6 +17,16 @@ class TestDuneAnalytics(unittest.TestCase):
     def setUp(self) -> None:
         self.dune = DuneClient(os.environ["DUNE_API_KEY"])
         self.slippage_query = QUERIES["PERIOD_SLIPPAGE"]
+
+    @staticmethod
+    def slippage_query_for(period: AccountingPeriod, tx_hash: str) -> Query:
+        return QUERIES["PERIOD_SLIPPAGE"].with_params(
+            period.as_query_params()
+            + [
+                QueryParameter.text_type("TxHash", tx_hash),
+                QueryParameter.text_type("CTE_NAME", "results_per_tx"),
+            ]
+        )
 
     @pytest.mark.skip(
         reason="This takes a while to run and should probably be avoided without local testing."
@@ -124,6 +135,90 @@ class TestDuneAnalytics(unittest.TestCase):
         # as a single row one of those imbalances was excluded as an "internal trade"
         # https://dune.com/queries/1836718?CTE_NAME_e15077=final_token_balance_sheet&EndTime_d83555=2023-01-02+00%3A00%3A00&StartTime_d83555=2023-01-01+00%3A00%3A00&TxHash_t6c1ea=0x5c4e410ce5d741f60e06a8621c6f12839ad39273f5abf78d4bbc1cd3b31de46c
         self.assertEqual(tx_slippage["num_entries"], 4)
+
+    def test_slippage_regression(self):
+        """
+        Two known batches with ETH transfers previously not captured.
+        The following hashes were picked up by this query: https://dune.com/queries/1957339
+        which displays batches where these missing ETH transfers occurred.
+        Bug was picked up by our Dune Alerts on Feb. 2, 2023
+        https://cowservices.slack.com/archives/C03PW4CR38A/p1675328564060139
+        """
+        old_query_id = 1836718
+        # For TX: 0x3b2e9675b6d71a34e9b7f4abb4c9e80922be311076fcbb345d7da9d91a05e048
+        old_query_results = self.dune.get_result(job_id="01GRA17C0WFB27W0TC5TZ7BFP1")
+        self.assertEqual(old_query_results.query_id, old_query_id)
+        self.assertEqual(
+            old_query_results.get_rows(),
+            [
+                {
+                    "eth_slippage_wei": -133004717098618640,
+                    "hour": "2023-02-01T01:00:00Z",
+                    "num_entries": 2,
+                    "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
+                    "usd_value": -210.78964412487517,
+                }
+            ],
+        )
+        # For TX: 0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf
+        old_query_results = self.dune.get_result(job_id="01GRA1FVYXSJY5916BEKVN5WHQ")
+        self.assertEqual(old_query_results.query_id, old_query_id)
+        self.assertEqual(
+            old_query_results.get_rows(),
+            [
+                {
+                    "eth_slippage_wei": -94488182834927150,
+                    "hour": "2023-02-01T01:00:00Z",
+                    "num_entries": 3,
+                    "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
+                    "usd_value": -149.7475493219728,
+                }
+            ],
+        )
+
+        period = AccountingPeriod("2023-02-01", 1)
+        result_0x3b2e = exec_or_get(
+            self.dune,
+            query=self.slippage_query_for(
+                period,
+                "0x3b2e9675b6d71a34e9b7f4abb4c9e80922be311076fcbb345d7da9d91a05e048",
+            ),
+            result_id="01GRA2NSAVSQZH6B8BPHR0FAN8",
+        )
+        self.assertNotEqual(result_0x3b2e.query_id, old_query_id)
+        self.assertEqual(
+            result_0x3b2e.get_rows(),
+            [
+                {
+                    "eth_slippage_wei": -4703807.681117934,
+                    "hour": "2023-02-01T01:00:00Z",
+                    "num_entries": 2,
+                    "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
+                    "usd_value": -7.454727687586665e-09,
+                }
+            ],
+        )
+        result_0x7a00 = exec_or_get(
+            self.dune,
+            query=self.slippage_query_for(
+                period,
+                "0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf",
+            ),
+            result_id="01GRA2Y006E4FGZMWSTACMHZDY",
+        )
+        self.assertNotEqual(result_0x7a00.query_id, old_query_id)
+        self.assertEqual(
+            result_0x7a00.get_rows(),
+            [
+                {
+                    "eth_slippage_wei": -815874497.9746609,
+                    "hour": "2023-02-01T01:00:00Z",
+                    "num_entries": 2,
+                    "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
+                    "usd_value": -1.2930210208343511e-06,
+                }
+            ],
+        )
 
 
 if __name__ == "__main__":
