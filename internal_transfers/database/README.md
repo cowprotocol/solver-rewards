@@ -1,12 +1,5 @@
 The system stores all data in a postgres database.
 This repo contains the docker image and the flyway migrations to run the database.
-Prepare your environment (Database credentials)
-
-```shell
-cp .env.sample .env
-# populate .env with relevant fields
-source .env
-```
 
 ## [Optional] Empty Local Instance of Postgres
 
@@ -16,13 +9,22 @@ docker run -e POSTGRES_PASSWORD=password -p 5432:5432 docker.io/postgres
 
 ## Perform Migration
 
-```sh
+Prepare your environment (Database credentials)
+
+```shell
 cd internal_transfers/database
+cp .env.sample .env
+# populate .env with relevant fields
 source .env
+```
+
+Now, assuming environment variables are in place:
+
+```sh
 docker build --tag migration-image .
-# REMOTE DB
+# Remote DB Instance
 docker run --add-host=host.docker.internal:host-gateway --rm migration-image -url=jdbc:postgresql://$POSTGRES_HOST/$POSTGRES_DB -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD migrate
-# Local Instance DB (from above)
+# Local DB Instance (from above)
 docker run --network host --add-host=localhost:host-gateway --rm migration-image -url=jdbc:postgresql://$POSTGRES_HOST/$POSTGRES_DB -user=$POSTGRES_USER -password=$POSTGRES_PASSWORD migrate
 ```
 
