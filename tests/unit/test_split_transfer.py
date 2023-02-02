@@ -11,7 +11,6 @@ from src.models.token import Token
 from src.models.transfer import Transfer
 from src.models.vouch import Vouch
 from src.utils.print_store import PrintStore
-from unittest.mock import MagicMock
 
 ONE_ETH = 10**18
 
@@ -32,7 +31,6 @@ class TestSplitTransfers(unittest.TestCase):
                 bonding_pool=Address.from_int(3),
             )
         }
-        usd_price = MagicMock(return_value=10)
         self.cow_token = Token(COW_TOKEN_ADDRESS)
 
     def construct_split_transfers_and_process(
