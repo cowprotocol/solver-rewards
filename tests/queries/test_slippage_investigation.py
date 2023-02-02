@@ -185,7 +185,7 @@ class TestDuneAnalytics(unittest.TestCase):
             ),
             result_id="01GRA2NSAVSQZH6B8BPHR0FAN8",
         )
-        self.assertNotEqual(result_0x3b2e.query_id, old_query_id)
+        self.assertEqual(result_0x3b2e.query_id, self.slippage_query.v2_query.query_id)
         self.assertEqual(
             result_0x3b2e.get_rows(),
             [
@@ -206,7 +206,7 @@ class TestDuneAnalytics(unittest.TestCase):
             ),
             result_id="01GRA2Y006E4FGZMWSTACMHZDY",
         )
-        self.assertNotEqual(result_0x7a00.query_id, old_query_id)
+        self.assertEqual(result_0x7a00.query_id, self.slippage_query.v2_query.query_id)
         self.assertEqual(
             result_0x7a00.get_rows(),
             [
