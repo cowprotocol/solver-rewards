@@ -11,19 +11,13 @@ from src.models.token import Token
 from src.models.transfer import Transfer
 from src.models.vouch import Vouch
 from src.utils.print_store import PrintStore
-from src.fetch.prices import usd_price, TokenId
 from unittest.mock import MagicMock
 
 ONE_ETH = 10**18
 
-
-def my_side_effect(
-    token_id: TokenId,
-):
-    if token_id == TokenId.COW:
-        return 0.095696
-    elif token_id == TokenId.ETH:
-        return 1105.43
+# TODO - these tests aren't entirely deterministic because they make requests to CoinPaprika API for COW and ETH prices.
+#  We should be able to mock the return values of price fetching:
+#  cf https://github.com/cowprotocol/solver-rewards/pull/179
 
 
 class TestSplitTransfers(unittest.TestCase):
