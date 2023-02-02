@@ -11,8 +11,19 @@ from src.models.token import Token
 from src.models.transfer import Transfer
 from src.models.vouch import Vouch
 from src.utils.print_store import PrintStore
+from src.fetch.prices import usd_price, TokenId
+from unittest.mock import MagicMock
 
 ONE_ETH = 10**18
+
+
+def my_side_effect(
+    token_id: TokenId,
+):
+    if token_id == TokenId.COW:
+        return 0.095696
+    elif token_id == TokenId.ETH:
+        return 1105.43
 
 
 class TestSplitTransfers(unittest.TestCase):
@@ -27,6 +38,7 @@ class TestSplitTransfers(unittest.TestCase):
                 bonding_pool=Address.from_int(3),
             )
         }
+        usd_price = MagicMock(return_value=10)
         self.cow_token = Token(COW_TOKEN_ADDRESS)
 
     def construct_split_transfers_and_process(
@@ -241,7 +253,7 @@ class TestSplitTransfers(unittest.TestCase):
                     receiver=self.redirect_map[self.solver].reward_target,
                     # This is the amount of COW deducted based on a "deterministic" price
                     # on the date of the fixed accounting period.
-                    amount_wei=cow_reward - 11549056229718590750720,
+                    amount_wei=cow_reward - 11528681622554420445184,
                 )
             ],
         )
@@ -271,7 +283,7 @@ class TestSplitTransfers(unittest.TestCase):
                     period=self.period,
                     account=self.solver,
                     name=self.solver_name,
-                    wei=1913412838234630144,
+                    wei=1913259812982984448,
                 )
             },
         )
