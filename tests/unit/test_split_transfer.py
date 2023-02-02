@@ -14,6 +14,10 @@ from src.utils.print_store import PrintStore
 
 ONE_ETH = 10**18
 
+# TODO - these tests aren't entirely deterministic because they make requests to CoinPaprika API for COW and ETH prices.
+#  We should be able to mock the return values of price fetching:
+#  cf https://github.com/cowprotocol/solver-rewards/pull/179
+
 
 class TestSplitTransfers(unittest.TestCase):
     def setUp(self) -> None:
@@ -241,7 +245,7 @@ class TestSplitTransfers(unittest.TestCase):
                     receiver=self.redirect_map[self.solver].reward_target,
                     # This is the amount of COW deducted based on a "deterministic" price
                     # on the date of the fixed accounting period.
-                    amount_wei=cow_reward - 11549056229718590750720,
+                    amount_wei=cow_reward - 11528681622554420445184,
                 )
             ],
         )
@@ -271,7 +275,7 @@ class TestSplitTransfers(unittest.TestCase):
                     period=self.period,
                     account=self.solver,
                     name=self.solver_name,
-                    wei=1913412838234630144,
+                    wei=1913259812982984448,
                 )
             },
         )
