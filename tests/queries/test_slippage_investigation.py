@@ -144,39 +144,8 @@ class TestDuneAnalytics(unittest.TestCase):
         Bug was picked up by our Dune Alerts on Feb. 2, 2023
         https://cowservices.slack.com/archives/C03PW4CR38A/p1675328564060139
         """
-        old_query_id = 1836718
-        # For TX: 0x3b2e9675b6d71a34e9b7f4abb4c9e80922be311076fcbb345d7da9d91a05e048
-        old_query_results = self.dune.get_result(job_id="01GRA17C0WFB27W0TC5TZ7BFP1")
-        self.assertEqual(old_query_results.query_id, old_query_id)
-        self.assertEqual(
-            old_query_results.get_rows(),
-            [
-                {
-                    "eth_slippage_wei": -133004717098618640,
-                    "hour": "2023-02-01T01:00:00Z",
-                    "num_entries": 2,
-                    "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
-                    "usd_value": -210.78964412487517,
-                }
-            ],
-        )
-        # For TX: 0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf
-        old_query_results = self.dune.get_result(job_id="01GRA1FVYXSJY5916BEKVN5WHQ")
-        self.assertEqual(old_query_results.query_id, old_query_id)
-        self.assertEqual(
-            old_query_results.get_rows(),
-            [
-                {
-                    "eth_slippage_wei": -94488182834927150,
-                    "hour": "2023-02-01T01:00:00Z",
-                    "num_entries": 3,
-                    "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
-                    "usd_value": -149.7475493219728,
-                }
-            ],
-        )
-
         period = AccountingPeriod("2023-02-01", 1)
+        # Previously having -210 USD negative slippage.
         result_0x3b2e = exec_or_get(
             self.dune,
             query=self.slippage_query_for(
@@ -198,6 +167,7 @@ class TestDuneAnalytics(unittest.TestCase):
                 }
             ],
         )
+        # Previously having -150 USD slippage
         result_0x7a00 = exec_or_get(
             self.dune,
             query=self.slippage_query_for(

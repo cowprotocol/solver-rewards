@@ -1,4 +1,4 @@
--- https://github.com/cowprotocol/solver-rewards/pull/169
+-- https://github.com/cowprotocol/solver-rewards/pull/180
 with
 batch_meta as (
     select t.block_time,
@@ -106,7 +106,11 @@ eth_transfers as (
         to as receiver,
         '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' as token,
         cast(value as decimal(38, 0)) as amount_wei,
-        'Native ETH' as transfer_type
+        case
+          when '0x9008d19f58aabd9ed0d60971565aa8510560ab41' = to
+          then 'AMM_IN'
+          else 'AMM_OUT'
+        end as transfer_type
     from batchwise_traders bt
     inner join ethereum.traces et
         on bt.block_number = et.block_number
