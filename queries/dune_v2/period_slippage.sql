@@ -1,7 +1,8 @@
--- https://github.com/cowprotocol/solver-rewards/pull/169
+-- https://github.com/cowprotocol/solver-rewards/pull/180
 with
-filtered_trades as (
+batch_meta as (
     select t.block_time,
+           t.block_number,
            t.tx_hash,
            case
             when dex_swaps = 0
@@ -10,7 +11,19 @@ filtered_trades as (
                 else dex_swaps
            end as dex_swaps,
            num_trades,
-           b.solver_address,
+           b.solver_address
+    from cow_protocol_ethereum.trades t
+    join cow_protocol_ethereum.batches b
+        on t.block_number = b.block_number
+        and t.tx_hash = b.tx_hash
+    where b.block_time between '{{StartTime}}' and '{{EndTime}}'
+    and t.block_time between '{{StartTime}}' and '{{EndTime}}'
+    and (b.solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
+    and (t.tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
+),
+filtered_trades as (
+    select t.tx_hash,
+           t.block_number,
            trader                                       as trader_in,
            receiver                                     as trader_out,
            sell_token_address                           as sell_token,
@@ -33,18 +46,14 @@ filtered_trades as (
 batchwise_traders as (
     select
         tx_hash,
+        block_number,
         collect_set(trader_in) as traders_in,
         collect_set(trader_out) as traders_out
     from filtered_trades
-    group by tx_hash
+    group by tx_hash, block_number
 ),
-
 user_in as (
-    select block_time,
-          tx_hash,
-          dex_swaps,
-          num_trades,
-          solver_address,
+    select  tx_hash,
           trader_in        as sender,
           contract_address as receiver,
           sell_token       as token,
@@ -53,11 +62,7 @@ user_in as (
     from filtered_trades
 ),
 user_out as (
-    select block_time,
-          tx_hash,
-          dex_swaps,
-          num_trades,
-          solver_address,
+    select tx_hash,
           contract_address as sender,
           trader_out       as receiver,
           buy_token        as token,
@@ -66,16 +71,7 @@ user_out as (
     from filtered_trades
 ),
 other_transfers as (
-    select block_time,
-          b.tx_hash,
-          case
-            when dex_swaps = 0
-            -- Estimation made here: https://dune.com/queries/1646084
-                then ((gas_used - 73688 - (70528 * num_trades)) / 90000)::int
-                else dex_swaps
-        end as dex_swaps,
-          num_trades,
-          solver_address,
+    select b.tx_hash,
           from               as sender,
           to                 as receiver,
           t.contract_address as token,
@@ -103,12 +99,55 @@ other_transfers as (
       and (t.evt_tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
       and (solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
 ),
-batch_transfers as (
+eth_transfers as (
+    select
+        bt.tx_hash,
+        from as sender,
+        to as receiver,
+        '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee' as token,
+        cast(value as decimal(38, 0)) as amount_wei,
+        case
+          when '0x9008d19f58aabd9ed0d60971565aa8510560ab41' = to
+          then 'AMM_IN'
+          else 'AMM_OUT'
+        end as transfer_type
+    from batchwise_traders bt
+    inner join ethereum.traces et
+        on bt.block_number = et.block_number
+        and bt.tx_hash = et.tx_hash
+        and cast(value as decimal(38, 0)) > 0
+        and success = true
+    and '0x9008d19f58aabd9ed0d60971565aa8510560ab41' in (to, from)
+    -- WETH unwraps don't have cancelling WETH transfer.
+    and from != '0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+    -- ETH transfers to traders are already part of USER_OUT
+    and not array_contains(traders_out, to)
+),
+pre_batch_transfers as (
     select * from user_in
     union all
     select * from user_out
     union all
     select * from other_transfers
+    union all
+    select * from eth_transfers
+),
+batch_transfers as (
+    select
+        block_time,
+        block_number,
+        pbt.tx_hash,
+        dex_swaps,
+        num_trades,
+        solver_address,
+        sender,
+        receiver,
+        token,
+        amount_wei,
+        transfer_type
+    from batch_meta bm
+    join pre_batch_transfers pbt
+        on bm.tx_hash = pbt.tx_hash
 ),
 -- These batches involve a token AXS (Old)
 -- whose transfer function doesn't align with the emitted transfer event.
