@@ -1,5 +1,11 @@
-create table settlements (
-  tx_hash bytea NOT NULL,
+CREATE TABLE settlements
+(
   block_number bigint NOT NULL,
-  solver bytea NOT NULL
+  log_index    bigint NOT NULL,
+  solver       bytea  NOT NULL,
+  tx_hash      bytea  NOT NULL,
+
+  PRIMARY KEY (block_number, log_index)
 );
+
+CREATE INDEX settlements_idx ON settlements (tx_hash);
