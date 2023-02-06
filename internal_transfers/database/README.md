@@ -4,7 +4,7 @@ This repo contains the docker image and the flyway migrations to run the databas
 ## [Optional] Empty Local Instance of Postgres
 
 ```sh
-docker run -e POSTGRES_PASSWORD=password -p 5432:5432 docker.io/postgres
+docker run -e POSTGRES_PASSWORD=postgres -p 5432:5432 docker.io/postgres
 ```
 
 ## Perform Migration
