@@ -10,4 +10,5 @@ export interface TransferEvent {
 
 export interface SettlementEvent {
   solver: string;
+  log_index: number;
 }

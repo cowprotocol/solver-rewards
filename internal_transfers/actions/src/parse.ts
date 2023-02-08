@@ -23,7 +23,7 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
     trades: [],
     settlements: [],
   };
-  logs.forEach((log) => {
+  logs.forEach((log, index) => {
     const topics = log.topics;
     const eventTopic = topics[0];
 
@@ -44,6 +44,7 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
     } else if (eventTopic === SETTLEMENT_EVENT_TOPIC) {
       result.settlements.push({
         solver: addressFromBytes32(topics[1]),
+        log_index: index,
       });
     } else {
       // Other, currently ignored, event topic.
