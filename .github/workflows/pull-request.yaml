@@ -29,3 +29,26 @@ jobs:
         env:
           # We make a rinkeby request in one unit test
           INFURA_KEY: ${{ secrets.INFURA_KEY }}
+  tenderly-ci:
+    name: Tenderly Lint & Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out Git repository
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16
+
+      - name: Install Node.js dependencies
+        run: npm ci
+        working-directory: ./internal_transfers/actions
+
+      - name: ESLint
+        run: npm run lint
+        working-directory: ./internal_transfers/actions
+
+      - name: Tests
+        run: npm run test --silent
+        working-directory: ./internal_transfers/actions
