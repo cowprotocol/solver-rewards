@@ -84,6 +84,4 @@ def usd_price(token: TokenId, day: datetime) -> float:
     item = response_list[0]
     price_time = datetime.strptime(item["timestamp"], "%Y-%m-%dT00:00:00Z")
     assert price_time == day
-    result = float(item["price"])
-    log.info(f"got price {result}")
-    return result
+    return float(item["price"])
