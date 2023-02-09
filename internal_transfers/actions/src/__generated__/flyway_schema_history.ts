@@ -9,35 +9,39 @@
 // tslint:disable
 
 interface FlywaySchemaHistory {
-  checksum: (number) | null
-  description: string
-  execution_time: number
-  installed_by: string
+  checksum: number | null;
+  description: string;
+  execution_time: number;
+  installed_by: string;
   /**
    * @default now()
    */
-  installed_on: Date
-  installed_rank: number & {readonly __brand?: 'flyway_schema_history_installed_rank'}
-  script: string
-  success: boolean
-  type: string
-  version: (string) | null
+  installed_on: Date;
+  installed_rank: number & {
+    readonly __brand?: "flyway_schema_history_installed_rank";
+  };
+  script: string;
+  success: boolean;
+  type: string;
+  version: string | null;
 }
 export default FlywaySchemaHistory;
 
 interface FlywaySchemaHistory_InsertParameters {
-  checksum?: (number) | null
-  description: string
-  execution_time: number
-  installed_by: string
+  checksum?: number | null;
+  description: string;
+  execution_time: number;
+  installed_by: string;
   /**
    * @default now()
    */
-  installed_on?: Date
-  installed_rank: number & {readonly __brand?: 'flyway_schema_history_installed_rank'}
-  script: string
-  success: boolean
-  type: string
-  version?: (string) | null
+  installed_on?: Date;
+  installed_rank: number & {
+    readonly __brand?: "flyway_schema_history_installed_rank";
+  };
+  script: string;
+  success: boolean;
+  type: string;
+  version?: string | null;
 }
-export type {FlywaySchemaHistory_InsertParameters}
+export type { FlywaySchemaHistory_InsertParameters };

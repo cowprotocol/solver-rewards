@@ -8,23 +8,32 @@
 /* eslint-disable */
 // tslint:disable
 
-import FlywaySchemaHistory, {FlywaySchemaHistory_InsertParameters} from './flyway_schema_history'
-import Settlements, {Settlements_InsertParameters} from './settlements'
+import FlywaySchemaHistory, {
+  FlywaySchemaHistory_InsertParameters,
+} from "./flyway_schema_history";
+import Settlements, { Settlements_InsertParameters } from "./settlements";
 
 interface DatabaseSchema {
-  flyway_schema_history: {record: FlywaySchemaHistory, insert: FlywaySchemaHistory_InsertParameters};
-  settlements: {record: Settlements, insert: Settlements_InsertParameters};
+  flyway_schema_history: {
+    record: FlywaySchemaHistory;
+    insert: FlywaySchemaHistory_InsertParameters;
+  };
+  settlements: { record: Settlements; insert: Settlements_InsertParameters };
 }
 export default DatabaseSchema;
 
-function serializeValue(_tableName: string, _columnName: string, value: unknown): unknown {
+function serializeValue(
+  _tableName: string,
+  _columnName: string,
+  value: unknown
+): unknown {
   return value;
 }
-export {serializeValue}
+export { serializeValue };
 
 export type {
   FlywaySchemaHistory,
   FlywaySchemaHistory_InsertParameters,
   Settlements,
   Settlements_InsertParameters,
-}
+};

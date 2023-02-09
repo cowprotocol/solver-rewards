@@ -9,17 +9,17 @@
 // tslint:disable
 
 interface Settlements {
-  block_number: number & {readonly __brand?: 'settlements_block_number'}
-  log_index: number & {readonly __brand?: 'settlements_log_index'}
-  solver: Buffer
-  tx_hash: Buffer
+  block_number: number & { readonly __brand?: "settlements_block_number" };
+  log_index: number & { readonly __brand?: "settlements_log_index" };
+  solver: Buffer;
+  tx_hash: Buffer;
 }
 export default Settlements;
 
 interface Settlements_InsertParameters {
-  block_number: number & {readonly __brand?: 'settlements_block_number'}
-  log_index: number & {readonly __brand?: 'settlements_log_index'}
-  solver: Buffer
-  tx_hash: Buffer
+  block_number: number & { readonly __brand?: "settlements_block_number" };
+  log_index: number & { readonly __brand?: "settlements_log_index" };
+  solver: Buffer;
+  tx_hash: Buffer;
 }
-export type {Settlements_InsertParameters}
+export type { Settlements_InsertParameters };

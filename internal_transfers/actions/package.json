@@ -2,6 +2,7 @@
   "name": "actions",
   "scripts": {
     "build": "tsc && cp ./src/__generated__/schema.json out/src/__generated__/",
+    "build:schema": "npx @databases/pg-schema-cli --database ${DB_URL} --directory src/__generated__ && yarn lint:fix",
     "test": "jest",
     "lint": "eslint && prettier --check .",
     "lint:fix": "eslint && prettier --write ."
