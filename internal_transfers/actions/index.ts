@@ -13,9 +13,10 @@ export const triggerInternalTransfersPipeline: ActionFn = async (
     transactionEvent.logs
   );
   if (settlements.length > 1) {
-    console.error(`Two settlements in same batch ${txHash}!`);
+    console.warn(`Two settlements in same batch ${txHash}!`);
+    // TODO - alert team that such a batch has taken place!
+    //  cf https://github.com/cowprotocol/solver-rewards/issues/187
   }
-
   console.log(`Parsed ${transfers.length} (relevant) transfer events`);
   console.log(`Parsed ${trades.length} trade events`);
 };
