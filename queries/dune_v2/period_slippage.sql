@@ -242,12 +242,12 @@ valued_potential_buffered_trades as (
     -- (contract, minute) as seen here: https://dune.xyz/queries/510124
     left outer join clearing_prices cp
         on t.tx_hash = cp.tx_hash
-    and t.token = cp.token
-        left outer join prices.usd pusd
-            on pusd.minute between '{{StartTime}}' and '{{EndTime}}'
-            and pusd.contract_address = t.token
-            and blockchain = 'ethereum'
-            and date_trunc('minute', block_time) = pusd.minute
+        and t.token = cp.token
+    left outer join prices.usd pusd
+        on pusd.minute between '{{StartTime}}' and '{{EndTime}}'
+        and pusd.contract_address = t.token
+        and blockchain = 'ethereum'
+        and date_trunc('minute', block_time) = pusd.minute
 ),
 internal_buffer_trader_solvers as (
     -- See the resulting list at: https://dune.com/queries/908642
@@ -485,6 +485,7 @@ eth_prices as (
 results_per_tx as (
     select
         ftbs.hour,
+        tx_hash,
         solver_address,
         sum(token_imbalance_wei * price / pow(10, p.decimals)) as usd_value,
         sum(token_imbalance_wei * price / pow(10, p.decimals) / eth_price) * pow(10, 18) as eth_slippage_wei,
@@ -511,8 +512,6 @@ results as (
         sum(eth_slippage_wei) as eth_slippage_wei
     from
         results_per_tx rpt
-    join eth_prices ep
-        on rpt.hour = ep.hour
     join cow_protocol_ethereum.solvers
         on address = solver_address
     group by
