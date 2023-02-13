@@ -1,9 +1,9 @@
--- https://github.com/cowprotocol/solver-rewards/pull/180
+-- https://github.com/cowprotocol/solver-rewards/pull/188
 with
 batch_meta as (
-    select t.block_time,
-           t.block_number,
-           t.tx_hash,
+    select b.block_time,
+           b.block_number,
+           b.tx_hash,
            case
             when dex_swaps = 0
             -- Estimation made here: https://dune.com/queries/1646084
@@ -12,14 +12,10 @@ batch_meta as (
            end as dex_swaps,
            num_trades,
            b.solver_address
-    from cow_protocol_ethereum.trades t
-    join cow_protocol_ethereum.batches b
-        on t.block_number = b.block_number
-        and t.tx_hash = b.tx_hash
+    from cow_protocol_ethereum.batches b
     where b.block_time between '{{StartTime}}' and '{{EndTime}}'
-    and t.block_time between '{{StartTime}}' and '{{EndTime}}'
     and (b.solver_address = lower('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
-    and (t.tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
+    and (b.tx_hash = lower('{{TxHash}}') or '{{TxHash}}' = '0x')
 ),
 filtered_trades as (
     select t.tx_hash,
@@ -513,7 +509,14 @@ results as (
         solver_address,
         concat(environment, '-', name) as solver_name,
         sum(usd_value) as usd_value,
-        sum(eth_slippage_wei) as eth_slippage_wei
+        sum(eth_slippage_wei) as eth_slippage_wei,
+        concat(
+            '<a href="https://dune.com/queries/1995951?SolverAddress=', solver_address,
+            '&CTE_NAME=results_per_tx',
+            '&StartTime={{StartTime}}',
+            '&EndTime={{EndTime}}',
+            '" target="_blank">link</a>'
+        ) as batchwise_breakdown
     from
         results_per_tx rpt
     join cow_protocol_ethereum.solvers
