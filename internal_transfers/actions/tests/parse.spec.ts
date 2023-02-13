@@ -7,12 +7,17 @@ import {
 } from "../src/parse";
 
 const TOKEN_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
+
+function addressToTopic(address: string): string {
+  return "0x000000000000000000000000" + address.slice(2);
+}
+
 describe("partitionEventLogs(logs)", () => {
   test("partitions event logs single Trade Event", () => {
     const tradeOwner = "0xd5553c9726ea28e7ebedfe9879cf8ab4d061dbf0";
     const trade_log = {
       address: SETTLEMENT_CONTRACT_ADDRESS,
-      topics: [TRADE_EVENT_TOPIC, "0x000000000000000000000000" + tradeOwner],
+      topics: [TRADE_EVENT_TOPIC, addressToTopic(tradeOwner)],
       data: "0x",
     };
     const { trades, transfers, settlements } = partitionEventLogs([trade_log]);
@@ -28,8 +33,8 @@ describe("partitionEventLogs(logs)", () => {
       address: TOKEN_ADDRESS,
       topics: [
         TRANSFER_EVENT_TOPIC,
-        "0x000000000000000000000000" + address,
-        "0x000000000000000000000000" + SETTLEMENT_CONTRACT_ADDRESS,
+        addressToTopic(address),
+        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
       ],
       data: "0x0000000000000000000000000000000000000000000000000000000000001000",
     };
@@ -58,10 +63,7 @@ describe("partitionEventLogs(logs)", () => {
     const solverAddress = "0xb20b86c4e6deeb432a22d773a221898bbbd03036";
     const settlement_log = {
       address: SETTLEMENT_CONTRACT_ADDRESS,
-      topics: [
-        SETTLEMENT_EVENT_TOPIC,
-        "0x000000000000000000000000" + solverAddress,
-      ],
+      topics: [SETTLEMENT_EVENT_TOPIC, addressToTopic(solverAddress)],
       data: "0x",
     };
     const { trades, transfers, settlements } = partitionEventLogs([
