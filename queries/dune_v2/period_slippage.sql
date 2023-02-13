@@ -1,4 +1,4 @@
--- https://github.com/cowprotocol/solver-rewards/pull/186
+-- https://github.com/cowprotocol/solver-rewards/pull/188
 with
 batch_meta as (
     select b.block_time,
