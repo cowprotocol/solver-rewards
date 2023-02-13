@@ -509,7 +509,14 @@ results as (
         solver_address,
         concat(environment, '-', name) as solver_name,
         sum(usd_value) as usd_value,
-        sum(eth_slippage_wei) as eth_slippage_wei
+        sum(eth_slippage_wei) as eth_slippage_wei,
+        concat(
+            '<a href="https://dune.com/queries/1995951?SolverAddress=', solver_address,
+            '&CTE_NAME=results_per_tx',
+            '&StartTime={{StartTime}}',
+            '&EndTime={{EndTime}}',
+            '" target="_blank">link</a>'
+        ) as batchwise_breakdown
     from
         results_per_tx rpt
     join cow_protocol_ethereum.solvers

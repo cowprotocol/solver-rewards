@@ -146,13 +146,11 @@ class TestDuneAnalytics(unittest.TestCase):
         """
         period = AccountingPeriod("2023-02-01", 1)
         # Previously having -210 USD negative slippage.
+        tx_hash = "0x3b2e9675b6d71a34e9b7f4abb4c9e80922be311076fcbb345d7da9d91a05e048"
         result_0x3b2e = exec_or_get(
             self.dune,
-            query=self.slippage_query_for(
-                period,
-                "0x3b2e9675b6d71a34e9b7f4abb4c9e80922be311076fcbb345d7da9d91a05e048",
-            ),
-            result_id="01GRA2NSAVSQZH6B8BPHR0FAN8",
+            query=self.slippage_query_for(period, tx_hash),
+            result_id="01GS59V171HPZTVJJ2K1VKQD31",
         )
         self.assertEqual(result_0x3b2e.query_id, self.slippage_query.v2_query.query_id)
         self.assertEqual(
@@ -163,18 +161,17 @@ class TestDuneAnalytics(unittest.TestCase):
                     "hour": "2023-02-01T01:00:00Z",
                     "num_entries": 2,
                     "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
+                    "tx_hash": tx_hash,
                     "usd_value": -7.454727687586665e-09,
                 }
             ],
         )
         # Previously having -150 USD slippage
+        tx_hash = "0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf"
         result_0x7a00 = exec_or_get(
             self.dune,
-            query=self.slippage_query_for(
-                period,
-                "0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf",
-            ),
-            result_id="01GRA2Y006E4FGZMWSTACMHZDY",
+            query=self.slippage_query_for(period, tx_hash),
+            result_id="01GS5BF01WCHMHJBAS8Q6F0C7W",
         )
         self.assertEqual(result_0x7a00.query_id, self.slippage_query.v2_query.query_id)
         self.assertEqual(
@@ -185,6 +182,7 @@ class TestDuneAnalytics(unittest.TestCase):
                     "hour": "2023-02-01T01:00:00Z",
                     "num_entries": 2,
                     "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
+                    "tx_hash": tx_hash,
                     "usd_value": -1.2930210208343511e-06,
                 }
             ],
