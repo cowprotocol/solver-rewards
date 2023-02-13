@@ -178,12 +178,12 @@ class TestDuneAnalytics(unittest.TestCase):
             result_0x7a00.get_rows(),
             [
                 {
-                    "eth_slippage_wei": -815874497.9746609,
+                    "eth_slippage_wei": -407937248.98733044,
                     "hour": "2023-02-01T01:00:00Z",
                     "num_entries": 2,
                     "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
-                    "tx_hash": tx_hash,
-                    "usd_value": -1.2930210208343511e-06,
+                    "tx_hash": "0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf",
+                    "usd_value": -6.465105104171756e-07,
                 }
             ],
         )
