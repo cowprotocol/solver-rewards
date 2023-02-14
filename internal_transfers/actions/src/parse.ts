@@ -31,8 +31,8 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
     if (transferEventLog != null) {
       const { from, to } = transferEventLog.args;
       const transfer: TransferEvent = {
-        from: from,
-        to: to,
+        from,
+        to,
         amount: BigInt(transferEventLog.args[2]),
       };
       // Is a "relevant" transfer (involving settlement contract)
