@@ -1,4 +1,5 @@
 """All Dune related query fetching is defined here in the DuneFetcherClass"""
+from typing import Optional
 
 import pandas as pd
 from dune_client.client import DuneClient
@@ -174,25 +175,28 @@ class DuneFetcher:
             realized_fees_eth=int(rec["realized_fees_eth"]),
         )
 
-    def get_period_slippage(self) -> SplitSlippages:
+    def get_period_slippage(self, job_id: Optional[str] = None) -> SplitSlippages:
         """
         Executes & Fetches results of slippage query per solver for specified accounting period.
         Returns a class representation of the results as two lists (positive & negative).
         """
-        token_list = get_trusted_tokens()
-        data_set = self._get_query_results(
-            self._parameterized_query(
-                QUERIES["PERIOD_SLIPPAGE"],
-                params=self._period_params()
-                + [
-                    QueryParameter.text_type("TxHash", "0x"),
-                    QueryParameter.text_type("TokenList", ",".join(token_list)),
-                ],
+        if job_id:
+            data_set = self.dune.get_result(job_id).get_rows()
+        else:
+            token_list = get_trusted_tokens()
+            data_set = self._get_query_results(
+                self._parameterized_query(
+                    QUERIES["PERIOD_SLIPPAGE"],
+                    params=self._period_params()
+                    + [
+                        QueryParameter.text_type("TxHash", "0x"),
+                        QueryParameter.text_type("TokenList", ",".join(token_list)),
+                    ],
+                )
             )
-        )
         return SplitSlippages.from_data_set(data_set)
 
-    def get_transfers(self) -> list[Transfer]:
+    def get_transfers(self, slippages: SplitSlippages) -> list[Transfer]:
         """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
         # TODO - fetch these three results asynchronously!
         reimbursements = self.get_eth_spent()
@@ -203,6 +207,6 @@ class DuneFetcher:
             log_saver=self.log_saver,
         )
         return split_transfers.process(
-            slippages=self.get_period_slippage(),
+            slippages=slippages,
             cow_redirects=self.get_vouches(),
         )

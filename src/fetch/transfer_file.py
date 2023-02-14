@@ -6,6 +6,7 @@ from __future__ import annotations
 import os
 import ssl
 from dataclasses import asdict
+from typing import Optional
 
 import certifi
 from dune_client.file.interface import FileIO
@@ -22,6 +23,7 @@ from src.constants import (
     FILE_OUT_DIR,
 )
 from src.fetch.dune import DuneFetcher
+from src.models.slippage import SplitSlippages
 from src.models.transfer import Transfer, CSVTransfer
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
 from src.slack import post_to_slack
@@ -29,7 +31,7 @@ from src.utils.print_store import Category
 from src.utils.script_args import generic_script_init
 
 
-def manual_propose(dune: DuneFetcher) -> None:
+def manual_propose(dune: DuneFetcher, slippage: Optional[SplitSlippages] = None) -> None:
     """
     Entry point to manual creation of rewards payout transaction.
     This function generates the CSV transfer file to be pasted into the COW Safe app
@@ -38,7 +40,8 @@ def manual_propose(dune: DuneFetcher) -> None:
         f"Please double check the batches with unusual slippage: "
         f"{dune.period.unusual_slippage_url()}"
     )
-    transfers = Transfer.consolidate(dune.get_transfers())
+    slippage = slippage if slippage else dune.get_period_slippage()
+    transfers = Transfer.consolidate(dune.get_transfers(slippage))
     csv_transfers = [asdict(CSVTransfer.from_transfer(t)) for t in transfers]
     FileIO(FILE_OUT_DIR).write_csv(csv_transfers, f"transfers-{dune.period}.csv")
 

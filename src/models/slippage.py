@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+from typing import Hashable, Any
 
 from dune_client.types import Address
 
@@ -26,7 +27,7 @@ class SolverSlippage:
     amount_wei: int
 
     @classmethod
-    def from_dict(cls, obj: dict[str, str]) -> SolverSlippage:
+    def from_dict(cls, obj: dict[Hashable, Any]) -> SolverSlippage:
         """Converts Dune data dict to object with types"""
         return cls(
             solver_address=Address(obj["solver_address"]),
@@ -47,7 +48,7 @@ class SplitSlippages:
         self.solvers_with_positive_total = []
 
     @classmethod
-    def from_data_set(cls, data_set: list[dict[str, str]]) -> SplitSlippages:
+    def from_data_set(cls, data_set: list[dict[Hashable, Any]]) -> SplitSlippages:
         """Constructs an object based on provided dataset"""
         results = cls()
         for row in data_set:
