@@ -64,7 +64,7 @@ def auto_propose(dune: DuneFetcher, slack_client: WebClient, dry_run: bool) -> N
     signing_key = os.environ["PROPOSER_PK"]
     client = EthereumClient(URI(NODE_URL))
 
-    transfers = Transfer.consolidate(dune.get_transfers())
+    transfers = Transfer.consolidate(dune.get_transfers(slippages=dune.get_period_slippage()))
     dune.log_saver.print(Transfer.summarize(transfers), category=Category.TOTALS)
     transactions = prepend_unwrap_if_necessary(
         client, SAFE_ADDRESS, transactions=[t.as_multisend_tx() for t in transfers]

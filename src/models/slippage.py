@@ -52,7 +52,9 @@ class SplitSlippages:
         """Constructs an object based on provided dataset"""
         results = cls()
         for row in data_set:
-            results.append(slippage=SolverSlippage.from_dict(row))
+            slippage_obj = SolverSlippage.from_dict(row)
+            if slippage_obj.amount_wei != 0:
+                results.append(slippage=slippage_obj)
         return results
 
     def append(self, slippage: SolverSlippage) -> None:
