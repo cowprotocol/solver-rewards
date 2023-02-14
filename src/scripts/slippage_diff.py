@@ -25,7 +25,10 @@ def get_slippages_for_execution(dune_client: DuneClient, job_id: str) -> DataFra
 
 if __name__ == "__main__":
     args = generic_script_init(description="Fetch Complete Reimbursement")
-
+    print(
+        f"The data aggregated can be visualized at\n"
+        f"{args.dune.period.dashboard_url()}",
+    )
     # https://production-6de61f.kb.eu-central-1.aws.cloud.es.io/app/r/s/Z4HbA
     bugged_execution = "01GRNEBG085542R4CQAPNNRMSH"
 
