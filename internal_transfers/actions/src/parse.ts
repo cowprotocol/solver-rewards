@@ -42,12 +42,14 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
     } else if (settlementEventLog != null) {
       // Relevant Event Types
       if (settlementEventLog.name == "Trade") {
+        const { owner } = settlementEventLog.args;
         result.trades.push({
-          owner: settlementEventLog.args[0],
+          owner,
         });
       } else if (settlementEventLog.name == "Settlement") {
+        const { solver } = settlementEventLog.args;
         result.settlements.push({
-          solver: settlementEventLog.args[0],
+          solver,
           log_index: index,
         });
       } else {
