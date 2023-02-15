@@ -73,7 +73,7 @@ class SplitTransfers:
                 except ValueError as err:
                     name, address = slippage.solver_name, slippage.solver_address
                     self.log_saver.print(
-                        f"Slippage for {address}({name}) exceeds reimbursement: {err}\n"
+                        f"Slippage for {address} ({name}) exceeds reimbursement: {err}\n"
                         f"Excluding payout and appending excess to overdraft",
                         category=Category.OVERDRAFT,
                     )
