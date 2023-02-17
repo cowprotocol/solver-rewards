@@ -11,6 +11,7 @@ from src.models.slippage import SolverSlippage
 from src.fetch.transfer_file import Transfer
 from src.models.accounting_period import AccountingPeriod
 from src.models.token import Token
+from src.models.vouch import Vouch
 from src.utils.print_store import PrintStore
 
 from tests.queries.test_internal_trades import TransferType
@@ -77,7 +78,19 @@ class TestTransfer(unittest.TestCase):
             f"by {overdraft_slippage.amount_wei / 10**18}",
         )
 
-    def test_consolidation(self):
+    def test_recipient(self):
+        receiver = Address.from_int(1)
+        transfer = Transfer(
+            token=None,
+            receiver=Address.from_int(1),
+            amount_wei=0,
+        )
+        self.assertEqual(transfer.recipient, receiver)
+        redirect = Address.from_int(2)
+        transfer.redirect_to = redirect
+        self.assertEqual(transfer.recipient, redirect)
+
+    def test_basic_consolidation(self):
         recipients = [
             Address.from_int(0),
             Address.from_int(1),
@@ -158,7 +171,79 @@ class TestTransfer(unittest.TestCase):
         ]
         self.assertEqual(expected, Transfer.consolidate(transfer_list))
 
-    def test_merge(self):
+    def test_consolidation_with_redirect(self):
+        receiver = Address.from_int(0)
+        redirect = Address.from_int(1)
+
+        transfer_list = [
+            Transfer(
+                token=None,
+                receiver=receiver,
+                amount_wei=1 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=receiver,
+                amount_wei=2 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=receiver,
+                amount_wei=3 * ONE_ETH,
+                redirect_to=redirect,
+            ),
+        ]
+
+        expected = [
+            Transfer(
+                token=None,
+                receiver=receiver,
+                amount_wei=3 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=redirect,
+                amount_wei=3 * ONE_ETH,
+            ),
+        ]
+        results = Transfer.consolidate(transfer_list)
+        self.assertEqual(expected, results)
+
+        transfer_list = [
+            Transfer(
+                token=None,
+                receiver=receiver,
+                amount_wei=1 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=receiver,
+                amount_wei=2 * ONE_ETH,
+                redirect_to=redirect,
+            ),
+            Transfer(
+                token=None,
+                receiver=receiver,
+                amount_wei=3 * ONE_ETH,
+                redirect_to=redirect,
+            ),
+        ]
+        expected = [
+            Transfer(
+                token=None,
+                receiver=redirect,
+                amount_wei=5 * ONE_ETH,
+            ),
+            Transfer(
+                token=None,
+                receiver=receiver,
+                amount_wei=1 * ONE_ETH,
+            ),
+        ]
+        results = Transfer.consolidate(transfer_list)
+        self.assertEqual(expected, results)
+
+    def test_basic_merge_without_redirects(self):
         receiver = Address.zero()
         # Native Transfer Merge
         native_transfer1 = Transfer(
@@ -202,7 +287,7 @@ class TestTransfer(unittest.TestCase):
         with self.assertRaises(ValueError) as err:
             native_transfer1.merge(erc20_transfer1)
         self.assertEqual(
-            f"Can't merge tokens {native_transfer1}, {erc20_transfer1}. "
+            f"Can't merge transfers {native_transfer1}, {erc20_transfer1}. "
             f"Requirements met [True, False]",
             str(err.exception),
         )
@@ -221,7 +306,7 @@ class TestTransfer(unittest.TestCase):
             )
             t1.merge(t2)
         self.assertEqual(
-            f"Can't merge tokens {t1}, {t2}. Requirements met [False, True]",
+            f"Can't merge transfers {t1}, {t2}. Requirements met [False, True]",
             str(err.exception),
         )
 
@@ -239,7 +324,58 @@ class TestTransfer(unittest.TestCase):
             )
             t1.merge(t2)
         self.assertEqual(
-            f"Can't merge tokens {t1}, {t2}. Requirements met [True, False]",
+            f"Can't merge transfers {t1}, {t2}. Requirements met [True, False]",
+            str(err.exception),
+        )
+
+    def test_merge_with_redirects(self):
+        receiver_1 = Address.from_int(1)
+        receiver_2 = Address.from_int(2)
+        redirect = Address.from_int(3)
+
+        redirected_transfer = Transfer(
+            token=None, receiver=receiver_1, amount_wei=ONE_ETH, redirect_to=redirect
+        )
+        expected = Transfer(
+            token=None,
+            receiver=redirect,
+            amount_wei=2 * ONE_ETH,
+        )
+        self.assertEqual(
+            redirected_transfer.merge(
+                Transfer(
+                    token=None,
+                    receiver=receiver_2,
+                    amount_wei=ONE_ETH,
+                    redirect_to=redirect,
+                )
+            ),
+            # Both redirected to same address get merged.
+            expected,
+        )
+        self.assertEqual(
+            redirected_transfer.merge(
+                Transfer(
+                    token=None,
+                    receiver=redirect,
+                    amount_wei=ONE_ETH,
+                )
+            ),
+            # one redirected and the other with initial recipient as redirect address get merged.
+            expected,
+        )
+
+        with self.assertRaises(ValueError) as err:
+            # Fail to merge redirected transfer with one whose recipient
+            # is the original receiver of the redirected transfer
+            other = Transfer(
+                token=None,
+                receiver=redirected_transfer.receiver,
+                amount_wei=ONE_ETH,
+            )
+            redirected_transfer.merge(other)
+        self.assertEqual(
+            f"Can't merge transfers {redirected_transfer}, {other}. Requirements met [False, True]",
             str(err.exception),
         )
 
@@ -318,7 +454,7 @@ class TestTransfer(unittest.TestCase):
 
         self.assertEqual(expected, Transfer.from_dataframe(transfer_df))
 
-    def test_as_multisend_tx(self):
+    def test_basic_as_multisend_tx(self):
         receiver = Address("0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1")
         native_transfer = Transfer(token=None, receiver=receiver, amount_wei=16)
         self.assertEqual(
@@ -345,6 +481,39 @@ class TestTransfer(unittest.TestCase):
             ),
         )
 
+    def test_as_multisend_tx_with_redirects(self):
+        receiver = Address.from_int(1)
+        redirect = Address.from_int(2)
+        native_transfer = Transfer(
+            token=None, receiver=receiver, amount_wei=16, redirect_to=redirect
+        )
+        self.assertEqual(
+            native_transfer.as_multisend_tx(),
+            MultiSendTx(
+                operation=MultiSendOperation.CALL,
+                to=redirect.address,
+                value=16,
+                data=HexStr("0x"),
+            ),
+        )
+        token_address = Address.from_int(1)
+        token = Token(address=token_address, decimals=10)
+        erc20_transfer = Transfer(
+            token=token,
+            receiver=receiver,
+            amount_wei=15,
+            redirect_to=redirect,
+        )
+        self.assertEqual(
+            erc20_transfer.as_multisend_tx(),
+            MultiSendTx(
+                operation=MultiSendOperation.CALL,
+                to=token_address.address,
+                value=0,
+                data=erc20().encodeABI(fn_name="transfer", args=[redirect.address, 15]),
+            ),
+        )
+
     def test_summarize(self):
         receiver = Address.from_int(1)
         eth_amount = 123456789101112131415
@@ -362,6 +531,116 @@ class TestTransfer(unittest.TestCase):
         self.assertEqual(
             result,
             "Total ETH Funds needed: 123.4568\nTotal COW Funds needed: 10000000.0000\n",
+        )
+
+    def test_try_redirect(self):
+        """
+        Test demonstrates that try_redirect works as expected for our use case.
+        However, it also demonstrates how bad it is to pass in an unstructured hashmap
+        that expects the keys to be equal the solver field of its values!
+        TODO - fix this strange error prone issue!
+        """
+        dummy_print_store = PrintStore()
+        receiver = Address.from_int(1)
+        redirect = Address.from_int(2)
+        # Try redirect elsewhere
+        t1 = Transfer(token=None, amount_wei=1, receiver=receiver)
+        vouch_forward = Vouch(
+            bonding_pool=Address.zero(), reward_target=redirect, solver=receiver
+        )
+        t1.try_redirect({vouch_forward.solver: vouch_forward}, dummy_print_store)
+        self.assertEqual(t1.recipient, redirect)
+        self.assertEqual(
+            t1,
+            Transfer(token=None, amount_wei=1, receiver=receiver, redirect_to=redirect),
+        )
+
+        vouch_reverse = Vouch(
+            bonding_pool=Address.zero(), reward_target=receiver, solver=redirect
+        )
+        # Redirect back!
+        t1.try_redirect({vouch_reverse.solver: vouch_reverse}, dummy_print_store)
+        self.assertEqual(t1.recipient, receiver)
+        self.assertEqual(
+            t1,
+            Transfer(token=None, amount_wei=1, receiver=receiver, redirect_to=receiver),
+        )
+        # no action redirect.
+        another_address = Address.from_int(5)
+        t2 = Transfer(token=None, amount_wei=1, receiver=another_address)
+        disjoint_redirect_map = {
+            vouch_forward.solver: vouch_forward,
+            vouch_reverse.solver: vouch_reverse,
+        }
+        # This assertion implies we should expect t2 to remain unchanged after "try_redirect"
+        self.assertFalse(t2.recipient in disjoint_redirect_map.keys())
+        t2.try_redirect(disjoint_redirect_map, dummy_print_store)
+        self.assertEqual(
+            t2, Transfer(token=None, amount_wei=1, receiver=another_address)
+        )
+
+    def test_sorted_output(self):
+        solver_1 = Address.from_int(1)
+        solver_2 = Address.from_int(2)
+        solver_3 = Address.from_int(3)
+
+        reward_target_1 = Address.from_int(4)
+        reward_target_2 = Address.from_int(4)
+
+        # These are not redirected.
+        eth_1 = Transfer(token=None, receiver=solver_1, amount_wei=2)
+        eth_2 = Transfer(token=None, receiver=solver_2, amount_wei=3)
+        eth_3 = Transfer(token=None, receiver=solver_3, amount_wei=5)
+        execution_reimbursements = [eth_1, eth_2, eth_3]
+        cow_token = Token(COW_TOKEN_ADDRESS)
+        cow_1 = Transfer(
+            token=cow_token,
+            receiver=solver_1,
+            amount_wei=10,
+            redirect_to=reward_target_1,
+        )
+        cow_2 = Transfer(
+            token=cow_token,
+            receiver=solver_2,
+            amount_wei=20,
+            redirect_to=reward_target_2,
+        )
+        cow_3 = Transfer(
+            token=cow_token,
+            receiver=solver_3,
+            amount_wei=30,
+            redirect_to=reward_target_1,
+        )
+        cow_rewards = [cow_1, cow_2, cow_3]
+        slip_1 = Transfer(
+            token=None, receiver=solver_1, amount_wei=1, redirect_to=reward_target_2
+        )
+        slip_2 = Transfer(
+            token=Token(COW_TOKEN_ADDRESS),
+            receiver=solver_2,
+            amount_wei=4,
+            redirect_to=reward_target_2,
+        )
+        positive_slippage = [slip_1, slip_2]
+
+        payout_transfers = execution_reimbursements + cow_rewards + positive_slippage
+        Transfer.sort_list(payout_transfers)
+        # This demonstrates that the sorting technique groups solvers (i.e. original recipients before redirects first)
+        # Then by token (with NATIVE ETH Last Since "0x" < "None")
+        # and finally by amount descending.
+        # Note that eth_1.amount > slip_1.amount while eth_2.amount < slip_2.amount
+        self.assertEqual(
+            payout_transfers,
+            [
+                cow_1,
+                eth_1,
+                slip_1,  # Solver 1 Transfers
+                cow_2,
+                slip_2,
+                eth_2,  # Solver 2 Transfers
+                cow_3,
+                eth_3,  # Solver 3 Transfers
+            ],
         )
 
 

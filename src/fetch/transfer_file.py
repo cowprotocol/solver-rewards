@@ -101,6 +101,7 @@ if __name__ == "__main__":
     )
 
     payout_transfers = dune.get_transfers()
+    Transfer.sort_list(payout_transfers)
     if args.consolidate_transfers:
         payout_transfers = Transfer.consolidate(payout_transfers)
 

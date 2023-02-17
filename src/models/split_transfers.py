@@ -121,7 +121,7 @@ class SplitTransfers:
                     # Reinsert since there is still an amount owed.
                     self.overdrafts[solver] = overdraft
                     continue
-            transfer.redirect_to(redirect_map, self.log_saver)
+            transfer.try_redirect(redirect_map, self.log_saver)
             self.cow_transfers.append(transfer)
         # We do not need to worry about any controversy between overdraft
         # and positive slippage adjustments, because positive/negative slippage
@@ -134,7 +134,7 @@ class SplitTransfers:
             ), f"Expected positive slippage got {slippage.amount_wei}"
             total_positive_slippage += slippage.amount_wei
             slippage_transfer = Transfer.from_slippage(slippage)
-            slippage_transfer.redirect_to(redirect_map, self.log_saver)
+            slippage_transfer.try_redirect(redirect_map, self.log_saver)
             self.eth_transfers.append(slippage_transfer)
         return total_positive_slippage
 
