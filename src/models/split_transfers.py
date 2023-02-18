@@ -61,7 +61,7 @@ class SplitTransfers:
         penalty_total = 0
         while self.unprocessed_native:
             transfer = self.unprocessed_native.pop(0)
-            solver = transfer.receiver
+            solver = transfer.solver
             slippage: Optional[SolverSlippage] = indexed_slippage.get(solver)
             if slippage is not None:
                 assert (
@@ -99,7 +99,7 @@ class SplitTransfers:
         price_day = self.period.end - timedelta(days=1)
         while self.unprocessed_cow:
             transfer = self.unprocessed_cow.pop(0)
-            solver = transfer.receiver
+            solver = transfer.solver
             # Remove the element if it exists (assuming it won't have to be reinserted)
             overdraft = self.overdrafts.pop(solver, None)
             if overdraft is not None:

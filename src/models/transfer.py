@@ -35,7 +35,7 @@ class CSVTransfer:
         return cls(
             token_type=transfer.token_type,
             token_address=transfer.token.address if transfer.token else None,
-            receiver=transfer.receiver,
+            receiver=transfer.recipient,
             # The primary purpose for this class is to convert amount_wei to amount
             amount=transfer.amount,
         )
@@ -46,10 +46,20 @@ class Transfer:
     """Total amount reimbursed for accounting period"""
 
     token: Optional[Token]
-    receiver: Address
+    _solver: Address
     amount_wei: int
     # This defaults to receiver if not otherwise specified.
-    redirect_to: Optional[Address] = None
+    _redirect_target: Optional[Address] = None
+
+    def __init__(self, token: Optional[Token], solver: Address, amount_wei: int):
+        self.token = token
+        self._solver = solver
+        self.amount_wei = amount_wei
+
+    @property
+    def solver(self) -> Address:
+        """Read access to the solver field"""
+        return self._solver
 
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> Transfer:
@@ -57,7 +67,7 @@ class Transfer:
         token_address = obj.get("token_address", None)
         return cls(
             token=Token(token_address) if token_address else None,
-            receiver=Address(obj["receiver"]),
+            solver=Address(obj["receiver"]),
             amount_wei=int(obj["amount"]),
         )
 
@@ -67,7 +77,7 @@ class Transfer:
         return [
             cls(
                 token=Token(row["token_address"]) if row["token_address"] else None,
-                receiver=Address(row["receiver"]),
+                solver=Address(row["receiver"]),
                 amount_wei=int(row["amount"]),
             )
             for _, row in pdf.iterrows()
@@ -90,7 +100,9 @@ class Transfer:
     @property
     def recipient(self) -> Address:
         """The correct way to access the true recipient of a transfer"""
-        return self.redirect_to if self.redirect_to is not None else self.receiver
+        return (
+            self._redirect_target if self._redirect_target is not None else self._solver
+        )
 
     @staticmethod
     def consolidate(transfer_list: list[Transfer]) -> list[Transfer]:
@@ -130,10 +142,10 @@ class Transfer:
 
     def add_slippage(self, slippage: SolverSlippage, log_saver: PrintStore) -> None:
         """Adds Adjusts Transfer amount by Slippage amount"""
-        assert self.receiver == slippage.solver_address, "receiver != solver"
+        assert self._solver == slippage.solver_address, "receiver != solver"
         adjustment = slippage.amount_wei
         log_saver.print(
-            f"Deducting slippage for solver {self.receiver}"
+            f"Deducting slippage for solver {self._solver}"
             f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})",
             category=Category.SLIPPAGE,
         )
@@ -157,7 +169,7 @@ class Transfer:
         if all(merge_requirements):
             return Transfer(
                 token=self.token,
-                receiver=self.recipient,
+                solver=self.recipient,
                 amount_wei=self.amount_wei + other.amount_wei,
             )
         raise ValueError(
@@ -216,7 +228,7 @@ class Transfer:
                 if self.token is None
                 else Category.COW_REDIRECT,
             )
-            self.redirect_to = redirect_address
+            self._redirect_target = redirect_address
 
     @classmethod
     def from_slippage(cls, slippage: SolverSlippage) -> Transfer:
@@ -226,12 +238,12 @@ class Transfer:
         """
         return cls(
             token=None,
-            receiver=slippage.solver_address,
+            solver=slippage.solver_address,
             amount_wei=slippage.amount_wei,
         )
 
-    @classmethod
-    def sort_list(cls, transfer_list: list[Transfer]) -> None:
+    @staticmethod
+    def sort_list(transfer_list: list[Transfer]) -> None:
         """
         This is the preferred and tested sort order we use for generating the transfer file.
         It ensures that transfers are grouped
@@ -240,7 +252,7 @@ class Transfer:
         and finally order by amount descending (so that largest in category occur first).
         Note that this method mutates the input data and nothing in returned.
         """
-        transfer_list.sort(key=lambda t: (t.receiver, str(t.token), -t.amount))
+        transfer_list.sort(key=lambda t: (t.solver, str(t.token), -t.amount))
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Transfer):

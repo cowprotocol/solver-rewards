@@ -24,12 +24,12 @@ class TestPrices(unittest.TestCase):
         mixed_transfers = [
             Transfer(
                 token=None,
-                receiver=barn_zerox,
+                _solver=barn_zerox,
                 amount_wei=185360274773133130,
             ),
-            Transfer(token=None, receiver=other_solver, amount_wei=1 * ONE_ETH),
-            Transfer(token=cow_token, receiver=barn_zerox, amount_wei=600 * ONE_ETH),
-            Transfer(token=cow_token, receiver=other_solver, amount_wei=2000 * ONE_ETH),
+            Transfer(token=None, _solver=other_solver, amount_wei=1 * ONE_ETH),
+            Transfer(token=cow_token, _solver=barn_zerox, amount_wei=600 * ONE_ETH),
+            Transfer(token=cow_token, _solver=other_solver, amount_wei=2000 * ONE_ETH),
         ]
         slippages = SplitSlippages.from_data_set(
             [
@@ -58,7 +58,7 @@ class TestPrices(unittest.TestCase):
             [
                 Transfer(
                     token=cow_token,
-                    receiver=other_solver,
+                    _solver=other_solver,
                     amount_wei=845094377028141056000,
                 )
             ],

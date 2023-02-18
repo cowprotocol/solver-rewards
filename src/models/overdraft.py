@@ -28,7 +28,7 @@ class Overdraft:
         cls, transfer: Transfer, slippage: SolverSlippage, period: AccountingPeriod
     ) -> Overdraft:
         """Constructs an overdraft instance based on Transfer & Slippage"""
-        assert transfer.receiver == slippage.solver_address
+        assert transfer.solver == slippage.solver_address
         assert transfer.token_type == TokenType.NATIVE
         overdraft = transfer.amount_wei + slippage.amount_wei
         assert overdraft < 0, "This is why we are here."
