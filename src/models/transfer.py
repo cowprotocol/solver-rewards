@@ -46,24 +46,19 @@ class Transfer:
     """Total amount reimbursed for accounting period"""
 
     token: Optional[Token]
-    _solver: Address
+    _recipient: Address
     amount_wei: int
-    _redirect_target: Optional[Address] = None
 
-    def __init__(self, token: Optional[Token], solver: Address, amount_wei: int):
+    def __init__(self, token: Optional[Token], recipient: Address, amount_wei: int):
         self.token = token
-        self._solver = solver
+        self._recipient = recipient
         self.amount_wei = amount_wei
 
-    @property
-    def solver(self) -> Address:
-        """Read access to the solver field"""
-        return self._solver
-
-    @property
-    def redirect_target(self) -> Optional[Address]:
-        """Read access to the redirect_target field"""
-        return self._redirect_target
+        # It ensures that transfers are grouped
+        # 1. first by initial recipient (i.e. solvers),
+        # 2. then by token address (with native ETH last) and
+        # 3. finally ordered by amount descending (so that largest in category occur first).
+        self._sort_key = (recipient, str(token), -amount_wei)
 
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> Transfer:
@@ -71,7 +66,7 @@ class Transfer:
         token_address = obj.get("token_address", None)
         return cls(
             token=Token(token_address) if token_address else None,
-            solver=Address(obj["receiver"]),
+            recipient=Address(obj["receiver"]),
             amount_wei=int(obj["amount"]),
         )
 
@@ -81,7 +76,7 @@ class Transfer:
         return [
             cls(
                 token=Token(row["token_address"]) if row["token_address"] else None,
-                solver=Address(row["receiver"]),
+                recipient=Address(row["receiver"]),
                 amount_wei=int(row["amount"]),
             )
             for _, row in pdf.iterrows()
@@ -103,8 +98,13 @@ class Transfer:
 
     @property
     def recipient(self) -> Address:
-        """The correct way to access the true recipient of a transfer"""
-        return self.redirect_target if self.redirect_target is not None else self.solver
+        """Read access to the recipient of a transfer"""
+        return self._recipient
+
+    @property
+    def sort_key(self) -> tuple[Address, str, int]:
+        """Read access to the recipient of a transfer"""
+        return self._sort_key
 
     @staticmethod
     def consolidate(transfer_list: list[Transfer]) -> list[Transfer]:
@@ -144,10 +144,10 @@ class Transfer:
 
     def add_slippage(self, slippage: SolverSlippage, log_saver: PrintStore) -> None:
         """Adds Adjusts Transfer amount by Slippage amount"""
-        assert self.solver == slippage.solver_address, "receiver != solver"
+        assert self.recipient == slippage.solver_address, "receiver != solver"
         adjustment = slippage.amount_wei
         log_saver.print(
-            f"Deducting slippage for solver {self.solver}"
+            f"Deducting slippage for solver {self.recipient}"
             f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})",
             category=Category.SLIPPAGE,
         )
@@ -171,7 +171,7 @@ class Transfer:
         if all(merge_requirements):
             return Transfer(
                 token=self.token,
-                solver=self.recipient,
+                recipient=self.recipient,
                 amount_wei=self.amount_wei + other.amount_wei,
             )
         raise ValueError(
@@ -230,17 +230,18 @@ class Transfer:
                 if self.token is None
                 else Category.COW_REDIRECT,
             )
-            self._redirect_target = redirect_address
+            # This is the only place where recipient can be overwritten
+            self._recipient = redirect_address
 
     @classmethod
     def from_slippage(cls, slippage: SolverSlippage) -> Transfer:
         """
         Slippage is always in ETH, so this converts
-        Slippage into an ETH Transfer with Null token address
+        slippage into an ETH Transfer with Null token address
         """
         return cls(
             token=None,
-            solver=slippage.solver_address,
+            recipient=slippage.solver_address,
             amount_wei=slippage.amount_wei,
         )
 
@@ -248,10 +249,6 @@ class Transfer:
     def sort_list(transfer_list: list[Transfer]) -> None:
         """
         This is the preferred and tested sort order we use for generating the transfer file.
-        It ensures that transfers are grouped
-        1. first by initial recipient (i.e. solvers),
-        2. then by token address (with native ETH last)
-        and finally order by amount descending (so that largest in category occur first).
         Note that this method mutates the input data and nothing in returned.
         """
-        transfer_list.sort(key=lambda t: (t.solver, str(t.token), -t.amount))
+        transfer_list.sort(key=lambda t: t.sort_key)
