@@ -11,6 +11,7 @@ from src.models.token import Token
 from src.models.transfer import Transfer
 from src.models.vouch import Vouch
 from src.utils.print_store import PrintStore
+from tests.unit.util_methods import redirected_transfer
 
 ONE_ETH = 10**18
 
@@ -40,15 +41,13 @@ class TestSplitTransfers(unittest.TestCase):
         eth_transfers = [
             Transfer(
                 token=None,
-                receiver=solvers[i],
+                solver=solvers[i],
                 amount_wei=eth_amounts[i],
             )
             for i in range(len(solvers))
         ]
         cow_transfers = [
-            Transfer(
-                token=self.cow_token, receiver=solvers[i], amount_wei=cow_rewards[i]
-            )
+            Transfer(token=self.cow_token, solver=solvers[i], amount_wei=cow_rewards[i])
             for i in range(len(solvers))
         ]
         accounting = SplitTransfers(
@@ -76,11 +75,11 @@ class TestSplitTransfers(unittest.TestCase):
         mixed_transfers = [
             Transfer(
                 token=None,
-                receiver=self.solver,
+                solver=self.solver,
                 amount_wei=amount_of_transfer,
             ),
             Transfer(
-                token=self.cow_token, receiver=self.solver, amount_wei=600 * ONE_ETH
+                token=self.cow_token, solver=self.solver, amount_wei=600 * ONE_ETH
             ),
         ]
 
@@ -99,7 +98,7 @@ class TestSplitTransfers(unittest.TestCase):
     def test_process_rewards(self):
         cow_reward = 600 * ONE_ETH
         mixed_transfers = [
-            Transfer(token=self.cow_token, receiver=self.solver, amount_wei=cow_reward),
+            Transfer(token=self.cow_token, solver=self.solver, amount_wei=cow_reward),
         ]
         accounting = SplitTransfers(self.period, mixed_transfers, PrintStore())
         reward_target = Address.from_int(7)
@@ -121,20 +120,22 @@ class TestSplitTransfers(unittest.TestCase):
         self.assertEqual(
             accounting.eth_transfers,
             [
-                Transfer(
+                redirected_transfer(
                     token=None,
-                    receiver=redirect_map[self.solver].reward_target,
+                    solver=self.solver,
                     amount_wei=slippage_amount,
+                    redirect=redirect_map[self.solver].reward_target,
                 )
             ],
         )
         self.assertEqual(
             accounting.cow_transfers,
             [
-                Transfer(
+                redirected_transfer(
                     token=self.cow_token,
-                    receiver=redirect_map[self.solver].reward_target,
+                    solver=self.solver,
                     amount_wei=cow_reward,
+                    redirect=redirect_map[self.solver].reward_target,
                 )
             ],
         )
@@ -157,24 +158,26 @@ class TestSplitTransfers(unittest.TestCase):
                 # The ETH Spent
                 Transfer(
                     token=None,
-                    receiver=self.solver,
+                    solver=self.solver,
                     amount_wei=eth_amount,
                 ),
                 # The redirected positive slippage
-                Transfer(
+                redirected_transfer(
                     token=None,
-                    receiver=self.redirect_map[self.solver].reward_target,
+                    solver=self.solver,
                     amount_wei=slippage_amount,
+                    redirect=self.redirect_map[self.solver].reward_target,
                 ),
             ],
         )
         self.assertEqual(
             accounting.cow_transfers,
             [
-                Transfer(
+                redirected_transfer(
                     token=self.cow_token,
-                    receiver=self.redirect_map[self.solver].reward_target,
+                    solver=self.solver,
                     amount_wei=cow_reward,
+                    redirect=self.redirect_map[self.solver].reward_target,
                 ),
             ],
         )
@@ -198,7 +201,7 @@ class TestSplitTransfers(unittest.TestCase):
             [
                 Transfer(
                     token=None,
-                    receiver=self.solver,
+                    solver=self.solver,
                     # Slippage is negative (so it is added here)
                     amount_wei=eth_amount + slippage_amount,
                 ),
@@ -207,10 +210,11 @@ class TestSplitTransfers(unittest.TestCase):
         self.assertEqual(
             accounting.cow_transfers,
             [
-                Transfer(
+                redirected_transfer(
                     token=self.cow_token,
-                    receiver=self.redirect_map[self.solver].reward_target,
+                    solver=self.solver,
                     amount_wei=cow_reward,
+                    redirect=self.redirect_map[self.solver].reward_target,
                 ),
             ],
         )
@@ -236,12 +240,13 @@ class TestSplitTransfers(unittest.TestCase):
         self.assertEqual(
             accounting.cow_transfers,
             [
-                Transfer(
+                redirected_transfer(
                     token=self.cow_token,
-                    receiver=self.redirect_map[self.solver].reward_target,
+                    solver=self.solver,
                     # This is the amount of COW deducted based on a "deterministic" price
                     # on the date of the fixed accounting period.
                     amount_wei=cow_reward - 11549056229718590750720,
+                    redirect=self.redirect_map[self.solver].reward_target,
                 )
             ],
         )
@@ -302,12 +307,12 @@ class TestSplitTransfers(unittest.TestCase):
             [
                 Transfer(
                     token=None,
-                    receiver=self.solver,
+                    solver=self.solver,
                     amount_wei=eth_amount,
                 ),
                 Transfer(
                     token=None,
-                    receiver=self.solver,
+                    solver=self.solver,
                     amount_wei=slippage_amount,
                 ),
             ],
@@ -317,7 +322,7 @@ class TestSplitTransfers(unittest.TestCase):
             [
                 Transfer(
                     token=self.cow_token,
-                    receiver=self.solver,
+                    solver=self.solver,
                     amount_wei=cow_reward,
                 ),
             ],
@@ -365,12 +370,12 @@ class TestSplitTransfers(unittest.TestCase):
             [
                 Transfer(
                     token=None,
-                    receiver=solvers[0],
+                    solver=solvers[0],
                     amount_wei=eth_amounts[0],
                 ),
                 Transfer(
                     token=None,
-                    receiver=solvers[1],
+                    solver=solvers[1],
                     amount_wei=eth_amounts[1],
                 ),
             ],
@@ -378,15 +383,17 @@ class TestSplitTransfers(unittest.TestCase):
         self.assertEqual(
             accounting.cow_transfers,
             [
-                Transfer(
+                redirected_transfer(
                     token=self.cow_token,
-                    receiver=reward_target,
+                    solver=solvers[0],
                     amount_wei=cow_rewards[0],
+                    redirect=reward_target,
                 ),
-                Transfer(
+                redirected_transfer(
                     token=self.cow_token,
-                    receiver=reward_target,
+                    solver=solvers[1],
                     amount_wei=cow_rewards[1],
+                    redirect=reward_target,
                 ),
             ],
         )

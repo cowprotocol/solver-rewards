@@ -26,9 +26,9 @@ class TestTransactionPost(unittest.TestCase):
         token_transfer = Transfer(
             token=self.cow,
             amount_wei=15,
-            receiver=self.receiver,
+            solver=self.receiver,
         )
-        native_transfer = Transfer(token=None, receiver=self.receiver, amount_wei=2)
+        native_transfer = Transfer(token=None, solver=self.receiver, amount_wei=2)
 
         post_multisend(
             safe_address=Web3().toChecksumAddress(self.test_safe),

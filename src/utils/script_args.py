@@ -18,6 +18,7 @@ class ScriptArgs:
     dune: DuneFetcher
     post_tx: bool
     dry_run: bool
+    consolidate_transfers: bool
 
 
 def generic_script_init(description: str) -> ScriptArgs:
@@ -48,6 +49,13 @@ def generic_script_init(description: str) -> ScriptArgs:
         choices=list(DuneVersion),
     )
     parser.add_argument(
+        "--consolidate-transfers",
+        type=bool,
+        help="Flag to indicate whether payout transfer file should be optimized "
+        "(i.e. squash transfers having same receiver-token pair) ",
+        default=False,
+    )
+    parser.add_argument(
         "--dry-run",
         type=bool,
         help="Flag indicating whether script should not post alerts or transactions. "
@@ -64,4 +72,5 @@ def generic_script_init(description: str) -> ScriptArgs:
         ),
         post_tx=args.post_tx,
         dry_run=args.dry_run,
+        consolidate_transfers=args.consolidate_transfers,
     )

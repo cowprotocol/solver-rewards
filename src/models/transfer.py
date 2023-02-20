@@ -35,7 +35,7 @@ class CSVTransfer:
         return cls(
             token_type=transfer.token_type,
             token_address=transfer.token.address if transfer.token else None,
-            receiver=transfer.receiver,
+            receiver=transfer.recipient,
             # The primary purpose for this class is to convert amount_wei to amount
             amount=transfer.amount,
         )
@@ -46,8 +46,24 @@ class Transfer:
     """Total amount reimbursed for accounting period"""
 
     token: Optional[Token]
-    receiver: Address
+    _solver: Address
     amount_wei: int
+    _redirect_target: Optional[Address] = None
+
+    def __init__(self, token: Optional[Token], solver: Address, amount_wei: int):
+        self.token = token
+        self._solver = solver
+        self.amount_wei = amount_wei
+
+    @property
+    def solver(self) -> Address:
+        """Read access to the solver field"""
+        return self._solver
+
+    @property
+    def redirect_target(self) -> Optional[Address]:
+        """Read access to the redirect_target field"""
+        return self._redirect_target
 
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> Transfer:
@@ -55,7 +71,7 @@ class Transfer:
         token_address = obj.get("token_address", None)
         return cls(
             token=Token(token_address) if token_address else None,
-            receiver=Address(obj["receiver"]),
+            solver=Address(obj["receiver"]),
             amount_wei=int(obj["amount"]),
         )
 
@@ -65,7 +81,7 @@ class Transfer:
         return [
             cls(
                 token=Token(row["token_address"]) if row["token_address"] else None,
-                receiver=Address(row["receiver"]),
+                solver=Address(row["receiver"]),
                 amount_wei=int(row["amount"]),
             )
             for _, row in pdf.iterrows()
@@ -85,6 +101,11 @@ class Transfer:
             f"Total COW Funds needed: {cow_total / 10 ** 18:.4f}\n"
         )
 
+    @property
+    def recipient(self) -> Address:
+        """The correct way to access the true recipient of a transfer"""
+        return self.redirect_target if self.redirect_target is not None else self.solver
+
     @staticmethod
     def consolidate(transfer_list: list[Transfer]) -> list[Transfer]:
         """
@@ -95,14 +116,14 @@ class Transfer:
 
         transfer_dict: dict[tuple, Transfer] = {}
         for transfer in transfer_list:
-            key = (transfer.receiver, transfer.token)
+            key = (transfer.recipient, transfer.token)
             if key in transfer_dict:
                 transfer_dict[key] = transfer_dict[key].merge(transfer)
             else:
                 transfer_dict[key] = transfer
         return sorted(
             transfer_dict.values(),
-            key=lambda t: (-t.amount, t.receiver, t.token),
+            key=lambda t: (-t.amount, t.recipient, t.token),
         )
 
     @property
@@ -123,10 +144,10 @@ class Transfer:
 
     def add_slippage(self, slippage: SolverSlippage, log_saver: PrintStore) -> None:
         """Adds Adjusts Transfer amount by Slippage amount"""
-        assert self.receiver == slippage.solver_address, "receiver != solver"
+        assert self.solver == slippage.solver_address, "receiver != solver"
         adjustment = slippage.amount_wei
         log_saver.print(
-            f"Deducting slippage for solver {self.receiver}"
+            f"Deducting slippage for solver {self.solver}"
             f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})",
             category=Category.SLIPPAGE,
         )
@@ -137,30 +158,34 @@ class Transfer:
 
     def merge(self, other: Transfer) -> Transfer:
         """
-        Merge two transfers (acts like addition)
-        if all fields except amount are equal, returns a transfer who amount is the sum
+        Merge two transfers (acts like addition) if all fields except amount are equal,
+        returns a transfer who amount is the sum.
+        Merges incur information loss (particularly in the category of redirects).
+        Note that two transfers of the same token with different receivers,
+        but redirected to the same address, will get merged and original receivers will be forgotten
         """
         merge_requirements = [
-            self.receiver == other.receiver,
+            self.recipient == other.recipient,
             self.token == other.token,
         ]
         if all(merge_requirements):
             return Transfer(
                 token=self.token,
-                receiver=self.receiver,
+                solver=self.recipient,
                 amount_wei=self.amount_wei + other.amount_wei,
             )
         raise ValueError(
-            f"Can't merge tokens {self}, {other}. "
+            f"Can't merge transfers {self}, {other}. "
             f"Requirements met {merge_requirements}"
         )
 
     def as_multisend_tx(self) -> MultiSendTx:
         """Converts Transfer into encoded MultiSendTx bytes"""
+        receiver = self.recipient.address
         if self.token_type == TokenType.NATIVE:
             return MultiSendTx(
                 operation=MultiSendOperation.CALL,
-                to=self.receiver.address,
+                to=receiver,
                 value=self.amount_wei,
                 data=HexStr("0x"),
             )
@@ -171,31 +196,31 @@ class Transfer:
                 to=str(self.token.address),
                 value=0,
                 data=erc20().encodeABI(
-                    fn_name="transfer", args=[self.receiver.address, self.amount_wei]
+                    fn_name="transfer", args=[receiver, self.amount_wei]
                 ),
             )
         raise ValueError(f"Unsupported type {self.token_type}")
 
     def __str__(self) -> str:
         if self.token_type == TokenType.NATIVE:
-            return f"TransferETH(receiver={self.receiver}, amount_wei={self.amount})"
+            return f"TransferETH(receiver={self.recipient}, amount_wei={self.amount})"
         if self.token_type == TokenType.ERC20:
             return (
                 f"Transfer("
                 f"token_address={self.token}, "
-                f"receiver={self.receiver}, "
+                f"recipient={self.recipient}, "
                 f"amount_wei={self.amount})"
             )
         raise ValueError(f"Invalid Token Type {self.token_type}")
 
-    def redirect_to(
+    def try_redirect(
         self, redirects: dict[Address, Vouch], log_saver: PrintStore
     ) -> None:
         """
         Redirects Transfers via Address => Vouch.reward_target
         This function modifies self!
         """
-        recipient = self.receiver
+        recipient = self.recipient
         if recipient in redirects:
             # Redirect COW rewards to reward target specific by VouchRegistry
             redirect_address = redirects[recipient].reward_target
@@ -205,7 +230,7 @@ class Transfer:
                 if self.token is None
                 else Category.COW_REDIRECT,
             )
-            self.receiver = redirect_address
+            self._redirect_target = redirect_address
 
     @classmethod
     def from_slippage(cls, slippage: SolverSlippage) -> Transfer:
@@ -215,6 +240,18 @@ class Transfer:
         """
         return cls(
             token=None,
-            receiver=slippage.solver_address,
+            solver=slippage.solver_address,
             amount_wei=slippage.amount_wei,
         )
+
+    @staticmethod
+    def sort_list(transfer_list: list[Transfer]) -> None:
+        """
+        This is the preferred and tested sort order we use for generating the transfer file.
+        It ensures that transfers are grouped
+        1. first by initial recipient (i.e. solvers),
+        2. then by token address (with native ETH last)
+        and finally order by amount descending (so that largest in category occur first).
+        Note that this method mutates the input data and nothing in returned.
+        """
+        transfer_list.sort(key=lambda t: (t.solver, str(t.token), -t.amount))

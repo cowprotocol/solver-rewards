@@ -59,7 +59,7 @@ class DuneFetcher:
     def _get_query_results(self, query: Query) -> list[dict[str, str]]:
         """Internally every dune query execution is routed through here."""
         log.info(f"Fetching {query.name} from query: {query}")
-        exec_result = self.dune.refresh(query, ping_frequency=5)
+        exec_result = self.dune.refresh(query, ping_frequency=15)
         log.info(f"Fetch completed for execution {exec_result.execution_id}")
         # TODO - use a real logger:
         #  https://github.com/cowprotocol/dune-client/issues/34

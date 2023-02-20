@@ -61,7 +61,7 @@ class SplitTransfers:
         penalty_total = 0
         while self.unprocessed_native:
             transfer = self.unprocessed_native.pop(0)
-            solver = transfer.receiver
+            solver = transfer.solver
             slippage: Optional[SolverSlippage] = indexed_slippage.get(solver)
             if slippage is not None:
                 assert (
@@ -73,7 +73,7 @@ class SplitTransfers:
                 except ValueError as err:
                     name, address = slippage.solver_name, slippage.solver_address
                     self.log_saver.print(
-                        f"Slippage for {address}({name}) exceeds reimbursement: {err}\n"
+                        f"Slippage for {address} ({name}) exceeds reimbursement: {err}\n"
                         f"Excluding payout and appending excess to overdraft",
                         category=Category.OVERDRAFT,
                     )
@@ -99,7 +99,7 @@ class SplitTransfers:
         price_day = self.period.end - timedelta(days=1)
         while self.unprocessed_cow:
             transfer = self.unprocessed_cow.pop(0)
-            solver = transfer.receiver
+            solver = transfer.solver
             # Remove the element if it exists (assuming it won't have to be reinserted)
             overdraft = self.overdrafts.pop(solver, None)
             if overdraft is not None:
@@ -121,7 +121,7 @@ class SplitTransfers:
                     # Reinsert since there is still an amount owed.
                     self.overdrafts[solver] = overdraft
                     continue
-            transfer.redirect_to(redirect_map, self.log_saver)
+            transfer.try_redirect(redirect_map, self.log_saver)
             self.cow_transfers.append(transfer)
         # We do not need to worry about any controversy between overdraft
         # and positive slippage adjustments, because positive/negative slippage
@@ -134,7 +134,7 @@ class SplitTransfers:
             ), f"Expected positive slippage got {slippage.amount_wei}"
             total_positive_slippage += slippage.amount_wei
             slippage_transfer = Transfer.from_slippage(slippage)
-            slippage_transfer.redirect_to(redirect_map, self.log_saver)
+            slippage_transfer.try_redirect(redirect_map, self.log_saver)
             self.eth_transfers.append(slippage_transfer)
         return total_positive_slippage
 
