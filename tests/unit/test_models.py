@@ -15,6 +15,7 @@ from src.models.vouch import Vouch
 from src.utils.print_store import PrintStore
 
 from tests.queries.test_internal_trades import TransferType
+from tests.unit.util_methods import redirected_transfer
 
 ONE_ETH = 10**18
 
@@ -45,15 +46,6 @@ class TestTransfer(unittest.TestCase):
     def setUp(self) -> None:
         self.token_1 = Token(Address.from_int(1), 18)
         self.token_2 = Token(Address.from_int(2), 18)
-
-    @staticmethod
-    def redirected_transfer(token, solver, amount_wei, redirect) -> Transfer:
-        # simple way to set up a transfer object with non-empty
-        # redirect target field (for testing)
-        transfer = Transfer(token, solver, amount_wei)
-
-        transfer._redirect_target = redirect
-        return transfer
 
     def test_add_slippage(self):
         solver = Address.zero()
@@ -195,7 +187,7 @@ class TestTransfer(unittest.TestCase):
                 solver=receiver,
                 amount_wei=2 * ONE_ETH,
             ),
-            self.redirected_transfer(
+            redirected_transfer(
                 token=None,
                 solver=receiver,
                 amount_wei=3 * ONE_ETH,
@@ -209,10 +201,8 @@ class TestTransfer(unittest.TestCase):
                 solver=receiver,
                 amount_wei=3 * ONE_ETH,
             ),
-            Transfer(
-                token=None,
-                solver=redirect,
-                amount_wei=3 * ONE_ETH,
+            redirected_transfer(
+                token=None, solver=receiver, amount_wei=3 * ONE_ETH, redirect=redirect
             ),
         ]
         results = Transfer.consolidate(transfer_list)
@@ -224,13 +214,13 @@ class TestTransfer(unittest.TestCase):
                 solver=receiver,
                 amount_wei=1 * ONE_ETH,
             ),
-            self.redirected_transfer(
+            redirected_transfer(
                 token=None,
                 solver=receiver,
                 amount_wei=2 * ONE_ETH,
                 redirect=redirect,
             ),
-            self.redirected_transfer(
+            redirected_transfer(
                 token=None,
                 solver=receiver,
                 amount_wei=3 * ONE_ETH,
@@ -342,7 +332,7 @@ class TestTransfer(unittest.TestCase):
         receiver_2 = Address.from_int(2)
         redirect = Address.from_int(3)
 
-        redirected_transfer = self.redirected_transfer(
+        transfer = redirected_transfer(
             token=None, solver=receiver_1, amount_wei=ONE_ETH, redirect=redirect
         )
         expected = Transfer(
@@ -351,8 +341,8 @@ class TestTransfer(unittest.TestCase):
             amount_wei=2 * ONE_ETH,
         )
         self.assertEqual(
-            redirected_transfer.merge(
-                self.redirected_transfer(
+            transfer.merge(
+                redirected_transfer(
                     token=None,
                     solver=receiver_2,
                     amount_wei=ONE_ETH,
@@ -363,7 +353,7 @@ class TestTransfer(unittest.TestCase):
             expected,
         )
         self.assertEqual(
-            redirected_transfer.merge(
+            transfer.merge(
                 Transfer(
                     token=None,
                     solver=redirect,
@@ -379,12 +369,12 @@ class TestTransfer(unittest.TestCase):
             # is the original receiver of the redirected transfer
             other = Transfer(
                 token=None,
-                solver=redirected_transfer.solver,
+                solver=transfer.solver,
                 amount_wei=ONE_ETH,
             )
-            redirected_transfer.merge(other)
+            transfer.merge(other)
         self.assertEqual(
-            f"Can't merge transfers {redirected_transfer}, {other}. Requirements met [False, True]",
+            f"Can't merge transfers {transfer}, {other}. Requirements met [False, True]",
             str(err.exception),
         )
 
@@ -493,7 +483,7 @@ class TestTransfer(unittest.TestCase):
     def test_as_multisend_tx_with_redirects(self):
         receiver = Address.from_int(1)
         redirect = Address.from_int(2)
-        native_transfer = self.redirected_transfer(
+        native_transfer = redirected_transfer(
             token=None, solver=receiver, amount_wei=16, redirect=redirect
         )
         self.assertEqual(
@@ -507,7 +497,7 @@ class TestTransfer(unittest.TestCase):
         )
         token_address = Address.from_int(1)
         token = Token(address=token_address, decimals=10)
-        erc20_transfer = self.redirected_transfer(
+        erc20_transfer = redirected_transfer(
             token=token,
             solver=receiver,
             amount_wei=15,
@@ -593,29 +583,29 @@ class TestTransfer(unittest.TestCase):
         eth_3 = Transfer(token=None, solver=solver_3, amount_wei=5)
         execution_reimbursements = [eth_1, eth_2, eth_3]
         cow_token = Token(COW_TOKEN_ADDRESS)
-        cow_1 = self.redirected_transfer(
+        cow_1 = redirected_transfer(
             token=cow_token,
             solver=solver_1,
             amount_wei=10,
             redirect=reward_target_1,
         )
-        cow_2 = self.redirected_transfer(
+        cow_2 = redirected_transfer(
             token=cow_token,
             solver=solver_2,
             amount_wei=20,
             redirect=reward_target_2,
         )
-        cow_3 = self.redirected_transfer(
+        cow_3 = redirected_transfer(
             token=cow_token,
             solver=solver_3,
             amount_wei=30,
             redirect=reward_target_1,
         )
         cow_rewards = [cow_1, cow_2, cow_3]
-        slip_1 = self.redirected_transfer(
+        slip_1 = redirected_transfer(
             token=None, solver=solver_1, amount_wei=1, redirect=reward_target_2
         )
-        slip_2 = self.redirected_transfer(
+        slip_2 = redirected_transfer(
             token=Token(COW_TOKEN_ADDRESS),
             solver=solver_2,
             amount_wei=4,

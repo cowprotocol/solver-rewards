@@ -48,7 +48,6 @@ class Transfer:
     token: Optional[Token]
     _solver: Address
     amount_wei: int
-    # This defaults to receiver if not otherwise specified.
     _redirect_target: Optional[Address] = None
 
     def __init__(self, token: Optional[Token], solver: Address, amount_wei: int):
@@ -60,6 +59,11 @@ class Transfer:
     def solver(self) -> Address:
         """Read access to the solver field"""
         return self._solver
+
+    @property
+    def redirect_target(self) -> Optional[Address]:
+        """Read access to the redirect_target field"""
+        return self._redirect_target
 
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> Transfer:
@@ -100,9 +104,7 @@ class Transfer:
     @property
     def recipient(self) -> Address:
         """The correct way to access the true recipient of a transfer"""
-        return (
-            self._redirect_target if self._redirect_target is not None else self._solver
-        )
+        return self.redirect_target if self.redirect_target is not None else self.solver
 
     @staticmethod
     def consolidate(transfer_list: list[Transfer]) -> list[Transfer]:
@@ -142,10 +144,10 @@ class Transfer:
 
     def add_slippage(self, slippage: SolverSlippage, log_saver: PrintStore) -> None:
         """Adds Adjusts Transfer amount by Slippage amount"""
-        assert self._solver == slippage.solver_address, "receiver != solver"
+        assert self.solver == slippage.solver_address, "receiver != solver"
         adjustment = slippage.amount_wei
         log_saver.print(
-            f"Deducting slippage for solver {self._solver}"
+            f"Deducting slippage for solver {self.solver}"
             f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})",
             category=Category.SLIPPAGE,
         )
@@ -253,14 +255,3 @@ class Transfer:
         Note that this method mutates the input data and nothing in returned.
         """
         transfer_list.sort(key=lambda t: (t.solver, str(t.token), -t.amount))
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, Transfer):
-            return all(
-                [
-                    self.recipient == other.recipient,
-                    self.token == other.token,
-                    self.amount_wei == other.amount_wei,
-                ]
-            )
-        return False
