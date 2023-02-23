@@ -15,59 +15,53 @@ DELTA = 0.00001
 
 class TestPrices(unittest.TestCase):
     def setUp(self) -> None:
-        self.far_past = datetime.strptime("2022-01-01", "%Y-%m-%d")
-        # https://api.coinpaprika.com/v1/tickers/cow-cow-protocol-token/historical?start=2022-01-01&interval=1d&end=2022-04-16
-        self.first_cow_day = datetime.strptime("2022-04-15", "%Y-%m-%d")
-        self.day_before_cow = self.first_cow_day - timedelta(days=1)
+        self.some_date = datetime.strptime("2023-02-01", "%Y-%m-%d")
+        self.cow_price = usd_price(TokenId.COW, self.some_date)
+        self.eth_price = usd_price(TokenId.ETH, self.some_date)
+        self.usdc_price = usd_price(TokenId.USDC, self.some_date)
+
+    def test_usd_price(self):
+        self.assertEqual(self.usdc_price, 1.000519)
+        self.assertEqual(self.eth_price, 1590.48)
+        self.assertEqual(self.cow_price, 0.098138)
 
     def test_token_in_usd(self):
-        with self.assertRaises(AssertionError):
-            token_in_usd(TokenId.COW, ONE_ETH, self.day_before_cow)
-
         with self.assertRaises(AssertionError):
             token_in_usd(TokenId.COW, ONE_ETH, datetime.today())
 
         self.assertEqual(
-            token_in_usd(TokenId.ETH, ONE_ETH, self.first_cow_day), 3032.45
+            token_in_usd(TokenId.ETH, ONE_ETH, self.some_date), self.eth_price
         )
         self.assertEqual(
-            token_in_usd(TokenId.COW, ONE_ETH, self.first_cow_day), 0.435229
+            token_in_usd(TokenId.COW, ONE_ETH, self.some_date), self.cow_price
         )
         self.assertEqual(
-            token_in_usd(TokenId.USDC, 10**6, self.first_cow_day), 1.001656
+            token_in_usd(TokenId.USDC, 10**6, self.some_date), self.usdc_price
         )
 
     def test_eth_in_token(self):
-        with self.assertRaises(AssertionError):
-            eth_in_token(TokenId.COW, ONE_ETH, self.day_before_cow)
 
-        # cow_price =  0.435229
-        # eth_price = 3032.45
-        # usdc_price = 1.001656
-        self.assertEqual(
-            eth_in_token(TokenId.COW, ONE_ETH, self.first_cow_day),
-            10**18 * 3032.45 // 0.435229,
-        )
-        self.assertEqual(
-            eth_in_token(TokenId.USDC, ONE_ETH, self.first_cow_day),
-            10**6 * 3032.45 // 1.001656,
-        )
-
-    def test_token_in_eth(self):
-        with self.assertRaises(AssertionError):
-            token_in_eth(TokenId.COW, ONE_ETH, self.day_before_cow)
-
-        # cow_price =  0.435229
-        # eth_price = 3032.45
-        # usdc_price = 1.001656
         self.assertAlmostEqual(
-            token_in_eth(TokenId.COW, ONE_ETH, self.first_cow_day),
-            10**18 * 0.435229 // 3032.45,
+            eth_in_token(TokenId.COW, ONE_ETH, self.some_date) / 10**18,
+            self.eth_price / self.cow_price,
             delta=DELTA,
         )
         self.assertAlmostEqual(
-            token_in_eth(TokenId.USDC, 10**6, self.first_cow_day),
-            10**18 * 1.001656 // 3032.45,
+            eth_in_token(TokenId.USDC, ONE_ETH, self.some_date) / 10**6,
+            self.eth_price / self.usdc_price,
+            delta=DELTA,
+        )
+
+    def test_token_in_eth(self):
+
+        self.assertAlmostEqual(
+            token_in_eth(TokenId.COW, ONE_ETH, self.some_date),
+            10**18 * self.cow_price // self.eth_price,
+            delta=DELTA,
+        )
+        self.assertAlmostEqual(
+            token_in_eth(TokenId.USDC, 10**6, self.some_date),
+            10**18 * self.usdc_price // self.eth_price,
             delta=DELTA,
         )
 

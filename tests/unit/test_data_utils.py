@@ -14,7 +14,7 @@ class DummyDataClass:
 class TestDataUtils(unittest.TestCase):
     def test_dashboard_url(self):
         expected = (
-            "https://dune.com/bh2smith/cow-solver-rewards?"
+            "https://dune.com/cowprotocol/cow-solver-rewards?"
             "StartTime=2022-05-31+00%3A00%3A00&"
             "EndTime=2022-06-07+00%3A00%3A00"
         )
