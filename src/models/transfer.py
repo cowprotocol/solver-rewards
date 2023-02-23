@@ -231,6 +231,10 @@ class Transfer:
                 else Category.COW_REDIRECT,
             )
             # This is the only place where recipient can be overwritten
+            # sort_key is not updated here because sorted transfers should be
+            # grouped by "initial recipient" before they were redirected.
+            # This is a business requirement for making non-consolidated
+            # multisend transaction validation more visually straight-forward.
             self._recipient = redirect_address
 
     @classmethod
