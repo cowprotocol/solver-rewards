@@ -2,8 +2,8 @@ WITH observed_settlements AS (SELECT
                                 -- settlement
                                 tx_hash,
                                 solver,
+                                s.block_number,
                                 -- settlement_observations
-                                block_number,
                                 effective_gas_price * gas_used AS execution_cost,
                                 surplus,
                                 fee,
@@ -16,7 +16,7 @@ WITH observed_settlements AS (SELECT
                                      JOIN auction_transaction at
                                           ON s.tx_from = at.tx_from
                                             AND s.tx_nonce = at.tx_nonce
-                              WHERE block_number > {{start_block}} AND block_number <= {{end_block}}),
+                              WHERE s.block_number > {{start_block}} AND s.block_number <= {{end_block}}),
 
      reward_data AS (SELECT
                        -- observations
@@ -45,7 +45,7 @@ WITH observed_settlements AS (SELECT
                             -- If there are reported scores,
                             -- there will always be a record of auction participants
                             JOIN auction_participants ap
-                                 ON os.auction_id = ap.auction_id
+                                 ON ss.auction_id = ap.auction_id
                        -- outer joins made in order to capture non-existent settlements.
                             LEFT OUTER JOIN observed_settlements os
                                             ON os.auction_id = ss.auction_id),
@@ -62,19 +62,19 @@ WITH observed_settlements AS (SELECT
                        FROM reward_data),
      participation_data as (select tx_hash, unnest(participating_solvers) as participant
                             from reward_per_tx),
-     participation_counts as (select participant as solver, count(tx_hash) as num_participating_batches
+     participation_counts as (select participant as solver, count(*) as num_participating_batches
                               from participation_data
                               group by participant),
      primary_rewards as (select rpt.solver, sum(reward_eth) as total_reward_eth
                          from reward_per_tx rpt
                          group by solver)
 
-select concat('0x', encode(pr.solver, 'hex')) as solver,
-       total_reward_eth,
+select concat('0x', encode(pc.solver, 'hex')) as solver,
+       coalesce(total_reward_eth, 0)          as total_reward_eth,
        num_participating_batches
-from primary_rewards pr
-       join participation_counts pc
-            on pr.solver = pc.solver
+from participation_counts pc
+       left outer join primary_rewards pr
+                        on pr.solver = pc.solver;
 
 
 
