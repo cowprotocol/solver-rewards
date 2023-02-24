@@ -23,7 +23,7 @@ class TestMultiSend(unittest.TestCase):
             "0xA03be496e67Ec29bC62F01a428683D7F9c204930"
         )
         big_native_transfer = Transfer(
-            token=None, solver=Address.zero(), amount_wei=many_eth
+            token=None, recipient=Address.zero(), amount_wei=many_eth
         ).as_multisend_tx()
 
         with self.assertRaises(ValueError):
@@ -41,7 +41,7 @@ class TestMultiSend(unittest.TestCase):
         transactions = [
             Transfer(
                 token=None,
-                solver=Address.zero(),
+                recipient=Address.zero(),
                 amount_wei=eth_balance + 1,  # More ETH than account has!
             ).as_multisend_tx()
         ]
@@ -73,7 +73,7 @@ class TestMultiSend(unittest.TestCase):
         )
 
         native_transfer = Transfer(
-            token=None, solver=receiver, amount_wei=16
+            token=None, recipient=receiver, amount_wei=16
         ).as_multisend_tx()
         self.assertEqual(
             build_encoded_multisend([native_transfer], client=self.client),
@@ -86,7 +86,7 @@ class TestMultiSend(unittest.TestCase):
         )
         erc20_transfer = Transfer(
             token=cow_token,
-            solver=receiver,
+            recipient=receiver,
             amount_wei=15,
         ).as_multisend_tx()
         self.assertEqual(
