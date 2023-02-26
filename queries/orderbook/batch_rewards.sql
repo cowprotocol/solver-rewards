@@ -51,21 +51,26 @@ WITH observed_settlements AS (SELECT
                                             ON os.auction_id = ss.auction_id),
 
      reward_per_tx as (SELECT tx_hash,
-                              solver,
-                              execution_cost,
-                              surplus,
-                              fee,
-                              surplus + fee - reference_score as reward_eth,
-                              winning_score,
-                              reference_score,
-                              participants                    as participating_solvers
-                       FROM reward_data),
+                                       solver,
+                                       execution_cost,
+                                       surplus,
+                                       fee,
+                                       surplus + fee - reference_score                                                              as uncapped_reward_eth,
+                                       -- Uncapped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
+                                       LEAST(GREATEST(-{{EPSILON}}, surplus + fee - reference_score), {{EPSILON}} + execution_cost) as capped_reward,
+                                       winning_score,
+                                       reference_score,
+                                       participants                                                                                 as participating_solvers
+                                FROM reward_data),
+
      participation_data as (select tx_hash, unnest(participating_solvers) as participant
                             from reward_per_tx),
      participation_counts as (select participant as solver, count(*) as num_participating_batches
                               from participation_data
                               group by participant),
-     primary_rewards as (select rpt.solver, sum(reward_eth) as total_reward_eth
+     primary_rewards as (select rpt.solver,
+                                SUM(capped_reward) as total_reward_eth,
+                                SUM(execution_cost) as total_exececution_cost_eth
                          from reward_per_tx rpt
                          group by solver)
 
@@ -74,7 +79,7 @@ select concat('0x', encode(pc.solver, 'hex')) as solver,
        num_participating_batches
 from participation_counts pc
        left outer join primary_rewards pr
-                        on pr.solver = pc.solver;
+                       on pr.solver = pc.solver;
 
 
 
