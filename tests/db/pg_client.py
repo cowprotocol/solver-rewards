@@ -53,11 +53,11 @@ def connect() -> connection:
 
 # TODO 1. pass populate_db script as optional parameter.
 #  2. Separate create schema and table commands
-def connect_and_populate_db() -> tuple[connection, cursor]:
+def connect_and_populate_db_from(migration_filename: str) -> tuple[connection, cursor]:
     conn = connect()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     # Populate DB with sample data
-    populate_from(cur, "./populate_db.sql")
+    populate_from(cur, migration_filename)
     return conn, cur
 
 

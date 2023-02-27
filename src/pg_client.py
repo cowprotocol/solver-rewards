@@ -1,6 +1,7 @@
 """Basic client for connecting to postgres database with login credentials"""
 from __future__ import annotations
 
+import logging
 import os
 from dataclasses import dataclass
 from enum import Enum
@@ -8,7 +9,6 @@ from enum import Enum
 import pandas as pd
 from dotenv import load_dotenv
 from pandas import DataFrame
-from psycopg2 import errors, errorcodes
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -120,21 +120,16 @@ class OrderbookFetcher:
         return create_engine(db_url)
 
     @classmethod
-    def _exec_query(  # pylint: disable=inconsistent-return-statements
-        cls, query: str, engine: Engine
-    ) -> DataFrame:
+    def _exec_query(cls, query: str, engine: Engine) -> DataFrame:
         try:
             return pd.read_sql(sql=query, con=engine)
         except ProgrammingError as err:
-            # We introduce this ugly try-catch temporarily while only
-            # one of the two orderbook databases contain the necessary schema.
-            # Once both DBs have the tables defined, this can be thrown away.
+            # This broad error catching is only temporary while
+            # the tables don't exist in Production
+            logging.error(f"likely undefined table: {err.orig}")
+            return DataFrame({"solver": []})
+            # Could also do the following suggestion
             # Catch Undefined Table: https://stackoverflow.com/a/75102570
-            try:
-                raise err.orig
-            except errors.lookup(errorcodes.UNDEFINED_TABLE):
-                print("UNDEFINED TABLE")
-                return DataFrame({"solver": []})
 
     def merge(self) -> DataFrame:
         """Merges prod and barn dataframes via concatenation"""

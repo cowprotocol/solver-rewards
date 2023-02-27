@@ -87,7 +87,7 @@ WITH observed_settlements AS (SELECT
                          GROUP BY solver),
      aggregate_results as (SELECT concat('0x', encode(pc.solver, 'hex'))  as solver,
                                   coalesce(total_reward_eth, 0)           as total_reward_eth,
-                                  coalesce(total_exececution_cost_eth, 0) as total_exececution_cost_eth,
+                                  coalesce(total_exececution_cost_eth, 0) as total_execution_cost_eth,
                                   num_participating_batches
                            FROM participation_counts pc
                                   LEFT OUTER JOIN primary_rewards pr
