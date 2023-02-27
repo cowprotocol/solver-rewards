@@ -17,7 +17,7 @@ class DBRouter:
         self.conn, self.cur, self.dune = None, None, None
 
         if self.route == ConnectionType.LOCAL:
-            self.conn, self.cur = connect_and_populate_db()
+            self.conn, self.cur = connect_and_populate_db_from("./populate_db.sql")
         elif self.route == ConnectionType.REMOTE:
             # TODO - Change DB setup to use Hive instead of postgres.
             #  I don't believe this code path is currently used

@@ -27,7 +27,7 @@ class TestBatchRewards(unittest.TestCase):
         ] = f"{base}://postgres:postgres@localhost:5432/postgres"
 
     def test_get_batch_rewards(self):
-        connect_and_populate_db_from("populate_cip_20.sql")
+        connect_and_populate_db_from("./populate_cip_20.sql")
         start_block, end_block = "0", "100"
         batch_rewards = OrderbookFetcher.get_solver_rewards(start_block, end_block)
         print(batch_rewards)
