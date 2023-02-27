@@ -63,25 +63,26 @@ WITH observed_settlements AS (SELECT
                               participants                                                                                 as participating_solvers
                        FROM reward_data),
 
-     participation_data as (select tx_hash,
+     participation_data as (SELECT tx_hash,
                                    unnest(participating_solvers) as participant
-                            from reward_per_tx),
-     participation_counts as (select participant as solver,
+                            FROM reward_per_tx),
+     participation_counts as (SELECT participant as solver,
                                      count(*)    as num_participating_batches
-                              from participation_data
-                              group by participant),
-     primary_rewards as (select rpt.solver,
+                              FROM participation_data
+                              GROUP BY participant),
+     primary_rewards as (SELECT rpt.solver,
                                 SUM(capped_reward)  as total_reward_eth,
                                 SUM(execution_cost) as total_exececution_cost_eth
-                         from reward_per_tx rpt
-                         group by solver)
+                         FROM reward_per_tx rpt
+                         GROUP BY solver)
 
-select concat('0x', encode(pc.solver, 'hex')) as solver,
-       coalesce(total_reward_eth, 0)          as total_reward_eth,
+SELECT concat('0x', encode(pc.solver, 'hex'))                as solver,
+       coalesce(total_reward_eth, 0) / pow(10, 18)           as total_reward_eth,
+       coalesce(total_exececution_cost_eth, 0) / pow(10, 18) as total_exececution_cost_eth,
        num_participating_batches
-from participation_counts pc
-       left outer join primary_rewards pr
-                       on pr.solver = pc.solver;
+FROM participation_counts pc
+       LEFT OUTER JOIN primary_rewards pr
+                       ON pr.solver = pc.solver;
 
 
 
