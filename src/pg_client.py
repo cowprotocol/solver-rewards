@@ -8,6 +8,7 @@ from enum import Enum
 import pandas as pd
 from dotenv import load_dotenv
 from pandas import DataFrame
+from psycopg2 import errors, errorcodes
 from sqlalchemy.exc import ProgrammingError
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
@@ -94,6 +95,72 @@ class DualEnvDataframe:
         # Solvers do not appear in both environments!
         # TODO - move this assertion into merge:
         #  https://github.com/cowprotocol/solver-rewards/issues/125
+        assert set(dual_df.prod.solver).isdisjoint(
+            set(dual_df.barn.solver)
+        ), "solver overlap!"
+        return dual_df.merge()
+
+
+@dataclass
+class OrderbookFetcher:
+    """
+    A pair of Dataframes primarily intended to store query results
+    from production and staging orderbook databases
+    """
+
+    barn: DataFrame
+    prod: DataFrame
+
+    @staticmethod
+    def _pg_engine(db_env: OrderbookEnv) -> Engine:
+        """Returns a connection to postgres database"""
+        load_dotenv()
+        # Format: f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
+        db_url = os.environ[f"{db_env}_DB_URL"]
+        return create_engine(db_url)
+
+    @classmethod
+    def _exec_query(  # pylint: disable=inconsistent-return-statements
+        cls, query: str, engine: Engine
+    ) -> DataFrame:
+        try:
+            return pd.read_sql(sql=query, con=engine)
+        except ProgrammingError as err:
+            # We introduce this ugly try-catch temporarily while only
+            # one of the two orderbook databases contain the necessary schema.
+            # Once both DBs have the tables defined, this can be thrown away.
+            # Catch Undefined Table: https://stackoverflow.com/a/75102570
+            try:
+                raise err.orig
+            except errors.lookup(errorcodes.UNDEFINED_TABLE):
+                print("UNDEFINED TABLE")
+                return DataFrame({"solver": []})
+
+    def merge(self) -> DataFrame:
+        """Merges prod and barn dataframes via concatenation"""
+        return pd.concat([self.prod, self.barn])
+
+    @classmethod
+    def get_solver_rewards(cls, start_block: str, end_block: str) -> DataFrame:
+        """
+        Returns aggregated solver rewards for accounting period defined by block range
+        """
+        batch_reward_query = (
+            open_query("orderbook/batch_rewards.sql")
+            .replace("{{start_block}}", start_block)
+            .replace("{{end_block}}", end_block)
+            .replace("{{EPSILON}}", "10000000000000000")
+        )
+
+        dual_df = cls(
+            barn=cls._exec_query(
+                query=batch_reward_query, engine=cls._pg_engine(OrderbookEnv.BARN)
+            ),
+            prod=cls._exec_query(
+                query=batch_reward_query, engine=cls._pg_engine(OrderbookEnv.PROD)
+            ),
+        )
+        # Solvers do not appear in both environments!
         assert set(dual_df.prod.solver).isdisjoint(
             set(dual_df.barn.solver)
         ), "solver overlap!"
