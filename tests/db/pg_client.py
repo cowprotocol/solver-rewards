@@ -17,7 +17,7 @@ class DBRouter:
         self.conn, self.cur, self.dune = None, None, None
 
         if self.route == ConnectionType.LOCAL:
-            self.conn, self.cur = connect_and_populate_db_from("./populate_db.sql")
+            self.conn, self.cur = connect_and_populate_db()
         elif self.route == ConnectionType.REMOTE:
             # TODO - Change DB setup to use Hive instead of postgres.
             #  I don't believe this code path is currently used
@@ -53,11 +53,11 @@ def connect() -> connection:
 
 # TODO 1. pass populate_db script as optional parameter.
 #  2. Separate create schema and table commands
-def connect_and_populate_db_from(migration_filename: str) -> tuple[connection, cursor]:
+def connect_and_populate_db() -> tuple[connection, cursor]:
     conn = connect()
     cur = conn.cursor(cursor_factory=RealDictCursor)
     # Populate DB with sample data
-    populate_from(cur, migration_filename)
+    populate_from(cur, "./populate_db.sql")
     return conn, cur
 
 
