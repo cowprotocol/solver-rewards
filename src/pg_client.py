@@ -1,7 +1,6 @@
 """Basic client for connecting to postgres database with login credentials"""
 from __future__ import annotations
 
-import logging
 import os
 from dataclasses import dataclass
 from enum import Enum
@@ -101,42 +100,21 @@ class DualEnvDataframe:
         return dual_df.merge()
 
 
-@dataclass
-class OrderbookFetcher:
+class MultiInstanceDBFetcher:
     """
-    A pair of Dataframes primarily intended to store query results
-    from production and staging orderbook databases
+    Allows identical query execution on multiple db instances (merging results).
+    Currently very specific to the CoW Protocol Orderbook DB.
     """
 
-    barn: DataFrame
-    prod: DataFrame
-
-    @staticmethod
-    def _pg_engine(db_env: OrderbookEnv) -> Engine:
-        """Returns a connection to postgres database"""
-        load_dotenv()
-        # Format: f"postgresql+psycopg2://{user}:{password}@{host}:{port}/{database}"
-        db_url = os.environ[f"{db_env}_DB_URL"]
-        return create_engine(db_url)
+    def __init__(self, db_urls: list[str]):
+        self.connections = [create_engine(url) for url in db_urls]
 
     @classmethod
-    def _exec_query(cls, query: str, engine: Engine) -> DataFrame:
-        try:
-            return pd.read_sql(sql=query, con=engine)
-        except ProgrammingError as err:
-            # This broad error catching is only temporary while
-            # the tables don't exist in Production
-            logging.error(f"likely undefined table: {err.orig}")
-            return DataFrame({"solver": []})
-            # Could also do the following suggestion
-            # Catch Undefined Table: https://stackoverflow.com/a/75102570
+    def exec_query(cls, query: str, engine: Engine) -> DataFrame:
+        """Executes query on DB engine"""
+        return pd.read_sql(sql=query, con=engine)
 
-    def merge(self) -> DataFrame:
-        """Merges prod and barn dataframes via concatenation"""
-        return pd.concat([self.prod, self.barn])
-
-    @classmethod
-    def get_solver_rewards(cls, start_block: str, end_block: str) -> DataFrame:
+    def get_solver_rewards(self, start_block: str, end_block: str) -> DataFrame:
         """
         Returns aggregated solver rewards for accounting period defined by block range
         """
@@ -146,20 +124,12 @@ class OrderbookFetcher:
             .replace("{{end_block}}", end_block)
             .replace("{{EPSILON}}", "10000000000000000")
         )
+        results = [
+            self.exec_query(query=batch_reward_query, engine=engine)
+            for engine in self.connections
+        ]
 
-        dual_df = cls(
-            barn=cls._exec_query(
-                query=batch_reward_query, engine=cls._pg_engine(OrderbookEnv.BARN)
-            ),
-            prod=cls._exec_query(
-                query=batch_reward_query, engine=cls._pg_engine(OrderbookEnv.PROD)
-            ),
-        )
-        # Solvers do not appear in both environments!
-        assert set(dual_df.prod.solver).isdisjoint(
-            set(dual_df.barn.solver)
-        ), "solver overlap!"
-        return dual_df.merge()
+        return pd.concat(results)
 
 
 def pg_hex2bytea(hex_address: str) -> str:
