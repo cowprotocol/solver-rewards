@@ -100,6 +100,38 @@ class DualEnvDataframe:
         return dual_df.merge()
 
 
+class MultiInstanceDBFetcher:
+    """
+    Allows identical query execution on multiple db instances (merging results).
+    Currently very specific to the CoW Protocol Orderbook DB.
+    """
+
+    def __init__(self, db_urls: list[str]):
+        self.connections = [create_engine(url) for url in db_urls]
+
+    @classmethod
+    def exec_query(cls, query: str, engine: Engine) -> DataFrame:
+        """Executes query on DB engine"""
+        return pd.read_sql(sql=query, con=engine)
+
+    def get_solver_rewards(self, start_block: str, end_block: str) -> DataFrame:
+        """
+        Returns aggregated solver rewards for accounting period defined by block range
+        """
+        batch_reward_query = (
+            open_query("orderbook/batch_rewards.sql")
+            .replace("{{start_block}}", start_block)
+            .replace("{{end_block}}", end_block)
+            .replace("{{EPSILON}}", "10000000000000000")
+        )
+        results = [
+            self.exec_query(query=batch_reward_query, engine=engine)
+            for engine in self.connections
+        ]
+
+        return pd.concat(results)
+
+
 def pg_hex2bytea(hex_address: str) -> str:
     """
     transforms hex string (beginning with 0x) to dune
