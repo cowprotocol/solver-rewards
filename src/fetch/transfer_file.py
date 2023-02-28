@@ -21,6 +21,7 @@ from src.constants import (
     SAFE_URL,
     FILE_OUT_DIR,
 )
+from src.fetch.payouts import post_cip20_payouts
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
@@ -100,7 +101,11 @@ if __name__ == "__main__":
         category=Category.GENERAL,
     )
 
-    payout_transfers = dune.get_transfers()
+    if args.post_cip20:
+        payout_transfers = post_cip20_payouts(args.dune, args.orderbook)
+    else:
+        payout_transfers = dune.get_transfers()
+
     Transfer.sort_list(payout_transfers)
     if args.consolidate_transfers:
         payout_transfers = Transfer.consolidate(payout_transfers)

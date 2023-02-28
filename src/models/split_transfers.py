@@ -6,7 +6,6 @@ internal methods are called in the appropriate order.
 from __future__ import annotations
 
 from datetime import timedelta
-from typing import Optional
 
 from dune_client.types import Address
 
@@ -62,8 +61,8 @@ class SplitTransfers:
         while self.unprocessed_native:
             transfer = self.unprocessed_native.pop(0)
             solver = transfer.recipient
-            slippage: Optional[SolverSlippage] = indexed_slippage.get(solver)
-            if slippage is not None:
+            try:
+                slippage: SolverSlippage = indexed_slippage.pop(solver)
                 assert (
                     slippage.amount_wei < 0
                 ), f"Expected negative slippage! Got {slippage}"
@@ -83,7 +82,19 @@ class SplitTransfers:
                     # Deduct entire transfer value.
                     penalty_total -= transfer.amount_wei
                     continue
+            except KeyError:
+                pass
             self.eth_transfers.append(transfer)
+
+        if indexed_slippage is not None:
+            # This is the case when solver had Negative Payment
+            # and did not appear in the list of unprocessed_native transfers
+            # slippages were expected drained!
+            # TODO - Deal with this!
+            raise ValueError(
+                "This is a scenario where solver has no payment but also has negative slippage!"
+            )
+
         return penalty_total
 
     def _process_rewards(

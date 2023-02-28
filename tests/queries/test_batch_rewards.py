@@ -1,9 +1,10 @@
-import os
 import unittest
 
 import pandas.testing
 from pandas import DataFrame
 
+from src.fetch.payouts import split_into_eth_cow
+from src.models.accounting_period import AccountingPeriod
 from src.pg_client import MultiInstanceDBFetcher
 
 
@@ -19,28 +20,39 @@ class TestBatchRewards(unittest.TestCase):
         batch_rewards = self.fetcher.get_solver_rewards(start_block, end_block)
         expected = DataFrame(
             {
-                "solver": ["0x5222", "0x5444", "0x5111", "0x5333"],
-                "total_reward_eth": [
-                    10450000000000000.00000,
-                    0.00000,
-                    600000000000000.00000,
-                    -10000000000000000.00000,
+                "solver": [
+                    "0x5111111111111111111111111111111111111111",
+                    "0x5222222222222222222222222222222222222222",
+                    "0x5333333333333333333333333333333333333333",
+                    "0x5444444444444444444444444444444444444444",
                 ],
-                "total_execution_cost_eth": [
+                "payment_eth": [
+                    600000000000000.00000,
+                    10450000000000000.00000,
+                    -10000000000000000.00000,
+                    0.00000,
+                ],
+                "execution_cost_eth": [
+                    800000000000000.00000,
                     450000000000000.00000,
                     0.00000,
-                    800000000000000.00000,
                     0.00000,
                 ],
                 "num_participating_batches": [
+                    7,
                     2,
+                    7,
                     6,
-                    7,
-                    7,
                 ],
             }
         )
         self.assertIsNone(pandas.testing.assert_frame_equal(expected, batch_rewards))
+
+        payments = split_into_eth_cow(
+            batch_rewards, AccountingPeriod(start="2023-02-14", length_days=0)
+        )
+
+        print(payments)
 
 
 if __name__ == "__main__":

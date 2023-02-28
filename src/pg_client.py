@@ -128,6 +128,7 @@ class MultiInstanceDBFetcher:
             self.exec_query(query=batch_reward_query, engine=engine)
             for engine in self.connections
         ]
+        # TODO - ensure types (large integers for WEI amounts)
 
         return pd.concat(results)
 

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Optional
 
 from dune_client.types import Address
 
@@ -20,8 +21,8 @@ class Overdraft:
 
     period: AccountingPeriod
     account: Address
-    name: str
     wei: int
+    name: Optional[str] = None
 
     @classmethod
     def from_objects(

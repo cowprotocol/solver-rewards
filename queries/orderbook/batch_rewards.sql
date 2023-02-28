@@ -70,7 +70,7 @@ WITH observed_settlements AS (SELECT
                                    surplus + fee - reference_score as uncapped_reward_eth,
                                    -- Uncapped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
                                    LEAST(GREATEST(-{{EPSILON}}, surplus + fee - reference_score),
-                                     {{EPSILON}} + execution_cost) as capped_reward,
+                                     {{EPSILON}} + execution_cost) as capped_payment,
                                    winning_score,
                                    reference_score,
                                    participating_solvers           as participating_solvers
@@ -81,17 +81,18 @@ WITH observed_settlements AS (SELECT
                               FROM participation_data
                               GROUP BY participant),
      primary_rewards as (SELECT rpt.solver,
-                                SUM(capped_reward)  as total_reward_eth,
-                                SUM(execution_cost) as total_exececution_cost_eth
+                                SUM(capped_payment) as payment_wei,
+                                SUM(execution_cost) as exececution_cost_wei
                          FROM reward_per_auction rpt
                          GROUP BY solver),
-     aggregate_results as (SELECT concat('0x', encode(pc.solver, 'hex'))  as solver,
-                                  coalesce(total_reward_eth, 0)           as total_reward_eth,
-                                  coalesce(total_exececution_cost_eth, 0) as total_execution_cost_eth,
+     aggregate_results as (SELECT concat('0x', encode(pc.solver, 'hex')) as solver,
+                                  coalesce(payment_wei, 0)               as payment_eth,
+                                  coalesce(exececution_cost_wei, 0)      as execution_cost_eth,
                                   num_participating_batches
                            FROM participation_counts pc
                                   LEFT OUTER JOIN primary_rewards pr
                                                   ON pr.solver = pc.solver)
 
 select *
-from aggregate_results;
+from aggregate_results
+order by solver;
