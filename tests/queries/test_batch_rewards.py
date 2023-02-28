@@ -2,11 +2,9 @@ import os
 import unittest
 
 import pandas.testing
-from dotenv import load_dotenv
 from pandas import DataFrame
 
 from src.pg_client import MultiInstanceDBFetcher
-from tests.db.pg_client import connect_and_populate_db_from
 
 
 class TestBatchRewards(unittest.TestCase):
