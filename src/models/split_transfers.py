@@ -86,7 +86,7 @@ class SplitTransfers:
                 pass
             self.eth_transfers.append(transfer)
 
-        if indexed_slippage is not None:
+        if indexed_slippage:
             # This is the case when solver had Negative Payment
             # and did not appear in the list of unprocessed_native transfers
             # slippages were expected drained!
