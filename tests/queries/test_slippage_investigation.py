@@ -188,6 +188,34 @@ class TestDuneAnalytics(unittest.TestCase):
             ],
         )
 
+    def test_slippage_0xb0eb23(self):
+        """
+        Bad Slippage Calculation (on dashboard and in our Slippage Query -- but not in Token Imbalance)
+        https://cowservices.slack.com/archives/C037UV49JLR/p1677580069637059?thread_ts=1677571577.413889&cid=C037UV49JLR
+        """
+        period = AccountingPeriod("2023-02-21", 1)
+        # Unusual Slippage query shows 900$ in slippage!
+        tx_hash = "0xb0eb23b6864a5dd2447140a06174537f8b5ad7d70e5f2d8af76ddc8d62fbf21a"
+        result = exec_or_get(
+            self.dune,
+            query=self.slippage_query_for(period, tx_hash),
+            result_id="01GTBSD5J7P0CTSXJHCSG3TB2X",
+        )
+        self.assertEqual(result.query_id, self.slippage_query.v2_query.query_id)
+        self.assertEqual(
+            result.get_rows(),
+            [
+                {
+                    "eth_slippage_wei": -588897866192248800,
+                    "hour": "2023-02-21T09:00:00Z",
+                    "num_entries": 2,
+                    "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
+                    "tx_hash": "0xb0eb23b6864a5dd2447140a06174537f8b5ad7d70e5f2d8af76ddc8d62fbf21a",
+                    "usd_value": -991.142590701977,
+                }
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
