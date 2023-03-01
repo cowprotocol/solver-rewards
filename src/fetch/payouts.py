@@ -20,6 +20,7 @@ from src.models.token import Token
 from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 
+# TODO - this should be a runtime parameter.
 PERIOD_BUDGET_COW = 1
 
 PAYMENT_COLUMNS = {
@@ -42,33 +43,47 @@ COMPLETE_COLUMNS = PAYMENT_COLUMNS.union(SLIPPAGE_COLUMNS).union(REWARD_TARGET_C
 
 @dataclass
 class PeriodPayouts:
-    """Dataclass to keep track of reimbursements and rewards"""
+    """Dataclass to keep track of reimbursements, rewards and solver overdrafts"""
 
     overdrafts: list[Overdraft]
     # ETH Reimbursements & COW Rewards
     transfers: list[Transfer]
 
 
-@dataclass
 class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
     """
     Dataclass holding all pertinent information related to a solver's payout (or overdraft)
     """
 
-    solver: Address
-    solver_name: str
-    reward_target: Address
-    exec_cost: int
-    payment_eth: int
-    secondary_reward_eth: int
-    slippage_eth: int
-    cow_reward: int
-    secondary_reward_cow: int
+    def __init__(  # pylint: disable=too-many-arguments
+        self,
+        solver: Address,
+        solver_name: str,
+        reward_target: Address,
+        exec_cost: int,
+        payment_eth: int,
+        secondary_reward_eth: int,
+        slippage_eth: int,
+        reward_cow: int,
+        secondary_reward_cow: int,
+    ):
+        assert exec_cost >= 0, "invalid execution cost"
+        assert secondary_reward_eth >= 0, "invalid secondary_reward_eth"
+        assert secondary_reward_cow >= 0, "invalid secondary_reward_cow"
+
+        self.solver = solver
+        self.solver_name = solver_name
+        self.reward_target = reward_target
+        self.exec_cost = exec_cost
+        self.payment_eth = payment_eth
+        self.slippage_eth = slippage_eth
+        self.reward_cow = reward_cow
+        self.secondary_reward_eth = secondary_reward_eth
+        self.secondary_reward_cow = secondary_reward_cow
 
     @classmethod
     def from_series(cls, frame: Series) -> RewardAndPenaltyDatum:
         """Constructor from row in Dataframe"""
-        # TODO - deal with this better.
         slippage = (
             int(frame["eth_slippage_wei"])
             if not math.isnan(frame["eth_slippage_wei"])
@@ -84,10 +99,10 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             solver=Address(solver),
             solver_name=frame["solver_name"],
             reward_target=Address(reward_target),
-            exec_cost=int(frame["execution_cost_eth"]),
             payment_eth=int(frame["payment_eth"]),
             slippage_eth=slippage,
-            cow_reward=int(frame["reward_cow"]),
+            reward_cow=int(frame["reward_cow"]),
+            exec_cost=int(frame["execution_cost_eth"]),
             secondary_reward_eth=int(frame["secondary_reward_eth"]),
             secondary_reward_cow=int(frame["secondary_reward_cow"]),
         )
@@ -98,7 +113,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
 
     def total_cow_reward(self) -> int:
         """Total outgoing COW token reward"""
-        return self.cow_reward + self.secondary_reward_cow
+        return self.reward_cow + self.secondary_reward_cow
 
     def is_overdraft(self) -> bool:
         """
@@ -120,36 +135,52 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         if self.total_outgoing_eth() < self.exec_cost:
             # Total outgoing doesn't even cover execution costs,
             # so reimburse as much as possible.
-            return [
+            return (
+                [
+                    Transfer(
+                        token=None,
+                        recipient=self.solver,
+                        amount_wei=int(self.total_outgoing_eth()),
+                    )
+                ]
+                # Handling another Degenerate Case
+                if self.total_outgoing_eth() > 0
+                else []
+            )
+        # Since total_outgoing_eth >= self.exec_cost so there will be some transfer.
+        # TODO - THIS IS A MESS! WAY TOO COMPLICATED TO GET RIGHT IN A SINGLE PR.
+        #  need to mathematically prove that at least one transfer
+        #  will always be returned from this (or find a counter example!)
+        result = []
+        eth_amount = int(self.exec_cost + self.slippage_eth)
+        try:
+            result.append(
                 Transfer(
                     token=None,
                     recipient=self.solver,
-                    amount_wei=int(self.total_outgoing_eth()),
+                    amount_wei=eth_amount,
                 )
-            ]
-        # At this point we know that:
-        # self.total_outgoing_eth() >= self.exec_cost
-        # Now it is time to handle the many cases involving signatures of
-        # (payment_eth, secondary_reward_eth, slippage_eth)
-        # TODO - THIS IS A MESS!
-        #  WAY TOO COMPLICATED TO GET RIGHT IN A SINGLE PR.
-        #  The logic of this method must be sorted out separately.
+            )
+        except AssertionError:
+            logging.warning(
+                f"Invalid ETH Transfer {self.solver} with amount={eth_amount}"
+            )
 
-        # primary_eth + secondary_eth and slippage combined all cover execution costs
-        # TODO - we have not captured all the cases.
-        return [
-            Transfer(
-                # TODO - this amount could be negative! Will capture this with a test.
-                token=None,
-                recipient=self.solver,
-                amount_wei=int(self.exec_cost + self.slippage_eth),
-            ),
-            Transfer(
-                token=Token(COW_TOKEN_ADDRESS),
-                recipient=self.reward_target,
-                amount_wei=int(self.total_cow_reward()),
-            ),
-        ]
+        cow_amount = int(self.total_cow_reward())
+        try:
+            result.append(
+                Transfer(
+                    token=Token(COW_TOKEN_ADDRESS),
+                    recipient=self.reward_target,
+                    amount_wei=cow_amount,
+                )
+            )
+        except AssertionError:
+            logging.warning(
+                f"Invalid COW Transfer {self.solver} with amount={cow_amount}"
+            )
+
+        return result
 
 
 @dataclass
@@ -201,15 +232,14 @@ def prepare_transfers(payout_df: DataFrame, period: AccountingPeriod) -> PeriodP
     for _, payment in payout_df.iterrows():
         payout_datum = RewardAndPenaltyDatum.from_series(payment)
         if payout_datum.is_overdraft():
-            print(f"Solver {payout_datum.solver} owes us! ETH or COW.")
-            overdrafts.append(
-                Overdraft(
-                    period=period,
-                    account=payout_datum.solver,
-                    name=payout_datum.solver_name,
-                    wei=-int(payout_datum.total_outgoing_eth()),
-                )
+            overdraft = Overdraft(
+                period=period,
+                account=payout_datum.solver,
+                name=payout_datum.solver_name,
+                wei=-int(payout_datum.total_outgoing_eth()),
             )
+            print(f"Solver Overdraft! {overdraft}")
+            overdrafts.append(overdraft)
         else:
             # No overdraft, always results in at least one transfer.
             transfers += payout_datum.as_payouts()
@@ -225,7 +255,6 @@ def validate_df_columns(
     we validate that the expected columns/fields are available within our datasets.
     While it is ok for the input data to contain more columns,
     this method merely validates that the expected ones are there.
-    TODO - this might also be a good place to assert types.
     """
     assert PAYMENT_COLUMNS.issubset(
         set(payment_df.columns)
@@ -261,11 +290,11 @@ def construct_payout_dataframe(
     normalize_address_field(payment_df, join_column)
     normalize_address_field(slippage_df, join_column)
     normalize_address_field(reward_target_df, join_column)
+
     # 3. Merge the three dataframes (joining on solver)
     merged_df = payment_df.merge(slippage_df, on=join_column, how="left").merge(
         reward_target_df, on=join_column, how="left"
     )
-    merged_df.to_dict()
     return merged_df
 
 
@@ -273,24 +302,21 @@ def post_cip20_payouts(
     dune: DuneFetcher, orderbook: MultiInstanceDBFetcher
 ) -> list[Transfer]:
     """Workflow of solver reward payout logic post-CIP20"""
-    # Fetch auction data from orderbook.
-    # rewards_df = orderbook.get_solver_rewards(dune.start_block, dune.end_block)
-    # solver_slippage = pandas.DataFrame(dune.get_period_slippage())
-    # reward_targets = dune.get_vouches()
 
-    # Separate values into ETH (execution costs) and COW rewards.
-    # payments = split_into_eth_cow(rewards_df, dune.period)
     price_day = dune.period.end - timedelta(days=1)
     reward_token = TokenId.COW
 
     complete_payout_df = construct_payout_dataframe(
+        # Fetch and extend auction data from orderbook.
         payment_df=extend_payment_df(
             pdf=orderbook.get_solver_rewards(dune.start_block, dune.end_block),
+            # provide token conversion functions (ETH <--> COW)
             converter=TokenConversion(
                 eth_to_token=lambda t: eth_in_token(reward_token, t, price_day),
                 token_to_eth=lambda t: token_in_eth(reward_token, t, price_day),
             ),
         ),
+        # Dune: Fetch Solver Slippage & Reward Targets
         slippage_df=pandas.DataFrame(dune.get_period_slippage()),
         reward_target_df=pandas.DataFrame(dune.get_vouches()),
     )

@@ -12,7 +12,7 @@ from src.fetch.payouts import (
     construct_payout_dataframe,
     TokenConversion,
     prepare_transfers,
-    PeriodPayouts,
+    RewardAndPenaltyDatum,
 )
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
@@ -20,7 +20,7 @@ from src.models.token import Token
 from src.models.transfer import Transfer
 
 
-class TestFetchPayouts(unittest.TestCase):
+class TestPayoutTransformations(unittest.TestCase):
     """Contains tests all stray methods in src/fetch/payouts.py"""
 
     def setUp(self) -> None:
@@ -304,7 +304,6 @@ class TestFetchPayouts(unittest.TestCase):
                     recipient=Address(self.reward_targets[1]),
                     amount_wei=10018181818181818180,
                 ),
-                Transfer(token=None, recipient=Address(self.solvers[3]), amount_wei=0),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[3]),
@@ -322,6 +321,144 @@ class TestFetchPayouts(unittest.TestCase):
                     wei=9936363636363638,
                     name="S_3",
                 )
+            ],
+        )
+
+
+class TestRewardAndPenaltyDatum(unittest.TestCase):
+    def setUp(self) -> None:
+        self.solver = Address.from_int(1)
+        self.solver_name = "Solver1"
+        self.reward_target = Address.from_int(2)
+        self.cow_token = Token(COW_TOKEN_ADDRESS)
+        self.conversion_rate = 1000
+
+    def sample_record(
+        self,
+        payment: int,
+        cost: int,
+        participation: int,
+        slippage: int,
+    ):
+        """Assumes a conversion rate of ETH:COW <> 1:self.conversion_rate"""
+        return RewardAndPenaltyDatum(
+            solver=self.solver,
+            solver_name=self.solver_name,
+            reward_target=self.reward_target,
+            payment_eth=payment,
+            exec_cost=cost,
+            reward_cow=(payment - cost) * self.conversion_rate,
+            secondary_reward_eth=participation,
+            secondary_reward_cow=participation * self.conversion_rate,
+            slippage_eth=slippage,
+        )
+
+    def test_invalid_input(self):
+        with self.assertRaises(AssertionError):
+            self.sample_record(0, -1, 0, 0)
+
+        with self.assertRaises(AssertionError):
+            self.sample_record(0, 0, -1, 0)
+
+    def test_reward_datum_0_0_0_0(self):
+        test_datum = self.sample_record(0, 0, 0, 0)
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(test_datum.as_payouts(), [])
+
+    def test_reward_datum_1_1_0_0(self):
+        cost = 1
+        test_datum = self.sample_record(1, cost, 0, 0)
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [Transfer(token=None, recipient=self.solver, amount_wei=cost)],
+        )
+
+    def test_reward_datum_3_2_0_minus1(self):
+        payment, cost, participation, slippage = 3, 2, 0, -1
+        test_datum = self.sample_record(payment, cost, participation, slippage)
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [
+                Transfer(
+                    token=None,
+                    recipient=self.solver,
+                    amount_wei=cost + slippage,
+                ),
+                Transfer(
+                    token=self.cow_token,
+                    recipient=self.reward_target,
+                    amount_wei=(payment - cost) * self.conversion_rate,
+                ),
+            ],
+        )
+
+    def test_reward_datum_cost_exceeds_payment_degenerate(self):
+        # Degenerate Case!
+        payment, cost, participation, slippage = 1, 10, 0, -1
+        test_datum = self.sample_record(payment, cost, participation, slippage)
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [],
+        )
+
+    def test_reward_datum_cost_exceeds_payment_non_degenerate(self):
+        # Payment + Slippage combined do not exceed costs so only that is returned
+
+        triplets = [(1, 0, 1), (2, 0, -1), (1, 1, 1)]
+        cost = max(sum(x) for x in triplets) + 1
+
+        for payment, participation, slippage in triplets:
+            test_datum = self.sample_record(payment, cost, participation, slippage)
+            self.assertFalse(test_datum.is_overdraft())
+            self.assertLess(test_datum.total_outgoing_eth(), cost)
+            self.assertEqual(
+                test_datum.as_payouts(),
+                [
+                    Transfer(
+                        token=None,
+                        recipient=self.solver,
+                        amount_wei=test_datum.total_outgoing_eth(),
+                    )
+                ],
+            )
+
+    def test_reward_datum_overdraft(self):
+        # Any time when payment + participation + slippage < 0
+        triplets = [
+            (-1, 0, 0),
+            (0, -1, 0),
+            (0, 0, -1),
+        ]
+        for payment, participation, slippage in triplets:
+            for cost in [-100, 0, 100]:
+                # Doesn't matter their costs, they are in overdraft state!
+                rec = self.sample_record(payment, cost, participation, slippage)
+                self.assertTrue(rec.is_overdraft())
+
+    def test_reward_datum_1_1_1_1(self):
+        payment, cost, participation, slippage = 1, 1, 1, 1
+        test_datum = self.sample_record(payment, cost, participation, slippage)
+
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.total_cow_reward(), participation * self.conversion_rate
+        )
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [
+                Transfer(
+                    token=None,
+                    recipient=self.solver,
+                    amount_wei=cost + slippage,
+                ),
+                Transfer(
+                    token=self.cow_token,
+                    recipient=self.reward_target,
+                    amount_wei=test_datum.total_cow_reward(),
+                ),
             ],
         )
 
