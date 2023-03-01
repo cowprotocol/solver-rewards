@@ -4,6 +4,7 @@ import pandas
 from dune_client.types import Address
 from pandas import DataFrame
 
+from src.constants import COW_TOKEN_ADDRESS
 from src.fetch.payouts import (
     extend_payment_df,
     normalize_address_field,
@@ -14,13 +15,15 @@ from src.fetch.payouts import (
     PeriodPayouts,
 )
 from src.models.accounting_period import AccountingPeriod
+from src.models.overdraft import Overdraft
+from src.models.token import Token
+from src.models.transfer import Transfer
 
 
 class TestFetchPayouts(unittest.TestCase):
     """Contains tests all stray methods in src/fetch/payouts.py"""
 
     def setUp(self) -> None:
-
         self.solvers = list(
             map(
                 str,
@@ -75,7 +78,6 @@ class TestFetchPayouts(unittest.TestCase):
             "num_participating_batches": self.batch_participation,
         }
         base_payout_df = DataFrame(base_data_dict)
-
         result = extend_payment_df(base_payout_df, converter=self.mock_converter)
         expected_data_dict = {
             "solver": self.solvers,
@@ -170,7 +172,6 @@ class TestFetchPayouts(unittest.TestCase):
         )
 
     def test_construct_payouts(self):
-
         payments = extend_payment_df(
             pdf=DataFrame(
                 {
@@ -243,7 +244,6 @@ class TestFetchPayouts(unittest.TestCase):
         self.assertIsNone(pandas.testing.assert_frame_equal(result, expected))
 
     def test_prepare_transfers(self):
-        # TODO - write test here
         # Need Example of every possible scenario
         full_payout_data = DataFrame(
             {
@@ -284,10 +284,46 @@ class TestFetchPayouts(unittest.TestCase):
                 ],
             }
         )
-        payout_transfers = prepare_transfers(
-            full_payout_data, period=AccountingPeriod("1985-03-10", 1)
+        period = AccountingPeriod("1985-03-10", 1)
+        payout_transfers = prepare_transfers(full_payout_data, period)
+        self.assertEqual(
+            payout_transfers.transfers,
+            [
+                Transfer(
+                    token=None,
+                    recipient=Address(self.solvers[0]),
+                    amount_wei=663636363636364,
+                ),
+                Transfer(
+                    token=None,
+                    recipient=Address(self.solvers[1]),
+                    amount_wei=450000000000000,
+                ),
+                Transfer(
+                    token=Token(COW_TOKEN_ADDRESS),
+                    recipient=Address(self.reward_targets[1]),
+                    amount_wei=10018181818181818180,
+                ),
+                Transfer(token=None, recipient=Address(self.solvers[3]), amount_wei=0),
+                Transfer(
+                    token=Token(COW_TOKEN_ADDRESS),
+                    recipient=Address(self.reward_targets[3]),
+                    amount_wei=54545454545454544,
+                ),
+            ],
         )
-        self.assertEqual(payout_transfers, PeriodPayouts(overdrafts=[], transfers=[]))
+
+        self.assertEqual(
+            payout_transfers.overdrafts,
+            [
+                Overdraft(
+                    period,
+                    account=Address(self.solvers[2]),
+                    wei=9936363636363638,
+                    name="S_3",
+                )
+            ],
+        )
 
 
 if __name__ == "__main__":

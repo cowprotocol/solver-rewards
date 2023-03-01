@@ -1,5 +1,8 @@
 """Logic for Post CIP 20 Solver Payout Calculation"""
 from __future__ import annotations
+
+import logging
+import math
 from dataclasses import dataclass
 from datetime import timedelta
 from typing import Callable
@@ -65,14 +68,26 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
     @classmethod
     def from_series(cls, frame: Series) -> RewardAndPenaltyDatum:
         """Constructor from row in Dataframe"""
+        # TODO - deal with this better.
+        slippage = (
+            int(frame["eth_slippage_wei"])
+            if not math.isnan(frame["eth_slippage_wei"])
+            else 0
+        )
+        solver = frame["solver"]
+        reward_target = frame["reward_target"]
+        if reward_target is None:
+            logging.warning(f"solver {solver} without reward_target. Using solver")
+            reward_target = solver
+
         return cls(
-            solver=Address(frame["solver"]),
+            solver=Address(solver),
             solver_name=frame["solver_name"],
-            reward_target=Address(frame["reward_target"]),
+            reward_target=Address(reward_target),
             exec_cost=int(frame["execution_cost_eth"]),
             payment_eth=int(frame["payment_eth"]),
-            slippage_eth=int(frame["eth_slippage_wei"]),
-            cow_reward=int(frame["cow_reward"]),
+            slippage_eth=slippage,
+            cow_reward=int(frame["reward_cow"]),
             secondary_reward_eth=int(frame["secondary_reward_eth"]),
             secondary_reward_cow=int(frame["secondary_reward_cow"]),
         )

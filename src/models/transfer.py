@@ -203,13 +203,13 @@ class Transfer:
 
     def __str__(self) -> str:
         if self.token_type == TokenType.NATIVE:
-            return f"TransferETH(receiver={self.recipient}, amount_wei={self.amount})"
+            return f"TransferETH(receiver={self.recipient}, amount={self.amount})"
         if self.token_type == TokenType.ERC20:
             return (
                 f"Transfer("
-                f"token_address={self.token}, "
+                f"token={self.token}, "
                 f"recipient={self.recipient}, "
-                f"amount_wei={self.amount})"
+                f"amount={self.amount})"
             )
         raise ValueError(f"Invalid Token Type {self.token_type}")
 
