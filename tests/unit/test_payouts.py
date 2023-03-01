@@ -462,6 +462,20 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             ],
         )
 
+    def test_payout_negative_payments(self):
+        payment, cost, participation, slippage = -1, 1, 1, 1
+        test_datum = self.sample_record(payment, cost, participation, slippage)
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [
+                Transfer(
+                    token=None,
+                    recipient=self.solver,
+                    amount_wei=test_datum.total_outgoing_eth(),
+                ),
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -52,7 +52,7 @@ class PeriodPayouts:
 
 class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
     """
-    Dataclass holding all pertinent information related to a solver's payout (or overdraft)
+    All pertinent information and functionality related to individual solver payout (or overdraft)
     """
 
     def __init__(  # pylint: disable=too-many-arguments
@@ -115,6 +115,10 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         """Total outgoing COW token reward"""
         return self.reward_cow + self.secondary_reward_cow
 
+    def total_eth_reward(self) -> int:
+        """Total outgoing COW token reward"""
+        return self.payment_eth - self.exec_cost + self.secondary_reward_eth
+
     def is_overdraft(self) -> bool:
         """
         True if the solver's complete combined data results in a net negative
@@ -151,8 +155,28 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         # TODO - THIS IS A MESS! WAY TOO COMPLICATED TO GET RIGHT IN A SINGLE PR.
         #  need to mathematically prove that at least one transfer
         #  will always be returned from this (or find a counter example!)
-        result = []
         eth_amount = int(self.exec_cost + self.slippage_eth)
+        cow_amount = int(self.total_cow_reward())
+
+        if cow_amount < 0:
+            # This happens when reward_cow < 0 (i.e. payment - cost < 0)
+            # In particular -secondary_reward_cow
+            # So we will need to deduct this from eth_amount
+            assert self.total_eth_reward() < 0
+            return [
+                Transfer(
+                    token=None,
+                    recipient=self.solver,
+                    # eth_amount + self.total_eth_reward()
+                    # = exec_cost + slippage_eth + payment_eth - exec_cost + secondary_reward_eth
+                    # = slippage_eth + payment_eth + secondary_reward_eth
+                    # >= exec_cost >= 0
+                    amount_wei=eth_amount + self.total_eth_reward(),
+                )
+            ]
+
+        # We should be able to prove that there must always be one transfer resulting from this
+        result = []
         try:
             result.append(
                 Transfer(
@@ -163,10 +187,8 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             )
         except AssertionError:
             logging.warning(
-                f"Invalid ETH Transfer {self.solver} with amount={eth_amount}"
+                f"Invalid COW Transfer {self.solver} with amount={cow_amount}"
             )
-
-        cow_amount = int(self.total_cow_reward())
         try:
             result.append(
                 Transfer(

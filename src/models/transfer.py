@@ -50,10 +50,7 @@ class Transfer:
     amount_wei: int
 
     def __init__(self, token: Optional[Token], recipient: Address, amount_wei: int):
-        # TODO - Could reduce the number of degenerate cases by allowing 0-Transfers
-        assert (
-            amount_wei > 0
-        ), f"Can't construct trivial or negative transfer of {amount_wei}"
+        assert amount_wei > 0, f"Can't construct negative transfer of {amount_wei}"
 
         self.token = token
         self._recipient = recipient
