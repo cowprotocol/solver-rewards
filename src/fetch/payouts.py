@@ -1,6 +1,6 @@
 """Logic for Post CIP 20 Solver Payout Calculation"""
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from dune_client.types import Address
 from pandas import DataFrame
@@ -10,6 +10,7 @@ from src.fetch.dune import DuneFetcher
 from src.fetch.prices import eth_in_token, TokenId, token_in_eth
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
+from src.models.slippage import SplitSlippages
 from src.models.split_transfers import SplitTransfers
 from src.models.token import Token
 from src.models.transfer import Transfer
@@ -29,13 +30,14 @@ class Payments:
     rewards: list[Transfer]
 
 
-def split_into_eth_cow(pdf: DataFrame, period: AccountingPeriod) -> Payments:
+def extend_payment_df(pdf: DataFrame, price_day: datetime) -> DataFrame:
     """
-    Manipulates the payout DataFrame to split into ETH and COW.
-    Specifically, We deduct total_rewards by total_execution_cost (both initially in ETH)
-    keep the execution cost in ETH and convert the difference to COW.
+    Extending the basic columns returned by SQL Query with some after-math:
+    - reward_eth as difference of payment and execution_cost
+    - reward_cow as conversion from ETH to cow.
+    - secondary_reward (as the remaining reward after all has been distributed)
+        This is evaluated in both ETH and COW (for different use cases).
     """
-    price_day = period.end - timedelta(days=1)
     # Note that this can be negative!
     pdf["reward_eth"] = pdf["payment_eth"] - pdf["execution_cost_eth"]
     pdf["reward_cow"] = pdf["reward_eth"].apply(
@@ -50,6 +52,16 @@ def split_into_eth_cow(pdf: DataFrame, period: AccountingPeriod) -> Payments:
     pdf["secondary_reward_eth"] = pdf["secondary_reward_cow"].apply(
         lambda t: token_in_eth(TokenId.COW, t, day=price_day)
     )
+    return pdf
+
+
+def split_into_eth_cow(pdf: DataFrame, period: AccountingPeriod) -> Payments:
+    """
+    Manipulates the payout DataFrame to split into ETH and COW.
+    Specifically, We deduct total_rewards by total_execution_cost (both initially in ETH)
+    keep the execution cost in ETH and convert the difference to COW.
+    """
+    pdf = extend_payment_df(pdf, price_day=period.end - timedelta(days=1))
 
     negative_payments, reimbursements, rewards = [], [], []
     for _, payment in pdf.iterrows():
@@ -105,12 +117,13 @@ def post_cip20_payouts(
     payments = split_into_eth_cow(rewards_df, dune.period)
 
     # Everything below here is already existing and reviewed code:
+    # TODO - eliminate the use of this logic.
     split_transfers = SplitTransfers(
         period=dune.period,
         mixed_transfers=payments.reimbursements + payments.rewards,
         log_saver=dune.log_saver,
     )
     return split_transfers.process(
-        slippages=dune.get_period_slippage(),
+        slippages=SplitSlippages.from_data_set(dune.get_period_slippage()),
         cow_redirects=dune.get_vouches(),
     )

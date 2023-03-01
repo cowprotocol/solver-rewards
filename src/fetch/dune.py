@@ -1,4 +1,5 @@
 """All Dune related query fetching is defined here in the DuneFetcherClass"""
+from typing import Any
 
 import pandas as pd
 from dune_client.client import DuneClient
@@ -174,13 +175,13 @@ class DuneFetcher:
             realized_fees_eth=int(rec["realized_fees_eth"]),
         )
 
-    def get_period_slippage(self) -> SplitSlippages:
+    def get_period_slippage(self) -> list[dict[str, Any]]:
         """
         Executes & Fetches results of slippage query per solver for specified accounting period.
         Returns a class representation of the results as two lists (positive & negative).
         """
         token_list = get_trusted_tokens()
-        data_set = self._get_query_results(
+        return self._get_query_results(
             self._parameterized_query(
                 QUERIES["PERIOD_SLIPPAGE"],
                 params=self._period_params()
@@ -190,7 +191,6 @@ class DuneFetcher:
                 ],
             )
         )
-        return SplitSlippages.from_data_set(data_set)
 
     def get_transfers(self) -> list[Transfer]:
         """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
@@ -203,6 +203,6 @@ class DuneFetcher:
             log_saver=self.log_saver,
         )
         return split_transfers.process(
-            slippages=self.get_period_slippage(),
+            slippages=SplitSlippages.from_data_set(self.get_period_slippage()),
             cow_redirects=self.get_vouches(),
         )
