@@ -67,7 +67,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         reward_cow: int,
         secondary_reward_cow: int,
     ):
-        assert exec_cost >= 0, "invalid execution cost"
+        assert exec_cost >= 0, f"invalid execution cost {exec_cost}"
         assert secondary_reward_eth >= 0, "invalid secondary_reward_eth"
         assert secondary_reward_cow >= 0, "invalid secondary_reward_cow"
 

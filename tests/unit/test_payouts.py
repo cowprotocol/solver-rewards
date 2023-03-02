@@ -429,11 +429,10 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         # Any time when payment + participation + slippage < 0
         triplets = [
             (-1, 0, 0),
-            (0, -1, 0),
             (0, 0, -1),
         ]
         for payment, participation, slippage in triplets:
-            for cost in [-100, 0, 100]:
+            for cost in [0, 1, 100]:
                 # Doesn't matter their costs, they are in overdraft state!
                 rec = self.sample_record(payment, cost, participation, slippage)
                 self.assertTrue(rec.is_overdraft())

@@ -3,8 +3,6 @@ import unittest
 import pandas.testing
 from pandas import DataFrame
 
-from src.fetch.payouts import split_into_eth_cow
-from src.models.accounting_period import AccountingPeriod
 from src.pg_client import MultiInstanceDBFetcher
 
 
@@ -47,12 +45,6 @@ class TestBatchRewards(unittest.TestCase):
             }
         )
         self.assertIsNone(pandas.testing.assert_frame_equal(expected, batch_rewards))
-
-        payments = split_into_eth_cow(
-            batch_rewards, AccountingPeriod(start="2023-02-14", length_days=0)
-        )
-
-        print(payments)
 
 
 if __name__ == "__main__":
