@@ -1,9 +1,10 @@
 """All Dune related query fetching is defined here in the DuneFetcherClass"""
+from typing import Any
 
 import pandas as pd
 from dune_client.client import DuneClient
 from dune_client.query import Query
-from dune_client.types import QueryParameter, Address, DuneRecord
+from dune_client.types import QueryParameter, DuneRecord
 
 from src.fetch.cow_rewards import aggregate_orderbook_rewards
 from src.fetch.token_list import get_trusted_tokens
@@ -13,7 +14,7 @@ from src.models.period_totals import PeriodTotals
 from src.models.slippage import SplitSlippages
 from src.models.split_transfers import SplitTransfers
 from src.models.transfer import Transfer
-from src.models.vouch import Vouch, RECOGNIZED_BONDING_POOLS, parse_vouches
+from src.models.vouch import RECOGNIZED_BONDING_POOLS, parse_vouches
 from src.pg_client import DualEnvDataframe
 from src.queries import QUERIES, DuneVersion, QueryData
 from src.utils.print_store import PrintStore
@@ -139,12 +140,12 @@ class DuneFetcher:
         assert len(duplicates) == 0, f"solver sets disagree: {duplicates}"
         return Transfer.from_dataframe(cow_rewards_df)
 
-    def get_vouches(self) -> dict[Address, Vouch]:
+    def get_vouches(self) -> list[DuneRecord]:
         """
         Fetches & Returns Parsed Results for VouchRegistry query.
         """
         pool_values = ",\n".join(RECOGNIZED_BONDING_POOLS)
-        data_set = self._get_query_results(
+        return self._get_query_results(
             query=self._parameterized_query(
                 query_data=QUERIES["VOUCH_REGISTRY"],
                 params=[
@@ -154,7 +155,6 @@ class DuneFetcher:
                 ],
             )
         )
-        return parse_vouches(data_set)
 
     def get_period_totals(self) -> PeriodTotals:
         """
@@ -174,13 +174,13 @@ class DuneFetcher:
             realized_fees_eth=int(rec["realized_fees_eth"]),
         )
 
-    def get_period_slippage(self) -> SplitSlippages:
+    def get_period_slippage(self) -> list[DuneRecord]:
         """
         Executes & Fetches results of slippage query per solver for specified accounting period.
         Returns a class representation of the results as two lists (positive & negative).
         """
         token_list = get_trusted_tokens()
-        data_set = self._get_query_results(
+        return self._get_query_results(
             self._parameterized_query(
                 QUERIES["PERIOD_SLIPPAGE"],
                 params=self._period_params()
@@ -190,7 +190,6 @@ class DuneFetcher:
                 ],
             )
         )
-        return SplitSlippages.from_data_set(data_set)
 
     def get_transfers(self) -> list[Transfer]:
         """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
@@ -203,6 +202,6 @@ class DuneFetcher:
             log_saver=self.log_saver,
         )
         return split_transfers.process(
-            slippages=self.get_period_slippage(),
-            cow_redirects=self.get_vouches(),
+            slippages=SplitSlippages.from_data_set(self.get_period_slippage()),
+            cow_redirects=parse_vouches(self.get_vouches()),
         )
