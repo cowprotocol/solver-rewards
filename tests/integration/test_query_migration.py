@@ -6,6 +6,7 @@ from dune_client.client import DuneClient
 from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer
+from src.models.vouch import parse_vouches
 from src.queries import DuneVersion
 from src.utils.dataset import index_by
 
@@ -22,8 +23,8 @@ class TestQueryMigration(unittest.TestCase):
         )
 
     def test_identical_vouch_registry(self):
-        v1_vouches = self.v1_fetcher.get_vouches()
-        v2_vouches = self.v2_fetcher.get_vouches()
+        v1_vouches = parse_vouches(self.v1_fetcher.get_vouches())
+        v2_vouches = parse_vouches(self.v2_fetcher.get_vouches())
 
         self.assertEqual(v1_vouches, v2_vouches)
 

@@ -9,6 +9,7 @@ from dune_client.types import QueryParameter
 
 from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
+from src.models.slippage import SplitSlippages
 from src.queries import QUERIES, DuneVersion
 from tests.integration.common import exec_or_get
 
@@ -40,7 +41,7 @@ class TestDuneAnalytics(unittest.TestCase):
         """
         period = AccountingPeriod("2022-03-01", 1)
         fetcher = DuneFetcher(self.dune, period, DuneVersion.V2)
-        period_slippage = fetcher.get_period_slippage()
+        period_slippage = SplitSlippages.from_data_set(fetcher.get_period_slippage())
         self.assertLess(
             period_slippage.sum_positive() - period_slippage.sum_negative(),
             2 * 10**18,
