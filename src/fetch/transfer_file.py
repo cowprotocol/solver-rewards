@@ -11,7 +11,7 @@ import certifi
 from dune_client.file.interface import FileIO
 from eth_typing.ethpm import URI
 from gnosis.eth.ethereum_client import EthereumClient
-from slack_utils import WebClient
+from slack import WebClient
 
 from src.constants import (
     SAFE_ADDRESS,
@@ -24,7 +24,7 @@ from src.constants import (
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
-from slack_utils import post_to_slack
+from src.slack_utils import post_to_slack
 from src.utils.print_store import Category, PrintStore
 from src.utils.script_args import generic_script_init
 

@@ -4,8 +4,8 @@ import unittest
 
 import certifi
 import pytest
-from slack_utils import WebClient
-from slack_utils import SlackApiError
+from slack.web.client import WebClient
+from slack.errors import SlackApiError
 
 from src.fetch.transfer_file import post_to_slack
 
