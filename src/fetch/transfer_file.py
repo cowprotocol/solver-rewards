@@ -11,7 +11,7 @@ import certifi
 from dune_client.file.interface import FileIO
 from eth_typing.ethpm import URI
 from gnosis.eth.ethereum_client import EthereumClient
-from slack import WebClient
+from slack.web.client import WebClient
 
 from src.constants import (
     SAFE_ADDRESS,
