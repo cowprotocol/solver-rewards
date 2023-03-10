@@ -130,22 +130,27 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         Isolating the logic of how solvers are paid out according to their
             execution costs, rewards and slippage
         """
-        # TODO - decide how to approach the "order of operations" regarding slippage and rewards
-        #  Seemingly, the simplest option is to deal with Reward Scheme First and Slippage after.
-        #  However, there is this issue with the fact that payment can be negative
-        #  (which didn't exist before)
         # We do not handle overdraft scenario here!
         assert not self.is_overdraft()
-        reimbursement_eth = int(self.exec_cost + self.slippage_eth)
-        # TODO: the following value is not available in COW at the moment
-        reimbursement_cow = int(0)
         reward_eth = int(self.total_eth_reward())
         reward_cow = int(self.total_cow_reward())
 
-        if reimbursement_eth > 0 and reward_cow < 0:
+        reimbursement_eth = int(self.exec_cost + self.slippage_eth)
+        # We do not have access to token conversion here, but we do have other converted values
+        # x_eth:x_cow = y_eth:y_cow --> y_cow = y_eth * x_cow / x_eth
+        reimbursement_cow = (reimbursement_eth * reward_cow) // reward_eth
+
+        if reimbursement_eth > 0 > reward_cow:
             # If the total payment is positive but the total rewards are negative,
             # pay the total payment in ETH. The total payment corresponds to reimbursement,
             # reduced by the negative reward.
+            assert reimbursement_eth + reward_eth > 0
+            # That assertion was not necessary because:
+            # reimbursement_eth + reward_eth
+            # = self.total_eth_reward() + self.exec_cost + self.slippage_eth
+            # = self.payment_eth + self.secondary_reward_eth + self.slippage_eth
+            # = self.total_outgoing_eth()
+            # > 0 (because not self.is_overdraft())
             return [
                 Transfer(
                     token=None,
@@ -153,21 +158,19 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                     amount_wei=reimbursement_eth + reward_eth,
                 )
             ]
-        elif reimbursement_eth < 0 and reward_cow > 0:
+
+        if reimbursement_eth < 0 < reward_cow:
             # If the total payment is positive but the total reimbursement is negative,
             # pay the total payment in COW. The total payment corresponds to a payment of rewards,
             # reduced by the negative reimbursement.
-            return (
-                [
-                    Transfer(
-                        token=None,
-                        recipient=self.solver,
-                        amount_wei=reimbursement_cow + reward_cow,
-                    )
-                ]
-            )
+            return [
+                Transfer(
+                    token=Token(COW_TOKEN_ADDRESS),
+                    recipient=self.solver,
+                    amount_wei=reimbursement_cow + reward_cow,
+                )
+            ]
 
-        # TODO: filter out zero amounts
         result = []
         try:
             result.append(
@@ -186,12 +189,12 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=self.reward_target,
-                    amount_wei=cow_amount,
+                    amount_wei=reward_cow,
                 )
             )
         except AssertionError:
             logging.warning(
-                f"Invalid COW Transfer {self.solver} with amount={cow_amount}"
+                f"Invalid COW Transfer {self.solver} with amount={reward_cow}"
             )
 
         return result
