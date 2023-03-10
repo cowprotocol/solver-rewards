@@ -136,58 +136,50 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         #  (which didn't exist before)
         # We do not handle overdraft scenario here!
         assert not self.is_overdraft()
-        if self.total_outgoing_eth() < self.exec_cost:
-            # Total outgoing doesn't even cover execution costs,
-            # so reimburse as much as possible.
+        reimbursement_eth = int(self.exec_cost + self.slippage_eth)
+        # TODO: the following value is not available in COW at the moment
+        reimbursement_cow = int(0)
+        reward_eth = int(self.total_eth_reward())
+        reward_cow = int(self.total_cow_reward())
+
+        if reimbursement_eth > 0 and reward_cow < 0:
+            # If the total payment is positive but the total rewards are negative,
+            # pay the total payment in ETH. The total payment corresponds to reimbursement,
+            # reduced by the negative reward.
+            return [
+                Transfer(
+                    token=None,
+                    recipient=self.solver,
+                    amount_wei=reimbursement_eth + reward_eth,
+                )
+            ]
+        elif reimbursement_eth < 0 and reward_cow > 0:
+            # If the total payment is positive but the total reimbursement is negative,
+            # pay the total payment in COW. The total payment corresponds to a payment of rewards,
+            # reduced by the negative reimbursement.
             return (
                 [
                     Transfer(
                         token=None,
                         recipient=self.solver,
-                        amount_wei=int(self.total_outgoing_eth()),
+                        amount_wei=reimbursement_cow + reward_cow,
                     )
                 ]
-                # Handling another Degenerate Case
-                if self.total_outgoing_eth() > 0
-                else []
             )
-        # Since total_outgoing_eth >= self.exec_cost so there will be some transfer.
-        # TODO - THIS IS A MESS! WAY TOO COMPLICATED TO GET RIGHT IN A SINGLE PR.
-        #  need to mathematically prove that at least one transfer
-        #  will always be returned from this (or find a counter example!)
-        eth_amount = int(self.exec_cost + self.slippage_eth)
-        cow_amount = int(self.total_cow_reward())
 
-        if cow_amount < 0:
-            # This happens when reward_cow < 0 (i.e. payment - cost < 0)
-            # In particular -secondary_reward_cow
-            # So we will need to deduct this from eth_amount
-            assert self.total_eth_reward() < 0
-            return [
-                Transfer(
-                    token=None,
-                    recipient=self.solver,
-                    # eth_amount + self.total_eth_reward()
-                    # = exec_cost + slippage_eth + payment_eth - exec_cost + secondary_reward_eth
-                    # = slippage_eth + payment_eth + secondary_reward_eth
-                    # >= exec_cost >= 0
-                    amount_wei=eth_amount + self.total_eth_reward(),
-                )
-            ]
-
-        # We should be able to prove that there must always be one transfer resulting from this
+        # TODO: filter out zero amounts
         result = []
         try:
             result.append(
                 Transfer(
                     token=None,
                     recipient=self.solver,
-                    amount_wei=eth_amount,
+                    amount_wei=reimbursement_eth,
                 )
             )
         except AssertionError:
             logging.warning(
-                f"Invalid COW Transfer {self.solver} with amount={cow_amount}"
+                f"Invalid ETH Transfer {self.solver} with amount={reimbursement_eth}"
             )
         try:
             result.append(
