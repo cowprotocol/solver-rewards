@@ -107,7 +107,9 @@ class MultiInstanceDBFetcher:
     """
 
     def __init__(self, db_urls: list[str]):
-        self.connections = [create_engine(url) for url in db_urls]
+        self.connections = [
+            create_engine(f"postgresql+psycopg2://{url}") for url in db_urls
+        ]
 
     @classmethod
     def exec_query(cls, query: str, engine: Engine) -> DataFrame:
