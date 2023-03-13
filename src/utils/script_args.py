@@ -8,7 +8,6 @@ from dune_client.client import DuneClient
 
 from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
-from src.pg_client import MultiInstanceDBFetcher
 from src.queries import DuneVersion
 
 
@@ -17,7 +16,6 @@ class ScriptArgs:
     """A collection of common script arguments relevant to this project"""
 
     dune: DuneFetcher
-    orderbook: MultiInstanceDBFetcher
     post_tx: bool
     dry_run: bool
     post_cip20: bool
@@ -79,9 +77,6 @@ def generic_script_init(description: str) -> ScriptArgs:
             dune=DuneClient(os.environ["DUNE_API_KEY"]),
             period=AccountingPeriod(args.start),
             dune_version=args.dune_version,
-        ),
-        orderbook=MultiInstanceDBFetcher(
-            [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
         ),
         post_cip20=args.post_cip20,
         post_tx=args.post_tx,
