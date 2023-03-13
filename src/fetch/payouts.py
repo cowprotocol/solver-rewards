@@ -176,13 +176,17 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             # If the total payment is positive but the total reimbursement is negative,
             # pay the total payment in COW. The total payment corresponds to a payment of rewards,
             # reduced by the negative reimbursement.
-            return [
-                Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
-                    recipient=self.solver,
-                    amount_wei=reimbursement_cow + reward_cow,
-                )
-            ]
+            return (
+                [
+                    Transfer(
+                        token=Token(COW_TOKEN_ADDRESS),
+                        recipient=self.solver,
+                        amount_wei=reimbursement_cow + reward_cow,
+                    )
+                ]
+                if reimbursement_cow + reward_cow > 0
+                else []
+            )
 
         result = []
         try:
