@@ -124,7 +124,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         return self.reward_cow + self.secondary_reward_cow
 
     def total_eth_reward(self) -> int:
-        """Total outgoing COW token reward"""
+        """Total outgoing ETH reward"""
         return self.payment_eth - self.exec_cost + self.secondary_reward_eth
 
     def is_overdraft(self) -> bool:
