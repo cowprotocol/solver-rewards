@@ -5,6 +5,7 @@ import logging
 import math
 from dataclasses import dataclass
 from datetime import timedelta
+
 from typing import Callable
 
 import pandas
@@ -20,8 +21,7 @@ from src.models.token import Token
 from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 
-# TODO - this should be a runtime parameter.
-PERIOD_BUDGET_COW = 1
+PERIOD_BUDGET_COW = 383307 * 10**18
 
 PAYMENT_COLUMNS = {
     "solver",
@@ -39,6 +39,14 @@ SLIPPAGE_COLUMNS = {
 REWARD_TARGET_COLUMNS = {"solver", "reward_target"}
 
 COMPLETE_COLUMNS = PAYMENT_COLUMNS.union(SLIPPAGE_COLUMNS).union(REWARD_TARGET_COLUMNS)
+NUMERICAL_COLUMNS = [
+    "payment_eth",
+    "execution_cost_eth",
+    "reward_eth",
+    "reward_cow",
+    "secondary_reward_cow",
+    "secondary_reward_eth",
+]
 
 
 @dataclass
@@ -238,6 +246,10 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     pdf["secondary_reward_eth"] = pdf["secondary_reward_cow"].apply(
         converter.token_to_eth
     )
+
+    for number_col in NUMERICAL_COLUMNS:
+        pdf[number_col] = pandas.to_numeric(pdf[number_col])
+
     return pdf
 
 
