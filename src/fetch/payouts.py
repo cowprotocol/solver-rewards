@@ -138,26 +138,31 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         reimbursement_eth = int(self.exec_cost + self.slippage_eth)
         # We do not have access to token conversion here, but we do have other converted values
         # x_eth:x_cow = y_eth:y_cow --> y_cow = y_eth * x_cow / x_eth
-        reimbursement_cow = (reimbursement_eth * reward_cow) // reward_eth
+        reimbursement_cow = (
+            (reimbursement_eth * reward_cow) // reward_eth if reward_eth != 0 else 0
+        )
 
         if reimbursement_eth > 0 > reward_cow:
             # If the total payment is positive but the total rewards are negative,
             # pay the total payment in ETH. The total payment corresponds to reimbursement,
             # reduced by the negative reward.
-            assert reimbursement_eth + reward_eth > 0
             # That assertion was not necessary because:
             # reimbursement_eth + reward_eth
             # = self.total_eth_reward() + self.exec_cost + self.slippage_eth
             # = self.payment_eth + self.secondary_reward_eth + self.slippage_eth
             # = self.total_outgoing_eth()
-            # > 0 (because not self.is_overdraft())
-            return [
-                Transfer(
-                    token=None,
-                    recipient=self.solver,
-                    amount_wei=reimbursement_eth + reward_eth,
-                )
-            ]
+            # >= 0 (because not self.is_overdraft())
+            return (
+                [
+                    Transfer(
+                        token=None,
+                        recipient=self.solver,
+                        amount_wei=reimbursement_eth + reward_eth,
+                    )
+                ]
+                if reimbursement_eth + reward_eth > 0
+                else []
+            )
 
         if reimbursement_eth < 0 < reward_cow:
             # If the total payment is positive but the total reimbursement is negative,
