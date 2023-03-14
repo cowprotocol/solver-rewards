@@ -22,6 +22,7 @@ class ScriptArgs:
     dry_run: bool
     post_cip20: bool
     consolidate_transfers: bool
+    min_transfer_amount_wei: int
 
 
 def generic_script_init(description: str) -> ScriptArgs:
@@ -73,6 +74,12 @@ def generic_script_init(description: str) -> ScriptArgs:
         "Primarily intended for deployment in staging environment.",
         default=False,
     )
+    parser.add_argument(
+        "--min-transfer-amount-wei",
+        type=int,
+        help="Ignore transfers with amount less than this",
+        default=1000000000000000,
+    )
     args = parser.parse_args()
     return ScriptArgs(
         dune=DuneFetcher(
@@ -87,4 +94,5 @@ def generic_script_init(description: str) -> ScriptArgs:
         post_tx=args.post_tx,
         dry_run=args.dry_run,
         consolidate_transfers=args.consolidate_transfers,
+        min_transfer_amount_wei=args.min_transfer_amount_wei,
     )
