@@ -107,9 +107,11 @@ if __name__ == "__main__":
         payout_transfers = dune.get_transfers()
 
     Transfer.sort_list(payout_transfers)
-    payout_transfers = filter(
-        lambda payout: payout.amount_wei > args.min_transfer_amount_wei,
-        payout_transfers,
+    payout_transfers = list(
+        filter(
+            lambda payout: payout.amount_wei > args.min_transfer_amount_wei,
+            payout_transfers,
+        )
     )
     if args.consolidate_transfers:
         payout_transfers = Transfer.consolidate(payout_transfers)
