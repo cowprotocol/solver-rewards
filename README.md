@@ -2,47 +2,22 @@
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
-## Installation & Usage
+## Installation & Usage (Quickstart)
 
 ```shell
-python3 -m venv env
-source ./env/bin/activate
-pip install -r requirements.txt
-cp .env.sample .env    <----- Copy your Dune credentials here!
+make install
+cp .env.sample .env    <----- Copy your Dune and orderbook credentials here!
 ```
 
-Fill out your Dune credentials in the `.env` file. The Dune user and password are
-straight-forward login credentials to Dune Analytics. The `DUNE_QUERY_ID` is an integer
-id found in the URL of a query when saved in the Dune interface. This should be created
-beforehand, but the same query id can be used everywhere throughout the program (as long
-as it is owned by the account corresponding to the user credentials provided).
+Fill out your Dune credentials in the `.env` file.
 
-Each individual file should be executable as a standalone script. Many of the scripts
-found here initiate and execute query, returning the results.
-
-Example script
-
-To fetch the total eth spent, realized fees and cow rewards for an accounting period run
-the period totals script as follows
+Generate the solver-payouts with for the accounting period 7 days with today as end date).
 
 ```shell
-python -m src.fetch.period_totals --start '2022-02-01'
+python -m src.fetch.transfer_file
 ```
 
-This will result in the following console logs:
-
-```
-PeriodTotals(period=<src.models.AccountingPeriod object at 0x7f21bd9ad600>,
-             execution_cost_eth=148,
-             cow_rewards=423400,
-             realized_fees_eth=92)
-```
-
-To fetch the total slippage for an accounting period, run period_slippage script as follows:
-
-```shell
-python -m src.fetch.period_slippage --start '2022-02-01'
-```
+For more advanced usage of this payout script see below.
 
 # Summary of Accounting Procedure
 
@@ -69,7 +44,7 @@ cp hooks/pre-push .git/hooks/ && chmod +x .git/hooks/pre-push
 To run the unit tests
 
 ```shell
-python -m pytest tests/unit/
+make test-unit
 ```
 
 To run the query tests, you must first have a local instance of the database running
@@ -78,6 +53,12 @@ To run the query tests, you must first have a local instance of the database run
 docker build -t test_db -f Dockerfile.db .
 docker run -d --name testDB -p 5432:5432 test_db
 python -m pytest tests/queries/
+```
+
+or just
+
+```shell
+make test-db
 ```
 
 If you have the local database running you can run the entire suite of tests with
@@ -95,40 +76,71 @@ black ./
 
 However, many IDEs can be configured to auto format on save.
 
-## Proposed Reimbursement Work Flow
+## Advanced Payout Generation
 
-The solver reimbursements are to be executed each Tuesday with the accounting period of the last 7 days. If the payout can not be done on Tuesdays, its okay to execute them later, but still the accounting period should always be from 00:00 between Monday and Tuesday to 00:00 between Monday and Tuesday
+looking at the script help menu can help provide a list of options!
 
-In order to do the payout, run the following scripts:
 ```shell
-rm -r out/
-python -m src.fetch.transfer_file --start '2022-MM-DD'
+$ python -m src.fetch.transfer_file --help            
+
+usage: Fetch Complete Reimbursement [-h] [--start START] [--post-tx POST_TX] [--post-cip20 POST_CIP20] [--dune-version {DuneVersion.V1,DuneVersion.V2}]
+                                    [--consolidate-transfers CONSOLIDATE_TRANSFERS] [--dry-run DRY_RUN]
+
+options:
+  -h, --help            show this help message and exit
+  --start START         Accounting Period Start. Defaults to previous Tuesday
+  --post-tx POST_TX     Flag indicating whether multisend should be posted to safe (requires valid env var `PROPOSER_PK`)
+  --post-cip20 POST_CIP20
+                        Flag payout should be made according to pre or post CIP 20 (temporary during switch over)
+  --dune-version {DuneVersion.V1,DuneVersion.V2}
+                        Which Dune Client version to use (legacy or official)
+  --consolidate-transfers CONSOLIDATE_TRANSFERS
+                        Flag to indicate whether payout transfer file should be optimized (i.e. squash transfers having same receiver-token pair)
+  --dry-run DRY_RUN     Flag indicating whether script should not post alerts or transactions. Only relevant in combination with --post-tx TruePrimarily intended for
+                        deployment in staging environment.
 ```
-Here, the start should specify the Tuesday of the start of the accounting period. The next Tuesday - the end date of the accounting period - will be calculated automatically by the script.
-I.e. for the first payout, we would run:
+
+The solver reimbursements are executed each Tuesday with the accounting period of the last 7 days.
+The default accounting period is 7 days with end date equal to the current date.
+If the payout script can not be run on Tuesday, one will have to specify the start date to specify the correct
+accounting period.
+
+To generate the CSV Transfer file manually run the "quickstart" variant of the script.
+A more fine-tuned variant of the script execution could look like this:
+
 ```shell
-python -m src.fetch.transfer_file --start '2022-03-01'
-```
-and for the next one:
-```shell
-python -m src.fetch.transfer_file --start '2022-03-08'
+python -m src.fetch.transfer_file --start 2023-03-14 --post-cip20 True --post-tx True
 ```
 
+which would run for the accounting period March 14 - 21, 2023, using the Post CIP-20 reward scheme and post the payout
+transaction directly to the safe (i.e. without generating a CSV file).
 
-Please double-check that the payout is reasonable. That means the eth sent should be between 30-80 ETH, depending on gas prices from last week. Also the amount of cow send should reflect 100x the amount of batches. Reasonable COW totals are around 300000-500000, that means 500-700 batches a day.
+## Validating the Payout Transaction
 
-Also, it might happen that the slippage of a solver is bigger than the ETH payout. In this case, please do not proceed with the payout, until the root cause is known. Feel free to reach out the project maintainers to do the investigation.
+Please visit this [Notion document](https://www.notion.so/cownation/Solver-Payouts-3dfee64eb3d449ed8157a652cc817a8c).
+In particular
+see [Validation by Example](https://www.notion.so/cownation/Solver-Payouts-3dfee64eb3d449ed8157a652cc817a8c?pvs=4#5a99004c03714f939cd80ef41a3d9590)
+section.
 
-Note that we must wait some time after the period has ended for some data to finalize (e.g. `prices.usd`, `ethereum.transactions` our event data, etc...). Hence, the scripts should not be executed immediately after the accounting period has ended.
+### Additional Notes
 
-After generating the transfer file and double-checking the results, please create the multi-send transaction with the link provided in the console.
+Also, it might happen that the slippage of a solver is bigger than the ETH payout. In this case, please do not proceed
+with the payout, until the root cause is known. Feel free to reach out the project maintainers to do the investigation.
 
-Inform the team of this proposed transaction in the #dev-multisig Slack channel and follow through to ensure execution. It is preferred that the transaction be executed by the proposer account(eth:0xd8Ca5FE380b68171155C7069B8df166db28befdd).
+Note that we must wait some time after the period has ended for some data to finalize (
+e.g. `prices.usd`, `ethereum.transactions` our event data, etc...). Hence, the scripts should not be executed
+immediately after the accounting period has ended.
 
+After generating the transfer file and double-checking the results, please create the multi-send transaction with the
+link provided in the console.
+
+Inform the team of this proposed transaction in the #dev-multisig Slack channel and follow through to ensure execution.
+It is preferred that the transaction be executed by the proposer account(eth:
+0xd8Ca5FE380b68171155C7069B8df166db28befdd).
 
 ## Docker
 
-This project has a strict requirement of python >= 3.10 which may not be common version for most operating systems. 
+This project has a strict requirement of python >= 3.10 which may not be common version for most operating systems.
 In order to make the reimbursement effort seamless, we have prepared the following docker container.
 
 ```shell

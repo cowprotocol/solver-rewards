@@ -25,6 +25,7 @@ from src.fetch.payouts import post_cip20_payouts
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
+from src.pg_client import MultiInstanceDBFetcher
 from src.slack_utils import post_to_slack
 from src.utils.print_store import Category, PrintStore
 from src.utils.script_args import generic_script_init
@@ -102,7 +103,12 @@ if __name__ == "__main__":
     )
 
     if args.post_cip20:
-        payout_transfers = post_cip20_payouts(args.dune, args.orderbook)
+        payout_transfers = post_cip20_payouts(
+            args.dune,
+            orderbook=MultiInstanceDBFetcher(
+                [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
+            ),
+        )
     else:
         payout_transfers = dune.get_transfers()
 

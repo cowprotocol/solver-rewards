@@ -8,7 +8,7 @@ from src.pg_client import MultiInstanceDBFetcher
 
 class TestBatchRewards(unittest.TestCase):
     def setUp(self) -> None:
-        db_url = "postgresql+psycopg2://postgres:postgres@localhost:5432/postgres"
+        db_url = "postgres:postgres@localhost:5432/postgres"
         self.fetcher = MultiInstanceDBFetcher([db_url])
         with open("./populate_cip_20.sql", "r", encoding="utf-8") as file:
             self.fetcher.connections[0].execute(file.read())
