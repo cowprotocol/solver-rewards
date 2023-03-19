@@ -111,8 +111,8 @@ if __name__ == "__main__":
         )
     else:
         payout_transfers = dune.get_transfers()
+        Transfer.sort_list(payout_transfers)
 
-    Transfer.sort_list(payout_transfers)
     payout_transfers = list(
         filter(
             lambda payout: payout.amount_wei > args.min_transfer_amount_wei,

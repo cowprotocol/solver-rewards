@@ -1,4 +1,5 @@
 """All Dune related query fetching is defined here in the DuneFetcherClass"""
+from typing import Optional
 
 import pandas as pd
 from dune_client.client import DuneClient
@@ -56,10 +57,16 @@ class DuneFetcher:
     ) -> Query:
         return query_data.with_params(params, dune_version=self.dune_version)
 
-    def _get_query_results(self, query: Query) -> list[dict[str, str]]:
+    def _get_query_results(
+        self, query: Query, job_id: Optional[str] = None
+    ) -> list[dict[str, str]]:
         """Internally every dune query execution is routed through here."""
         log.info(f"Fetching {query.name} from query: {query}")
-        exec_result = self.dune.refresh(query, ping_frequency=15)
+        if not job_id:
+            exec_result = self.dune.refresh(query, ping_frequency=15)
+        else:
+            exec_result = self.dune.get_result(job_id)
+
         log.info(f"Fetch completed for execution {exec_result.execution_id}")
         # TODO - use a real logger:
         #  https://github.com/cowprotocol/dune-client/issues/34
@@ -173,7 +180,7 @@ class DuneFetcher:
             realized_fees_eth=int(rec["realized_fees_eth"]),
         )
 
-    def get_period_slippage(self) -> list[DuneRecord]:
+    def get_period_slippage(self, job_id: Optional[str] = None) -> list[DuneRecord]:
         """
         Executes & Fetches results of slippage query per solver for specified accounting period.
         Returns a class representation of the results as two lists (positive & negative).
@@ -187,7 +194,8 @@ class DuneFetcher:
                     QueryParameter.text_type("TxHash", "0x"),
                     QueryParameter.text_type("TokenList", ",".join(token_list)),
                 ],
-            )
+            ),
+            job_id,
         )
 
     def get_transfers(self) -> list[Transfer]:

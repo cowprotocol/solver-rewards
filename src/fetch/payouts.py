@@ -319,7 +319,7 @@ def construct_payout_dataframe(
     with reward and execution data coming from orderbook.
     """
     # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
-    slippage_df.rename(columns={"solver_address": "solver"})
+    slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
     # 1. Assert existence of required columns.
     validate_df_columns(payment_df, slippage_df, reward_target_df)
 
@@ -358,7 +358,8 @@ def post_cip20_payouts(
         slippage_df=pandas.DataFrame(dune.get_period_slippage()),
         reward_target_df=pandas.DataFrame(dune.get_vouches()),
     )
-    # TODO - sort by solver first?
+    # Sort by solver before breaking this data frame into Transfer objects.
+    complete_payout_df.sort_values("solver")
     payouts = prepare_transfers(complete_payout_df, dune.period)
-    # TODO - make sure to log Overdrafts
+    # TODO - make sure to log Overdrafts!
     return payouts.transfers
