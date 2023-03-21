@@ -229,9 +229,6 @@ class TokenConversion:
 
 def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     """
-    TODO: add type: `eth_to_token` is a function with signature (int -> int)
-          add type: `token_to_eth` is a function with signature (int -> int)
-                (one is the compositional the inverse of the other)
     Extending the basic columns returned by SQL Query with some after-math:
     - reward_eth as difference of payment and execution_cost
     - reward_cow as conversion from ETH to cow.
