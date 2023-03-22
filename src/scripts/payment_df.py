@@ -25,7 +25,7 @@ if __name__ == "__main__":
         "--end",
         type=str,
         help="End Block Number (block_deadline)",
-        default="999999999",
+        default="16875871",
     )
     args = parser.parse_args()
 
