@@ -19,7 +19,7 @@ if __name__ == "__main__":
         "--start",
         type=str,
         help="Start Block Number (block_deadline)",
-        default="0",
+        default="16865181",
     )
     parser.add_argument(
         "--end",
