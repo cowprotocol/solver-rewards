@@ -347,7 +347,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             reward_target=self.reward_target,
             payment_eth=payment,
             exec_cost=cost,
-            reward_cow=(payment - cost) * self.conversion_rate,
+            primary_reward_cow=(payment - cost) * self.conversion_rate,
             secondary_reward_eth=participation,
             secondary_reward_cow=participation * self.conversion_rate,
             slippage_eth=slippage,
