@@ -102,16 +102,17 @@ if __name__ == "__main__":
         category=Category.GENERAL,
     )
 
-    if args.post_cip20:
+    if args.pre_cip20:
+        payout_transfers = dune.get_transfers()
+        Transfer.sort_list(payout_transfers)
+
+    else:
         payout_transfers = post_cip20_payouts(
             args.dune,
             orderbook=MultiInstanceDBFetcher(
                 [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
             ),
         )
-    else:
-        payout_transfers = dune.get_transfers()
-        Transfer.sort_list(payout_transfers)
 
     payout_transfers = list(
         filter(
