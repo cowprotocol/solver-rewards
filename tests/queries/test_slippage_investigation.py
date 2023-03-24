@@ -53,7 +53,6 @@ class TestDuneAnalytics(unittest.TestCase):
         which tx are having high slippage values in dollar terms.
         This is unusual slippage.
         """
-        dune = DuneClient(os.environ["DUNE_API_KEY"])
         period = AccountingPeriod("2022-06-07", 1)
         query = QUERIES["PERIOD_SLIPPAGE"].with_params(
             period.as_query_params()
@@ -66,8 +65,12 @@ class TestDuneAnalytics(unittest.TestCase):
             ],
             dune_version=DuneVersion.V2,
         )
-        results = exec_or_get(dune, query, result_id="01GJX4SWHY7H20KPVPHCENEQRH")
-        print(results.execution_id)
+        results = exec_or_get(
+            self.dune,
+            query,
+            result_id="01GW9JK5K0JMXEFYETHX8YQ3YA"
+        )
+        self.assertEqual(results.query_id, self.slippage_query.v2_query.query_id)
         slippage_per_tx = results.get_rows()
 
         slippage_per_tx.sort(key=lambda t: int(t["eth_slippage_wei"]))
@@ -96,7 +99,12 @@ class TestDuneAnalytics(unittest.TestCase):
             ],
             dune_version=DuneVersion.V2,
         )
-        results = exec_or_get(self.dune, query, result_id="01GP3A0QV1BNWF55Z5N362RK8M")
+        results = exec_or_get(
+            self.dune,
+            query,
+            result_id="01GW9JNPSPJTADDYTW2HEAD4J2"
+        )
+        self.assertEqual(results.query_id, self.slippage_query.v2_query.query_id)
         tx_slippage = results.get_rows()[0]
         self.assertEqual(tx_slippage["eth_slippage_wei"], 71151929005056890)
         self.assertAlmostEqual(
@@ -118,15 +126,18 @@ class TestDuneAnalytics(unittest.TestCase):
                     "TxHash",
                     "0x5c4e410ce5d741f60e06a8621c6f12839ad39273f5abf78d4bbc1cd3b31de46c",
                 ),
-                # QueryParameter.text_type("SolverAddress", "0x97ec0a17432d71a3234ef7173c6b48a2c0940896"),
-                # QueryParameter.text_type("TokenList", ",".join(get_trusted_tokens())),
                 QueryParameter.text_type("CTE_NAME", "results_per_tx"),
             ],
             dune_version=DuneVersion.V2,
         )
-        results = exec_or_get(self.dune, query, result_id="01GP11D7FH4WAEFW1Z46Q79VBC")
+        results = exec_or_get(
+            self.dune,
+            query,
+            result_id="01GW9QA64YYRRKXQDTAN8QMYAS"
+        )
+        self.assertEqual(results.query_id, self.slippage_query.v2_query.query_id)
         tx_slippage = results.get_rows()[0]
-        self.assertEqual(tx_slippage["eth_slippage_wei"], 148427839329771300)
+        self.assertEqual(tx_slippage["eth_slippage_wei"], 148427839329771500)
         self.assertAlmostEqual(
             tx_slippage["usd_value"], 177.37732880251593, delta=0.000000001
         )
@@ -137,7 +148,7 @@ class TestDuneAnalytics(unittest.TestCase):
         # https://dune.com/queries/1836718?CTE_NAME_e15077=final_token_balance_sheet&EndTime_d83555=2023-01-02+00%3A00%3A00&StartTime_d83555=2023-01-01+00%3A00%3A00&TxHash_t6c1ea=0x5c4e410ce5d741f60e06a8621c6f12839ad39273f5abf78d4bbc1cd3b31de46c
         self.assertEqual(tx_slippage["num_entries"], 4)
 
-    def test_slippage_regression(self):
+    def test_slippage_regression_1(self):
         """
         Two known batches with ETH transfers previously not captured.
         The following hashes were picked up by this query: https://dune.com/queries/1957339
@@ -151,14 +162,14 @@ class TestDuneAnalytics(unittest.TestCase):
         result_0x3b2e = exec_or_get(
             self.dune,
             query=self.slippage_query_for(period, tx_hash),
-            result_id="01GS59V171HPZTVJJ2K1VKQD31",
+            result_id="01GW9J1Y7YVS0RQQQS3GJS9JPD",
         )
         self.assertEqual(result_0x3b2e.query_id, self.slippage_query.v2_query.query_id)
         self.assertEqual(
             result_0x3b2e.get_rows(),
             [
                 {
-                    "eth_slippage_wei": -4703807.681117934,
+                    "eth_slippage_wei": -4703807.681117931,
                     "hour": "2023-02-01T01:00:00Z",
                     "num_entries": 2,
                     "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
@@ -167,12 +178,15 @@ class TestDuneAnalytics(unittest.TestCase):
                 }
             ],
         )
+
+    def test_slippage_regression_2(self):
+        period = AccountingPeriod("2023-02-01", 1)
         # Previously having -150 USD slippage
         tx_hash = "0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf"
         result_0x7a00 = exec_or_get(
             self.dune,
             query=self.slippage_query_for(period, tx_hash),
-            result_id="01GS5BF01WCHMHJBAS8Q6F0C7W",
+            result_id="01GW9J45HQ7K7HAS983G0KZT1T",
         )
         self.assertEqual(result_0x7a00.query_id, self.slippage_query.v2_query.query_id)
         self.assertEqual(
@@ -183,8 +197,8 @@ class TestDuneAnalytics(unittest.TestCase):
                     "hour": "2023-02-01T01:00:00Z",
                     "num_entries": 2,
                     "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
-                    "tx_hash": "0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf",
-                    "usd_value": -6.465105104171756e-07,
+                    "tx_hash": tx_hash,
+                    "usd_value": -6.46510510417176e-07,
                 }
             ],
         )
