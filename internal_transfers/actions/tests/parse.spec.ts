@@ -1,4 +1,6 @@
-import { partitionEventLogs, SETTLEMENT_CONTRACT_ADDRESS } from "../src/parse";
+import { partitionEventLogs } from "../src/parse";
+// @ts-ignore
+import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 
 const SETTLEMENT_EVENT_TOPIC =
   "0x40338ce1a7c49204f0099533b1e9a7ee0a3d261f84974ab7af36105b8c4e9db4";

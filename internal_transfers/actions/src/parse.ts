@@ -4,9 +4,7 @@ import { transferInvolves } from "./utils";
 import { ethers } from "ethers";
 import { abi as SETTLEMENT_ABI } from "@cowprotocol/contracts/lib/contracts/GPv2Settlement.json";
 import { abi as IERC20_ABI } from "@cowprotocol/contracts/lib/contracts/IERC20.json";
-
-export const SETTLEMENT_CONTRACT_ADDRESS =
-  "0x9008D19f58AAbD9eD0D60971565AA8510560ab41";
+import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 
 export interface ClassifiedEvents {
   trades: TradeEvent[];
