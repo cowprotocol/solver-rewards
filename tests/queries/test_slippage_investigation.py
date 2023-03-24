@@ -65,11 +65,7 @@ class TestDuneAnalytics(unittest.TestCase):
             ],
             dune_version=DuneVersion.V2,
         )
-        results = exec_or_get(
-            self.dune,
-            query,
-            result_id="01GW9JK5K0JMXEFYETHX8YQ3YA"
-        )
+        results = exec_or_get(self.dune, query, result_id="01GW9JK5K0JMXEFYETHX8YQ3YA")
         self.assertEqual(results.query_id, self.slippage_query.v2_query.query_id)
         slippage_per_tx = results.get_rows()
 
@@ -99,11 +95,7 @@ class TestDuneAnalytics(unittest.TestCase):
             ],
             dune_version=DuneVersion.V2,
         )
-        results = exec_or_get(
-            self.dune,
-            query,
-            result_id="01GW9JNPSPJTADDYTW2HEAD4J2"
-        )
+        results = exec_or_get(self.dune, query, result_id="01GW9JNPSPJTADDYTW2HEAD4J2")
         self.assertEqual(results.query_id, self.slippage_query.v2_query.query_id)
         tx_slippage = results.get_rows()[0]
         self.assertEqual(tx_slippage["eth_slippage_wei"], 71151929005056890)
@@ -130,11 +122,7 @@ class TestDuneAnalytics(unittest.TestCase):
             ],
             dune_version=DuneVersion.V2,
         )
-        results = exec_or_get(
-            self.dune,
-            query,
-            result_id="01GW9QA64YYRRKXQDTAN8QMYAS"
-        )
+        results = exec_or_get(self.dune, query, result_id="01GW9QA64YYRRKXQDTAN8QMYAS")
         self.assertEqual(results.query_id, self.slippage_query.v2_query.query_id)
         tx_slippage = results.get_rows()[0]
         self.assertEqual(tx_slippage["eth_slippage_wei"], 148427839329771500)
