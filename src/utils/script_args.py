@@ -18,7 +18,7 @@ class ScriptArgs:
     dune: DuneFetcher
     post_tx: bool
     dry_run: bool
-    post_cip20: bool
+    pre_cip20: bool
     consolidate_transfers: bool
     min_transfer_amount_wei: int
 
@@ -44,10 +44,10 @@ def generic_script_init(description: str) -> ScriptArgs:
         default=False,
     )
     parser.add_argument(
-        "--post-cip20",
+        "--pre-cip20",
         type=bool,
-        help="Flag payout should be made according to pre or post CIP 20 "
-        "(temporary during switch over)",
+        help="Flag payout should be made according to pre or post CIP-20. "
+        "Default is set to the current reward scheme",
         default=False,
     )
     parser.add_argument(
@@ -85,7 +85,7 @@ def generic_script_init(description: str) -> ScriptArgs:
             period=AccountingPeriod(args.start),
             dune_version=args.dune_version,
         ),
-        post_cip20=args.post_cip20,
+        pre_cip20=args.pre_cip20,
         post_tx=args.post_tx,
         dry_run=args.dry_run,
         consolidate_transfers=args.consolidate_transfers,
