@@ -28,12 +28,12 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
     // All other event emissions can be ignored for our purposes.
     const transferEventLog = erc20Interface.parseLog(log);
     const settlementEventLog = settlementInterface.parseLog(log);
-    if (transferEventLog != null) {
-      const { from, to } = transferEventLog.args;
+    if (transferEventLog != null && transferEventLog.name === "Transfer") {
+      const { from, to, value } = transferEventLog.args;
       const transfer: TransferEvent = {
         from,
         to,
-        amount: BigInt(transferEventLog.args[2]),
+        amount: BigInt(value),
       };
       // Is a "relevant" transfer (involving settlement contract)
       if (transferInvolves(transfer, SETTLEMENT_CONTRACT_ADDRESS)) {
