@@ -1,15 +1,5 @@
-import { addressFromBytes32, transferInvolves } from "../src/utils";
+import { transferInvolves } from "../src/utils";
 import { TransferEvent } from "../src/models";
-
-describe("addressFromBytes32(hexStr)", () => {
-  test("parses address from event topic hex string", () => {
-    const addressTopic =
-      "0x0000000000000000000000009008d19f58aabd9ed0d60971565aa8510560ab41";
-    expect(addressFromBytes32(addressTopic)).toBe(
-      "0x9008d19f58aabd9ed0d60971565aa8510560ab41"
-    );
-  });
-});
 
 describe("transferInvolves(transfer, address)", () => {
   test("correctly returns whether transfer instance involves given address", () => {
