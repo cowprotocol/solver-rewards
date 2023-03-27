@@ -17,6 +17,8 @@ from src.models.token import TokenType, Token
 from src.models.vouch import Vouch
 from src.utils.print_store import Category, PrintStore
 
+ERC20_CONTRACT = erc20()
+
 
 @dataclass
 class CSVTransfer:
@@ -197,7 +199,7 @@ class Transfer:
                 operation=MultiSendOperation.CALL,
                 to=str(self.token.address),
                 value=0,
-                data=erc20().encodeABI(
+                data=ERC20_CONTRACT.encodeABI(
                     fn_name="transfer", args=[receiver, self.amount_wei]
                 ),
             )
