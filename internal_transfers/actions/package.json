@@ -10,6 +10,7 @@
   "devDependencies": {
     "@databases/pg": "^5.4.1",
     "@databases/pg-schema-cli": "^4.3.1",
+    "@databases/pg-test": "^3.1.2",
     "@databases/pg-typed": "^4.4.0",
     "@types/jest": "^29.2.5",
     "eslint": "8.27.0",
