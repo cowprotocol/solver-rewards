@@ -2,8 +2,10 @@
   "compileOnSave": true,
   "compilerOptions": {
     "module": "commonjs",
+    "moduleResolution": "node16",
     "resolveJsonModule": true,
     "noImplicitReturns": true,
+    "noImplicitAny": true,
     "noUnusedLocals": true,
     "outDir": "out",
     "sourceMap": true,
