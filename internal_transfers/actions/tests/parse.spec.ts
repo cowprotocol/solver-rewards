@@ -1,5 +1,4 @@
 import { partitionEventLogs } from "../src/parse";
-// @ts-ignore
 import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 
 const SETTLEMENT_EVENT_TOPIC =
