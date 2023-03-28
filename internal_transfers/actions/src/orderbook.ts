@@ -58,8 +58,6 @@ export async function getSettlementCompetitionData(
   txHash: string
 ): Promise<WinningSettlementData | undefined> {
   let result = await getFromOrderbookAPI(`${PROD_API_URL}/${txHash}`);
-  console.log("HELLO", result, result == undefined);
-
   if (result == undefined) {
     result = await getFromOrderbookAPI(`${BARN_API_URL}/${txHash}`);
   }
