@@ -9,6 +9,7 @@ export const triggerInternalTransfersPipeline: ActionFn = async (
   // TODO - https://github.com/cowprotocol/solver-rewards/issues/219
   const transactionEvent = event as TransactionEvent;
   const txHash = transactionEvent.hash;
+  console.log(`Received Settlement Event with txHash ${txHash}`);
 
   const { trades, transfers, settlements } = partitionEventLogs(
     transactionEvent.logs
