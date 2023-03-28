@@ -30,7 +30,6 @@ async function insertSettlementEvent(
     block_number: blockNumber,
     log_index: logIndex,
   });
-  console.log("inserted settlement event to DB");
 }
 
 function hexToBytea(hexString: string): Buffer {
