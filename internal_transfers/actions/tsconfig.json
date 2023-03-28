@@ -1,18 +1,17 @@
 {
-    "compileOnSave": true,
-    "compilerOptions": {
-        "module": "commonjs",
-        "noImplicitReturns": true,
-        "noUnusedLocals": true,
-        "outDir": "out",
-        "sourceMap": true,
-        "strict": true,
-        "target": "es2020"
-    },
-    "exclude": [
-        "**/*.spec.ts"
-    ],
-    "include": [
-        "**/*"
-    ]
+  "compileOnSave": true,
+  "compilerOptions": {
+    "module": "commonjs",
+    "moduleResolution": "node16",
+    "resolveJsonModule": true,
+    "noImplicitReturns": true,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "outDir": "out",
+    "sourceMap": true,
+    "strict": true,
+    "target": "es2020"
+  },
+  "exclude": ["**/*.spec.ts"],
+  "include": ["**/*"]
 }
