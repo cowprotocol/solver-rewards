@@ -10,7 +10,6 @@ export interface TransferEvent {
   from: string;
   amount: BigInt;
 }
-
 export interface EventMeta {
   blockNumber: number;
   txHash: string;
