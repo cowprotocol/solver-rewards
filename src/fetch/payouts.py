@@ -20,6 +20,7 @@ from src.models.overdraft import Overdraft
 from src.models.token import Token
 from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
+from src.utils.print_store import Category
 
 PERIOD_BUDGET_COW = 383307 * 10**18
 
@@ -362,6 +363,15 @@ def post_cip20_payouts(
     )
     # Sort by solver before breaking this data frame into Transfer objects.
     complete_payout_df.sort_values("solver")
+
+    performance_reward = complete_payout_df["reward_cow"].sum()
+    participation_reward = complete_payout_df["secondary_reward_cow"].sum()
+    dune.log_saver.print(
+        f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
+        f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n",
+        category=Category.TOTALS,
+    )
     payouts = prepare_transfers(complete_payout_df, dune.period)
-    # TODO - make sure to log Overdrafts!
+    for overdraft in payouts.overdrafts:
+        dune.log_saver.print(str(overdraft), Category.OVERDRAFT)
     return payouts.transfers
