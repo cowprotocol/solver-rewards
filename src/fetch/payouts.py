@@ -232,9 +232,6 @@ class TokenConversion:
 
 def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     """
-    TODO: add type: `eth_to_token` is a function with signature (int -> int)
-          add type: `token_to_eth` is a function with signature (int -> int)
-                (one is the compositional the inverse of the other)
     Extending the basic columns returned by SQL Query with some after-math:
     - reward_eth as difference of payment and execution_cost
     - reward_cow as conversion from ETH to cow.
@@ -362,7 +359,7 @@ def post_cip20_payouts(
         reward_target_df=pandas.DataFrame(dune.get_vouches()),
     )
     # Sort by solver before breaking this data frame into Transfer objects.
-    complete_payout_df.sort_values("solver")
+    complete_payout_df = complete_payout_df.sort_values("solver")
 
     performance_reward = complete_payout_df["reward_cow"].sum()
     participation_reward = complete_payout_df["secondary_reward_cow"].sum()
