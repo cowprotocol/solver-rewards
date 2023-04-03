@@ -182,7 +182,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 [
                     Transfer(
                         token=Token(COW_TOKEN_ADDRESS),
-                        recipient=self.solver,
+                        recipient=self.reward_target,
                         amount_wei=reimbursement_cow + total_cow_reward,
                     )
                 ]
