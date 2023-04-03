@@ -48,7 +48,7 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
         const { solver } = settlementEventLog.args;
         result.settlements.push({
           solver,
-          log_index: index,
+          logIndex: index,
         });
       } else {
         // Placeholder for other Settlement Contract Events (e.g. Interaction)

@@ -10,8 +10,12 @@ export interface TransferEvent {
   from: string;
   amount: BigInt;
 }
+export interface EventMeta {
+  blockNumber: number;
+  txHash: string;
+}
 
 export interface SettlementEvent {
   solver: string;
-  log_index: number;
+  logIndex: number;
 }

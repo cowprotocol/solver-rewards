@@ -72,9 +72,7 @@ describe("partitionEventLogs(logs)", () => {
 
     expect(trades).toStrictEqual([]);
     expect(transfers).toStrictEqual([]);
-    expect(settlements).toStrictEqual([
-      { solver: solverAddress, log_index: 0 },
-    ]);
+    expect(settlements).toStrictEqual([{ solver: solverAddress, logIndex: 0 }]);
   });
   test("no relevant events", () => {
     const irrelevant_event_log = {
