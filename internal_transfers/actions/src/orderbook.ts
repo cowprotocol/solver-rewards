@@ -7,7 +7,7 @@ const PROD_API_URL =
 const BARN_API_URL =
   "https://barn.api.cow.fi/mainnet/api/v1/solver_competition/by_tx_hash";
 
-async function getFromOrderbookAPI(
+async function getWinningSettlementFromOrderbookAPI(
   apiUrl: string
 ): Promise<WinningSettlementData | undefined> {
   try {
@@ -17,8 +17,8 @@ async function getFromOrderbookAPI(
     // The winning solution is the last entry of the `solutions` array.
     const solutionArray = response.data.solutions;
     const winningSolution = solutionArray[solutionArray.length - 1];
-    // Note that old records have solver = ZeroAddress!
-    // We need to rectify this (use txReceipt!)
+    // TODO - Note that old records have solver = ZeroAddress!
+    //  We need to rectify this (use txReceipt or whatever Tenderly web-action provides)
     const solver = winningSolution.solverAddress;
 
     return {
@@ -38,8 +38,8 @@ async function getFromOrderbookAPI(
       // 2. !isActualTxHash: web3.eth.getTransactionReceipt(txHash) -- Requires EVM Node.
       // 3. !isSettlementTransaction(txReceipt)
       // 4. !correctDB
-      // TODO - the above checks would be nice to have, but would affect performance of workflow
-      // its cheaper and faster to query orderbook API for the data we want.
+      // TODO - might be nice to pre-validate input, but would affect performance of workflow
+      //  its cheaper and faster to query orderbook API for the data we want without validation.
       return undefined;
     } else {
       throw `ERROR unexpected response received from ${apiUrl}: ${exception}`;
@@ -57,9 +57,13 @@ async function getFromOrderbookAPI(
 export async function getSettlementCompetitionData(
   txHash: string
 ): Promise<WinningSettlementData | undefined> {
-  let result = await getFromOrderbookAPI(`${PROD_API_URL}/${txHash}`);
+  let result = await getWinningSettlementFromOrderbookAPI(
+    `${PROD_API_URL}/${txHash}`
+  );
   if (result == undefined) {
-    result = await getFromOrderbookAPI(`${BARN_API_URL}/${txHash}`);
+    result = await getWinningSettlementFromOrderbookAPI(
+      `${BARN_API_URL}/${txHash}`
+    );
   }
   return result;
 }
