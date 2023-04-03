@@ -1,4 +1,4 @@
--- https://github.com/cowprotocol/solver-rewards/pull/188
+-- https://github.com/cowprotocol/solver-rewards/pull/216
 with
 batch_meta as (
     select b.block_time,
@@ -120,13 +120,16 @@ eth_transfers as (
     and not array_contains(traders_out, to)
 ),
 pre_batch_transfers as (
-    select * from user_in
-    union all
-    select * from user_out
-    union all
-    select * from other_transfers
-    union all
-    select * from eth_transfers
+    select * from (
+        select * from user_in
+        union all
+        select * from user_out
+        union all
+        select * from other_transfers
+        union all
+        select * from eth_transfers
+        ) as _
+    order by tx_hash
 ),
 batch_transfers as (
     select
@@ -343,6 +346,7 @@ buffer_trades as (
               )
 ),
 incoming_and_outgoing_with_buffer_trades as (
+select * from (
     select block_time,
           tx_hash,
           solver_address,
@@ -360,6 +364,8 @@ incoming_and_outgoing_with_buffer_trades as (
           amount_from as amount,
           transfer_type
     from buffer_trades
+) as _
+order by block_time
 ),
 final_token_balance_sheet as (
     select
@@ -444,6 +450,7 @@ intrinsic_prices as (
         AND units_sold > 0
     ) as combined
     GROUP BY hour, contract_address, decimals
+    order by hour
 ),
 -- Price Construction: https://dune.com/queries/1579091?
 prices as (

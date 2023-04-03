@@ -20,6 +20,7 @@ from src.models.overdraft import Overdraft
 from src.models.token import Token
 from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
+from src.utils.print_store import Category
 
 PERIOD_BUDGET_COW = 383307 * 10**18
 
@@ -72,7 +73,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         payment_eth: int,
         secondary_reward_eth: int,
         slippage_eth: int,
-        reward_cow: int,
+        primary_reward_cow: int,
         secondary_reward_cow: int,
     ):
         assert exec_cost >= 0, f"invalid execution cost {exec_cost}"
@@ -85,7 +86,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         self.exec_cost = exec_cost
         self.payment_eth = payment_eth
         self.slippage_eth = slippage_eth
-        self.reward_cow = reward_cow
+        self.primary_reward_cow = primary_reward_cow
         self.secondary_reward_eth = secondary_reward_eth
         self.secondary_reward_cow = secondary_reward_cow
 
@@ -109,7 +110,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             reward_target=Address(reward_target),
             payment_eth=int(frame["payment_eth"]),
             slippage_eth=slippage,
-            reward_cow=int(frame["reward_cow"]),
+            primary_reward_cow=int(frame["reward_cow"]),
             exec_cost=int(frame["execution_cost_eth"]),
             secondary_reward_eth=int(frame["secondary_reward_eth"]),
             secondary_reward_cow=int(frame["secondary_reward_cow"]),
@@ -121,7 +122,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
 
     def total_cow_reward(self) -> int:
         """Total outgoing COW token reward"""
-        return self.reward_cow + self.secondary_reward_cow
+        return self.primary_reward_cow + self.secondary_reward_cow
 
     def total_eth_reward(self) -> int:
         """Total outgoing ETH reward"""
@@ -140,21 +141,23 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         """
         # We do not handle overdraft scenario here!
         assert not self.is_overdraft()
-        reward_eth = int(self.total_eth_reward())
-        reward_cow = int(self.total_cow_reward())
+        total_eth_reward = int(self.total_eth_reward())
+        total_cow_reward = int(self.total_cow_reward())
 
         reimbursement_eth = int(self.exec_cost + self.slippage_eth)
         # We do not have access to token conversion here, but we do have other converted values
         # x_eth:x_cow = y_eth:y_cow --> y_cow = y_eth * x_cow / x_eth
         reimbursement_cow = (
-            (reimbursement_eth * reward_cow) // reward_eth if reward_eth != 0 else 0
+            (reimbursement_eth * total_cow_reward) // total_eth_reward
+            if total_eth_reward != 0
+            else 0
         )
 
-        if reimbursement_eth > 0 > reward_cow:
+        if reimbursement_eth > 0 > total_cow_reward:
             # If the total payment is positive but the total rewards are negative,
             # pay the total payment in ETH. The total payment corresponds to reimbursement,
             # reduced by the negative reward.
-            # That assertion was not necessary because:
+            # Note that;
             # reimbursement_eth + reward_eth
             # = self.total_eth_reward() + self.exec_cost + self.slippage_eth
             # = self.payment_eth + self.secondary_reward_eth + self.slippage_eth
@@ -165,14 +168,14 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                     Transfer(
                         token=None,
                         recipient=self.solver,
-                        amount_wei=reimbursement_eth + reward_eth,
+                        amount_wei=reimbursement_eth + total_eth_reward,
                     )
                 ]
-                if reimbursement_eth + reward_eth > 0
+                if reimbursement_eth + total_eth_reward > 0
                 else []
             )
 
-        if reimbursement_eth < 0 < reward_cow:
+        if reimbursement_eth < 0 < total_cow_reward:
             # If the total payment is positive but the total reimbursement is negative,
             # pay the total payment in COW. The total payment corresponds to a payment of rewards,
             # reduced by the negative reimbursement.
@@ -180,11 +183,11 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 [
                     Transfer(
                         token=Token(COW_TOKEN_ADDRESS),
-                        recipient=self.solver,
-                        amount_wei=reimbursement_cow + reward_cow,
+                        recipient=self.reward_target,
+                        amount_wei=reimbursement_cow + total_cow_reward,
                     )
                 ]
-                if reimbursement_cow + reward_cow > 0
+                if reimbursement_cow + total_cow_reward > 0
                 else []
             )
 
@@ -206,12 +209,12 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=self.reward_target,
-                    amount_wei=reward_cow,
+                    amount_wei=total_cow_reward,
                 )
             )
         except AssertionError:
             logging.warning(
-                f"Invalid COW Transfer {self.solver} with amount={reward_cow}"
+                f"Invalid COW Transfer {self.solver} with amount={total_cow_reward}"
             )
 
         return result
@@ -356,7 +359,16 @@ def post_cip20_payouts(
         reward_target_df=pandas.DataFrame(dune.get_vouches()),
     )
     # Sort by solver before breaking this data frame into Transfer objects.
-    complete_payout_df.sort_values("solver")
+    complete_payout_df = complete_payout_df.sort_values("solver")
+
+    performance_reward = complete_payout_df["reward_cow"].sum()
+    participation_reward = complete_payout_df["secondary_reward_cow"].sum()
+    dune.log_saver.print(
+        f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
+        f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n",
+        category=Category.TOTALS,
+    )
     payouts = prepare_transfers(complete_payout_df, dune.period)
-    # TODO - make sure to log Overdrafts!
+    for overdraft in payouts.overdrafts:
+        dune.log_saver.print(str(overdraft), Category.OVERDRAFT)
     return payouts.transfers
