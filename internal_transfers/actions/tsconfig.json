@@ -2,6 +2,7 @@
   "compileOnSave": true,
   "compilerOptions": {
     "module": "commonjs",
+    "esModuleInterop": true,
     "moduleResolution": "node16",
     "resolveJsonModule": true,
     "noImplicitReturns": true,

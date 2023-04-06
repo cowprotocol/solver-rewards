@@ -22,6 +22,7 @@
   "dependencies": {
     "@cowprotocol/contracts": "^1.3.2",
     "@tenderly/actions": "^0.1.0",
+    "axios": "^1.3.4",
     "ethers": "^6.0.3"
   },
   "private": true
