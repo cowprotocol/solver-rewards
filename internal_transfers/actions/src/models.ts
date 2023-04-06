@@ -19,3 +19,16 @@ export interface SettlementEvent {
   solver: string;
   logIndex: number;
 }
+
+export interface WinningSettlementData {
+  // Block at which settlement was simulated.
+  simulationBlock: number;
+  // Solver who submitted the (winning) solution
+  solver: string;
+  // Settlement call data: after internalized interactions have been removed.
+  // equivalent to what actually appears on-chain.
+  reducedCallData: string;
+  // Full Call Data provided by the solver
+  // null indicates that settlement was not pruned.
+  fullCallData?: string;
+}
