@@ -1,3 +1,5 @@
+import { SimulationData } from "./models";
+
 export abstract class TxSimulator {
   /**
    * Simulates the given `callData` uses whatever means of EVM transaction simulation at `block_number`.
@@ -28,4 +30,10 @@ export abstract class TxSimulator {
     save: boolean,
     blockNumber?: number
   ): Promise<any>;
+
+  /**
+   * Converts simulation result into `SimulationData` containing only the relevant fields.
+   * @param simulation - return value from simulate method.
+   */
+  abstract parseSimulation(simulation: any): SimulationData;
 }

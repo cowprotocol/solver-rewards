@@ -1,5 +1,7 @@
 import axios from "axios";
 import { TxSimulator } from "./interface";
+import { EventLog } from "../models";
+import { SimulationData } from "./models";
 
 export class TenderlySimulator extends TxSimulator {
   BASE_URL = "https://api.tenderly.co/api";
@@ -60,5 +62,18 @@ export class TenderlySimulator extends TxSimulator {
       }
       throw Error(error);
     }
+  }
+
+  parseSimulation(simulation: any): SimulationData {
+    const { transaction: tx } = simulation;
+    if (tx != undefined) {
+      return {
+        blockNumber: tx.transaction_info.block_number,
+        txHash: tx.hash,
+        logs:
+          tx.transaction_info.logs.map((t: { raw: EventLog }) => t.raw) || [],
+      };
+    }
+    throw Error(`Invalid simulation data ${JSON.stringify(simulation)}`);
   }
 }
