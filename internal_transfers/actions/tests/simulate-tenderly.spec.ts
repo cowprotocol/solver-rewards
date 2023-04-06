@@ -28,7 +28,6 @@ describe("Tenderly Simulator", () => {
     );
     expect(simulation.transaction).toMatchSnapshot();
   });
-
   test.skip("simulate() returns expected output on failed simulation", async () => {
     const simulation = await simulator.simulate(
       SETTLEMENT_CONTRACT_ADDRESS,
@@ -40,7 +39,6 @@ describe("Tenderly Simulator", () => {
     );
     expect(simulation.transaction).toMatchSnapshot();
   });
-
   test("simulate() returns expected output with invalid credentials", async () => {
     const simulation = await invalidSimulator.simulate(
       oneAddress,
@@ -51,11 +49,52 @@ describe("Tenderly Simulator", () => {
     );
     expect(simulation.transaction).toEqual(undefined);
   });
-
   test("simulate() throws bad request error", async () => {
     const badRequestSimulator = new TenderlySimulator("", "", "");
     await expect(
       badRequestSimulator.simulate("0x", "0x", "0x", "0", false)
     ).rejects.toThrow("AxiosError: Request failed with status code 401");
+  });
+
+  test("parseSimulation() operates as expected", () => {
+    const mockSimulation = {
+      // Test Data excludes irrelevant fields.
+      transaction: {
+        hash: "0xa7b2f2ff14a780504c97aeb484bfd7560486241c00f066395e1e8c2e9d99ffd3",
+        transaction_info: {
+          block_number: 16300366,
+          logs: [
+            {
+              raw: {
+                address: "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+                data: "0x0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f0000000000000000000000003432b6a60d23ca0dfca7761b7ab56459d9c964d000000000000000000000000000000000000000000000006c6b935b8bbd400000000000000000000000000000000000000000000000000019753399721b8078ee000000000000000000000000000000000000000000000000604fbfc634eef00000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000038bf293f652b46fe85a15838d7ff736add1b6098ed1c143f3902869d325f9e0069e2b424053b9ebfcedf89ecb8bf2972974e98700c63af639e0000000000000000",
+                topics: [
+                  "0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17",
+                  "0x000000000000000000000000e2b424053b9ebfcedf89ecb8bf2972974e98700c",
+                ],
+              },
+            },
+            {
+              raw: {
+                address: "0x6b175474e89094c44da98b954eedeac495271d0f",
+                data: "0x00000000000000000000000000000000000000000000006c6b935b8bbd400000",
+                topics: [
+                  "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+                  "0x000000000000000000000000e2b424053b9ebfcedf89ecb8bf2972974e98700c",
+                  "0x0000000000000000000000009008d19f58aabd9ed0d60971565aa8510560ab41",
+                ],
+              },
+            },
+          ],
+        },
+      },
+    };
+    expect(invalidSimulator.parseSimulation(mockSimulation)).toMatchSnapshot();
+  });
+  test("parseSimulation() throws as expected.", () => {
+    const invalidSimulator = new TenderlySimulator("", "", "");
+    expect(() => invalidSimulator.parseSimulation({})).toThrow(
+      "Invalid simulation data {}"
+    );
   });
 });
