@@ -29,6 +29,7 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
     if (transferEventLog != null && transferEventLog.name === "Transfer") {
       const { from, to, value } = transferEventLog.args;
       const transfer: TransferEvent = {
+        token: log.address,
         from,
         to,
         amount: BigInt(value),
