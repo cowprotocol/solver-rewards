@@ -4,7 +4,8 @@ import { EventLog } from "../models";
  *  Represents the relevant data returned from a transaction-simulation.
  */
 export interface SimulationData {
-  // # Transaction hash that would have been assigned if this were an actually mined tx.
+  // Transaction hash that would have been assigned if this were an actually mined tx.
+  // This is not meaningful to us (since this hash does not wind up existing)
   txHash: string;
   // Block on which the simulation was made.
   blockNumber: number;
