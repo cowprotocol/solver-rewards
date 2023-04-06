@@ -56,7 +56,7 @@ describe("Tenderly Simulator", () => {
     ).rejects.toThrow("AxiosError: Request failed with status code 401");
   });
 
-  test("parseSimulation() operates as expected",  () => {
+  test("parseSimulation() operates as expected", () => {
     const mockSimulation = {
       // Test Data excludes irrelevant fields.
       transaction: {
@@ -91,7 +91,7 @@ describe("Tenderly Simulator", () => {
     };
     expect(invalidSimulator.parseSimulation(mockSimulation)).toMatchSnapshot();
   });
-  test("parseSimulation() throws as expected.",  () => {
+  test("parseSimulation() throws as expected.", () => {
     const invalidSimulator = new TenderlySimulator("", "", "");
     expect(() => invalidSimulator.parseSimulation({})).toThrow(
       "Invalid simulation data {}"
