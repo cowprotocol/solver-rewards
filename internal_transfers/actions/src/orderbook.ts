@@ -57,13 +57,14 @@ async function getWinningSettlementFromOrderbookAPI(
 export async function getSettlementCompetitionData(
   txHash: string
 ): Promise<WinningSettlementData | undefined> {
+  // Try fetching from Production first
   let result = await getWinningSettlementFromOrderbookAPI(
     `${PROD_API_URL}/${txHash}`
   );
-  if (result == undefined) {
-    result = await getWinningSettlementFromOrderbookAPI(
-      `${BARN_API_URL}/${txHash}`
-    );
-  }
-  return result;
+  if (result !== undefined) return result;
+
+  // If it was not found/undefined try fetching from Barn.
+  return await getWinningSettlementFromOrderbookAPI(
+    `${BARN_API_URL}/${txHash}`
+  );
 }
