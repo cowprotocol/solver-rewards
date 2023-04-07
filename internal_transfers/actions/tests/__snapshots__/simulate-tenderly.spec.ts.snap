@@ -116,7 +116,3 @@ exports[`Tenderly Simulator simulate() returns expected output on successful sim
   "txHash": "0xa7b2f2ff14a780504c97aeb484bfd7560486241c00f066395e1e8c2e9d99ffd3",
 }
 `;
-
-exports[`Tenderly Simulator simulate() returns expected output on failed simulation 1`] = `undefined`;
-
-exports[`Tenderly Simulator simulate() returns expected output on successful simulation 1`] = `undefined`;

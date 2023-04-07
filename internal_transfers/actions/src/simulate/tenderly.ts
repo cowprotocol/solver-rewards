@@ -57,19 +57,6 @@ export class TenderlySimulator implements TransactionSimulator {
     }
     return parseTenderlySimulation(response.data);
   }
-
-  parseSimulation(simulation: any): SimulationData {
-    const { transaction: tx } = simulation;
-    if (tx != undefined) {
-      return {
-        blockNumber: tx.transaction_info.block_number,
-        txHash: tx.hash,
-        logs:
-          tx.transaction_info.logs.map((t: { raw: EventLog }) => t.raw) || [],
-      };
-    }
-    throw Error(`Invalid simulation data ${JSON.stringify(simulation)}`);
-  }
 }
 
 interface TenderlySimulationResponse {
