@@ -1,6 +1,5 @@
 import { partitionEventLogs } from "../src/parse";
 import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
-import { SimulationData } from "../src/simulate/models";
 
 const SETTLEMENT_EVENT_TOPIC =
   "0x40338ce1a7c49204f0099533b1e9a7ee0a3d261f84974ab7af36105b8c4e9db4";
@@ -98,7 +97,7 @@ describe("partitionEventLogs(logs)", () => {
   });
 
   test("parses SimulationData event logs", async () => {
-    const simulationData: SimulationData = {
+    const simulationData = {
       blockNumber: 16300366,
       txHash:
         "0xa7b2f2ff14a780504c97aeb484bfd7560486241c00f066395e1e8c2e9d99ffd3",
