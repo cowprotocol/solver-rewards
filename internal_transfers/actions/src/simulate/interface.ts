@@ -38,21 +38,7 @@ export interface TransactionSimulator {
    * }
    *
    * @param transactionData - Elementary Transaction Data
-   * @returns JSON representation of corresponding simulation result (i.e. "untyped" simulation results).
+   * @returns Relevant content from Simulation Results.
    */
   simulate(transactionData: SimulationParams): Promise<SimulationData>;
 }
-
-// export abstract class TxSimulator {
-
-//   abstract simulate(
-//     // essential transaction data
-//     contractAddress: string,
-//     sender: string,
-//     callData: string,
-//     value: string,
-//     // tenderly configs
-//     save: boolean,
-//     blockNumber?: number
-//   ): Promise<any>;
-// }

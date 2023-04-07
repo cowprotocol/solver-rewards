@@ -23,7 +23,6 @@ export const triggerInternalTransfersPipeline: ActionFn = async (
   console.log(`Parsed ${trades.length} trade events`);
 
   const dbUrl = await context.secrets.get("DATABASE_URL");
-
   await Promise.all(
     settlements.map(async (settlement) => {
       await insertSettlementEvent(
