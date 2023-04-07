@@ -1,6 +1,31 @@
-import { SimulationData } from "./models";
+import { EventLog } from "../models";
 
-export abstract class TxSimulator {
+export interface SimulationParams {
+  // Ethereum address transaction should be sent to.
+  contractAddress: string;
+  // Ethereum address of transaction sender.
+  sender: string;
+  // 0x-prefixed string representing transaction data to simulate.
+  callData: string;
+  // Amount of Ether to send along with transaction.
+  value: string;
+  // Block at which simulation should be made.
+  blockNumber?: number;
+}
+
+/**
+ *  Represents the relevant data returned from a transaction-simulation.
+ */
+export interface SimulationData {
+  // # Transaction hash that would have been assigned if this were an actually mined tx.
+  txHash: string;
+  // Block on which the simulation was made.
+  blockNumber: number;
+  // Event Logs emitted within the transaction's simulation.
+  logs: EventLog[];
+}
+
+export interface TransactionSimulator {
   /**
    * Simulates the given `callData` uses whatever means of EVM transaction simulation at `block_number`.
    * Returns sufficiently relevant parts of the simulation to build Settlement Transfers.
@@ -12,28 +37,22 @@ export abstract class TxSimulator {
    *      "value": 0,
    * }
    *
-   * @param {string} contractAddress - Ethereum address transaction should be sent to.
-   * @param {string} sender - Ethereum address of transaction sender
-   * @param {string} callData - 0x-prefixed string representing transaction data to simulate
-   * @param {string} value - Amount of Ether to send along with transaction.
-   * @param {boolean} save - Flag indicating whether the simulation should be saved.
-   * @param {number} blockNumber - Block at which simulation should be made.
+   * @param transactionData - Elementary Transaction Data
    * @returns JSON representation of corresponding simulation result (i.e. "untyped" simulation results).
    */
-  abstract simulate(
-    // essential transaction data
-    contractAddress: string,
-    sender: string,
-    callData: string,
-    value: string,
-    // tenderly configs
-    save: boolean,
-    blockNumber?: number
-  ): Promise<any>;
-
-  /**
-   * Converts simulation result into `SimulationData` containing only the relevant fields.
-   * @param simulation - return value from simulate method.
-   */
-  abstract parseSimulation(simulation: any): SimulationData;
+  simulate(transactionData: SimulationParams): Promise<SimulationData>;
 }
+
+// export abstract class TxSimulator {
+
+//   abstract simulate(
+//     // essential transaction data
+//     contractAddress: string,
+//     sender: string,
+//     callData: string,
+//     value: string,
+//     // tenderly configs
+//     save: boolean,
+//     blockNumber?: number
+//   ): Promise<any>;
+// }
