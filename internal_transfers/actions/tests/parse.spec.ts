@@ -53,10 +53,14 @@ describe("partitionEventLogs(logs)", () => {
     ]);
 
     expect(trades).toStrictEqual([]);
-    expect(transfers.length).toBe(1);
-    expect(transfers[0].to).toStrictEqual(SETTLEMENT_CONTRACT_ADDRESS);
-    expect(transfers[0].from).toStrictEqual(address);
-    expect(transfers[0].amount.toString()).toBe(BigInt(4096).toString());
+    expect(transfers).toEqual([
+      {
+        amount: BigInt("4096"),
+        from: address,
+        to: SETTLEMENT_CONTRACT_ADDRESS,
+        token: TOKEN_ADDRESS,
+      },
+    ]);
     expect(settlements).toStrictEqual([]);
   });
   test("single Settlement Event", () => {
@@ -220,21 +224,25 @@ describe("partitionEventLogs(logs)", () => {
         amount: BigInt("2000000000000000000000"),
         from: "0xE2b424053b9ebFCEdF89ECB8Bf2972974E98700C",
         to: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41",
+        token: "0x6b175474e89094c44da98b954eedeac495271d0f",
       },
       {
         amount: BigInt("1614063949739215622"),
         from: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41",
         to: "0x61eB53ee427aB4E007d78A9134AaCb3101A2DC23",
+        token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
       },
       {
         amount: BigInt("456148202922231918871"),
         from: "0x61eB53ee427aB4E007d78A9134AaCb3101A2DC23",
         to: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41",
+        token: "0x3432b6a60d23ca0dfca7761b7ab56459d9c964d0",
       },
       {
         amount: BigInt("469613864284355328238"),
         from: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41",
         to: "0xE2b424053b9ebFCEdF89ECB8Bf2972974E98700C",
+        token: "0x3432b6a60d23ca0dfca7761b7ab56459d9c964d0",
       },
     ]);
     expect(settlements).toEqual([
