@@ -2,6 +2,16 @@
 // for our purposes at this time.
 // For example, this program only requires the owner of the trade so
 // that transfers can be classified AMM_{IN/OUT} or USER_{IN/OUT}.
+
+export interface EventLog {
+  // The contract address emitting the event
+  address: string;
+  // The indexed topics from the event log
+  topics: string[];
+  // The additional (non-indexed event data)
+  data: string;
+}
+
 export interface TradeEvent {
   owner: string;
 }
