@@ -10,6 +10,7 @@ export interface SimulationParams {
   // Amount of Ether to send along with transaction.
   value: string;
   // Block at which simulation should be made.
+  // use "latest" when undefined.
   blockNumber?: number;
 }
 
