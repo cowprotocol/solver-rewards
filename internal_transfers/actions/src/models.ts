@@ -3,6 +3,11 @@
 // For example, this program only requires the owner of the trade so
 // that transfers can be classified AMM_{IN/OUT} or USER_{IN/OUT}.
 
+export interface TokenImbalance {
+  token: string;
+  amount: bigint;
+}
+
 export interface EventLog {
   // The contract address emitting the event
   address: string;
@@ -16,9 +21,10 @@ export interface TradeEvent {
   owner: string;
 }
 export interface TransferEvent {
+  token: string;
   to: string;
   from: string;
-  amount: BigInt;
+  amount: bigint;
 }
 export interface EventMeta {
   blockNumber: number;
