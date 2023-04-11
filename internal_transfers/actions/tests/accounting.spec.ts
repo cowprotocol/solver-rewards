@@ -2,7 +2,6 @@ import { getInternalImbalance, MinimalTxData } from "../src/accounting";
 import { TenderlySimulator } from "../src/simulate/tenderly";
 
 describe("getInternalImbalance(transaction, simulator)", () => {
-  // TODO - proper e2e test.
   test("throws when no competition found", async () => {
     const invalidSimulator = new TenderlySimulator(
       "INVALID_USER",

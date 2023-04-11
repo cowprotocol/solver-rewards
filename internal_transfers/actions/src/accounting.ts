@@ -5,22 +5,22 @@ import assert from "assert";
 import { partitionEventLogs } from "./parse";
 import { Log } from "@tenderly/actions";
 import { TokenImbalance } from "./models";
-import { aggregateTransfers } from "./utils";
+import { aggregateTransfers, imbalanceMapDiff } from "./imbalance";
 
 // This represents the only required fields for InternalImbalance accounting
 // An object of this shape can be easily be constructed from any of
 // - ethers - `TransactionReceipt`,
 // - tenderly - `TransactionEvent`
 export interface MinimalTxData {
-  from: string;
-  hash: string;
-  logs: Log[];
+  readonly from: string;
+  readonly hash: string;
+  readonly logs: Log[];
 }
 export async function getInternalImbalance(
   transaction: MinimalTxData,
   simulator: TransactionSimulator
 ): Promise<TokenImbalance[]> {
-  const solverAddress = transaction.from;
+  const solverAddress = transaction.from.toLowerCase();
   const competition = await getSettlementCompetitionData(transaction.hash);
   if (competition === undefined) {
     throw Error(`No competition found for ${transaction.hash}`);
@@ -28,7 +28,8 @@ export async function getInternalImbalance(
 
   // This is more of a monitoring system task!
   assert(
-    solverAddress === competition.solver,
+    solverAddress === competition.solver ||
+      competition.solver === "0x0000000000000000000000000000000000000000",
     `Winning solver ${competition.solver} doesn't match settlement solver ${solverAddress}`
   );
   if (competition.fullCallData === undefined) {
@@ -61,8 +62,5 @@ export async function getInternalImbalance(
     SETTLEMENT_CONTRACT_ADDRESS
   );
 
-  console.log(simulationImbalance);
-  console.log(actualImbalance);
-
-  return [];
+  return imbalanceMapDiff(simulationImbalance, actualImbalance);
 }
