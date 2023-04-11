@@ -1,10 +1,19 @@
-import { TokenImbalance, TransferEvent } from "./models";
+import { TransferEvent } from "./models";
 
+export type ImbalanceMap = Map<string, bigint>;
+
+/**
+ * Aggregation operator transforming a list of `TransferEvent` into an
+ * aggregation of token imbalances as an `ImbalanceMap`.
+ * Imbalances are defined in reference to `focalAccount`
+ * @param transfers - a list of token transfers
+ * @param focalAccount - account for which the "imbalance" is referring to.
+ */
 export function aggregateTransfers(
   transfers: TransferEvent[],
   focalAccount: string
-): TokenImbalance[] {
-  let accumulator = new Map<string, bigint>();
+): ImbalanceMap {
+  let accumulator: ImbalanceMap = new Map<string, bigint>();
   transfers.map((transfer) => {
     const { to, from, amount, token } = transfer;
 
@@ -19,10 +28,7 @@ export function aggregateTransfers(
       // Irrelevant transfer.
     }
   });
-  return Array.from(accumulator).map(([token, amount]) => ({
-    token,
-    amount,
-  }));
+  return accumulator;
 }
 
 export function transferInvolves(

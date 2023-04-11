@@ -32,12 +32,7 @@ describe("aggregateTransfers(transfers, focalAccount)", () => {
 
     expect(
       aggregateTransfers(transferEvents, SETTLEMENT_CONTRACT_ADDRESS)
-    ).toEqual([
-      {
-        token: TOKEN_ADDRESS,
-        amount: BigInt("-100"),
-      },
-    ]);
+    ).toEqual(new Map([[TOKEN_ADDRESS, BigInt("-100")]]));
   });
 });
 describe("transferInvolves(transfer, address)", () => {
