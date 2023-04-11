@@ -52,7 +52,6 @@ export async function getInternalImbalance(
     `Found ${actualTransfers.length} relevant Actual Transfers and ${simTransfers.length} relevant Simulated Transfers`
   );
 
-  // TODO - take the aggregated difference of (Simulated - Actual) Transfers!
   const simulationImbalance = aggregateTransfers(
     simTransfers,
     SETTLEMENT_CONTRACT_ADDRESS

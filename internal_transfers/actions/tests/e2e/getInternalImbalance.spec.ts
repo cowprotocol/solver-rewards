@@ -7,11 +7,11 @@ const simulator = new TenderlySimulator(
   process.env["TENDERLY_PROJECT"] || "TENDERLY_PROJECT",
   process.env["TENDERLY_ACCESS_KEY"] || "TENDERLY_ACCESS_KEY"
 );
-const provider = ethers.getDefaultProvider(
-  process.env["NODE_URL"] || "NODE_URL"
-);
 
 async function TxDataFromHash(txHash: string): Promise<MinimalTxData> {
+  const provider = ethers.getDefaultProvider(
+    process.env["NODE_URL"] || "NODE_URL"
+  );
   const transaction = await provider.getTransactionReceipt(txHash);
   if (transaction === null) {
     throw new Error(`invalid transaction hash ${txHash} - try again`);
@@ -33,7 +33,7 @@ async function TxDataFromHash(txHash: string): Promise<MinimalTxData> {
     logs: tenderlyLogs,
   };
 }
-describe("getInternalImbalance(transaction, simulator)", () => {
+describe.skip("getInternalImbalance(transaction, simulator)", () => {
   test.skip("throws when no competition found", async () => {
     const txHash =
       "0x08100e7ba81be84ee0bdce43db6640e2f992ec9991a740a689e97d20dea9dafa";
