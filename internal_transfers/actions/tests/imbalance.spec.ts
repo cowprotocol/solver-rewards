@@ -2,7 +2,7 @@ import { aggregateTransfers, imbalanceMapDiff } from "../src/imbalance";
 import { TransferEvent } from "../src/models";
 import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 
-const TOKEN_ADDRESS = "SuperToken!";
+const TOKEN_ADDRESS = "0x-token!";
 describe("aggregateTransfers(transfers, focalAccount)", () => {
   test("works in generic setting", () => {
     const address = "0x0000000000000000000000000000000000000001";
