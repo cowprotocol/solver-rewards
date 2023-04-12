@@ -80,4 +80,9 @@ describe("imbalanceMapDiff(mapA, mapB)", () => {
       },
     ]);
   });
+
+  test("map difference excludes zeros", () => {
+    const testMap = new Map([["x", 1n]]);
+    expect(imbalanceMapDiff(testMap, testMap)).toEqual([]);
+  });
 });
