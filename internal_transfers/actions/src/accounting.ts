@@ -6,6 +6,7 @@ import { partitionEventLogs } from "./parse";
 import { Log } from "@tenderly/actions";
 import { TokenImbalance } from "./models";
 import { aggregateTransfers, imbalanceMapDiff } from "./imbalance";
+import { ZeroAddress } from "ethers";
 
 // This represents the only required fields for InternalImbalance accounting
 // An object of this shape can be easily be constructed from any of
@@ -28,8 +29,7 @@ export async function getInternalImbalance(
 
   // This is more of a monitoring system task!
   assert(
-    solverAddress === competition.solver ||
-      competition.solver === "0x0000000000000000000000000000000000000000",
+    solverAddress === competition.solver || competition.solver === ZeroAddress,
     `Winning solver ${competition.solver} doesn't match settlement solver ${solverAddress}`
   );
   if (competition.fullCallData === undefined) {
