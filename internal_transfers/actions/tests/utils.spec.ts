@@ -1,45 +1,5 @@
-import { aggregateTransfers, transferInvolves } from "../src/utils";
+import { transferInvolves } from "../src/utils";
 import { TransferEvent } from "../src/models";
-import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
-
-const TOKEN_ADDRESS = "SuperToken!";
-describe("aggregateTransfers(transfers, focalAccount)", () => {
-  test("works in generic setting", () => {
-    const address = "0x0000000000000000000000000000000000000001";
-    const transferEvents: TransferEvent[] = [
-      // Incoming
-      {
-        amount: BigInt("100"),
-        from: address,
-        to: SETTLEMENT_CONTRACT_ADDRESS,
-        token: TOKEN_ADDRESS,
-      },
-      // Outgoing
-      {
-        amount: BigInt("200"),
-        from: SETTLEMENT_CONTRACT_ADDRESS,
-        to: address,
-        token: TOKEN_ADDRESS,
-      },
-      // Irrelevant
-      {
-        amount: BigInt("300"),
-        from: address,
-        to: address,
-        token: TOKEN_ADDRESS,
-      },
-    ];
-
-    expect(
-      aggregateTransfers(transferEvents, SETTLEMENT_CONTRACT_ADDRESS)
-    ).toEqual([
-      {
-        token: TOKEN_ADDRESS,
-        amount: BigInt("-100"),
-      },
-    ]);
-  });
-});
 describe("transferInvolves(transfer, address)", () => {
   test("correctly returns whether transfer instance involves given address", () => {
     const address1 = "0x0000000000000000000000000000000000000001";
