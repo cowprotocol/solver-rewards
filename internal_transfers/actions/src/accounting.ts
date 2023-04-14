@@ -17,7 +17,7 @@ export interface MinimalTxData {
   readonly hash: string;
   readonly logs: Log[];
 }
-export async function getInternalImbalance(
+export async function getInternalizedImbalance(
   transaction: MinimalTxData,
   simulator: TransactionSimulator
 ): Promise<TokenImbalance[]> {
@@ -33,33 +33,41 @@ export async function getInternalImbalance(
     `Winning solver ${competition.solver} doesn't match settlement solver ${solverAddress}`
   );
   if (competition.fullCallData === undefined) {
-    // Settlement was not even partially internalized. Return before simulating!
+    // Settlement was not even partially internalized.
+    // https://api.cow.fi/docs/#/default/get_api_v1_solver_competition_by_tx_hash__tx_hash_
+    // No need to simulate!
     return [];
   }
-  const simulation = await simulator.simulate({
-    callData: competition.fullCallData,
+
+  const commonSimulationParams = {
     contractAddress: SETTLEMENT_CONTRACT_ADDRESS,
     sender: solverAddress,
     value: "0",
-    blockNumber: competition.simulationBlock + 1,
+    blockNumber: competition.simulationBlock,
+  };
+  const simFull = await simulator.simulate({
+    ...commonSimulationParams,
+    callData: competition.fullCallData,
+  });
+  const simReduced = await simulator.simulate({
+    ...commonSimulationParams,
+    callData: competition.reducedCallData,
   });
   // TODO - figure out what happens when simulation fails and handle it!
 
-  const { transfers: simTransfers } = partitionEventLogs(simulation.logs);
-  const { transfers: actualTransfers } = partitionEventLogs(transaction.logs);
-
-  console.log(
-    `Found ${actualTransfers.length} relevant Actual Transfers and ${simTransfers.length} relevant Simulated Transfers`
+  const { transfers: fullSimTransfers } = partitionEventLogs(simFull.logs);
+  const { transfers: reducedSimTransfers } = partitionEventLogs(
+    simReduced.logs
   );
 
-  const simulationImbalance = aggregateTransfers(
-    simTransfers,
+  const fullSimulationImbalance = aggregateTransfers(
+    fullSimTransfers,
     SETTLEMENT_CONTRACT_ADDRESS
   );
-  const actualImbalance = aggregateTransfers(
-    actualTransfers,
+  const reducedSimulationImbalance = aggregateTransfers(
+    reducedSimTransfers,
     SETTLEMENT_CONTRACT_ADDRESS
   );
 
-  return imbalanceMapDiff(simulationImbalance, actualImbalance);
+  return imbalanceMapDiff(fullSimulationImbalance, reducedSimulationImbalance);
 }

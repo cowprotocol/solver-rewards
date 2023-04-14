@@ -1,4 +1,4 @@
-import { getInternalImbalance, MinimalTxData } from "../src/accounting";
+import { getInternalizedImbalance, MinimalTxData } from "../src/accounting";
 import { TenderlySimulator } from "../src/simulate/tenderly";
 
 describe("getInternalImbalance(transaction, simulator)", () => {
@@ -17,7 +17,7 @@ describe("getInternalImbalance(transaction, simulator)", () => {
       // hash: "0x08100e7ba81be84ee0bdce43db6640e2f992ec9991a740a689e97d20dea9dafa",
     };
     await expect(
-      getInternalImbalance(invalidTransaction, invalidSimulator)
+      getInternalizedImbalance(invalidTransaction, invalidSimulator)
     ).rejects.toThrow("No competition found for 0x");
   });
   test("returns early without simulation when fullCallData is undefined", async () => {
@@ -31,7 +31,7 @@ describe("getInternalImbalance(transaction, simulator)", () => {
       hash: "0xf1df7c1d068c2e0f0cf324bb0739a838fff89b4b08bf2aa11a7b4a609a7e20fe",
       logs: [],
     };
-    const result = await getInternalImbalance(
+    const result = await getInternalizedImbalance(
       uninternalizedSettlement,
       invalidSimulator
     );
