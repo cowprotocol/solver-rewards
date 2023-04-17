@@ -71,6 +71,7 @@ describe("Tenderly Simulator", () => {
       transaction: {
         hash: "0xHASH",
         transaction_info: {
+          balance_diff: [],
           block_number: 5,
           logs: [
             {
@@ -93,6 +94,7 @@ describe("Tenderly Simulator", () => {
           topics: ["0xTOPIC_1"],
         },
       ],
+      ethDelta: new Map(),
       txHash: "0xHASH",
     });
   });
