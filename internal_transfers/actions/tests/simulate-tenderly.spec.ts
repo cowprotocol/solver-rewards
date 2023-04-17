@@ -92,7 +92,7 @@ describe("Tenderly Simulator", () => {
           data: "0xDATA",
           topics: ["0xTOPIC_1"],
         },
-      ]
+      ],
     });
   });
   test("isTenderlySimulationResponse() returns false", () => {
