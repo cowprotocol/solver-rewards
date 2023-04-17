@@ -147,4 +147,23 @@ describe.skip("getInternalImbalance(transaction, simulator)", () => {
       },
     ]);
   });
+  test("ETH Transfers - 0x7a007eb", async () => {
+    // Transaction contains ETH transfers (but they were not internalized)
+    // It is non-trivial to find batches with internalized ETH transfers.
+    // However, the tests we have in `accounting.spec` should demonstrate we are prepared to handle them.
+    const transaction = await TxDataFromHash(
+      "0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf"
+    );
+    const imbalance = await getInternalizedImbalance(transaction, simulator);
+    expect(imbalance).toEqual([
+      {
+        amount: -95100807345736279n,
+        token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      },
+      {
+        amount: 14916332565n,
+        token: "0x64aa3364f17a4d01c6f1751fd97c2bd3d7e7f1d5",
+      },
+    ]);
+  });
 });

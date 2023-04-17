@@ -71,8 +71,16 @@ interface TenderlyTransaction {
 interface TenderlyTransactionInfo {
   block_number: number;
   logs: TenderlyTransactionLog[];
+  balance_diff: TenderlyBalanceDiff[];
 }
 
+interface TenderlyBalanceDiff {
+  address: string;
+  // before
+  original: bigint;
+  // after
+  dirty: bigint;
+}
 interface TenderlyTransactionLog {
   raw: EventLog;
 }
@@ -103,6 +111,12 @@ export function parseTenderlySimulation(
       blockNumber: tx.transaction_info.block_number,
       txHash: tx.hash,
       logs: tx.transaction_info.logs.map((t: { raw: EventLog }) => t.raw) || [],
+      ethDelta: new Map(
+        tx.transaction_info.balance_diff.map((t) => [
+          t.address.toLowerCase(),
+          BigInt(t.dirty - t.original),
+        ])
+      ),
     };
   }
   throw Error(`Invalid simulation data ${JSON.stringify(simulation)}`);

@@ -24,6 +24,8 @@ export interface SimulationData {
   blockNumber: number;
   // Event Logs emitted within the transaction's simulation.
   logs: EventLog[];
+  // Difference in ETH balances of all accounts in transactions
+  ethDelta: Map<string, bigint>;
 }
 
 export interface TransactionSimulator {
