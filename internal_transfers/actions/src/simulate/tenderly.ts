@@ -109,7 +109,6 @@ export function parseTenderlySimulation(
   if (tx != undefined) {
     return {
       blockNumber: tx.transaction_info.block_number,
-      txHash: tx.hash,
       logs: tx.transaction_info.logs.map((t: { raw: EventLog }) => t.raw) || [],
       ethDelta: new Map(
         tx.transaction_info.balance_diff.map((t) => [

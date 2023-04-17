@@ -95,7 +95,6 @@ describe("Tenderly Simulator", () => {
         },
       ],
       ethDelta: new Map(),
-      txHash: "0xHASH",
     });
   });
   test("isTenderlySimulationResponse() returns false", () => {
