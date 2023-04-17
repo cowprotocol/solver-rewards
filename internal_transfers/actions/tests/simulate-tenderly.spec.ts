@@ -92,8 +92,7 @@ describe("Tenderly Simulator", () => {
           data: "0xDATA",
           topics: ["0xTOPIC_1"],
         },
-      ],
-      txHash: "0xHASH",
+      ]
     });
   });
   test("isTenderlySimulationResponse() returns false", () => {
