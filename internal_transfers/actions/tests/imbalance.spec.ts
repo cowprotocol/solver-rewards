@@ -1,38 +1,39 @@
 import { aggregateTransfers, imbalanceMapDiff } from "../src/imbalance";
 import { TransferEvent } from "../src/models";
-import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 
-const TOKEN_ADDRESS = "SuperToken!";
 describe("aggregateTransfers(transfers, focalAccount)", () => {
   test("works in generic setting", () => {
-    const address = "0x0000000000000000000000000000000000000001";
+    const tokenAddress = "0x-token";
+    const focalAddress = "0x-focal";
+    const irrelevantAddress = "0x-irrelevant";
+
     const transferEvents: TransferEvent[] = [
       // Incoming
       {
         amount: BigInt("100"),
-        from: address,
-        to: SETTLEMENT_CONTRACT_ADDRESS,
-        token: TOKEN_ADDRESS,
+        from: irrelevantAddress,
+        to: focalAddress,
+        token: tokenAddress,
       },
       // Outgoing
       {
         amount: BigInt("200"),
-        from: SETTLEMENT_CONTRACT_ADDRESS,
-        to: address,
-        token: TOKEN_ADDRESS,
+        from: focalAddress,
+        to: irrelevantAddress,
+        token: tokenAddress,
       },
       // Irrelevant
       {
         amount: BigInt("300"),
-        from: address,
-        to: address,
-        token: TOKEN_ADDRESS,
+        from: irrelevantAddress,
+        to: irrelevantAddress,
+        token: tokenAddress,
       },
     ];
 
-    expect(
-      aggregateTransfers(transferEvents, SETTLEMENT_CONTRACT_ADDRESS)
-    ).toEqual(new Map([[TOKEN_ADDRESS, BigInt("-100")]]));
+    expect(aggregateTransfers(transferEvents, focalAddress)).toEqual(
+      new Map([[tokenAddress, BigInt("-100")]])
+    );
   });
 });
 describe("imbalanceMapDiff(mapA, mapB)", () => {

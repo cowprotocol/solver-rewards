@@ -15,8 +15,8 @@ export function aggregateTransfers(
 ): ImbalanceMap {
   let accumulator: ImbalanceMap = new Map<string, bigint>();
   transfers.map((transfer) => {
-    const { to, from, amount, token } = transfer;
-
+    let { to, from, amount, token } = transfer;
+    token = token.toLowerCase();
     const currVal = accumulator.get(token) ?? 0n;
     if (to.toLowerCase() == focalAccount.toLowerCase()) {
       // Incoming Transfer
