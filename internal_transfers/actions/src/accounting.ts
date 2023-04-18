@@ -1,12 +1,18 @@
 import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 import { getSettlementCompetitionData } from "./orderbook";
-import { TransactionSimulator } from "./simulate/interface";
+import { SimulationData, TransactionSimulator } from "./simulate/interface";
 import assert from "assert";
 import { partitionEventLogs } from "./parse";
 import { Log } from "@tenderly/actions";
 import { TokenImbalance } from "./models";
-import { aggregateTransfers, imbalanceMapDiff } from "./imbalance";
+import {
+  aggregateTransfers,
+  ImbalanceMap,
+  imbalanceMapDiff,
+} from "./imbalance";
 import { ZeroAddress } from "ethers";
+
+const ETH_TOKEN = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
 // This represents the only required fields for InternalImbalance accounting
 // An object of this shape can be easily be constructed from any of
@@ -17,6 +23,23 @@ export interface MinimalTxData {
   readonly hash: string;
   readonly logs: Log[];
 }
+
+export function constructImbalanceMap(
+  simulation: SimulationData,
+  focalContract: string
+): ImbalanceMap {
+  focalContract = focalContract.toLowerCase();
+  const { transfers } = partitionEventLogs(simulation.logs);
+
+  const simulationImbalance = aggregateTransfers(transfers, focalContract);
+  const ethImbalance = simulation.ethDelta.get(focalContract) ?? 0n;
+  if (ethImbalance !== 0n) {
+    simulationImbalance.set(ETH_TOKEN, ethImbalance);
+  }
+
+  return simulationImbalance;
+}
+
 export async function getInternalizedImbalance(
   transaction: MinimalTxData,
   simulator: TransactionSimulator
@@ -36,6 +59,7 @@ export async function getInternalizedImbalance(
     // Settlement was not even partially internalized.
     // https://api.cow.fi/docs/#/default/get_api_v1_solver_competition_by_tx_hash__tx_hash_
     // No need to simulate!
+    console.log(`Batch ${transaction.hash} not internalized.`);
     return [];
   }
 
@@ -53,19 +77,13 @@ export async function getInternalizedImbalance(
     ...commonSimulationParams,
     callData: competition.reducedCallData,
   });
-  // TODO - figure out what happens when simulation fails and handle it!
 
-  const { transfers: fullSimTransfers } = partitionEventLogs(simFull.logs);
-  const { transfers: reducedSimTransfers } = partitionEventLogs(
-    simReduced.logs
-  );
-
-  const fullSimulationImbalance = aggregateTransfers(
-    fullSimTransfers,
+  const fullSimulationImbalance = constructImbalanceMap(
+    simFull,
     SETTLEMENT_CONTRACT_ADDRESS
   );
-  const reducedSimulationImbalance = aggregateTransfers(
-    reducedSimTransfers,
+  const reducedSimulationImbalance = constructImbalanceMap(
+    simReduced,
     SETTLEMENT_CONTRACT_ADDRESS
   );
 
