@@ -4,10 +4,10 @@ import createConnectionPool, { sql } from "@databases/pg";
 import tables from "@databases/pg-typed";
 import ConnectionPool from "@databases/pg/lib/types/Queryable";
 import DatabaseSchema from "./__generated__";
-import { EventMeta, SettlementEvent } from "./models";
+import { EventMeta, SettlementEvent, TokenImbalance } from "./models";
 
 export { sql };
-const { settlements } = tables<DatabaseSchema>({
+const { settlements, internalized_imbalances } = tables<DatabaseSchema>({
   databaseSchema: require("./__generated__/schema.json"),
 });
 
@@ -32,8 +32,25 @@ async function insertSettlementEvent(
   });
 }
 
+async function insertTokenImbalances(
+  db: ConnectionPool,
+  txHash: string,
+  imbalances: TokenImbalance[]
+) {
+  await internalized_imbalances(db).bulkInsertOrIgnore({
+    columnsToInsert: ["token", "tx_hash", "amount"],
+    records: imbalances.map((imbalance) => {
+      return {
+        token: hexToBytea(imbalance.token),
+        tx_hash: hexToBytea(txHash),
+        amount: imbalance.amount.toString(),
+      };
+    }),
+  });
+}
+
 function hexToBytea(hexString: string): Buffer {
   return Buffer.from(hexString.slice(2), "hex");
 }
 
-export { settlements, insertSettlementEvent, getDB, hexToBytea };
+export { insertSettlementEvent, insertTokenImbalances, getDB, hexToBytea };
