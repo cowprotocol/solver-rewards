@@ -13,6 +13,8 @@ import { abi as IERC20_ABI } from "@cowprotocol/contracts/lib/contracts/IERC20.j
 import { abi as WETH9_ABI } from "./artifacts/weth9_abi.json";
 import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 
+export const WETH_TOKEN_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
+
 const settlementInterface = new ethers.Interface(SETTLEMENT_ABI);
 const erc20Interface = new ethers.Interface(IERC20_ABI);
 const wethInterface = new ethers.Interface(WETH9_ABI);
@@ -36,8 +38,8 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
     const possibleTransfer = tryParseERC20Transfer(log);
     const possibleWethAction = tryParseWethAction(log);
     if (possibleTransfer || possibleWethAction) {
-      const transfer =
-        possibleTransfer ?? (possibleWethAction as TransferEvent);
+      const transfer = (possibleTransfer ??
+        possibleWethAction) as TransferEvent;
       if (transferInvolves(transfer, SETTLEMENT_CONTRACT_ADDRESS)) {
         result.transfers.push(transfer);
       }
@@ -99,8 +101,13 @@ export function tryParseERC20Transfer(log: Log): TransferEvent | null {
 }
 
 export function tryParseWethAction(log: Log): TransferEvent | null {
+  if (log.address !== WETH_TOKEN_ADDRESS) return null; // Not emitted by WETH Contract!
   const eventLog = wethInterface.parseLog(log);
-  if (eventLog === null || !["Deposit", "Withdrawal"].includes(eventLog.name)) {
+  if (
+    eventLog === null ||
+    !["Deposit", "Withdrawal"].includes(eventLog.name) ||
+    eventLog.args.address
+  ) {
     return null;
   }
 

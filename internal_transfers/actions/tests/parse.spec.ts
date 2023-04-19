@@ -3,6 +3,7 @@ import {
   tryParseERC20Transfer,
   tryParseSettlementEventLog,
   tryParseWethAction,
+  WETH_TOKEN_ADDRESS,
 } from "../src/parse";
 import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 import { isSettlementEvent, isTradeEvent } from "../src/models";
@@ -14,7 +15,6 @@ const TRANSFER_EVENT_TOPIC =
   "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const TRADE_EVENT_TOPIC =
   "0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17";
-const WETH_TOKEN_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 // Aka WETH Withdrawal
 const ETH_UNWRAP_EVENT_TOPIC =
   "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65";
@@ -335,7 +335,7 @@ describe("tryParseWethAction(logs)", () => {
       data: "0x0000000000000000000000000000000000000000000000000000000000001000",
     };
     const transferEvent = tryParseWethAction(transferLog);
-    expect(transferEvent).toEqual(null);
+    expect(transferEvent).toBeNull();
   });
   test("parses WETH Approval Event as null", () => {
     const address = "0x0000000000000000000000000000000000000001";
@@ -349,6 +349,27 @@ describe("tryParseWethAction(logs)", () => {
       data: "0x000000000000000000000000000000000000000000000000016345785d8a0000",
     };
     const nullEvent = tryParseWethAction(approvalLog);
-    expect(nullEvent).toEqual(null);
+    expect(nullEvent).toBeNull();
+  });
+  test("parses Fake Deposit/Withdraw Events null", () => {
+    const fakeDeposit = {
+      address: ethers.ZeroAddress, // Not WETH!
+      topics: [
+        ETH_WRAP_EVENT_TOPIC,
+        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+      ],
+      data: "0x00000000000000000000000000000000000000000000000000354a6ba7a18000",
+    };
+    expect(tryParseWethAction(fakeDeposit)).toBeNull();
+
+    const fakeWithdrawal = {
+      address: ethers.ZeroAddress, // Not WETH!
+      topics: [
+        ETH_UNWRAP_EVENT_TOPIC,
+        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+      ],
+      data: "0x00000000000000000000000000000000000000000000000000354a6ba7a18000",
+    };
+    expect(tryParseWethAction(fakeWithdrawal)).toBeNull();
   });
 });
