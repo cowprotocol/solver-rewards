@@ -10,10 +10,12 @@ import { transferInvolves } from "./utils";
 import { ethers } from "ethers";
 import { abi as SETTLEMENT_ABI } from "@cowprotocol/contracts/lib/contracts/GPv2Settlement.json";
 import { abi as IERC20_ABI } from "@cowprotocol/contracts/lib/contracts/IERC20.json";
+import { abi as WETH9_ABI } from "./artifacts/weth9_abi.json";
 import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 
 const settlementInterface = new ethers.Interface(SETTLEMENT_ABI);
 const erc20Interface = new ethers.Interface(IERC20_ABI);
+const wethInterface = new ethers.Interface(WETH9_ABI);
 export interface ClassifiedEvents {
   trades: TradeEvent[];
   transfers: TransferEvent[];
@@ -32,8 +34,10 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
     // along with Settlement and Trade Events from the Settlement contract
     // All other event emissions can be ignored for our purposes.
     const possibleTransfer = tryParseERC20Transfer(log);
-    if (possibleTransfer) {
-      const transfer = possibleTransfer;
+    const possibleWethAction = tryParseWethAction(log);
+    if (possibleTransfer || possibleWethAction) {
+      const transfer =
+        possibleTransfer ?? (possibleWethAction as TransferEvent);
       if (transferInvolves(transfer, SETTLEMENT_CONTRACT_ADDRESS)) {
         result.transfers.push(transfer);
       }
@@ -91,5 +95,24 @@ export function tryParseERC20Transfer(log: Log): TransferEvent | null {
     from,
     to,
     amount: BigInt(value),
+  };
+}
+
+export function tryParseWethAction(log: Log): TransferEvent | null {
+  const eventLog = wethInterface.parseLog(log);
+  if (eventLog === null || !["Deposit", "Withdrawal"].includes(eventLog.name)) {
+    return null;
+  }
+
+  const { src, dst, wad } = eventLog.args;
+  const isDeposit = eventLog.name === "Deposit";
+
+  const to = isDeposit ? dst : ethers.ZeroAddress;
+  const from = isDeposit ? ethers.ZeroAddress : src;
+  return {
+    token: log.address,
+    from,
+    to,
+    amount: BigInt(wad),
   };
 }
