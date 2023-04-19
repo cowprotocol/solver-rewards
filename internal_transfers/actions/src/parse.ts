@@ -57,7 +57,7 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
   return result;
 }
 
-function tryParseSettlementEventLog(
+export function tryParseSettlementEventLog(
   log: Log,
   index: number
 ): SettlementEvent | TradeEvent | null {
@@ -79,7 +79,7 @@ function tryParseSettlementEventLog(
   }
 }
 
-function tryParseERC20Transfer(log: Log): TransferEvent | null {
+export function tryParseERC20Transfer(log: Log): TransferEvent | null {
   const transferEventLog = erc20Interface.parseLog(log);
   if (transferEventLog === null || transferEventLog.name !== "Transfer")
     return null;
