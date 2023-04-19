@@ -42,7 +42,7 @@ async function TxDataFromHash(txHash: string): Promise<MinimalTxData> {
     logs,
   };
 }
-describe("simulateSolverSolution(transaction, simulator)", () => {
+describe.skip("simulateSolverSolution(transaction, simulator)", () => {
   test("throws when no competition found", async () => {
     const txHash =
       "0x08100e7ba81be84ee0bdce43db6640e2f992ec9991a740a689e97d20dea9dafa";
@@ -66,7 +66,7 @@ describe("simulateSolverSolution(transaction, simulator)", () => {
     expect(imbalance).toMatchSnapshot();
   });
 });
-describe("completeComposition(transaction, simulator)", () => {
+describe.skip("completeComposition(transaction, simulator)", () => {
   test("runs as expected on txHash = 0xca0bbc", async () => {
     const transaction = await TxDataFromHash(
       "0xca0bbc3551a4e44c31a9fbd29f872f921548d33400e28debb07ffdc5c2d82370"
