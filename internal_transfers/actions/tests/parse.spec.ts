@@ -2,9 +2,12 @@ import {
   partitionEventLogs,
   tryParseERC20Transfer,
   tryParseSettlementEventLog,
+  tryParseWethAction,
+  WETH_TOKEN_ADDRESS,
 } from "../src/parse";
 import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 import { isSettlementEvent, isTradeEvent } from "../src/models";
+import { ethers } from "ethers";
 
 const SETTLEMENT_EVENT_TOPIC =
   "0x40338ce1a7c49204f0099533b1e9a7ee0a3d261f84974ab7af36105b8c4e9db4";
@@ -12,9 +15,12 @@ const TRANSFER_EVENT_TOPIC =
   "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef";
 const TRADE_EVENT_TOPIC =
   "0xa07a543ab8a018198e99ca0184c93fe9050a79400a0a723441f84de1d972cc17";
-
-const TOKEN_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
-
+// Aka WETH Withdrawal
+const ETH_UNWRAP_EVENT_TOPIC =
+  "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65";
+// Aka WETH Deposit
+const ETH_WRAP_EVENT_TOPIC =
+  "0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c";
 function addressToTopic(address: string): string {
   return "0x000000000000000000000000" + address.slice(2);
 }
@@ -133,6 +139,24 @@ describe("partitionEventLogs(logs)", () => {
             "0x000000000000000000000000a21740833858985e4d801533a808786d3647fb83",
           ],
         },
+        // WETH Deposit
+        {
+          address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          topics: [
+            ETH_WRAP_EVENT_TOPIC,
+            addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+          ],
+          data: "0x00000000000000000000000000000000000000000000000000354a6ba7a18000",
+        },
+        // WETH Withdrawal
+        {
+          address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+          topics: [
+            ETH_UNWRAP_EVENT_TOPIC,
+            addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+          ],
+          data: "0x0000000000000000000000000000000000000000000000001ca811856c2c5a63",
+        },
       ],
     };
     const { trades, transfers, settlements } = partitionEventLogs(
@@ -166,6 +190,18 @@ describe("partitionEventLogs(logs)", () => {
         from: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41",
         to: "0xE2b424053b9ebFCEdF89ECB8Bf2972974E98700C",
         token: "0x3432b6a60d23ca0dfca7761b7ab56459d9c964d0",
+      },
+      {
+        amount: 15000000000000000n,
+        from: "0x0000000000000000000000000000000000000000",
+        to: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41",
+        token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      },
+      {
+        amount: 2064919693892541027n,
+        from: "0x9008D19f58AAbD9eD0D60971565AA8510560ab41",
+        to: "0x0000000000000000000000000000000000000000",
+        token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
       },
     ]);
     expect(settlements).toEqual([
@@ -221,7 +257,7 @@ describe("tryParseTransferEvent(logs)", () => {
   test("parses Transfer Event", () => {
     const address = "0x0000000000000000000000000000000000000001";
     const transferLog = {
-      address: TOKEN_ADDRESS,
+      address: WETH_TOKEN_ADDRESS,
       topics: [
         TRANSFER_EVENT_TOPIC,
         addressToTopic(address),
@@ -235,7 +271,7 @@ describe("tryParseTransferEvent(logs)", () => {
       amount: BigInt("4096"),
       from: address,
       to: SETTLEMENT_CONTRACT_ADDRESS,
-      token: TOKEN_ADDRESS,
+      token: WETH_TOKEN_ADDRESS,
     });
   });
   test("parses Non Transfer Event as null", () => {
@@ -249,5 +285,91 @@ describe("tryParseTransferEvent(logs)", () => {
     };
     const nullEvent = tryParseERC20Transfer(nonTransferEvent);
     expect(nullEvent).toStrictEqual(null);
+  });
+});
+
+describe("tryParseWethAction(logs)", () => {
+  test("parses Withdrawal Event Outgoing Transfer", () => {
+    const withdrawalEventLog = {
+      address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      topics: [
+        ETH_UNWRAP_EVENT_TOPIC,
+        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+      ],
+      data: "0x0000000000000000000000000000000000000000000000001ca811856c2c5a63",
+    };
+    const outgoingWethTransfer = tryParseWethAction(withdrawalEventLog);
+    expect(outgoingWethTransfer).toStrictEqual({
+      amount: 2064919693892541027n,
+      from: SETTLEMENT_CONTRACT_ADDRESS,
+      to: ethers.ZeroAddress,
+      token: WETH_TOKEN_ADDRESS,
+    });
+  });
+  test("parses Deposit Event as Incoming Transfer", () => {
+    const depositEventLog = {
+      address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      topics: [
+        ETH_WRAP_EVENT_TOPIC,
+        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+      ],
+      data: "0x00000000000000000000000000000000000000000000000000354a6ba7a18000",
+    };
+    const incomingWethTransfer = tryParseWethAction(depositEventLog);
+    expect(incomingWethTransfer).toStrictEqual({
+      amount: 15000000000000000n,
+      from: ethers.ZeroAddress,
+      to: SETTLEMENT_CONTRACT_ADDRESS,
+      token: WETH_TOKEN_ADDRESS,
+    });
+  });
+  test("parses WETH Transfer Event as null", () => {
+    const address = "0x0000000000000000000000000000000000000001";
+    const transferLog = {
+      address: WETH_TOKEN_ADDRESS,
+      topics: [
+        TRANSFER_EVENT_TOPIC,
+        addressToTopic(address),
+        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+      ],
+      data: "0x0000000000000000000000000000000000000000000000000000000000001000",
+    };
+    const transferEvent = tryParseWethAction(transferLog);
+    expect(transferEvent).toBeNull();
+  });
+  test("parses WETH Approval Event as null", () => {
+    const address = "0x0000000000000000000000000000000000000001";
+    const approvalLog = {
+      address: WETH_TOKEN_ADDRESS,
+      topics: [
+        "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",
+        addressToTopic(address),
+        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+      ],
+      data: "0x000000000000000000000000000000000000000000000000016345785d8a0000",
+    };
+    const nullEvent = tryParseWethAction(approvalLog);
+    expect(nullEvent).toBeNull();
+  });
+  test("parses Fake Deposit/Withdraw Events null", () => {
+    const fakeDeposit = {
+      address: ethers.ZeroAddress, // Not WETH!
+      topics: [
+        ETH_WRAP_EVENT_TOPIC,
+        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+      ],
+      data: "0x00000000000000000000000000000000000000000000000000354a6ba7a18000",
+    };
+    expect(tryParseWethAction(fakeDeposit)).toBeNull();
+
+    const fakeWithdrawal = {
+      address: ethers.ZeroAddress, // Not WETH!
+      topics: [
+        ETH_UNWRAP_EVENT_TOPIC,
+        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+      ],
+      data: "0x00000000000000000000000000000000000000000000000000354a6ba7a18000",
+    };
+    expect(tryParseWethAction(fakeWithdrawal)).toBeNull();
   });
 });
