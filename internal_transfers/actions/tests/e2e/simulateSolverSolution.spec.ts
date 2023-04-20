@@ -1,7 +1,6 @@
 import {
   getInternalizedImbalance,
   MinimalTxData,
-  SettlementSimulationData,
   simulateSolverSolution,
 } from "../../src/accounting";
 import { TenderlySimulator } from "../../src/simulate/tenderly";
@@ -12,12 +11,6 @@ const simulator = new TenderlySimulator(
   process.env["TENDERLY_PROJECT"] || "TENDERLY_PROJECT",
   process.env["TENDERLY_ACCESS_KEY"] || "TENDERLY_ACCESS_KEY"
 );
-
-const DefaultSimData: SettlementSimulationData = {
-  txHash: "0x",
-  full: { blockNumber: 0, logs: [], ethDelta: new Map([]) },
-  reduced: { blockNumber: 0, logs: [], ethDelta: new Map([]) },
-};
 
 async function TxDataFromHash(txHash: string): Promise<MinimalTxData> {
   const provider = ethers.getDefaultProvider(
@@ -73,7 +66,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     );
     const simData = await simulateSolverSolution(transaction, simulator);
     expect(simData).toBeDefined();
-    expect(getInternalizedImbalance(simData ?? DefaultSimData)).toEqual([
+    expect(getInternalizedImbalance(simData!)).toEqual([
       {
         amount: -1608243187495153737n,
         token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
@@ -95,7 +88,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     );
     const simData = await simulateSolverSolution(transaction, simulator);
     expect(simData).toBeDefined();
-    expect(getInternalizedImbalance(simData ?? DefaultSimData)).toEqual([
+    expect(getInternalizedImbalance(simData!)).toEqual([
       {
         amount: -3763821350n,
         token: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
@@ -123,7 +116,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     );
     const simData = await simulateSolverSolution(transaction, simulator);
     expect(simData).toBeDefined();
-    expect(getInternalizedImbalance(simData ?? DefaultSimData)).toEqual([
+    expect(getInternalizedImbalance(simData!)).toEqual([
       {
         token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
         amount: -95100807345736279n,
@@ -140,7 +133,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     );
     const simData = await simulateSolverSolution(transaction, simulator);
     expect(simData).toBeDefined();
-    expect(getInternalizedImbalance(simData ?? DefaultSimData)).toEqual([
+    expect(getInternalizedImbalance(simData!)).toEqual([
       {
         amount: -1694865144280746549n,
         token: "0x6810e776880c02933d47db1b9fc05908e5386b96",
@@ -157,7 +150,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     );
     const simData = await simulateSolverSolution(transaction, simulator);
     expect(simData).toBeDefined();
-    expect(getInternalizedImbalance(simData ?? DefaultSimData)).toEqual([
+    expect(getInternalizedImbalance(simData!)).toEqual([
       {
         amount: 5677312578n,
         token: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
@@ -181,7 +174,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     );
     const simData = await simulateSolverSolution(transaction, simulator);
     expect(simData).toBeDefined();
-    expect(getInternalizedImbalance(simData ?? DefaultSimData)).toEqual([
+    expect(getInternalizedImbalance(simData!)).toEqual([
       {
         amount: -95100807345736279n,
         token: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
