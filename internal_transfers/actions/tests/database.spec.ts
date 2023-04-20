@@ -152,12 +152,12 @@ describe("test database insertion methods", () => {
   });
 });
 
-describe("jsonFromSimulationData", () => {
+describe("jsonFromSettlementData", () => {
   afterAll(async () => {
     await (db as ConnectionPool).dispose();
   });
 
-  test("works properly", async () => {
+  test("converts settlement data to database object format", async () => {
     const blockNumber = 1;
     const bigNumber = 12345678910999999999999n;
     const dummySimData = {
@@ -172,7 +172,6 @@ describe("jsonFromSimulationData", () => {
       ],
       ethDelta: new Map([["0x1", bigNumber]]),
     };
-    jsonFromSettlementData(dummySimData);
     expect(jsonFromSettlementData(dummySimData)).toStrictEqual({
       blockNumber: 1,
       ethDelta: {
