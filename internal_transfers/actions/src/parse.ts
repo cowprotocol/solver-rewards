@@ -21,7 +21,7 @@ export interface ClassifiedEvents {
 }
 
 export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
-  let result: ClassifiedEvents = {
+  const result: ClassifiedEvents = {
     transfers: [],
     trades: [],
     settlements: [],
@@ -31,15 +31,17 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
     // We are only interested in Transfer Events from erc20 contracts
     // along with Settlement and Trade Events from the Settlement contract
     // All other event emissions can be ignored for our purposes.
-    const possibleSettlementEvent = tryParseSettlementEventLog(log, index);
     const possibleTransfer = tryParseERC20Transfer(log);
-
-    if (possibleTransfer !== null) {
-      const transfer: TransferEvent = possibleTransfer;
+    if (possibleTransfer) {
+      const transfer = possibleTransfer;
       if (transferInvolves(transfer, SETTLEMENT_CONTRACT_ADDRESS)) {
         result.transfers.push(transfer);
       }
-    } else if (possibleSettlementEvent !== null) {
+      return;
+    }
+
+    const possibleSettlementEvent = tryParseSettlementEventLog(log, index);
+    if (possibleSettlementEvent) {
       const settlementEventLog = possibleSettlementEvent;
       // Relevant Event Types
       if (isTradeEvent(settlementEventLog)) {
@@ -49,10 +51,10 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
       } else {
         // Placeholder for other Settlement Contract Events (e.g. Interaction)
       }
-    } else {
-      // Placeholder for any event emitted not by erc20 token or Settlement contract.
-      // Examples here include WETH deposit/withdrawals, AMM Swaps etc.
+      return;
     }
+    // Placeholder for any event emitted not by erc20 token or Settlement contract.
+    // Examples here include WETH deposit/withdrawals, AMM Swaps etc.
   });
   return result;
 }
