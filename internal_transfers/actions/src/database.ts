@@ -52,7 +52,7 @@ async function insertTokenImbalances(
   });
 }
 
-export function bigIntMapToJSON<T>(originalMap: Map<T, bigint>): object {
+export function bigIntMapToJSON(originalMap: Map<string, bigint>): object {
   return Object.fromEntries(
     new Map(Array.from(originalMap, ([k, v]) => [k, v.toString()]))
   );

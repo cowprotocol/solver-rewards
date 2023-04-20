@@ -20,7 +20,6 @@ const dbURL: string =
   process.env["DATABASE_URL"] ||
   "postgresql://postgres:postgres@localhost:5432/postgres";
 const db = getDB(dbURL);
-const zeroHex = ethers.ZeroAddress;
 
 describe("test database insertion methods", () => {
   beforeEach(async () => {
@@ -93,29 +92,31 @@ describe("test database insertion methods", () => {
     const blockNumber = 1;
     const largeBigInt = 99999999999999999999999999999999999999999999999999n;
     const exampleLog = {
-      address: zeroHex,
+      address: ethers.ZeroAddress,
       // The indexed topics from the event log
-      topics: [zeroHex, zeroHex],
-      data: zeroHex,
+      topics: [ethers.ZeroHash, ethers.ZeroHash],
+      data: ethers.ZeroHash,
     };
     const exampleEthDelta = new Map([["0x2", largeBigInt]]);
     const dummySimData: SettlementSimulationData = {
-      txHash: zeroHex,
+      txHash: ethers.ZeroHash,
       full: {
         blockNumber,
+        // Note there are 2 logs here!
         logs: [exampleLog, exampleLog],
         ethDelta: exampleEthDelta,
       },
       reduced: {
         blockNumber,
+        // and only 1 log here!
         logs: [exampleLog],
         ethDelta: exampleEthDelta,
       },
       winningSettlement: {
-        solver: zeroHex,
+        solver: ethers.ZeroAddress,
         simulationBlock: blockNumber,
-        reducedCallData: zeroHex,
-        fullCallData: zeroHex,
+        reducedCallData: "0xca11da7a",
+        fullCallData: "0xca11da7a000000",
       },
     };
     await insertSettlementSimulations(db, dummySimData);
@@ -133,12 +134,12 @@ describe("test database insertion methods", () => {
           ethDelta: bigIntMapToJSON(exampleEthDelta),
           logs: [exampleLog],
         },
-        tx_hash: hexToBytea(zeroHex),
+        tx_hash: hexToBytea(ethers.ZeroHash),
         winning_settlement: {
-          fullCallData: zeroHex,
-          reducedCallData: zeroHex,
+          fullCallData: "0xca11da7a000000",
+          reducedCallData: "0xca11da7a",
           simulationBlock: blockNumber,
-          solver: zeroHex,
+          solver: ethers.ZeroAddress,
         },
       },
     ];
@@ -163,10 +164,10 @@ describe("jsonFromSimulationData", () => {
       blockNumber,
       logs: [
         {
-          address: zeroHex,
+          address: ethers.ZeroAddress,
           // The indexed topics from the event log
-          topics: [zeroHex],
-          data: zeroHex,
+          topics: [ethers.ZeroHash],
+          data: ethers.ZeroHash,
         },
       ],
       ethDelta: new Map([["0x1", bigNumber]]),
@@ -179,9 +180,9 @@ describe("jsonFromSimulationData", () => {
       },
       logs: [
         {
-          address: zeroHex,
-          data: zeroHex,
-          topics: [zeroHex],
+          address: ethers.ZeroAddress,
+          data: ethers.ZeroHash,
+          topics: [ethers.ZeroHash],
         },
       ],
     });
