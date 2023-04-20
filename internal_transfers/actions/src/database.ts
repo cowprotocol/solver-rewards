@@ -6,7 +6,7 @@ import ConnectionPool from "@databases/pg/lib/types/Queryable";
 import DatabaseSchema from "./__generated__";
 import { EventMeta, SettlementEvent, TokenImbalance } from "./models";
 import { SettlementSimulationData } from "./accounting";
-import {SimulationData} from "./simulate/interface";
+import { SimulationData } from "./simulate/interface";
 
 export { sql };
 const { settlements, internalized_imbalances, settlement_simulations } =
@@ -52,14 +52,27 @@ async function insertTokenImbalances(
   });
 }
 
+export function bigIntMapToJSON<T>(originalMap: Map<T, bigint>): object {
+  return Object.fromEntries(
+    new Map(Array.from(originalMap, ([k, v]) => [k, v.toString()]))
+  );
+}
+export function jsonFromSettlementData(datum: SimulationData): object {
+  return {
+    logs: datum.logs,
+    blockNumber: datum.blockNumber,
+    ethDelta: bigIntMapToJSON(datum.ethDelta),
+  };
+}
+
 async function insertSettlementSimulations(
   db: ConnectionPool,
   datum: SettlementSimulationData
 ) {
   await settlement_simulations(db).insertOrIgnore({
     tx_hash: hexToBytea(datum.txHash),
-    complete: datum.full,
-    reduced: JSON.stringify(datum.reduced),
+    complete: jsonFromSettlementData(datum.full),
+    reduced: jsonFromSettlementData(datum.reduced),
     winning_settlement: datum.winningSettlement,
   });
 }

@@ -14,7 +14,12 @@ describe("getInternalizedImbalance(simulationData)", () => {
       txHash: "0x1",
       full: { blockNumber, logs: [], ethDelta: new Map([["0x", 1n]]) },
       reduced: { blockNumber, logs: [], ethDelta: new Map([["0x", 1n]]) },
-      winningSettlement: {solver: "0x", simulationBlock: 1, reducedCallData: "0x", fullCallData: "0x"},
+      winningSettlement: {
+        solver: "0x",
+        simulationBlock: 1,
+        reducedCallData: "0x",
+        fullCallData: "0x",
+      },
     };
     expect(getInternalizedImbalance(dummySimData)).toStrictEqual([]);
   });
