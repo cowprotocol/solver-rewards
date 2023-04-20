@@ -40,10 +40,16 @@ export function constructImbalanceMap(
   return simulationImbalance;
 }
 
-export async function getInternalizedImbalance(
+export interface SettlementSimulationData {
+  txHash: string;
+  full: SimulationData;
+  reduced: SimulationData;
+}
+
+export async function simulateSolverSolution(
   transaction: MinimalTxData,
   simulator: TransactionSimulator
-): Promise<TokenImbalance[]> {
+): Promise<SettlementSimulationData | null> {
   const solverAddress = transaction.from.toLowerCase();
   const competition = await getSettlementCompetitionData(transaction.hash);
   if (competition === undefined) {
@@ -60,7 +66,7 @@ export async function getInternalizedImbalance(
     // https://api.cow.fi/docs/#/default/get_api_v1_solver_competition_by_tx_hash__tx_hash_
     // No need to simulate!
     console.log(`Batch ${transaction.hash} not internalized.`);
-    return [];
+    return null;
   }
 
   const commonSimulationParams = {
@@ -77,13 +83,22 @@ export async function getInternalizedImbalance(
     ...commonSimulationParams,
     callData: competition.reducedCallData,
   });
+  return {
+    txHash: transaction.hash,
+    full: simFull,
+    reduced: simReduced,
+  };
+}
 
+export function getInternalizedImbalance(
+  simulationData: SettlementSimulationData
+): TokenImbalance[] {
   const fullSimulationImbalance = constructImbalanceMap(
-    simFull,
+    simulationData.full,
     SETTLEMENT_CONTRACT_ADDRESS
   );
   const reducedSimulationImbalance = constructImbalanceMap(
-    simReduced,
+    simulationData.reduced,
     SETTLEMENT_CONTRACT_ADDRESS
   );
 

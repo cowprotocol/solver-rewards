@@ -2,10 +2,23 @@ import {
   constructImbalanceMap,
   getInternalizedImbalance,
   MinimalTxData,
+  SettlementSimulationData,
+  simulateSolverSolution,
 } from "../src/accounting";
 import { TenderlySimulator } from "../src/simulate/tenderly";
 
-describe("getInternalImbalance(transaction, simulator)", () => {
+describe("getInternalizedImbalance(simulationData)", () => {
+  test("does the thing", async () => {
+    const blockNumber = 1;
+    const dummySimData: SettlementSimulationData = {
+      txHash: "0x1",
+      full: { blockNumber, logs: [], ethDelta: new Map([["0x", 1n]]) },
+      reduced: { blockNumber, logs: [], ethDelta: new Map([["0x", 1n]]) },
+    };
+    expect(getInternalizedImbalance(dummySimData)).toStrictEqual([]);
+  });
+});
+describe("simulateSolverSolution(transaction, simulator)", () => {
   test("throws when no competition found", async () => {
     const invalidSimulator = new TenderlySimulator(
       "INVALID_USER",
@@ -21,7 +34,7 @@ describe("getInternalImbalance(transaction, simulator)", () => {
       // hash: "0x08100e7ba81be84ee0bdce43db6640e2f992ec9991a740a689e97d20dea9dafa",
     };
     await expect(
-      getInternalizedImbalance(invalidTransaction, invalidSimulator)
+      simulateSolverSolution(invalidTransaction, invalidSimulator)
     ).rejects.toThrow("No competition found for 0x");
   });
   test("returns early without simulation when fullCallData is undefined", async () => {
@@ -35,11 +48,11 @@ describe("getInternalImbalance(transaction, simulator)", () => {
       hash: "0xf1df7c1d068c2e0f0cf324bb0739a838fff89b4b08bf2aa11a7b4a609a7e20fe",
       logs: [],
     };
-    const result = await getInternalizedImbalance(
+    const result = await simulateSolverSolution(
       uninternalizedSettlement,
       invalidSimulator
     );
-    expect(result).toEqual([]);
+    expect(result).toEqual(null);
   });
 });
 

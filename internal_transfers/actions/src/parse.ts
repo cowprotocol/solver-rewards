@@ -18,6 +18,7 @@ export const WETH_TOKEN_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 const settlementInterface = new ethers.Interface(SETTLEMENT_ABI);
 const erc20Interface = new ethers.Interface(IERC20_ABI);
 const wethInterface = new ethers.Interface(WETH9_ABI);
+
 export interface ClassifiedEvents {
   trades: TradeEvent[];
   transfers: TransferEvent[];

@@ -75,6 +75,32 @@
     ]
   },
   {
+    "name": "internalized_imbalances",
+    "columns": [
+      {
+        "name": "amount",
+        "isNullable": true,
+        "hasDefault": false,
+        "typeId": 1700,
+        "typeName": "NUMERIC"
+      },
+      {
+        "name": "token",
+        "isNullable": false,
+        "hasDefault": false,
+        "typeId": 17,
+        "typeName": "BYTEA"
+      },
+      {
+        "name": "tx_hash",
+        "isNullable": false,
+        "hasDefault": false,
+        "typeId": 17,
+        "typeName": "BYTEA"
+      }
+    ]
+  },
+  {
     "name": "settlements",
     "columns": [
       {
