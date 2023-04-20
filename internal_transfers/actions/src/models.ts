@@ -20,6 +20,11 @@ export interface EventLog {
 export interface TradeEvent {
   owner: string;
 }
+
+export function isTradeEvent(event: any): event is TradeEvent {
+  const castEvent = event as TradeEvent;
+  return castEvent.owner !== undefined;
+}
 export interface TransferEvent {
   token: string;
   to: string;
@@ -34,6 +39,11 @@ export interface EventMeta {
 export interface SettlementEvent {
   solver: string;
   logIndex: number;
+}
+
+export function isSettlementEvent(event: any): event is SettlementEvent {
+  const castEvent = event as SettlementEvent;
+  return castEvent.solver !== undefined && castEvent.logIndex !== undefined;
 }
 
 export interface WinningSettlementData {

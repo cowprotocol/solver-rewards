@@ -1,5 +1,10 @@
-import { partitionEventLogs } from "../src/parse";
+import {
+  partitionEventLogs,
+  tryParseERC20Transfer,
+  tryParseSettlementEventLog,
+} from "../src/parse";
 import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
+import { isSettlementEvent, isTradeEvent } from "../src/models";
 
 const SETTLEMENT_EVENT_TOPIC =
   "0x40338ce1a7c49204f0099533b1e9a7ee0a3d261f84974ab7af36105b8c4e9db4";
@@ -14,88 +19,6 @@ function addressToTopic(address: string): string {
   return "0x000000000000000000000000" + address.slice(2);
 }
 describe("partitionEventLogs(logs)", () => {
-  test("single Trade Event", () => {
-    const tradeOwner = "0xd5553C9726EA28e7EbEDfe9879cF8aB4d061dbf0";
-    const tradeLog = {
-      address: SETTLEMENT_CONTRACT_ADDRESS,
-      data: "0x0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f0000000000000000000000003432b6a60d23ca0dfca7761b7ab56459d9c964d000000000000000000000000000000000000000000000006c6b935b8bbd400000000000000000000000000000000000000000000000000019753399721b8078ee000000000000000000000000000000000000000000000000604fbfc634eef00000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000038bf293f652b46fe85a15838d7ff736add1b6098ed1c143f3902869d325f9e0069e2b424053b9ebfcedf89ecb8bf2972974e98700c63af639e0000000000000000",
-      topics: [TRADE_EVENT_TOPIC, addressToTopic(tradeOwner)],
-    };
-    const { trades, transfers, settlements } = partitionEventLogs([tradeLog]);
-
-    expect(trades).toStrictEqual([{ owner: tradeOwner }]);
-    expect(transfers).toStrictEqual([]);
-    expect(settlements).toStrictEqual([]);
-  });
-  test("single relevant Transfer Event", () => {
-    const address = "0x0000000000000000000000000000000000000001";
-    const relevant_transfer_log = {
-      address: TOKEN_ADDRESS,
-      topics: [
-        TRANSFER_EVENT_TOPIC,
-        addressToTopic(address),
-        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
-      ],
-      data: "0x0000000000000000000000000000000000000000000000000000000000001000",
-    };
-    const irrelevant_transfer_log = {
-      address: TOKEN_ADDRESS,
-      topics: [
-        TRANSFER_EVENT_TOPIC,
-        "0x0000000000000000000000000000000000000000000000000000000000000001",
-        "0x0000000000000000000000000000000000000000000000000000000000000002",
-      ],
-      data: "0x000000000000000000000000000000000000000000000000000000000000000f",
-    };
-    const { trades, transfers, settlements } = partitionEventLogs([
-      relevant_transfer_log,
-      irrelevant_transfer_log,
-    ]);
-
-    expect(trades).toStrictEqual([]);
-    expect(transfers).toEqual([
-      {
-        amount: BigInt("4096"),
-        from: address,
-        to: SETTLEMENT_CONTRACT_ADDRESS,
-        token: TOKEN_ADDRESS,
-      },
-    ]);
-    expect(settlements).toStrictEqual([]);
-  });
-  test("single Settlement Event", () => {
-    const solverAddress = "0xb20B86C4e6DEEB432A22D773a221898bBBD03036";
-    const settlement_log = {
-      address: SETTLEMENT_CONTRACT_ADDRESS,
-      topics: [SETTLEMENT_EVENT_TOPIC, addressToTopic(solverAddress)],
-      data: "0x",
-    };
-    const { trades, transfers, settlements } = partitionEventLogs([
-      settlement_log,
-    ]);
-
-    expect(trades).toStrictEqual([]);
-    expect(transfers).toStrictEqual([]);
-    expect(settlements).toStrictEqual([{ solver: solverAddress, logIndex: 0 }]);
-  });
-  test("no relevant events", () => {
-    const irrelevant_event_log = {
-      address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
-      topics: [
-        "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65",
-        "0x0000000000000000000000009008d19f58aabd9ed0d60971565aa8510560ab41",
-      ],
-      data: "0x",
-    };
-    const { trades, transfers, settlements } = partitionEventLogs([
-      irrelevant_event_log,
-    ]);
-
-    expect(trades).toStrictEqual([]);
-    expect(transfers).toStrictEqual([]);
-    expect(settlements).toStrictEqual([]);
-  });
-
   test("parses SimulationData event logs", async () => {
     const simulationData = {
       blockNumber: 16300366,
@@ -251,5 +174,80 @@ describe("partitionEventLogs(logs)", () => {
         solver: "0xA21740833858985e4D801533a808786d3647Fb83",
       },
     ]);
+  });
+});
+
+describe("tryParseSettlementEvent(log, index)", () => {
+  test("parses Trade Event", () => {
+    const tradeOwner = "0xd5553C9726EA28e7EbEDfe9879cF8aB4d061dbf0";
+    const tradeLog = {
+      address: SETTLEMENT_CONTRACT_ADDRESS,
+      data: "0x0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f0000000000000000000000003432b6a60d23ca0dfca7761b7ab56459d9c964d000000000000000000000000000000000000000000000006c6b935b8bbd400000000000000000000000000000000000000000000000000019753399721b8078ee000000000000000000000000000000000000000000000000604fbfc634eef00000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000038bf293f652b46fe85a15838d7ff736add1b6098ed1c143f3902869d325f9e0069e2b424053b9ebfcedf89ecb8bf2972974e98700c63af639e0000000000000000",
+      topics: [TRADE_EVENT_TOPIC, addressToTopic(tradeOwner)],
+    };
+    const tradeEvent = tryParseSettlementEventLog(tradeLog, 1);
+    expect(isTradeEvent(tradeEvent)).toStrictEqual(true);
+    expect(isSettlementEvent(tradeEvent)).toStrictEqual(false);
+    expect(tradeEvent).toStrictEqual({ owner: tradeOwner });
+  });
+  test("parses Settlement Event", () => {
+    const solver = "0xb20B86C4e6DEEB432A22D773a221898bBBD03036";
+    const settlementLog = {
+      address: SETTLEMENT_CONTRACT_ADDRESS,
+      topics: [SETTLEMENT_EVENT_TOPIC, addressToTopic(solver)],
+      data: "0x",
+    };
+    const logIndex = 1;
+    const settlementEvent = tryParseSettlementEventLog(settlementLog, logIndex);
+    expect(isTradeEvent(settlementEvent)).toStrictEqual(false);
+    expect(isSettlementEvent(settlementEvent)).toStrictEqual(true);
+    expect(settlementEvent).toStrictEqual({ solver, logIndex });
+  });
+  test("parses Interaction Event as null", () => {
+    const nullEventLog = {
+      address: SETTLEMENT_CONTRACT_ADDRESS,
+      topics: [
+        "0xed99827efb37016f2275f98c4bcf71c7551c75d59e9b450f79fa32e60be672c2",
+        addressToTopic("0xF6a94dfD0E6ea9ddFdFfE4762Ad4236576136613"),
+      ],
+      data: "0x0000000000000000000000000000000000000000000000000000000000000000f021092900000000000000000000000000000000000000000000000000000000",
+    };
+    const nullEvent = tryParseSettlementEventLog(nullEventLog, 0);
+    expect(nullEvent).toStrictEqual(null);
+  });
+});
+
+describe("tryParseTransferEvent(logs)", () => {
+  test("parses Transfer Event", () => {
+    const address = "0x0000000000000000000000000000000000000001";
+    const transferLog = {
+      address: TOKEN_ADDRESS,
+      topics: [
+        TRANSFER_EVENT_TOPIC,
+        addressToTopic(address),
+        addressToTopic(SETTLEMENT_CONTRACT_ADDRESS),
+      ],
+      data: "0x0000000000000000000000000000000000000000000000000000000000001000",
+    };
+    const transferEvent = tryParseERC20Transfer(transferLog);
+
+    expect(transferEvent).toEqual({
+      amount: BigInt("4096"),
+      from: address,
+      to: SETTLEMENT_CONTRACT_ADDRESS,
+      token: TOKEN_ADDRESS,
+    });
+  });
+  test("parses Non Transfer Event as null", () => {
+    const nonTransferEvent = {
+      address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      topics: [
+        "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65",
+        "0x0000000000000000000000009008d19f58aabd9ed0d60971565aa8510560ab41",
+      ],
+      data: "0x",
+    };
+    const nullEvent = tryParseERC20Transfer(nonTransferEvent);
+    expect(nullEvent).toStrictEqual(null);
   });
 });
