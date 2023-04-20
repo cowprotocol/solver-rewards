@@ -171,7 +171,6 @@ describe("jsonFromSettlementData", () => {
       ],
       ethDelta: new Map([["0x1", bigNumber]]),
     };
-    jsonFromSettlementData(dummySimData);
     expect(jsonFromSettlementData(dummySimData)).toStrictEqual({
       blockNumber: 1,
       ethDelta: {
