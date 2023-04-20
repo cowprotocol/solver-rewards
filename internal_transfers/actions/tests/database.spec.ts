@@ -151,12 +151,12 @@ describe("test database insertion methods", () => {
   });
 });
 
-describe("jsonFromSimulationData", () => {
+describe("jsonFromSettlementData", () => {
   afterAll(async () => {
     await (db as ConnectionPool).dispose();
   });
 
-  test("works properly", async () => {
+  test("converts settlement data to database object format", async () => {
     const blockNumber = 1;
     const bigNumber = 12345678910999999999999n;
     const dummySimData = {
