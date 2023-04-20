@@ -103,11 +103,7 @@ export function tryParseERC20Transfer(log: Log): TransferEvent | null {
 export function tryParseWethAction(log: Log): TransferEvent | null {
   if (log.address !== WETH_TOKEN_ADDRESS) return null; // Not emitted by WETH Contract!
   const eventLog = wethInterface.parseLog(log);
-  if (
-    eventLog === null ||
-    !["Deposit", "Withdrawal"].includes(eventLog.name) ||
-    eventLog.args.address
-  ) {
+  if (eventLog === null || !["Deposit", "Withdrawal"].includes(eventLog.name)) {
     return null;
   }
 
