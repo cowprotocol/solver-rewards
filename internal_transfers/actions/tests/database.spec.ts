@@ -1,12 +1,13 @@
 import {
   getDB,
   hexToBytea,
-  insertSettlementEvent,
+  insertSettlementEvent, insertSettlementSimulations,
   insertTokenImbalances,
 } from "../src/database";
 import * as process from "process";
 import { sql } from "@databases/pg";
 import ConnectionPool from "@databases/pg/lib/ConnectionPool";
+import {SettlementSimulationData} from "../src/accounting";
 
 // Tried to use their Testing Docs, but it didn't seem quite right
 // https://www.atdatabases.org/docs/pg-test
@@ -81,5 +82,23 @@ describe("test database insertion methods", () => {
     await insertTokenImbalances(db, txHash, imbalances);
     results = await db.query(sql`SELECT * from internalized_imbalances;`);
     expect(results).toStrictEqual(expectedResults);
+  });
+  test("insertSimulations(datum) & idempotent", async () => {
+    const blockNumber = 1;
+    const dummySimData: SettlementSimulationData = {
+      txHash: "0x1",
+      full: { blockNumber, logs: [], ethDelta: new Map([["0x1234", 1n]]) },
+      reduced: { blockNumber, logs: [], ethDelta: new Map([["0x5678", 2n]]) },
+      winningSettlement: {solver: "0x51", simulationBlock: blockNumber, reducedCallData: "0x12", fullCallData: "0x1234"},
+    }
+    await insertSettlementSimulations(db, dummySimData);
+
+    let results = await db.query(sql`SELECT * from settlement_simulations;`);
+    expect(results).toStrictEqual([]);
+
+    // Idempotency
+    await insertSettlementSimulations(db, dummySimData);
+    results = await db.query(sql`SELECT * from settlement_simulations;`);
+    expect(results).toStrictEqual([]);
   });
 });
