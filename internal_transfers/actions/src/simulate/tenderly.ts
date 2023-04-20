@@ -107,11 +107,12 @@ export function parseTenderlySimulation(
 ): SimulationData {
   const { transaction: tx } = simulation;
   if (tx != undefined) {
+    const balanceDiff = tx.transaction_info.balance_diff ?? [];
     return {
       blockNumber: tx.transaction_info.block_number,
       logs: tx.transaction_info.logs.map((t: { raw: EventLog }) => t.raw) || [],
       ethDelta: new Map(
-        tx.transaction_info.balance_diff.map((t) => [
+        balanceDiff.map((t) => [
           t.address.toLowerCase(),
           BigInt(t.dirty - t.original),
         ])
