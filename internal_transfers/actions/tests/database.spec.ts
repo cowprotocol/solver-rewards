@@ -90,6 +90,8 @@ describe("test database insertion methods", () => {
   });
   test("insertSimulations(datum) & idempotent", async () => {
     const blockNumber = 1;
+    const gasUsed = 2;
+    const simulationID = "sim-id";
     const largeBigInt = 99999999999999999999999999999999999999999999999999n;
     const exampleLog = {
       address: ethers.ZeroAddress,
@@ -101,12 +103,16 @@ describe("test database insertion methods", () => {
     const dummySimData: SettlementSimulationData = {
       txHash: ethers.ZeroHash,
       full: {
+        simulationID,
+        gasUsed,
         blockNumber,
         // Note there are 2 logs here!
         logs: [exampleLog, exampleLog],
         ethDelta: exampleEthDelta,
       },
       reduced: {
+        simulationID,
+        gasUsed,
         blockNumber,
         // and only 1 log here!
         logs: [exampleLog],
@@ -159,8 +165,12 @@ describe("jsonFromSettlementData", () => {
 
   test("converts settlement data to database object format", async () => {
     const blockNumber = 1;
+    const gasUsed = 2;
+    const simulationID = "sim-id";
     const bigNumber = 12345678910999999999999n;
     const dummySimData = {
+      simulationID,
+      gasUsed,
       blockNumber,
       logs: [
         {

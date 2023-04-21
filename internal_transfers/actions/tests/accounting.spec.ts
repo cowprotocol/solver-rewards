@@ -10,10 +10,24 @@ import { TenderlySimulator } from "../src/simulate/tenderly";
 describe("getInternalizedImbalance(simulationData)", () => {
   test("does the thing", async () => {
     const blockNumber = 1;
+    const simulationID = "simId";
+    const gasUsed = 1;
     const dummySimData: SettlementSimulationData = {
       txHash: "0x1",
-      full: { blockNumber, logs: [], ethDelta: new Map([["0x", 1n]]) },
-      reduced: { blockNumber, logs: [], ethDelta: new Map([["0x", 1n]]) },
+      full: {
+        simulationID,
+        blockNumber,
+        gasUsed,
+        logs: [],
+        ethDelta: new Map([["0x", 1n]]),
+      },
+      reduced: {
+        simulationID,
+        blockNumber,
+        gasUsed,
+        logs: [],
+        ethDelta: new Map([["0x", 1n]]),
+      },
       winningSettlement: {
         solver: "0x",
         simulationBlock: 1,
@@ -65,6 +79,8 @@ describe("simulateSolverSolution(transaction, simulator)", () => {
 describe("constructImbalanceMap(simulation, focalContract)", () => {
   test("constructs imbalances as expected with ETH Delta", async () => {
     const simulationWithETH = {
+      simulationID: "ID-Value",
+      gasUsed: 12345,
       blockNumber: 16530828,
       txHash:
         "0x0e50d5447266171a4daf32880dfef3f55e31b7b80b285d14ddaefa6ad8098221",
@@ -108,6 +124,8 @@ describe("constructImbalanceMap(simulation, focalContract)", () => {
 
   test("constructs imbalances as expected without ETH Delta", async () => {
     const simulationNoEth = {
+      simulationID: "Super ID",
+      gasUsed: 1234,
       blockNumber: 16530828,
       txHash: "0x",
       logs: [
