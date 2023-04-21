@@ -1,12 +1,17 @@
 import {
+  bigIntMapToJSON,
   getDB,
   hexToBytea,
   insertSettlementEvent,
+  insertSettlementSimulations,
   insertTokenImbalances,
+  jsonFromSettlementData,
 } from "../src/database";
 import * as process from "process";
 import { sql } from "@databases/pg";
 import ConnectionPool from "@databases/pg/lib/ConnectionPool";
+import { SettlementSimulationData } from "../src/accounting";
+import { ethers } from "ethers";
 
 // Tried to use their Testing Docs, but it didn't seem quite right
 // https://www.atdatabases.org/docs/pg-test
@@ -20,6 +25,7 @@ describe("test database insertion methods", () => {
   beforeEach(async () => {
     await db.query(sql`TRUNCATE TABLE settlements;`);
     await db.query(sql`TRUNCATE TABLE internalized_imbalances;`);
+    await db.query(sql`TRUNCATE TABLE settlement_simulations;`);
   });
 
   afterAll(async () => {
@@ -81,5 +87,113 @@ describe("test database insertion methods", () => {
     await insertTokenImbalances(db, txHash, imbalances);
     results = await db.query(sql`SELECT * from internalized_imbalances;`);
     expect(results).toStrictEqual(expectedResults);
+  });
+  test("insertSimulations(datum) & idempotent", async () => {
+    const blockNumber = 1;
+    const gasUsed = 2;
+    const simulationID = "sim-id";
+    const largeBigInt = 99999999999999999999999999999999999999999999999999n;
+    const exampleLog = {
+      address: ethers.ZeroAddress,
+      // The indexed topics from the event log
+      topics: [ethers.ZeroHash, ethers.ZeroHash],
+      data: ethers.ZeroHash,
+    };
+    const exampleEthDelta = new Map([["0x2", largeBigInt]]);
+    const dummySimData: SettlementSimulationData = {
+      txHash: ethers.ZeroHash,
+      full: {
+        simulationID,
+        gasUsed,
+        blockNumber,
+        // Note there are 2 logs here!
+        logs: [exampleLog, exampleLog],
+        ethDelta: exampleEthDelta,
+      },
+      reduced: {
+        simulationID,
+        gasUsed,
+        blockNumber,
+        // and only 1 log here!
+        logs: [exampleLog],
+        ethDelta: exampleEthDelta,
+      },
+      winningSettlement: {
+        solver: ethers.ZeroAddress,
+        simulationBlock: blockNumber,
+        reducedCallData: "0xca11da7a",
+        fullCallData: "0xca11da7a000000",
+      },
+    };
+    await insertSettlementSimulations(db, dummySimData);
+
+    let results = await db.query(sql`SELECT * from settlement_simulations;`);
+    const expected = [
+      {
+        complete: {
+          blockNumber: blockNumber,
+          ethDelta: bigIntMapToJSON(exampleEthDelta),
+          logs: [exampleLog, exampleLog],
+        },
+        reduced: {
+          blockNumber: blockNumber,
+          ethDelta: bigIntMapToJSON(exampleEthDelta),
+          logs: [exampleLog],
+        },
+        tx_hash: hexToBytea(ethers.ZeroHash),
+        winning_settlement: {
+          fullCallData: "0xca11da7a000000",
+          reducedCallData: "0xca11da7a",
+          simulationBlock: blockNumber,
+          solver: ethers.ZeroAddress,
+        },
+      },
+    ];
+    expect(results).toStrictEqual(expected);
+
+    // Idempotency
+    await insertSettlementSimulations(db, dummySimData);
+    results = await db.query(sql`SELECT * from settlement_simulations;`);
+    expect(results).toStrictEqual(expected);
+  });
+});
+
+describe("jsonFromSettlementData", () => {
+  afterAll(async () => {
+    await (db as ConnectionPool).dispose();
+  });
+
+  test("converts settlement data to database object format", async () => {
+    const blockNumber = 1;
+    const gasUsed = 2;
+    const simulationID = "sim-id";
+    const bigNumber = 12345678910999999999999n;
+    const dummySimData = {
+      simulationID,
+      gasUsed,
+      blockNumber,
+      logs: [
+        {
+          address: ethers.ZeroAddress,
+          // The indexed topics from the event log
+          topics: [ethers.ZeroHash],
+          data: ethers.ZeroHash,
+        },
+      ],
+      ethDelta: new Map([["0x1", bigNumber]]),
+    };
+    expect(jsonFromSettlementData(dummySimData)).toStrictEqual({
+      blockNumber: 1,
+      ethDelta: {
+        "0x1": bigNumber.toString(),
+      },
+      logs: [
+        {
+          address: ethers.ZeroAddress,
+          data: ethers.ZeroHash,
+          topics: [ethers.ZeroHash],
+        },
+      ],
+    });
   });
 });

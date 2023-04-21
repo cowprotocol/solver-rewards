@@ -18,8 +18,12 @@ export interface SimulationParams {
  *  Represents the relevant data returned from a transaction-simulation.
  */
 export interface SimulationData {
+  // Some identifier of the simulation (e.g. a URL)
+  simulationID: string;
   // Block on which the simulation was made.
   blockNumber: number;
+  // Gas used by transaction
+  gasUsed: number;
   // Event Logs emitted within the transaction's simulation.
   logs: EventLog[];
   // Difference in ETH balances of all accounts in transaction

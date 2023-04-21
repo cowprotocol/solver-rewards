@@ -101,6 +101,39 @@
     ]
   },
   {
+    "name": "settlement_simulations",
+    "columns": [
+      {
+        "name": "complete",
+        "isNullable": false,
+        "hasDefault": false,
+        "typeId": 3802,
+        "typeName": "JSONB"
+      },
+      {
+        "name": "reduced",
+        "isNullable": false,
+        "hasDefault": false,
+        "typeId": 3802,
+        "typeName": "JSONB"
+      },
+      {
+        "name": "tx_hash",
+        "isNullable": false,
+        "hasDefault": false,
+        "typeId": 17,
+        "typeName": "BYTEA"
+      },
+      {
+        "name": "winning_settlement",
+        "isNullable": false,
+        "hasDefault": false,
+        "typeId": 3802,
+        "typeName": "JSONB"
+      }
+    ]
+  },
+  {
     "name": "settlements",
     "columns": [
       {
