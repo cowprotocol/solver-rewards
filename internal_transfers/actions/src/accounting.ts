@@ -1,16 +1,14 @@
 import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
 import { getSettlementCompetitionData } from "./orderbook";
 import { SimulationData, TransactionSimulator } from "./simulate/interface";
-import assert from "assert";
 import { partitionEventLogs } from "./parse";
 import { Log } from "@tenderly/actions";
-import { TokenImbalance } from "./models";
+import { TokenImbalance, WinningSettlementData } from "./models";
 import {
   aggregateTransfers,
   ImbalanceMap,
   imbalanceMapDiff,
 } from "./imbalance";
-import { ZeroAddress } from "ethers";
 
 const ETH_TOKEN = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
@@ -42,6 +40,7 @@ export function constructImbalanceMap(
 
 export interface SettlementSimulationData {
   txHash: string;
+  winningSettlement: WinningSettlementData;
   full: SimulationData;
   reduced: SimulationData;
 }
@@ -56,11 +55,6 @@ export async function simulateSolverSolution(
     throw Error(`No competition found for ${transaction.hash}`);
   }
 
-  // This is more of a monitoring system task!
-  assert(
-    solverAddress === competition.solver || competition.solver === ZeroAddress,
-    `Winning solver ${competition.solver} doesn't match settlement solver ${solverAddress}`
-  );
   if (competition.fullCallData === undefined) {
     // Settlement was not even partially internalized.
     // https://api.cow.fi/docs/#/default/get_api_v1_solver_competition_by_tx_hash__tx_hash_
@@ -85,6 +79,7 @@ export async function simulateSolverSolution(
   });
   return {
     txHash: transaction.hash,
+    winningSettlement: competition,
     full: simFull,
     reduced: simReduced,
   };

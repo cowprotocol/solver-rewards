@@ -55,17 +55,23 @@ export class TenderlySimulator implements TransactionSimulator {
     if (!isTenderlySimulationResponse(response.data)) {
       throw Error(`Invalid Response ${JSON.stringify(response.data)}`);
     }
+    console.log(JSON.stringify(response.data));
     return parseTenderlySimulation(response.data);
   }
 }
 
 interface TenderlySimulationResponse {
   transaction: TenderlyTransaction;
+  simulation: TenderlySimulation;
 }
 
 interface TenderlyTransaction {
   transaction_info: TenderlyTransactionInfo;
   hash: string;
+}
+interface TenderlySimulation {
+  id: string;
+  gas_used: number;
 }
 
 interface TenderlyTransactionInfo {
@@ -97,9 +103,14 @@ export function isTenderlySimulationResponse(
   if (typeof info.block_number !== "number" || info.logs === undefined)
     return false;
   const logs = info.logs;
-  return (
-    Array.isArray(logs) && (logs.length === 0 || logs[0].raw !== undefined)
-  );
+  if (
+    !(Array.isArray(logs) && (logs.length === 0 || logs[0].raw !== undefined))
+  )
+    return false;
+  if (value.simulation === undefined) return false;
+  const sim = value.simulation;
+  return typeof sim.id === "string" && typeof sim.gas_used === "number";
+
   // Even more could be done here (like 0x prefixed strings, etc...)
 }
 export function parseTenderlySimulation(
@@ -109,7 +120,9 @@ export function parseTenderlySimulation(
   if (tx != undefined) {
     const balanceDiff = tx.transaction_info.balance_diff ?? [];
     return {
+      simulationID: `tenderly-${simulation.simulation.id}`,
       blockNumber: tx.transaction_info.block_number,
+      gasUsed: simulation.simulation.gas_used,
       logs: tx.transaction_info.logs.map((t: { raw: EventLog }) => t.raw) || [],
       ethDelta: new Map(
         balanceDiff.map((t) => [

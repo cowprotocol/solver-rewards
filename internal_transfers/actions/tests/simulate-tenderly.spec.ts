@@ -67,6 +67,10 @@ describe("Tenderly Simulator", () => {
 
   test("parseTenderlySimulation() operates as expected", () => {
     const mockSimulation = {
+      simulation: {
+        id: "id-value",
+        gas_used: 1,
+      },
       // Test Data excludes irrelevant fields.
       transaction: {
         hash: "0xHASH",
@@ -87,6 +91,8 @@ describe("Tenderly Simulator", () => {
     };
     expect(parseTenderlySimulation(mockSimulation)).toEqual({
       blockNumber: 5,
+      gasUsed: 1,
+      ethDelta: new Map(),
       logs: [
         {
           address: "0xADDRESS",
@@ -94,7 +100,7 @@ describe("Tenderly Simulator", () => {
           topics: ["0xTOPIC_1"],
         },
       ],
-      ethDelta: new Map(),
+      simulationID: "tenderly-id-value",
     });
   });
   test("isTenderlySimulationResponse() returns false", () => {
