@@ -142,24 +142,35 @@ class TestPayoutTransformations(unittest.TestCase):
             {"solver": [], "solver_name": [], "eth_slippage_wei": []}
         )
         legit_reward_targets = DataFrame({"solver": [], "reward_target": []})
+        legit_mev_kickback = DataFrame({"solver": [], "refund_wei": []})
         failing_df = DataFrame({})
 
         with self.assertRaises(AssertionError):
             validate_df_columns(
                 payment_df=legit_payments,
                 slippage_df=legit_reward_targets,
+                mev_kickback_df=legit_mev_kickback,
                 reward_target_df=failing_df,
             )
         with self.assertRaises(AssertionError):
             validate_df_columns(
                 payment_df=legit_payments,
                 slippage_df=failing_df,
+                mev_kickback_df=legit_mev_kickback,
+                reward_target_df=legit_reward_targets,
+            )
+        with self.assertRaises(AssertionError):
+            validate_df_columns(
+                payment_df=legit_payments,
+                slippage_df=legit_slippages,
+                mev_kickback_df=failing_df,
                 reward_target_df=legit_reward_targets,
             )
         with self.assertRaises(AssertionError):
             validate_df_columns(
                 payment_df=failing_df,
                 slippage_df=legit_slippages,
+                mev_kickback_df=legit_mev_kickback,
                 reward_target_df=legit_reward_targets,
             )
 
@@ -167,6 +178,7 @@ class TestPayoutTransformations(unittest.TestCase):
             validate_df_columns(
                 payment_df=legit_payments,
                 slippage_df=legit_slippages,
+                mev_kickback_df=legit_mev_kickback,
                 reward_target_df=legit_reward_targets,
             )
         )
@@ -194,11 +206,21 @@ class TestPayoutTransformations(unittest.TestCase):
             }
         )
 
+        mev_kickbacks = DataFrame(
+            {
+                "solver": self.solvers[:3],
+                "refund_wei": [1, 0, 1],
+            }
+        )
+
         reward_targets = DataFrame(
             {"solver": self.solvers, "reward_target": self.reward_targets}
         )
         result = construct_payout_dataframe(
-            payment_df=payments, slippage_df=slippages, reward_target_df=reward_targets
+            payment_df=payments,
+            slippage_df=slippages,
+            mev_kickback_df=mev_kickbacks,
+            reward_target_df=reward_targets,
         )
         expected = DataFrame(
             {
@@ -238,6 +260,7 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000007",
                     "0x0000000000000000000000000000000000000008",
                 ],
+                "refund_wei": [1.0, 0.0, 1.0, None],
             }
         )
 
@@ -275,7 +298,8 @@ class TestPayoutTransformations(unittest.TestCase):
                     54545454545454.0,
                 ],
                 "solver_name": ["S_1", "S_2", "S_3", None],
-                "eth_slippage_wei": [1.0, 0.0, -1.0, None],
+                "eth_slippage_wei": [1, 0, -1, None],
+                "refund_wei": [1, 1, 1, 1],
                 "reward_target": [
                     "0x0000000000000000000000000000000000000005",
                     "0x0000000000000000000000000000000000000006",
@@ -292,12 +316,12 @@ class TestPayoutTransformations(unittest.TestCase):
                 Transfer(
                     token=None,
                     recipient=Address(self.solvers[0]),
-                    amount_wei=663636363636364,
+                    amount_wei=663636363636363,
                 ),
                 Transfer(
                     token=None,
                     recipient=Address(self.solvers[1]),
-                    amount_wei=450000000000000,
+                    amount_wei=449999999999999,
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
@@ -307,7 +331,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[3]),
-                    amount_wei=54545454545454544,
+                    amount_wei=54545454545453543,
                 ),
             ],
         )
@@ -318,7 +342,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 Overdraft(
                     period,
                     account=Address(self.solvers[2]),
-                    wei=9936363636363638,
+                    wei=9936363636363639,
                     name="S_3",
                 )
             ],

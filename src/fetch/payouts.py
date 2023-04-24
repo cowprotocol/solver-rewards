@@ -275,7 +275,9 @@ def prepare_transfers(payout_df: DataFrame, period: AccountingPeriod) -> PeriodP
     Specifically, We deduct total_rewards by total_execution_cost (both initially in ETH)
     keep the execution cost in ETH and convert the difference to COW.
     """
-    assert COMPLETE_COLUMNS.issubset(set(payout_df.columns))
+    assert COMPLETE_COLUMNS.issubset(
+        set(payout_df.columns)
+    ), f"Missing {COMPLETE_COLUMNS - set(payout_df.columns)}"
 
     overdrafts: list[Overdraft] = []
     transfers: list[Transfer] = []
