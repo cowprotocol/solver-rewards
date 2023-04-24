@@ -98,4 +98,10 @@ QUERIES = {
         v1_id=1728478,
         v2_id=2259497,
     ),
+    "PERIOD_MEV_KICKBACK": QueryData(
+        name="CoW MEV Blocker Refunds for Period",
+        filepath="period_mev_blocker_refunds.sql",
+        v1_id=-1,  # Doesn't exist. TODO - remove V1 from this framework.
+        v2_id=2404721,
+    ),
 }

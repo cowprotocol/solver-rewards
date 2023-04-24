@@ -38,8 +38,13 @@ SLIPPAGE_COLUMNS = {
     "eth_slippage_wei",
 }
 REWARD_TARGET_COLUMNS = {"solver", "reward_target"}
+MEV_KICKBACK_COLUMNS = {"solver", "refund_wei"}
 
-COMPLETE_COLUMNS = PAYMENT_COLUMNS.union(SLIPPAGE_COLUMNS).union(REWARD_TARGET_COLUMNS)
+COMPLETE_COLUMNS = (
+    PAYMENT_COLUMNS.union(SLIPPAGE_COLUMNS)
+    .union(REWARD_TARGET_COLUMNS)
+    .union(MEV_KICKBACK_COLUMNS)
+)
 NUMERICAL_COLUMNS = [
     "payment_eth",
     "execution_cost_eth",
@@ -98,6 +103,9 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             if not math.isnan(frame["eth_slippage_wei"])
             else 0
         )
+        mev_kickback = (
+            int(frame["refund_wei"]) if not math.isnan(frame["refund_wei"]) else 0
+        )
         solver = frame["solver"]
         reward_target = frame["reward_target"]
         if reward_target is None:
@@ -109,7 +117,11 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             solver_name=frame["solver_name"],
             reward_target=Address(reward_target),
             payment_eth=int(frame["payment_eth"]),
-            slippage_eth=slippage,
+            # The simplest and most straightforward way to incorporate
+            # MEV kickback (owed to us) is as negative slippage.
+            # That is, Because this is an auxiliary term
+            # extrinsic to the competition reward mechanism
+            slippage_eth=slippage - mev_kickback,
             primary_reward_cow=int(frame["reward_cow"]),
             exec_cost=int(frame["execution_cost_eth"]),
             secondary_reward_eth=int(frame["secondary_reward_eth"]),
@@ -286,7 +298,10 @@ def prepare_transfers(payout_df: DataFrame, period: AccountingPeriod) -> PeriodP
 
 
 def validate_df_columns(
-    payment_df: DataFrame, slippage_df: DataFrame, reward_target_df: DataFrame
+    payment_df: DataFrame,
+    slippage_df: DataFrame,
+    reward_target_df: DataFrame,
+    mev_kickback_df: DataFrame,
 ) -> None:
     """
     Since we are working with dataframes rather than concrete objects,
@@ -303,6 +318,9 @@ def validate_df_columns(
     assert REWARD_TARGET_COLUMNS.issubset(
         set(reward_target_df.columns)
     ), f"Reward Target validation Failed with columns: {set(reward_target_df.columns)}"
+    assert MEV_KICKBACK_COLUMNS.issubset(
+        set(mev_kickback_df.columns)
+    ), f"MEV Kickback validation failed with columns: {set(mev_kickback_df.columns)}"
 
 
 def normalize_address_field(frame: DataFrame, column_name: str) -> None:
@@ -311,7 +329,10 @@ def normalize_address_field(frame: DataFrame, column_name: str) -> None:
 
 
 def construct_payout_dataframe(
-    payment_df: DataFrame, slippage_df: DataFrame, reward_target_df: DataFrame
+    payment_df: DataFrame,
+    slippage_df: DataFrame,
+    mev_kickback_df: DataFrame,
+    reward_target_df: DataFrame,
 ) -> DataFrame:
     """
     Method responsible for joining datasets related to payouts.
@@ -321,17 +342,18 @@ def construct_payout_dataframe(
     # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
     slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
     # 1. Assert existence of required columns.
-    validate_df_columns(payment_df, slippage_df, reward_target_df)
+    validate_df_columns(payment_df, slippage_df, reward_target_df, mev_kickback_df)
 
     # 2. Normalize Join Column (and Ethereum Address Field)
     join_column = "solver"
-    normalize_address_field(payment_df, join_column)
-    normalize_address_field(slippage_df, join_column)
-    normalize_address_field(reward_target_df, join_column)
+    for data_frame in [payment_df, slippage_df, reward_target_df, mev_kickback_df]:
+        normalize_address_field(data_frame, join_column)
 
-    # 3. Merge the three dataframes (joining on solver)
-    merged_df = payment_df.merge(slippage_df, on=join_column, how="left").merge(
-        reward_target_df, on=join_column, how="left"
+    # 3. Merge the four dataframes (joining on solver)
+    merged_df = (
+        payment_df.merge(slippage_df, on=join_column, how="left")
+        .merge(reward_target_df, on=join_column, how="left")
+        .merge(mev_kickback_df, on=join_column, how="left")
     )
     return merged_df
 
@@ -356,16 +378,19 @@ def post_cip20_payouts(
         ),
         # Dune: Fetch Solver Slippage & Reward Targets
         slippage_df=pandas.DataFrame(dune.get_period_slippage()),
+        mev_kickback_df=pandas.DataFrame(dune.get_mev_kickback()),
         reward_target_df=pandas.DataFrame(dune.get_vouches()),
     )
     # Sort by solver before breaking this data frame into Transfer objects.
     complete_payout_df = complete_payout_df.sort_values("solver")
 
+    mev_kickback = complete_payout_df["refund_wei"].sum()
     performance_reward = complete_payout_df["reward_cow"].sum()
     participation_reward = complete_payout_df["secondary_reward_cow"].sum()
     dune.log_saver.print(
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
-        f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n",
+        f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n"
+        f"MEV Kickback (ETH): {mev_kickback / 10 ** 18:.4f}\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(complete_payout_df, dune.period)

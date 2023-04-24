@@ -180,6 +180,17 @@ class DuneFetcher:
             realized_fees_eth=int(rec["realized_fees_eth"]),
         )
 
+    def get_mev_kickback(self) -> list[DuneRecord]:
+        """
+        Executes & Fetches results of slippage query per solver for specified accounting period.
+        Returns a class representation of the results as two lists (positive & negative).
+        """
+        return self._get_query_results(
+            self._parameterized_query(
+                QUERIES["PERIOD_MEV_KICKBACK"], params=self._period_params()
+            ),
+        )
+
     def get_period_slippage(self, job_id: Optional[str] = None) -> list[DuneRecord]:
         """
         Executes & Fetches results of slippage query per solver for specified accounting period.
