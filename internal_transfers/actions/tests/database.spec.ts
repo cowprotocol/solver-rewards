@@ -6,6 +6,7 @@ import {
   insertSettlementSimulations,
   insertTokenImbalances,
   jsonFromSettlementData,
+  insertPipelineResults,
 } from "../src/database";
 import * as process from "process";
 import { sql } from "@databases/pg";
@@ -43,7 +44,8 @@ describe("test database insertion methods", () => {
       { solver: solver, logIndex: 0 }
     );
 
-    const results = await db.query(sql`SELECT * from settlements;`);
+    const results = await db.query(sql`SELECT *
+                                           from settlements;`);
     expect(results).toStrictEqual([
       {
         block_number: BigInt(0),
@@ -53,7 +55,7 @@ describe("test database insertion methods", () => {
       },
     ]);
   });
-  test("insertImbalances(txHash, imbalances) & idempotent", async () => {
+  test("insertImbalances(txHash, imbalances)", async () => {
     const txHash = "0x4321";
     const token1 = "0x12";
     const token2 = "0x34";
@@ -67,7 +69,8 @@ describe("test database insertion methods", () => {
     ];
     await insertTokenImbalances(db, txHash, imbalances);
 
-    let results = await db.query(sql`SELECT * from internalized_imbalances;`);
+    let results = await db.query(sql`SELECT *
+                                         from internalized_imbalances;`);
     const expectedResults = [
       {
         token: hexToBytea(token1),
@@ -83,10 +86,9 @@ describe("test database insertion methods", () => {
     ];
     expect(results).toStrictEqual(expectedResults);
 
-    // Idempotency
-    await insertTokenImbalances(db, txHash, imbalances);
-    results = await db.query(sql`SELECT * from internalized_imbalances;`);
-    expect(results).toStrictEqual(expectedResults);
+    await expect(insertTokenImbalances(db, txHash, imbalances)).rejects.toThrow(
+      'duplicate key value violates unique constraint "internalized_imbalances_pkey"'
+    );
   });
   test("insertSimulations(datum) & idempotent", async () => {
     const blockNumber = 1;
@@ -127,7 +129,8 @@ describe("test database insertion methods", () => {
     };
     await insertSettlementSimulations(db, dummySimData);
 
-    let results = await db.query(sql`SELECT * from settlement_simulations;`);
+    let results = await db.query(sql`SELECT *
+                                         from settlement_simulations;`);
     const expected = [
       {
         complete: {
@@ -151,10 +154,128 @@ describe("test database insertion methods", () => {
     ];
     expect(results).toStrictEqual(expected);
 
-    // Idempotency
-    await insertSettlementSimulations(db, dummySimData);
-    results = await db.query(sql`SELECT * from settlement_simulations;`);
-    expect(results).toStrictEqual(expected);
+    await expect(insertSettlementSimulations(db, dummySimData)).rejects.toThrow(
+      'duplicate key value violates unique constraint "settlement_simulations_pkey"'
+    );
+  });
+  test("insertPipelineResults", async () => {
+    const txHash = "0x4321";
+    const solver = "0xc9ec550bea1c64d779124b23a26292cc223327b6";
+    const eventMeta = { txHash: txHash, blockNumber: 0 };
+    const settlementEvent = { solver: solver, logIndex: 0 };
+
+    const token1 = "0x12";
+    const token2 = "0x34";
+    const imbalances = [
+      {
+        token: token1,
+        amount:
+          115792089237316195423570985008687907853269984665640564039457584007913129639935n,
+      },
+      { token: token2, amount: 5678n },
+    ];
+    const blockNumber = 1;
+    const gasUsed = 2;
+    const simulationID = "sim-id";
+    const largeBigInt = 99999999999999999999999999999999999999999999999999n;
+    const exampleLog = {
+      address: ethers.ZeroAddress,
+      // The indexed topics from the event log
+      topics: [ethers.ZeroHash, ethers.ZeroHash],
+      data: ethers.ZeroHash,
+    };
+    const exampleEthDelta = new Map([["0x2", largeBigInt]]);
+    const simulationDatum: SettlementSimulationData = {
+      txHash,
+      full: {
+        simulationID,
+        gasUsed,
+        blockNumber,
+        // Note there are 2 logs here!
+        logs: [exampleLog, exampleLog],
+        ethDelta: exampleEthDelta,
+      },
+      reduced: {
+        simulationID,
+        gasUsed,
+        blockNumber,
+        // and only 1 log here!
+        logs: [exampleLog],
+        ethDelta: exampleEthDelta,
+      },
+      winningSettlement: {
+        solver: ethers.ZeroAddress,
+        simulationBlock: blockNumber,
+        reducedCallData: "0xca11da7a",
+        fullCallData: "0xca11da7a000000",
+      },
+    };
+    // insertion works.
+    await insertPipelineResults(
+      db,
+      simulationDatum,
+      imbalances,
+      eventMeta,
+      settlementEvent
+    );
+    const recordCountQuery = sql`select count(*)
+                from internalized_imbalances i
+                       join settlements s
+                            on i.tx_hash = s.tx_hash
+                       join settlement_simulations ss
+                            on i.tx_hash = ss.tx_hash`;
+    let results = await db.query(recordCountQuery);
+    expect(results.length).toEqual(1);
+    expect(results[0]).toEqual({ count: 2n });
+
+    // Idempotency & insertion works ONLY IF ALL three insertions pass!
+    await expect(
+      insertPipelineResults(
+        db,
+        simulationDatum,
+        imbalances,
+        eventMeta,
+        settlementEvent
+      )
+    ).rejects.toThrow(
+      'duplicate key value violates unique constraint "internalized_imbalances_pkey"'
+    );
+    results = await db.query(recordCountQuery);
+    expect(results.length).toEqual(1);
+    expect(results[0]).toEqual({ count: 2n });
+    await expect(
+      insertPipelineResults(db, simulationDatum, [], eventMeta, settlementEvent)
+    ).rejects.toThrow(
+      'duplicate key value violates unique constraint "settlement_simulations_pkey"'
+    );
+    results = await db.query(recordCountQuery);
+    expect(results.length).toEqual(1);
+    expect(results[0]).toEqual({ count: 2n });
+
+    const newTxHash = "0x11";
+    eventMeta.txHash = newTxHash;
+    simulationDatum.txHash = newTxHash;
+    await expect(
+      insertPipelineResults(db, simulationDatum, [], eventMeta, settlementEvent)
+    ).rejects.toThrow(
+      'duplicate key value violates unique constraint "settlements_pkey"'
+    );
+    results = await db.query(recordCountQuery);
+    expect(results.length).toEqual(1);
+    expect(results[0]).toEqual({ count: 2n });
+
+    eventMeta.blockNumber += 1; // Different.
+
+    await insertPipelineResults(
+      db,
+      simulationDatum,
+      imbalances,
+      eventMeta,
+      settlementEvent
+    );
+    results = await db.query(recordCountQuery);
+    expect(results.length).toEqual(1);
+    expect(results[0]).toEqual({ count: 4n });
   });
 });
 

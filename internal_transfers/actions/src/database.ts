@@ -7,6 +7,7 @@ import DatabaseSchema from "./__generated__";
 import { EventMeta, SettlementEvent, TokenImbalance } from "./models";
 import { SettlementSimulationData } from "./accounting";
 import { SimulationData } from "./simulate/interface";
+// import { IsolationLevel } from "@databases/pg";
 
 export { sql };
 const { settlements, internalized_imbalances, settlement_simulations } =
@@ -40,7 +41,7 @@ async function insertTokenImbalances(
   txHash: string,
   imbalances: TokenImbalance[]
 ) {
-  await internalized_imbalances(db).bulkInsertOrIgnore({
+  await internalized_imbalances(db).bulkInsert({
     columnsToInsert: ["token", "tx_hash", "amount"],
     records: imbalances.map((imbalance) => {
       return {
@@ -69,12 +70,31 @@ async function insertSettlementSimulations(
   db: ConnectionPool,
   datum: SettlementSimulationData
 ) {
-  await settlement_simulations(db).insertOrIgnore({
+  await settlement_simulations(db).insert({
     tx_hash: hexToBytea(datum.txHash),
     complete: jsonFromSettlementData(datum.full),
     reduced: jsonFromSettlementData(datum.reduced),
     winning_settlement: datum.winningSettlement,
   });
+}
+export async function insertPipelineResults(
+  db: ConnectionPool,
+  simulationDatum: SettlementSimulationData,
+  imbalances: TokenImbalance[],
+  eventMeta: EventMeta,
+  settlementEvent: SettlementEvent
+) {
+  await db.tx(
+    async (db) => {
+      await insertTokenImbalances(db, eventMeta.txHash, imbalances);
+      await insertSettlementSimulations(db, simulationDatum);
+      await insertSettlementEvent(db, eventMeta, settlementEvent);
+    }
+    // {
+    //   isolationLevel: IsolationLevel.SERIALIZABLE,
+    //   retrySerializationFailures: true,
+    // }
+  );
 }
 
 function hexToBytea(hexString: string): Buffer {
