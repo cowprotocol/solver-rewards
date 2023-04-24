@@ -9,8 +9,8 @@ INNER JOIN ethereum.transactions as t
   ON b.number = t.block_number
   AND b.hash = t.block_hash
   AND "from" = miner
-JOIN cow_protocol_ethereum.solvers
-  ON "to" = address
+JOIN cow_protocol_ethereum.solvers s
+  ON "to" = s.address
 WHERE b.time >= timestamp '{{StartTime}}'
 AND b.time < timestamp '{{EndTime}}'
 GROUP BY solver_address, name
