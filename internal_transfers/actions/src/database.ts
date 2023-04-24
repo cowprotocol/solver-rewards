@@ -7,7 +7,6 @@ import DatabaseSchema from "./__generated__";
 import { EventMeta, SettlementEvent, TokenImbalance } from "./models";
 import { SettlementSimulationData } from "./accounting";
 import { SimulationData } from "./simulate/interface";
-// import { IsolationLevel } from "@databases/pg";
 
 export { sql };
 const { settlements, internalized_imbalances, settlement_simulations } =
@@ -90,10 +89,6 @@ export async function insertPipelineResults(
       await insertSettlementSimulations(db, simulationDatum);
       await insertSettlementEvent(db, eventMeta, settlementEvent);
     }
-    // {
-    //   isolationLevel: IsolationLevel.SERIALIZABLE,
-    //   retrySerializationFailures: true,
-    // }
   );
 }
 
