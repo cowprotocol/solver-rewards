@@ -181,10 +181,7 @@ class DuneFetcher:
         )
 
     def get_mev_kickback(self) -> list[DuneRecord]:
-        """
-        Executes & Fetches results of slippage query per solver for specified accounting period.
-        Returns a class representation of the results as two lists (positive & negative).
-        """
+        """Executes & Fetches results of Solver MEV Kickback for period"""
         return self._get_query_results(
             self._parameterized_query(
                 QUERIES["PERIOD_MEV_KICKBACK"], params=self._period_params()
