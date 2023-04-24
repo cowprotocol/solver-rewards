@@ -22,13 +22,13 @@ NUMERICAL_COLUMNS = [
 if __name__ == "__main__":
     # Saved query Executions. Note that before is no longer
     # re-constructable since the query is based on changed data.
-    exec_id_before = "01GYFEPH4XV8QJTZ2QSEAE3VWK"
-    exec_id_after = "01GYJ7RF07BVWW5SNGYTWYFMG5"
+    EXEC_ID_BEFORE = "01GYFEPH4XV8QJTZ2QSEAE3VWK"
+    EXEC_ID_AFTER = "01GYJ7RF07BVWW5SNGYTWYFMG5"
 
     dune = DuneClient(os.environ["DUNE_API_KEY"])
 
-    before = pandas.read_csv(dune.get_result_csv(exec_id_before).data)
-    after = pandas.read_csv(dune.get_result_csv(exec_id_after).data)
+    before = pandas.read_csv(dune.get_result_csv(EXEC_ID_BEFORE).data)
+    after = pandas.read_csv(dune.get_result_csv(EXEC_ID_AFTER).data)
 
     for number_col in NUMERICAL_COLUMNS:
         before[number_col] = before[number_col].replace("<nil>", 0)
