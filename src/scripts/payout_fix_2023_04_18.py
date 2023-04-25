@@ -68,7 +68,7 @@ if __name__ == "__main__":
                 amount_wei=row["owed_eth"] * 1e18,
             ),
             axis=1,
-        )
+        ).values
     )
 
     cow_transfers = list(
@@ -79,7 +79,7 @@ if __name__ == "__main__":
                 amount_wei=row["owed_cow"] * 1e18,
             ),
             axis=1,
-        )
+        ).values
     )
 
     manual_propose(eth_transfers + cow_transfers, AccountingPeriod("2023-04-11"))
