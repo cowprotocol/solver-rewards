@@ -16,7 +16,9 @@ LOG_CONFIG_FILE = PROJECT_ROOT / Path("logging.conf")
 QUERY_PATH = PROJECT_ROOT / Path("queries")
 DASHBOARD_PATH = PROJECT_ROOT / Path("dashboards/solver-rewards-accounting")
 
-DOCS_URL = "https://www.notion.so/cownation/Solver-Payouts-3dfee64eb3d449ed8157a652cc817a8c"
+DOCS_URL = (
+    "https://www.notion.so/cownation/Solver-Payouts-3dfee64eb3d449ed8157a652cc817a8c"
+)
 
 # Things requiring network
 load_dotenv()

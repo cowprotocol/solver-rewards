@@ -40,7 +40,6 @@ class TestPrices(unittest.TestCase):
         )
 
     def test_eth_in_token(self):
-
         self.assertAlmostEqual(
             eth_in_token(TokenId.COW, ONE_ETH, self.some_date) / 10**18,
             self.eth_price / self.cow_price,
@@ -53,7 +52,6 @@ class TestPrices(unittest.TestCase):
         )
 
     def test_token_in_eth(self):
-
         self.assertAlmostEqual(
             token_in_eth(TokenId.COW, ONE_ETH, self.some_date),
             10**18 * self.cow_price // self.eth_price,
