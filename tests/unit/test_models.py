@@ -4,6 +4,7 @@ import pandas as pd
 from dune_client.types import Address
 from eth_typing import HexStr
 from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
+from web3 import Web3
 
 from src.abis.load import erc20
 from src.constants import COW_TOKEN_ADDRESS
@@ -445,20 +446,22 @@ class TestTransfer(unittest.TestCase):
         self.assertEqual(expected, Transfer.from_dataframe(transfer_df))
 
     def test_basic_as_multisend_tx(self):
-        receiver = Address("0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1")
-        native_transfer = Transfer(token=None, recipient=receiver, amount_wei=16)
+        receiver = Web3.toChecksumAddress("0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1")
+        native_transfer = Transfer(
+            token=None, recipient=Address(receiver), amount_wei=16
+        )
         self.assertEqual(
             native_transfer.as_multisend_tx(),
             MultiSendTx(
                 operation=MultiSendOperation.CALL,
-                to=receiver.address,
+                to=receiver,
                 value=16,
                 data=HexStr("0x"),
             ),
         )
         erc20_transfer = Transfer(
             token=Token(COW_TOKEN_ADDRESS),
-            recipient=receiver,
+            recipient=Address(receiver),
             amount_wei=15,
         )
         self.assertEqual(
@@ -467,7 +470,7 @@ class TestTransfer(unittest.TestCase):
                 operation=MultiSendOperation.CALL,
                 to=COW_TOKEN_ADDRESS.address,
                 value=0,
-                data=erc20().encodeABI(fn_name="transfer", args=[receiver.address, 15]),
+                data=erc20().encodeABI(fn_name="transfer", args=[receiver, 15]),
             ),
         )
 

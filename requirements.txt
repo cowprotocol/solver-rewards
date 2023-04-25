@@ -17,6 +17,3 @@ SQLAlchemy>=1.4.41
 sqlalchemy-stubs==0.4
 pandas==1.5.0
 pandas-stubs==1.5.1.221024
-
-# TODO: This is temporary cf - https://github.com/cowprotocol/dune-client/pull/47
-ndjson
