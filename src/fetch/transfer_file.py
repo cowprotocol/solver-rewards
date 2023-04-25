@@ -20,6 +20,7 @@ from src.constants import (
     AIRDROP_URL,
     SAFE_URL,
     FILE_OUT_DIR,
+    DOCS_URL,
 )
 from src.fetch.payouts import post_cip20_payouts
 from src.models.accounting_period import AccountingPeriod
@@ -74,6 +75,11 @@ def auto_propose(
     if len(transactions) > len(transfers):
         log_saver.print("Prepended WETH unwrap", Category.GENERAL)
 
+    log_saver.print(
+        f"Instructions for verifying the payout transaction can be found at\n{DOCS_URL}",
+        category=Category.GENERAL,
+    )
+
     if not dry_run:
         nonce = post_multisend(
             safe_address=SAFE_ADDRESS,
@@ -98,7 +104,7 @@ if __name__ == "__main__":
     args = generic_script_init(description="Fetch Complete Reimbursement")
     dune = args.dune
     dune.log_saver.print(
-        f"The data aggregated can be visualized at\n" f"{dune.period.dashboard_url()}",
+        f"The data aggregated can be visualized at\n{dune.period.dashboard_url()}",
         category=Category.GENERAL,
     )
 
