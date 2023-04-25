@@ -40,7 +40,7 @@ async function insertTokenImbalances(
   txHash: string,
   imbalances: TokenImbalance[]
 ) {
-  await internalized_imbalances(db).bulkInsertOrIgnore({
+  await internalized_imbalances(db).bulkInsert({
     columnsToInsert: ["token", "tx_hash", "amount"],
     records: imbalances.map((imbalance) => {
       return {
@@ -69,11 +69,30 @@ async function insertSettlementSimulations(
   db: ConnectionPool,
   datum: SettlementSimulationData
 ) {
-  await settlement_simulations(db).insertOrIgnore({
+  await settlement_simulations(db).insert({
     tx_hash: hexToBytea(datum.txHash),
     complete: jsonFromSettlementData(datum.full),
     reduced: jsonFromSettlementData(datum.reduced),
     winning_settlement: datum.winningSettlement,
+  });
+}
+
+export interface SlippagePipelineResults {
+  settlementSimulations: SettlementSimulationData;
+  imbalances: TokenImbalance[];
+  eventMeta: EventMeta;
+  settlementEvent: SettlementEvent;
+}
+export async function insertPipelineResults(
+  db: ConnectionPool,
+  pipelineResults: SlippagePipelineResults
+) {
+  const { eventMeta, settlementEvent, imbalances, settlementSimulations } =
+    pipelineResults;
+  await db.tx(async (db) => {
+    await insertTokenImbalances(db, eventMeta.txHash, imbalances);
+    await insertSettlementSimulations(db, settlementSimulations);
+    await insertSettlementEvent(db, eventMeta, settlementEvent);
   });
 }
 
