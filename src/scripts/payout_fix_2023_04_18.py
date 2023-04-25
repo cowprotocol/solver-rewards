@@ -3,7 +3,7 @@ For the Accounting Period April 11 - 18, 2023 there was a bug
 in the backend services attributing incorrect solver reward values
 for a substantial number of market orders:
 
-cf. <INCLUDE LINK TO BUG AND FIX>
+cf. https://github.com/cowprotocol/orderbook-queries/pull/1
 
 This script
 - fetches the difference between ETH & COW Payments made before and after the fix,
@@ -38,40 +38,14 @@ if __name__ == "__main__":
     after = pandas.read_csv(dune.get_result_csv(EXEC_ID_AFTER).data)
 
     for number_col in NUMERICAL_COLUMNS:
-        before[number_col] = before[number_col].replace("<nil>", 0)
-        after[number_col] = after[number_col].replace("<nil>", 0)
-        before[number_col] = pandas.to_numeric(before[number_col])
-        after[number_col] = pandas.to_numeric(after[number_col])
+        for frame in [before, after]:
+            frame[number_col] = frame[number_col].replace("<nil>", 0)
+            frame[number_col] = pandas.to_numeric(frame[number_col])
 
-    before = before[
-        [
-            "solver",
-            "reward_target",
-            "name",
-            "eth_transfer",
-            "cow_transfer",
-        ]
-    ].add_suffix("_before")
-    after = after[
-        [
-            "solver",
-            "eth_transfer",
-            "cow_transfer",
-        ]
-    ].add_suffix("_after")
+    before = before[["solver", "reward_target", "name", "eth_transfer", "cow_transfer"]]
+    after = after[["solver", "eth_transfer", "cow_transfer"]]
 
-    merged = pandas.merge(
-        before, after, left_on="solver_before", right_on="solver_after"
-    )
-    # A little cleanup
-    del merged["solver_after"]
-    merged = merged.rename(
-        columns={
-            "solver_before": "solver",
-            "reward_target_before": "reward_target",
-            "name_before": "name",
-        }
-    )
+    merged = pandas.merge(before, after, on="solver", suffixes=["_before", "_after"])
 
     merged = merged.sort_values("solver")
 
@@ -81,25 +55,31 @@ if __name__ == "__main__":
     merged.to_csv(os.path.join("./out/transfers.csv"), index=False)
 
     # Filter all owed worth at least ~1 USD.
+    # TODO - use current prices to determine amount.
+    # https://github.com/cowprotocol/solver-rewards/issues/256
     owed_eth = merged[merged["owed_eth"] > 0.001]
     owed_cow = merged[merged["owed_cow"] > 10]
 
-    eth_transfers = [
-        Transfer(
-            token=None,
-            recipient=Address(row["solver"]),
-            amount_wei=row["owed_eth"] * 10**18,
+    eth_transfers = list(
+        owed_eth.apply(
+            lambda row: Transfer(
+                token=None,
+                recipient=Address(row["solver"]),
+                amount_wei=row["owed_eth"] * 1e18,
+            ),
+            axis=1,
         )
-        for _, row in owed_eth.iterrows()
-    ]
+    )
 
-    cow_transfers = [
-        Transfer(
-            token=Token(COW_TOKEN_ADDRESS),
-            recipient=Address(row["reward_target"]),
-            amount_wei=row["owed_cow"] * 10**18,
+    cow_transfers = list(
+        owed_cow.apply(
+            lambda row: Transfer(
+                token=Token(COW_TOKEN_ADDRESS),
+                recipient=Address(row["reward_target"]),
+                amount_wei=row["owed_cow"] * 1e18,
+            ),
+            axis=1,
         )
-        for _, row in owed_cow.iterrows()
-    ]
+    )
 
     manual_propose(eth_transfers + cow_transfers, AccountingPeriod("2023-04-11"))
