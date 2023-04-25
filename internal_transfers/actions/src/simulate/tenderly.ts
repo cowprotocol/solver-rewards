@@ -55,7 +55,6 @@ export class TenderlySimulator implements TransactionSimulator {
     if (!isTenderlySimulationResponse(response.data)) {
       throw Error(`Invalid Response ${JSON.stringify(response.data)}`);
     }
-    console.log(JSON.stringify(response.data));
     return parseTenderlySimulation(response.data);
   }
 }
