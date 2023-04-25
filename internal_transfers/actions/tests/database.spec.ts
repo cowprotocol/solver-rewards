@@ -234,7 +234,7 @@ describe("All Database Tests", () => {
       expect(results.length).toEqual(1);
       expect(results[0]).toEqual({ count: 2n });
 
-      // Idempotency & insertion works ONLY IF ALL three insertions pass!
+      // insertion works ONLY IF ALL three insertions pass!
       await expect(insertPipelineResults(db, testResults)).rejects.toThrow(
         'duplicate key value violates unique constraint "internalized_imbalances_pkey"'
       );
