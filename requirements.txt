@@ -1,7 +1,7 @@
 black==22.6.0
 certifi==2022.6.15
 duneapi==8.0.0
-dune-client==0.2.2
+dune-client==1.0.0
 mypy==0.982
 psycopg2-binary==2.9.3
 pylint==2.14.4
@@ -17,6 +17,3 @@ SQLAlchemy>=1.4.41
 sqlalchemy-stubs==0.4
 pandas==1.5.0
 pandas-stubs==1.5.1.221024
-
-# TODO: This is temporary cf - https://github.com/cowprotocol/dune-client/pull/47
-ndjson

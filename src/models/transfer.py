@@ -7,9 +7,11 @@ from dataclasses import dataclass
 from typing import Optional
 
 import pandas as pd
+
 from dune_client.types import Address
 from eth_typing.encoding import HexStr
 from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
+from web3 import Web3
 
 from src.abis.load import erc20
 from src.models.slippage import SolverSlippage
@@ -185,7 +187,7 @@ class Transfer:
 
     def as_multisend_tx(self) -> MultiSendTx:
         """Converts Transfer into encoded MultiSendTx bytes"""
-        receiver = self.recipient.address
+        receiver = Web3.toChecksumAddress(self.recipient.address)
         if self.token_type == TokenType.NATIVE:
             return MultiSendTx(
                 operation=MultiSendOperation.CALL,
