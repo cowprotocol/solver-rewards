@@ -56,7 +56,7 @@ if __name__ == "__main__":
 
     # Filter all owed worth at least ~1 USD.
     # TODO - use current prices to determine amount.
-    # https://github.com/cowprotocol/solver-rewards/issues/256
+    #  https://github.com/cowprotocol/solver-rewards/issues/256
     owed_eth = merged[merged["owed_eth"] > 0.001]
     owed_cow = merged[merged["owed_cow"] > 10]
 
