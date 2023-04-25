@@ -76,20 +76,24 @@ async function insertSettlementSimulations(
     winning_settlement: datum.winningSettlement,
   });
 }
+
+export interface SlippagePipelineResults {
+  settlementSimulations: SettlementSimulationData;
+  imbalances: TokenImbalance[];
+  eventMeta: EventMeta;
+  settlementEvent: SettlementEvent;
+}
 export async function insertPipelineResults(
   db: ConnectionPool,
-  simulationDatum: SettlementSimulationData,
-  imbalances: TokenImbalance[],
-  eventMeta: EventMeta,
-  settlementEvent: SettlementEvent
+  pipelineResults: SlippagePipelineResults
 ) {
-  await db.tx(
-    async (db) => {
-      await insertTokenImbalances(db, eventMeta.txHash, imbalances);
-      await insertSettlementSimulations(db, simulationDatum);
-      await insertSettlementEvent(db, eventMeta, settlementEvent);
-    }
-  );
+  const { eventMeta, settlementEvent, imbalances, settlementSimulations } =
+    pipelineResults;
+  await db.tx(async (db) => {
+    await insertTokenImbalances(db, eventMeta.txHash, imbalances);
+    await insertSettlementSimulations(db, settlementSimulations);
+    await insertSettlementEvent(db, eventMeta, settlementEvent);
+  });
 }
 
 function hexToBytea(hexString: string): Buffer {
