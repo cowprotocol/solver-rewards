@@ -13,6 +13,13 @@ This script
 import os
 import pandas
 from dune_client.client import DuneClient
+from dune_client.types import Address
+
+from src.constants import COW_TOKEN_ADDRESS
+from src.fetch.transfer_file import manual_propose
+from src.models.accounting_period import AccountingPeriod
+from src.models.token import Token
+from src.models.transfer import Transfer
 
 NUMERICAL_COLUMNS = [
     "eth_transfer",
@@ -39,8 +46,8 @@ if __name__ == "__main__":
     before = before[
         [
             "solver",
-            "name",
             "reward_target",
+            "name",
             "eth_transfer",
             "cow_transfer",
         ]
@@ -54,9 +61,45 @@ if __name__ == "__main__":
     ].add_suffix("_after")
 
     merged = pandas.merge(
-        before, after, left_on="solver_before", right_on="solver_after", how="left"
+        before, after, left_on="solver_before", right_on="solver_after"
     )
+    # A little cleanup
+    del merged["solver_after"]
+    merged = merged.rename(
+        columns={
+            "solver_before": "solver",
+            "reward_target_before": "reward_target",
+            "name_before": "name",
+        }
+    )
+
+    merged = merged.sort_values("solver")
 
     merged["owed_eth"] = merged["eth_transfer_after"] - merged["eth_transfer_before"]
     merged["owed_cow"] = merged["cow_transfer_after"] - merged["cow_transfer_before"]
-    print(merged)
+
+    merged.to_csv(os.path.join("./out/transfers.csv"), index=False)
+
+    # Filter all owed worth at least ~1 USD.
+    owed_eth = merged[merged["owed_eth"] > 0.001]
+    owed_cow = merged[merged["owed_cow"] > 10]
+
+    eth_transfers = [
+        Transfer(
+            token=None,
+            recipient=Address(row["solver"]),
+            amount_wei=row["owed_eth"] * 10**18,
+        )
+        for _, row in owed_eth.iterrows()
+    ]
+
+    cow_transfers = [
+        Transfer(
+            token=Token(COW_TOKEN_ADDRESS),
+            recipient=Address(row["reward_target"]),
+            amount_wei=row["owed_cow"] * 10**18,
+        )
+        for _, row in owed_cow.iterrows()
+    ]
+
+    manual_propose(eth_transfers + cow_transfers, AccountingPeriod("2023-04-11"))
