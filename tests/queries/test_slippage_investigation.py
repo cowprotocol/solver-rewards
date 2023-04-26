@@ -56,16 +56,10 @@ class TestDuneAnalytics(unittest.TestCase):
         period = AccountingPeriod("2022-06-07", 1)
         query = QUERIES["PERIOD_SLIPPAGE"].with_params(
             period.as_query_params()
-            + [
-                # Default values (on the query definition) do not need to be provided!
-                # QueryParameter.text_type("TxHash", "0x")
-                # QueryParameter.text_type("Solver", "0x")
-                # QueryParameter.text_type("TokenList", ",".join(get_trusted_tokens())),
-                QueryParameter.text_type("CTE_NAME", "results_per_tx")
-            ],
+            + [QueryParameter.text_type("CTE_NAME", "results_per_tx")],
             dune_version=DuneVersion.V2,
         )
-        results = exec_or_get(self.dune, query, result_id="01GW9JK5K0JMXEFYETHX8YQ3YA")
+        results = exec_or_get(self.dune, query, result_id="01GW9SVRHYWWXV62R3FVZMQNEW")
         self.assertEqual(results.query_id, self.slippage_query.v2_query.query_id)
         slippage_per_tx = results.get_rows()
 
@@ -95,10 +89,10 @@ class TestDuneAnalytics(unittest.TestCase):
             ],
             dune_version=DuneVersion.V2,
         )
-        results = exec_or_get(self.dune, query, result_id="01GW9JNPSPJTADDYTW2HEAD4J2")
+        results = exec_or_get(self.dune, query, result_id="01GW9SXZP72S2Z0TFWG6VCMTWS")
         self.assertEqual(results.query_id, self.slippage_query.v2_query.query_id)
         tx_slippage = results.get_rows()[0]
-        self.assertEqual(tx_slippage["eth_slippage_wei"], 71151929005056890)
+        self.assertEqual(tx_slippage["eth_slippage_wei"], 71151929005061256)
         self.assertAlmostEqual(
             tx_slippage["usd_value"], 83.37280645114296, delta=0.00001
         )
@@ -122,10 +116,10 @@ class TestDuneAnalytics(unittest.TestCase):
             ],
             dune_version=DuneVersion.V2,
         )
-        results = exec_or_get(self.dune, query, result_id="01GW9QA64YYRRKXQDTAN8QMYAS")
+        results = exec_or_get(self.dune, query, result_id="01GW9T7R10PDK7P5SRNBM3Z8J2")
         self.assertEqual(results.query_id, self.slippage_query.v2_query.query_id)
         tx_slippage = results.get_rows()[0]
-        self.assertEqual(tx_slippage["eth_slippage_wei"], 148427839329771500)
+        self.assertEqual(tx_slippage["eth_slippage_wei"], 148427839329771600)
         self.assertAlmostEqual(
             tx_slippage["usd_value"], 177.37732880251593, delta=0.000000001
         )
@@ -150,19 +144,19 @@ class TestDuneAnalytics(unittest.TestCase):
         result_0x3b2e = exec_or_get(
             self.dune,
             query=self.slippage_query_for(period, tx_hash),
-            result_id="01GW9J1Y7YVS0RQQQS3GJS9JPD",
+            result_id="01GW9T9X9EYRA48JYJKWMBQG4X",
         )
         self.assertEqual(result_0x3b2e.query_id, self.slippage_query.v2_query.query_id)
         self.assertEqual(
             result_0x3b2e.get_rows(),
             [
                 {
-                    "eth_slippage_wei": -4703807.681117931,
-                    "hour": "2023-02-01T01:00:00Z",
+                    "eth_slippage_wei": -4703808.820628837,
+                    "hour": "2023-02-01 01:00:00.000 UTC",
                     "num_entries": 2,
                     "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
                     "tx_hash": tx_hash,
-                    "usd_value": -7.454727687586665e-09,
+                    "usd_value": -7.454729493515833e-09,
                 }
             ],
         )
@@ -174,19 +168,19 @@ class TestDuneAnalytics(unittest.TestCase):
         result_0x7a00 = exec_or_get(
             self.dune,
             query=self.slippage_query_for(period, tx_hash),
-            result_id="01GW9J45HQ7K7HAS983G0KZT1T",
+            result_id="01GW9TAM3SJY5XP4DR0XB9SM24",
         )
         self.assertEqual(result_0x7a00.query_id, self.slippage_query.v2_query.query_id)
         self.assertEqual(
             result_0x7a00.get_rows(),
             [
                 {
-                    "eth_slippage_wei": -407937248.98733044,
-                    "hour": "2023-02-01T01:00:00Z",
-                    "num_entries": 2,
+                    "eth_slippage_wei": -407937294.96877956,
+                    "hour": "2023-02-01 01:00:00.000 UTC",
+                    "num_entries": 3,
                     "solver_address": "0xc9ec550bea1c64d779124b23a26292cc223327b6",
                     "tx_hash": tx_hash,
-                    "usd_value": -6.46510510417176e-07,
+                    "usd_value": -6.465105832898793e-07,
                 }
             ],
         )
