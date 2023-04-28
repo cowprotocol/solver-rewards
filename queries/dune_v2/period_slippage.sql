@@ -230,12 +230,11 @@ incoming_and_outgoing as (
              symbol,
              token,
              block_time
-             -- exclude 0 to prevent zero division, and exclude very small values for performance
+    -- exclude 0 to prevent zero division
     having sum(amount) != cast(0 as int256)
 )
 ,valued_potential_buffered_trades as (
     select t.*,
-    -- TODO: Not happy about this cast!
           cast(amount * clearing_price as double)            as clearing_value,
           cast(amount as double) / pow(10, decimals) * price as usd_value
     from potential_buffer_trades t
