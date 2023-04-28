@@ -164,7 +164,7 @@ incoming_and_outgoing as (
         case
             when t.symbol = 'ETH' then 'WETH'
             when t.symbol is not null then t.symbol
-            else cast(token as varchar)
+            else cast(t.token as varchar)
         end                                     as symbol,
           case
               when token = 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
