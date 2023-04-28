@@ -78,7 +78,7 @@ async function insertSettlementSimulations(
 }
 
 export interface SlippagePipelineResults {
-  settlementSimulations: SettlementSimulationData | null;
+  settlementSimulations: SettlementSimulationData;
   imbalances: TokenImbalance[];
   eventMeta: EventMeta;
   settlementEvent: SettlementEvent;
@@ -91,12 +91,10 @@ export async function insertPipelineResults(
     pipelineResults;
   await db.tx(async (db) => {
     await insertTokenImbalances(db, eventMeta.txHash, imbalances);
-    if (settlementSimulations) {
-      await insertSettlementSimulations(db, settlementSimulations);
-    }
+    await insertSettlementSimulations(db, settlementSimulations);
     await insertSettlementEvent(db, eventMeta, settlementEvent);
   });
-  console.log(`Successfully wrote imbalances for ${eventMeta.txHash}`);
+  console.log(`wrote ${imbalances.length} imbalances for ${eventMeta.txHash}`);
 }
 
 function hexToBytea(hexString: string): Buffer {
