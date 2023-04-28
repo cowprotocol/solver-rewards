@@ -46,6 +46,7 @@ describe("simulateSolverSolution(transaction, simulator)", () => {
       "INVALID_KEY"
     );
     const invalidTransaction: MinimalTxData = {
+      blockNumber: 1,
       from: "0x",
       hash: "0x",
       logs: [],
@@ -64,6 +65,7 @@ describe("simulateSolverSolution(transaction, simulator)", () => {
       "INVALID_KEY"
     );
     const uninternalizedSettlement: MinimalTxData = {
+      blockNumber: 1,
       from: "0xb20b86c4e6deeb432a22d773a221898bbbd03036",
       hash: "0xf1df7c1d068c2e0f0cf324bb0739a838fff89b4b08bf2aa11a7b4a609a7e20fe",
       logs: [],

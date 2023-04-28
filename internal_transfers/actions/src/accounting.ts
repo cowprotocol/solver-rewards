@@ -17,6 +17,7 @@ const ETH_TOKEN = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 // - ethers - `TransactionReceipt`,
 // - tenderly - `TransactionEvent`
 export interface MinimalTxData {
+  readonly blockNumber: number;
   readonly from: string;
   readonly hash: string;
   readonly logs: Log[];
@@ -59,7 +60,7 @@ export async function simulateSolverSolution(
     // Settlement was not even partially internalized.
     // https://api.cow.fi/docs/#/default/get_api_v1_solver_competition_by_tx_hash__tx_hash_
     // No need to simulate!
-    console.log(`Batch ${transaction.hash} not internalized.`);
+    console.log(`batch ${transaction.hash} was not internalized.`);
     return null;
   }
 

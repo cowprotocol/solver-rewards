@@ -4,6 +4,7 @@ import {
   simulateSolverSolution,
 } from "../../src/accounting";
 import { TenderlySimulator } from "../../src/simulate/tenderly";
+import { getTxDataFromHash } from "../../src/utils";
 import { ethers } from "ethers";
 
 const simulator = new TenderlySimulator(
@@ -12,47 +13,30 @@ const simulator = new TenderlySimulator(
   process.env["TENDERLY_ACCESS_KEY"] || "TENDERLY_ACCESS_KEY"
 );
 
-async function TxDataFromHash(txHash: string): Promise<MinimalTxData> {
+async function getTxData(txHash: string): Promise<MinimalTxData> {
   const provider = ethers.getDefaultProvider(
     process.env["NODE_URL"] || "NODE_URL"
   );
-  const transaction = await provider.getTransactionReceipt(txHash);
-  if (transaction === null) {
-    throw new Error(`invalid transaction hash ${txHash} - try again`);
-  }
-  const { from, hash, logs: readonlyLogs } = transaction;
-  const logs = readonlyLogs.map((log) => {
-    return {
-      ...log,
-      // had to Map it to make a copy of a readonly field.
-      topics: log.topics.map((value) => value),
-    };
-  });
-
-  return {
-    from,
-    hash,
-    logs,
-  };
+  return getTxDataFromHash(provider, txHash);
 }
 describe.skip("simulateSolverSolution(transaction, simulator)", () => {
   test("throws when no competition found", async () => {
     const txHash =
       "0x08100e7ba81be84ee0bdce43db6640e2f992ec9991a740a689e97d20dea9dafa";
-    const transaction = await TxDataFromHash(txHash);
+    const transaction = await getTxData(txHash);
     await expect(
       simulateSolverSolution(transaction, simulator)
     ).rejects.toThrow(`No competition found for ${txHash}`);
   });
   test("runs as expected on legit txHash with no internalization", async () => {
-    const transaction = await TxDataFromHash(
+    const transaction = await getTxData(
       "0x3b2e9675b6d71a34e9b7f4abb4c9e80922be311076fcbb345d7da9d91a05e048"
     );
     const imbalance = await simulateSolverSolution(transaction, simulator);
     expect(imbalance).toEqual(null);
   });
   test("runs as expected on txHash = 0xca0bbc", async () => {
-    const transaction = await TxDataFromHash(
+    const transaction = await getTxData(
       "0xca0bbc3551a4e44c31a9fbd29f872f921548d33400e28debb07ffdc5c2d82370"
     );
     const imbalance = await simulateSolverSolution(transaction, simulator);
@@ -61,7 +45,7 @@ describe.skip("simulateSolverSolution(transaction, simulator)", () => {
 });
 describe.skip("completeComposition(transaction, simulator)", () => {
   test("runs as expected on txHash = 0xca0bbc", async () => {
-    const transaction = await TxDataFromHash(
+    const transaction = await getTxData(
       "0xca0bbc3551a4e44c31a9fbd29f872f921548d33400e28debb07ffdc5c2d82370"
     );
     const simData = await simulateSolverSolution(transaction, simulator);
@@ -83,7 +67,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     ]);
   });
   test("runs as expected on txHash = 0xc6a48f", async () => {
-    const transaction = await TxDataFromHash(
+    const transaction = await getTxData(
       "0xc6a48f8c08dad2742fa225246da2becec44d87c54e5dadb516d34c1cffc3f2d5"
     );
     const simData = await simulateSolverSolution(transaction, simulator);
@@ -111,7 +95,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     ]);
   });
   test("runs as expected on txHash = 0x7a007e", async () => {
-    const transaction = await TxDataFromHash(
+    const transaction = await getTxData(
       "0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf"
     );
     const simData = await simulateSolverSolution(transaction, simulator);
@@ -128,7 +112,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     ]);
   });
   test("runs as expected on txHash = 0x0e9877", async () => {
-    const transaction = await TxDataFromHash(
+    const transaction = await getTxData(
       "0x0e9877bff7c9f9fb8516afc857d5bc986f8116bbf6972899c3eb65af4445901e"
     );
     const simData = await simulateSolverSolution(transaction, simulator);
@@ -145,7 +129,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     ]);
   });
   test("runs as expected on txHash = 0x426690f", async () => {
-    const transaction = await TxDataFromHash(
+    const transaction = await getTxData(
       "0x426690f4385bf943dffc12c5e2adbfd793acc1d16b3a8f5fddcd9e3f94a5a20b"
     );
     const simData = await simulateSolverSolution(transaction, simulator);
@@ -169,7 +153,7 @@ describe.skip("completeComposition(transaction, simulator)", () => {
     // Transaction contains ETH transfers (but they were not internalized)
     // It is non-trivial to find batches with internalized ETH transfers.
     // However, the tests we have in `accounting.spec` should demonstrate we are prepared to handle them.
-    const transaction = await TxDataFromHash(
+    const transaction = await getTxData(
       "0x7a007eb8ad25f5f1f1f36459998ae758b0e699ca69cc7b4c38354d42092651bf"
     );
     const simData = await simulateSolverSolution(transaction, simulator);

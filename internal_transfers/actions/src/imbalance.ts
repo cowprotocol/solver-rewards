@@ -13,7 +13,7 @@ export function aggregateTransfers(
   transfers: TransferEvent[],
   focalAccount: string
 ): ImbalanceMap {
-  let accumulator: ImbalanceMap = new Map<string, bigint>();
+  const accumulator: ImbalanceMap = new Map<string, bigint>();
   transfers.map((transfer) => {
     let { to, from, amount, token } = transfer;
     token = token.toLowerCase();
