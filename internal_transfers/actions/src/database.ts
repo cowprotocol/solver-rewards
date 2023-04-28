@@ -94,6 +94,7 @@ export async function insertPipelineResults(
     await insertSettlementSimulations(db, settlementSimulations);
     await insertSettlementEvent(db, eventMeta, settlementEvent);
   });
+  console.log(`wrote ${imbalances.length} imbalances for ${eventMeta.txHash}`);
 }
 
 function hexToBytea(hexString: string): Buffer {
