@@ -1,4 +1,4 @@
--- https://github.com/cowprotocol/solver-rewards/pull/216
+-- https://github.com/cowprotocol/solver-rewards/pull/217
 with
 batch_meta as (
     select b.block_time,
@@ -54,7 +54,7 @@ filtered_trades as (
         trader_in        as sender,
         contract_address as receiver,
         sell_token       as token,
-        cast(atoms_sold as uint256)       as amount_wei,
+        cast(atoms_sold as int256)       as amount_wei,
         'IN_USER'        as transfer_type
     from filtered_trades
 )
@@ -63,7 +63,7 @@ filtered_trades as (
           contract_address as sender,
           trader_out       as receiver,
           buy_token        as token,
-          cast(atoms_bought as uint256)            as amount_wei,
+          cast(atoms_bought as int256)            as amount_wei,
           'OUT_USER'       as transfer_type
     from filtered_trades
 )
@@ -72,7 +72,7 @@ filtered_trades as (
           "from"             as sender,
           to                 as receiver,
           t.contract_address as token,
-          value              as amount_wei,
+          cast(value as int256) as amount_wei,
           case
               when to = 0x9008d19f58aabd9ed0d60971565aa8510560ab41
                   then 'IN_AMM'
@@ -102,7 +102,7 @@ filtered_trades as (
         "from" as sender,
         to     as receiver,
         0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee as token,
-        value as amount_wei,
+        cast(value as int256) as amount_wei,
         case
           when 0x9008d19f58aabd9ed0d60971565aa8510560ab41 = to
           then 'AMM_IN'
@@ -173,9 +173,9 @@ incoming_and_outgoing as (
               end                                     as token,
           case
               when receiver = 0x9008d19f58aabd9ed0d60971565aa8510560ab41
-                  then cast(cast(amount_wei as varchar) as int256)
+                  then amount_wei
               when sender = 0x9008d19f58aabd9ed0d60971565aa8510560ab41
-                  then cast(-1 as int256) * cast(cast(amount_wei as varchar) as int256)
+                  then cast(-1 as int256) * amount_wei
               end                                     as amount,
           transfer_type
     from batch_transfers i
@@ -189,7 +189,6 @@ incoming_and_outgoing as (
       -- and we want to consider them in order to filter out illegal behaviour
       and ((dex_swaps = 0 and num_trades < 2) or dex_swaps > 0)
 )
--- Benchmark takes 3 minuites to get here for ONE DAY interval!
 
 -- Clearing Prices query here: https://dune.com/queries/1571457
 ,pre_clearing_prices as (
