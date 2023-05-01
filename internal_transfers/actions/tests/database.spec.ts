@@ -7,6 +7,7 @@ import {
   insertTokenImbalances,
   jsonFromSettlementData,
   insertPipelineResults,
+  recordExists,
 } from "../src/database";
 import * as process from "process";
 import { sql } from "@databases/pg";
@@ -162,6 +163,18 @@ describe("All Database Tests", () => {
       ).rejects.toThrow(
         'duplicate key value violates unique constraint "settlement_simulations_pkey"'
       );
+    });
+    test("recordExists(txHash) accurately performs its job", async () => {
+      const txHash =
+        "0x45f52ee09622eac16d0fe27b90a76749019b599c9566f10e21e8d0955a0e428e";
+
+      expect(await recordExists(db, txHash)).toEqual(false);
+      await insertSettlementEvent(
+        db,
+        { txHash: txHash, blockNumber: 0 },
+        { solver: "0xc9ec550bea1c64d779124b23a26292cc223327b6", logIndex: 0 }
+      );
+      expect(await recordExists(db, txHash)).toEqual(true);
     });
   });
 

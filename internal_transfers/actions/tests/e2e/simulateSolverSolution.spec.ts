@@ -6,19 +6,13 @@ import {
 import { TenderlySimulator } from "../../src/simulate/tenderly";
 import { getTxDataFromHash } from "../../src/utils";
 import { ethers } from "ethers";
+import {getTxData} from "./helper";
 
 const simulator = new TenderlySimulator(
   process.env["TENDERLY_USER"] || "INVALID_USER",
   process.env["TENDERLY_PROJECT"] || "TENDERLY_PROJECT",
   process.env["TENDERLY_ACCESS_KEY"] || "TENDERLY_ACCESS_KEY"
 );
-
-async function getTxData(txHash: string): Promise<MinimalTxData> {
-  const provider = ethers.getDefaultProvider(
-    process.env["NODE_URL"] || "NODE_URL"
-  );
-  return getTxDataFromHash(provider, txHash);
-}
 describe.skip("simulateSolverSolution(transaction, simulator)", () => {
   test("throws when no competition found", async () => {
     const txHash =

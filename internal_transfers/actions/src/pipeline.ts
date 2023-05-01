@@ -1,19 +1,16 @@
 import { partitionEventLogs } from "./parse";
-import { insertPipelineResults, insertSettlementEvent } from "./database";
+import {
+  insertPipelineResults,
+  insertSettlementEvent,
+  recordExists,
+} from "./database";
 import {
   getInternalizedImbalance,
   MinimalTxData,
   simulateSolverSolution,
 } from "./accounting";
-import { Queryable, sql } from "@databases/pg";
+import { Queryable } from "@databases/pg";
 import { TransactionSimulator } from "./simulate/interface";
-
-async function recordExists(db: Queryable, txHash: string): Promise<boolean> {
-  const pgHash = txHash.replace("0x", "\\x");
-  const query = sql`SELECT count(*) from settlements where tx_hash = ${pgHash};`;
-  const { count: numRecords } = (await db.query(query))[0];
-  return numRecords > 0;
-}
 
 export async function internalizedTokenImbalance(
   txData: MinimalTxData,
@@ -30,12 +27,6 @@ export async function internalizedTokenImbalance(
 
   // There are other events being returned here, but we only need the settlement(s)
   const { settlements } = partitionEventLogs(txData.logs);
-
-  if (settlements.length > 1) {
-    console.warn(`Two settlements in same batch ${txHash}!`);
-    // TODO - alert team that such a batch has taken place!
-    //  cf https://github.com/cowprotocol/solver-rewards/issues/187
-  }
 
   // It's annoying to have to handle the possibility of multiple settlements
   // in the same transaction, but it could happen.

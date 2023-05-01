@@ -1,6 +1,6 @@
 // Code Reference: https://www.atdatabases.org/docs/pg-guide-typescript
 
-import createConnectionPool, { sql } from "@databases/pg";
+import createConnectionPool, { Queryable, sql } from "@databases/pg";
 import tables from "@databases/pg-typed";
 import ConnectionPool from "@databases/pg/lib/types/Queryable";
 import DatabaseSchema from "./__generated__";
@@ -20,6 +20,17 @@ function getDB(dbURL: string): ConnectionPool {
     bigIntMode: "bigint",
   });
 }
+
+export async function recordExists(
+  db: Queryable,
+  txHash: string
+): Promise<boolean> {
+  const pgHash = txHash.replace("0x", "\\x");
+  const query = sql`SELECT count(*) from settlements where tx_hash = ${pgHash};`;
+  const { count: numRecords } = (await db.query(query))[0];
+  return numRecords > 0;
+}
+
 async function insertSettlementEvent(
   db: ConnectionPool,
   eventMeta: EventMeta,

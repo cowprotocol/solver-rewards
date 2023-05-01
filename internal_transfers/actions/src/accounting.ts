@@ -64,26 +64,65 @@ export async function simulateSolverSolution(
     return null;
   }
 
-  const commonSimulationParams = {
-    contractAddress: SETTLEMENT_CONTRACT_ADDRESS,
-    sender: solverAddress,
-    value: "0",
-    blockNumber: competition.simulationBlock,
-  };
-  const simFull = await simulator.simulate({
-    ...commonSimulationParams,
-    callData: competition.fullCallData,
+  const { full, reduced } = await simulateBoth(simulator, {
+    full: competition.fullCallData,
+    reduced: competition.reducedCallData,
+    common: {
+      contractAddress: SETTLEMENT_CONTRACT_ADDRESS,
+      sender: solverAddress,
+      value: "0",
+      blockNumber: competition.simulationBlock,
+    },
   });
-  const simReduced = await simulator.simulate({
-    ...commonSimulationParams,
-    callData: competition.reducedCallData,
-  });
+
   return {
     txHash: transaction.hash,
     winningSettlement: competition,
-    full: simFull,
-    reduced: simReduced,
+    full,
+    reduced,
   };
+}
+
+interface commonSimulationParams {
+  contractAddress: string;
+  sender: string;
+  value: string;
+  blockNumber: number;
+}
+
+interface SettlementSimulationParams {
+  full: string;
+  reduced: string;
+  common: commonSimulationParams;
+}
+
+interface SimulationPair {
+  full: SimulationData;
+  reduced: SimulationData;
+}
+async function simulateBoth(
+  simulator: TransactionSimulator,
+  params: SettlementSimulationParams,
+  numAttempts: number = 2
+): Promise<SimulationPair> {
+  let attempts = 0;
+  while (attempts < numAttempts) {
+    try {
+      return {
+        full: await simulator.simulate({
+          ...params.common,
+          callData: params.full,
+        }),
+        reduced: await simulator.simulate({
+          ...params.common,
+          callData: params.reduced,
+        }),
+      };
+    } catch (error) {
+      attempts += 1;
+    }
+  }
+  throw new Error(`failed simulations after ${numAttempts} attempts`);
 }
 
 export function getInternalizedImbalance(
