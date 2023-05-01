@@ -31,24 +31,22 @@ export async function internalizedTokenImbalance(
   // It's annoying to have to handle the possibility of multiple settlements
   // in the same transaction, but it could happen.
   for (const settlement of settlements) {
-    try {
-      const settlementSimulations = await simulateSolverSolution(
-        txData,
-        simulator
-      );
-      const eventMeta = { txHash, blockNumber: txData.blockNumber };
-      const settlementEvent = settlement;
-      if (settlementSimulations) {
-        // If there is a simulation, get imbalances otherwise assume none.
-        await insertPipelineResults(db, {
-          settlementSimulations,
-          imbalances: getInternalizedImbalance(settlementSimulations),
-          eventMeta,
-          settlementEvent,
-        });
-      } else {
-        await insertSettlementEvent(db, eventMeta, settlementEvent);
-      }
-    } catch (error) {}
+    const settlementSimulations = await simulateSolverSolution(
+      txData,
+      simulator
+    );
+    const eventMeta = { txHash, blockNumber: txData.blockNumber };
+    const settlementEvent = settlement;
+    if (settlementSimulations) {
+      // If there is a simulation, get imbalances otherwise assume none.
+      await insertPipelineResults(db, {
+        settlementSimulations,
+        imbalances: getInternalizedImbalance(settlementSimulations),
+        eventMeta,
+        settlementEvent,
+      });
+    } else {
+      await insertSettlementEvent(db, eventMeta, settlementEvent);
+    }
   }
 }
