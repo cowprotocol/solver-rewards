@@ -11,8 +11,8 @@ export const triggerInternalTransfersPipeline: ActionFn = async (
   const transactionEvent = event as TransactionEvent;
   const db = getDB(await context.secrets.get("DATABASE_URL"));
   const simulator = new TenderlySimulator(
-    await context.secrets.get("TENDERLY_USER"),
-    await context.secrets.get("TENDERLY_PROJECT"),
+    "gp-v2",
+    "solver-slippage",
     await context.secrets.get("TENDERLY_ACCESS_KEY")
   );
   await internalizedTokenImbalance(transactionEvent, db, simulator);

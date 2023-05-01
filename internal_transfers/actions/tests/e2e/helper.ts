@@ -1,6 +1,6 @@
-import {MinimalTxData} from "../../src/accounting";
-import {ethers} from "ethers";
-import {getTxDataFromHash} from "../../src/utils";
+import { MinimalTxData } from "../../src/accounting";
+import { ethers } from "ethers";
+import { getTxDataFromHash } from "../../src/utils";
 
 export async function getTxData(txHash: string): Promise<MinimalTxData> {
   const provider = ethers.getDefaultProvider(
