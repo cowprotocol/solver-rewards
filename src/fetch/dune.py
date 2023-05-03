@@ -10,7 +10,6 @@ from src.fetch.cow_rewards import aggregate_orderbook_rewards
 from src.fetch.token_list import get_trusted_tokens
 from src.logger import set_log
 from src.models.accounting_period import AccountingPeriod
-from src.models.period_totals import PeriodTotals
 from src.models.slippage import SplitSlippages
 from src.models.split_transfers import SplitTransfers
 from src.models.transfer import Transfer
@@ -161,24 +160,6 @@ class DuneFetcher:
                     QueryParameter.enum_type("VOUCH_CTE_NAME", "valid_vouches"),
                 ],
             )
-        )
-
-    def get_period_totals(self) -> PeriodTotals:
-        """
-        Fetches & Returns Dune Results for accounting period totals.
-        """
-        data_set = self._get_query_results(
-            query=self._parameterized_query(
-                query_data=QUERIES["PERIOD_TOTALS"], params=self._period_params()
-            )
-        )
-        assert len(data_set) == 1
-        rec = data_set[0]
-        return PeriodTotals(
-            period=self.period,
-            execution_cost_eth=int(rec["execution_cost_eth"]),
-            cow_rewards=int(rec["cow_rewards"]),
-            realized_fees_eth=int(rec["realized_fees_eth"]),
         )
 
     def get_period_slippage(self, job_id: Optional[str] = None) -> list[DuneRecord]:

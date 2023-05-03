@@ -86,12 +86,6 @@ QUERIES = {
         v1_id=1320169,
         v2_id=1320174,
     ),
-    "PERIOD_TOTALS": QueryData(
-        name="Accounting Period Totals",
-        filepath="period_totals.sql",
-        v1_id=1687752,
-        v2_id=1687870,
-    ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
         filepath="period_slippage.sql",
