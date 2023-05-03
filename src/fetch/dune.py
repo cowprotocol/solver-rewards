@@ -17,7 +17,7 @@ from src.models.transfer import Transfer
 from src.models.vouch import RECOGNIZED_BONDING_POOLS, parse_vouches
 from src.pg_client import DualEnvDataframe
 from src.queries import QUERIES, DuneVersion, QueryData
-from src.utils.print_store import PrintStore
+from src.utils.print_store import PrintStore, Category
 
 log = set_log(__name__)
 
@@ -69,6 +69,9 @@ class DuneFetcher:
             exec_result = self.dune.get_result(job_id)
 
         log.info(f"Fetch completed for execution {exec_result.execution_id}")
+        self.log_saver.print(
+            f"{query.name} execution ID: {exec_result.execution_id}", Category.EXECUTION
+        )
         # TODO - use a real logger:
         #  https://github.com/cowprotocol/dune-client/issues/34
         if exec_result.result is not None:
