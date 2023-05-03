@@ -30,15 +30,6 @@ StartTime <= block_time < EndTime
 
 # Testing & Contributing
 
-## Hooks
-
-To install hooks
-
-```shell
-cp hooks/pre-commit .git/hooks/ && chmod +x .git/hooks/pre-commit
-cp hooks/pre-push .git/hooks/ && chmod +x .git/hooks/pre-push
-```
-
 ## Testing
 
 To run the unit tests
