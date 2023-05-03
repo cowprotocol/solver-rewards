@@ -8,7 +8,6 @@ from dune_client.client import DuneClient
 
 from src.fetch.dune import DuneFetcher
 from src.models.accounting_period import AccountingPeriod
-from src.queries import DuneVersion
 
 
 @dataclass
@@ -51,13 +50,6 @@ def generic_script_init(description: str) -> ScriptArgs:
         default=False,
     )
     parser.add_argument(
-        "--dune-version",
-        type=DuneVersion,
-        help="Which Dune Client version to use (legacy or official)",
-        default=DuneVersion.V2,
-        choices=list(DuneVersion),
-    )
-    parser.add_argument(
         "--consolidate-transfers",
         type=bool,
         help="Flag to indicate whether payout transfer file should be optimized "
@@ -83,7 +75,6 @@ def generic_script_init(description: str) -> ScriptArgs:
         dune=DuneFetcher(
             dune=DuneClient(os.environ["DUNE_API_KEY"]),
             period=AccountingPeriod(args.start),
-            dune_version=args.dune_version,
         ),
         pre_cip20=args.pre_cip20,
         post_tx=args.post_tx,

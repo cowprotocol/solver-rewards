@@ -10,7 +10,7 @@ from dune_client.client import DuneClient
 from dune_client.types import Address, QueryParameter
 
 from src.models.accounting_period import AccountingPeriod
-from src.queries import QUERIES, DuneVersion
+from src.queries import QUERIES
 from tests.integration.common import exec_or_get
 
 
@@ -80,9 +80,6 @@ class TestInternalTrades(unittest.TestCase):
         self.period = AccountingPeriod("2022-03-01", length_days=10)
         self.slippage_query = QUERIES["PERIOD_SLIPPAGE"]
 
-    # def tearDown(self) -> None:
-    #     self.dune.close()
-
     def get_internal_transfers(
         self, tx_hash: str, result_id: Optional[str] = None
     ) -> list[InternalTransfer]:
@@ -96,7 +93,6 @@ class TestInternalTrades(unittest.TestCase):
                     "CTE_NAME", "incoming_and_outgoing_with_buffer_trades"
                 ),
             ],
-            dune_version=DuneVersion.V2,
         )
         data_set = exec_or_get(self.dune, query, result_id).get_rows()
         return [InternalTransfer.from_dict(row) for row in data_set]
