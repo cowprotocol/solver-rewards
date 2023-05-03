@@ -1,4 +1,4 @@
--- -- V2 Query: https://dune.com/queries/1541516
+-- -- V3 Query: https://dune.com/queries/1541516
 with
 bonding_pools (pool, name, initial_funder) as (
   select from_hex(pool), name, from_hex(funder) from (
