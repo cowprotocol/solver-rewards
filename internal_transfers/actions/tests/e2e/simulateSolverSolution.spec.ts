@@ -3,6 +3,7 @@ import {
   simulateSolverSolution,
 } from "../../src/accounting";
 import { TenderlySimulator } from "../../src/simulate/tenderly";
+import {getTxData} from "./helper";
 
 const simulator = new TenderlySimulator(
   process.env["TENDERLY_USER"] || "INVALID_USER",
