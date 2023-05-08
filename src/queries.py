@@ -55,11 +55,6 @@ QUERIES = {
         filepath="eth_spent.sql",
         q_id=1320174,
     ),
-    "PERIOD_TOTALS": QueryData(
-        name="Accounting Period Totals",
-        filepath="period_totals.sql",
-        q_id=1687870,
-    ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
         filepath="period_slippage.sql",
