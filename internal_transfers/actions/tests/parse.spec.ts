@@ -5,7 +5,7 @@ import {
   tryParseWethAction,
   WETH_TOKEN_ADDRESS,
 } from "../src/parse";
-import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
+import { SETTLEMENT_CONTRACT_ADDRESS } from "../src/constants";
 import { isSettlementEvent, isTradeEvent } from "../src/models";
 import { ethers } from "ethers";
 

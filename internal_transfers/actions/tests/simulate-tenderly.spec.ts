@@ -3,7 +3,7 @@ import {
   parseTenderlySimulation,
   TenderlySimulator,
 } from "../src/simulate/tenderly";
-import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
+import { SETTLEMENT_CONTRACT_ADDRESS } from "../src/constants";
 import { config as envConfig } from "dotenv";
 
 const oneAddress = "0x0000000000000000000000000000000000000001";

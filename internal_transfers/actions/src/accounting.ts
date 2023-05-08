@@ -1,4 +1,4 @@
-import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
+import { SETTLEMENT_CONTRACT_ADDRESS } from "./constants";
 import { getSettlementCompetitionData } from "./orderbook";
 import { SimulationData, TransactionSimulator } from "./simulate/interface";
 import { partitionEventLogs } from "./parse";
