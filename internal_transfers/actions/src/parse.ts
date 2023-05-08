@@ -8,10 +8,10 @@ import {
 import { Log } from "@tenderly/actions";
 import { transferInvolves } from "./utils";
 import { ethers } from "ethers";
-import { abi as SETTLEMENT_ABI } from "@cowprotocol/contracts/lib/contracts/GPv2Settlement.json";
-import { abi as IERC20_ABI } from "@cowprotocol/contracts/lib/contracts/IERC20.json";
+import { abi as SETTLEMENT_ABI } from "./artifacts/GPv2Settlement.json";
+import { abi as IERC20_ABI } from "./artifacts/IERC20.json";
 import { abi as WETH9_ABI } from "./artifacts/weth9_abi.json";
-import { address as SETTLEMENT_CONTRACT_ADDRESS } from "@cowprotocol/contracts/deployments/mainnet/GPv2Settlement.json";
+import { SETTLEMENT_CONTRACT_ADDRESS } from "./constants";
 
 export const WETH_TOKEN_ADDRESS = "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2";
 
