@@ -100,6 +100,7 @@ interface SimulationPair {
   full: SimulationData;
   reduced: SimulationData;
 }
+
 async function simulateBoth(
   simulator: TransactionSimulator,
   params: SettlementSimulationParams,
