@@ -37,8 +37,8 @@ export async function internalizedTokenImbalance(
     );
     const eventMeta = { txHash, blockNumber: txData.blockNumber };
     const settlementEvent = settlement;
+    // If there is a simulation, get imbalances otherwise assume none.
     if (settlementSimulations) {
-      // If there is a simulation, get imbalances otherwise assume none.
       await insertPipelineResults(db, {
         settlementSimulations,
         imbalances: getInternalizedImbalance(settlementSimulations),
