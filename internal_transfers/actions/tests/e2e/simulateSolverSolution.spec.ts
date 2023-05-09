@@ -33,6 +33,19 @@ describe.skip("simulateSolverSolution(transaction, simulator)", () => {
     const imbalance = await simulateSolverSolution(transaction, simulator);
     expect(imbalance).toMatchSnapshot();
   });
+
+  test("run pipeline on transaction known to fail first simulation", async () => {
+    const simFailer = await getTxData(
+      "0x82c20f4583fb2a49a1db506ef2a1777a3efc99d90d100f7d2da9ca718de395f2"
+    );
+    const simulation = (await simulateSolverSolution(simFailer, simulator))!;
+    expect(simulation.winningSettlement.simulationBlock + 1).toEqual(
+      simulation.reduced.blockNumber
+    );
+    expect(simulation.winningSettlement.simulationBlock + 1).toEqual(
+      simulation.full.blockNumber
+    );
+  }, 300000);
 });
 describe.skip("completeComposition(transaction, simulator)", () => {
   test("runs as expected on txHash = 0xca0bbc", async () => {
