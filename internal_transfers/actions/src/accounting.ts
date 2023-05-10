@@ -87,7 +87,6 @@ interface commonSimulationParams {
   contractAddress: string;
   sender: string;
   value: string;
-  blockNumber: number;
 }
 
 interface SettlementSimulationParams {
