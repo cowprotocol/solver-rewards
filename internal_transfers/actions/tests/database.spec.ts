@@ -8,6 +8,9 @@ import {
   jsonFromSettlementData,
   insertPipelineResults,
   recordExists,
+  insertTxReceipt,
+  getUnprocessedReceipts,
+  markReceiptProcessed,
 } from "../src/database";
 import * as process from "process";
 import { sql } from "@databases/pg";
@@ -31,13 +34,14 @@ describe("All Database Tests", () => {
     await db.query(sql`TRUNCATE TABLE settlements;`);
     await db.query(sql`TRUNCATE TABLE internalized_imbalances;`);
     await db.query(sql`TRUNCATE TABLE settlement_simulations;`);
+    await db.query(sql`TRUNCATE TABLE tx_receipts;`);
   });
 
   afterAll(async () => {
     await (db as ConnectionPool).dispose();
   });
 
-  describe("test database insertion methods", () => {
+  describe("test database methods", () => {
     test("insertSettlementEvent(txHash, solver) succeeds and fails second attempt", async () => {
       const txHash =
         "0x45f52ee09622eac16d0fe27b90a76749019b599c9566f10e21e8d0955a0e428e";
@@ -175,6 +179,63 @@ describe("All Database Tests", () => {
         { solver: "0xc9ec550bea1c64d779124b23a26292cc223327b6", logIndex: 0 }
       );
       expect(await recordExists(db, txHash)).toEqual(true);
+    });
+    test("insertTxReceipt(receipt)", async () => {
+      const hash = "0x";
+      const receipt = {
+        logs: [],
+        blockNumber: 1,
+        hash,
+        from: "0x",
+      };
+      await insertTxReceipt(db, receipt);
+      let results = await db.query(sql`SELECT * from tx_receipts;`);
+      expect(results).toEqual([
+        {
+          block_number: 1n,
+          data: receipt,
+          hash: hexToBytea(hash),
+          processed: false,
+        },
+      ]);
+    });
+    test("getUnprocessedReceipts(blockFrom)", async () => {
+      const hashes = ["0x01", "0x02"];
+      const receipts = hashes.map((value, index) => {
+        return {
+          logs: [],
+          blockNumber: index,
+          hash: value,
+          from: "0x",
+        };
+      });
+      await insertTxReceipt(db, receipts[0]);
+      await insertTxReceipt(db, receipts[1]);
+      const emptyResults = await getUnprocessedReceipts(db, 1);
+      expect(emptyResults).toEqual([]);
+      const oneResult = await getUnprocessedReceipts(db, 0);
+      expect(oneResult).toEqual(receipts.slice(1));
+      const twoResults = await getUnprocessedReceipts(db, -1);
+      expect(twoResults).toEqual(receipts);
+    });
+    test("markReceiptProcessed(hash)", async () => {
+      const receipt = {
+        logs: [],
+        blockNumber: 0,
+        hash: "0x01",
+        from: "0x",
+      };
+      await insertTxReceipt(db, receipt);
+      await markReceiptProcessed(db, receipt.hash);
+      let results = await db.query(sql`SELECT * from tx_receipts;`);
+      expect(results).toEqual([
+        {
+          block_number: 0n,
+          data: receipt,
+          hash: hexToBytea(receipt.hash),
+          processed: true,
+        },
+      ]);
     });
   });
 

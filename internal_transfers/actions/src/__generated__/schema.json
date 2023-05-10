@@ -165,5 +165,38 @@
         "typeName": "BYTEA"
       }
     ]
+  },
+  {
+    "name": "tx_receipts",
+    "columns": [
+      {
+        "name": "block_number",
+        "isNullable": false,
+        "hasDefault": false,
+        "typeId": 20,
+        "typeName": "BIGINT"
+      },
+      {
+        "name": "data",
+        "isNullable": false,
+        "hasDefault": false,
+        "typeId": 3802,
+        "typeName": "JSONB"
+      },
+      {
+        "name": "hash",
+        "isNullable": false,
+        "hasDefault": false,
+        "typeId": 17,
+        "typeName": "BYTEA"
+      },
+      {
+        "name": "processed",
+        "isNullable": false,
+        "hasDefault": true,
+        "typeId": 16,
+        "typeName": "BOOL"
+      }
+    ]
   }
 ]

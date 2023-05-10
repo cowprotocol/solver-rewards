@@ -5,14 +5,22 @@ import tables from "@databases/pg-typed";
 import ConnectionPool from "@databases/pg/lib/types/Queryable";
 import DatabaseSchema from "./__generated__";
 import { EventMeta, SettlementEvent, TokenImbalance } from "./models";
-import { SettlementSimulationData } from "./accounting";
+import { MinimalTxData, SettlementSimulationData } from "./accounting";
 import { SimulationData } from "./simulate/interface";
 
 export { sql };
-const { settlements, internalized_imbalances, settlement_simulations } =
-  tables<DatabaseSchema>({
-    databaseSchema: require("./__generated__/schema.json"),
-  });
+const {
+  settlements,
+  internalized_imbalances,
+  settlement_simulations,
+  tx_receipts,
+} = tables<DatabaseSchema>({
+  databaseSchema: require("./__generated__/schema.json"),
+});
+
+function pgHash(txHash: string) {
+  return txHash.replace("0x", "\\x");
+}
 
 function getDB(dbURL: string): ConnectionPool {
   return createConnectionPool({
@@ -21,12 +29,42 @@ function getDB(dbURL: string): ConnectionPool {
   });
 }
 
+export async function insertTxReceipt(
+  db: ConnectionPool,
+  receipt: MinimalTxData
+) {
+  await tx_receipts(db).insert({
+    hash: hexToBytea(receipt.hash),
+    block_number: receipt.blockNumber,
+    data: receipt,
+  });
+}
+
+export async function getUnprocessedReceipts(
+  db: Queryable,
+  blockFrom: number
+): Promise<MinimalTxData[]> {
+  const query = sql`SELECT data from tx_receipts where processed = false and block_number > ${blockFrom};`;
+  const unstructuredResults = await db.query(query);
+  return unstructuredResults.map((value) => {
+    return value.data as MinimalTxData;
+  });
+}
+
+export async function markReceiptProcessed(db: Queryable, hash: string) {
+  const updateQuery = sql`UPDATE tx_receipts SET processed = true where hash = ${pgHash(
+    hash
+  )};`;
+  await db.query(updateQuery);
+}
+
 export async function recordExists(
   db: Queryable,
   txHash: string
 ): Promise<boolean> {
-  const pgHash = txHash.replace("0x", "\\x");
-  const query = sql`SELECT count(*) from settlements where tx_hash = ${pgHash};`;
+  const query = sql`SELECT count(*) from settlements where tx_hash = ${pgHash(
+    txHash
+  )};`;
   const { count: numRecords } = (await db.query(query))[0];
   return numRecords > 0;
 }
@@ -104,6 +142,8 @@ export async function insertPipelineResults(
     await insertTokenImbalances(db, eventMeta.txHash, imbalances);
     await insertSettlementSimulations(db, settlementSimulations);
     await insertSettlementEvent(db, eventMeta, settlementEvent);
+    // TODO - markReceiptProcessed in follow up PR.
+    // await markReceiptProcessed(db, eventMeta.txHash);
   });
   console.log(`wrote ${imbalances.length} imbalances for ${eventMeta.txHash}`);
 }
