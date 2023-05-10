@@ -1,7 +1,9 @@
 import { partitionEventLogs } from "./parse";
 import {
+  getUnprocessedReceipts,
   insertPipelineResults,
   insertSettlementEvent,
+  insertTxReceipt,
   recordExists,
 } from "./database";
 import {
@@ -11,7 +13,45 @@ import {
 } from "./accounting";
 import { Queryable } from "@databases/pg";
 import { TransactionSimulator } from "./simulate/interface";
+import { AbstractProvider } from "ethers";
+import { getTxDataFromHash } from "./utils";
 
+/** Consumes a transaction hash, fetches corresponding transaction receipt,
+ * writes the receipt to a database, then fetches and returns all previously
+ * unprocessed, but ready, transaction receipts.
+ *
+ * @param db - Connection to a database
+ * @param provider - Ethereum network provider
+ * @param txHash - Ethereum Transaction Hash
+ * @param numConfirmationBlocks transaction finalization block confirmations
+ * @return an array of "finalized" Transaction Receipts
+ */
+export async function preliminaryPipelineTask(
+  db: Queryable,
+  provider: AbstractProvider,
+  txHash: string,
+  numConfirmationBlocks: number = 70
+): Promise<MinimalTxData[]> {
+  const txReceipt = await getTxDataFromHash(provider, txHash);
+  await insertTxReceipt(db, txReceipt);
+  return getUnprocessedReceipts(
+    db,
+    txReceipt.blockNumber - numConfirmationBlocks
+  );
+}
+
+/**
+ *  Consumes a data for an ethereum transaction (pertaining to a Settlement Event),
+ *  parses relevant event logs,
+ *  fetches winning solver competition,
+ *  simulates winning settlement data,
+ *  computes internalized token imbalance and
+ *  writes results to database.
+ *
+ * @param txData -- Relevant transaction data from transaction receipt
+ * @param db -- Connection to a database
+ * @param simulator -- Instance of a TransactionSimulator
+ */
 export async function internalizedTokenImbalance(
   txData: MinimalTxData,
   db: Queryable,
