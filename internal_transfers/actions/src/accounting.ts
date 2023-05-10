@@ -109,7 +109,6 @@ async function simulateBoth(
   let attemptNumber = 0;
   while (attemptNumber < numAttempts) {
     try {
-      params.common.blockNumber += attemptNumber;
       return {
         full: await simulator.simulate({
           ...params.common,
