@@ -3,9 +3,7 @@
 .mypy_cache/
 .pytest_cache/
 dashboards/
-hooks/
 out/
-tests/db
 tests/e2e
 tests/queries
 tests/unit
@@ -20,7 +18,7 @@ Dockerfile.db
 LICENSE-APACHE
 LICENSE-MIT
 mypy.ini
-populate_db.sql
+populate_cip_20.sql
 README.md
 
 
