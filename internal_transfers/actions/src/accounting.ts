@@ -71,8 +71,8 @@ export async function simulateSolverSolution(
       contractAddress: SETTLEMENT_CONTRACT_ADDRESS,
       sender: solverAddress,
       value: "0",
-      blockNumber: competition.simulationBlock,
     },
+    startBlock: competition.simulationBlock,
   });
 
   return {
@@ -87,13 +87,13 @@ interface commonSimulationParams {
   contractAddress: string;
   sender: string;
   value: string;
-  blockNumber: number;
 }
 
 interface SettlementSimulationParams {
   full: string;
   reduced: string;
   common: commonSimulationParams;
+  startBlock: number;
 }
 
 interface SimulationPair {
@@ -106,7 +106,6 @@ async function simulateBoth(
   params: SettlementSimulationParams,
   numAttempts: number = 3
 ): Promise<SimulationPair> {
-  const startBlock = params.common.blockNumber;
   let attemptNumber = 0;
   while (attemptNumber < numAttempts) {
     try {
@@ -114,10 +113,12 @@ async function simulateBoth(
       return {
         full: await simulator.simulate({
           ...params.common,
+          blockNumber: params.startBlock + attemptNumber,
           callData: params.full,
         }),
         reduced: await simulator.simulate({
           ...params.common,
+          blockNumber: params.startBlock + attemptNumber,
           callData: params.reduced,
         }),
       };
@@ -127,7 +128,7 @@ async function simulateBoth(
     }
   }
   throw new Error(
-    `failed simulations on ${numAttempts} blocks beginning from ${startBlock}`
+    `failed simulations on ${numAttempts} blocks beginning from ${params.startBlock}`
   );
 }
 
