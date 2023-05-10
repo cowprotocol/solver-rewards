@@ -30,6 +30,8 @@ export async function preliminaryPipelineTask(
   db: Queryable,
   provider: AbstractProvider,
   txHash: string,
+  // Services uses 64 blocks as assumed finalization, we must use at least this many to assume data availability:
+  // cf - https://github.com/cowprotocol/services/blob/042aac25dbb2219b4498142738cb87e3ddca7b45/crates/shared/src/event_handling.rs#L21
   numConfirmationBlocks: number = 70
 ): Promise<MinimalTxData[]> {
   const txReceipt = await getTxDataFromHash(provider, txHash);
