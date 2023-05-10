@@ -2,11 +2,9 @@
 .github/
 .mypy_cache/
 .pytest_cache/
-dashboards/
+internal_transfers/
 out/
-tests/e2e
-tests/queries
-tests/unit
+tests/
 venv/
 .env
 .env.sample
