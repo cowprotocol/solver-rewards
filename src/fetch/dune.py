@@ -15,7 +15,7 @@ from src.models.split_transfers import SplitTransfers
 from src.models.transfer import Transfer
 from src.models.vouch import RECOGNIZED_BONDING_POOLS, parse_vouches
 from src.pg_client import DualEnvDataframe
-from src.queries import QUERIES, DuneVersion, QueryData
+from src.queries import QUERIES, QueryData
 from src.utils.print_store import PrintStore, Category
 
 log = set_log(__name__)
@@ -37,12 +37,10 @@ class DuneFetcher:
         self,
         dune: DuneClient,
         period: AccountingPeriod,
-        dune_version: DuneVersion = DuneVersion.V2,
     ):
         self.dune = dune
         self.period = period
         self.log_saver = PrintStore()
-        self.dune_version = dune_version
         # Already have period set, so we might as well store this upon construction.
         # This may become an issue when we make the fetchers async;
         # since python does not allow async constructors
@@ -55,7 +53,7 @@ class DuneFetcher:
     def _parameterized_query(
         self, query_data: QueryData, params: list[QueryParameter]
     ) -> Query:
-        return query_data.with_params(params, dune_version=self.dune_version)
+        return query_data.with_params(params)
 
     def _get_query_results(
         self, query: Query, job_id: Optional[str] = None

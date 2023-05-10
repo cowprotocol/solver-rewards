@@ -48,11 +48,7 @@ db:
 
 test-db:
 	if !(docker ps | grep test_db >/dev/null); then make db; fi
-	python -m pytest tests/db
 	python -m pytest tests/queries
-
-test-integration:
-	python -m pytest tests/integration
 
 test-all:
 	make test-unit

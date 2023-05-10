@@ -2,13 +2,9 @@
 .github/
 .mypy_cache/
 .pytest_cache/
-dashboards/
-hooks/
+internal_transfers/
 out/
-tests/db
-tests/e2e
-tests/queries
-tests/unit
+tests/
 venv/
 .env
 .env.sample
@@ -20,7 +16,7 @@ Dockerfile.db
 LICENSE-APACHE
 LICENSE-MIT
 mypy.ini
-populate_db.sql
+populate_cip_20.sql
 README.md
 
 
