@@ -71,8 +71,8 @@ export async function simulateSolverSolution(
       contractAddress: SETTLEMENT_CONTRACT_ADDRESS,
       sender: solverAddress,
       value: "0",
-      blockNumber: competition.simulationBlock,
     },
+    startBlock: competition.simulationBlock,
   });
 
   return {
@@ -87,13 +87,13 @@ interface commonSimulationParams {
   contractAddress: string;
   sender: string;
   value: string;
-  blockNumber: number;
 }
 
 interface SettlementSimulationParams {
   full: string;
   reduced: string;
   common: commonSimulationParams;
+  startBlock: number;
 }
 
 interface SimulationPair {
@@ -104,28 +104,31 @@ interface SimulationPair {
 async function simulateBoth(
   simulator: TransactionSimulator,
   params: SettlementSimulationParams,
-  numAttempts: number = 2
+  numAttempts: number = 3
 ): Promise<SimulationPair> {
-  let attempts = 0;
-  while (attempts < numAttempts) {
+  let attemptNumber = 0;
+  while (attemptNumber < numAttempts) {
     try {
       return {
         full: await simulator.simulate({
           ...params.common,
+          blockNumber: params.startBlock + attemptNumber,
           callData: params.full,
         }),
         reduced: await simulator.simulate({
           ...params.common,
+          blockNumber: params.startBlock + attemptNumber,
           callData: params.reduced,
         }),
       };
     } catch (error) {
-      attempts += 1;
-      // Increment blockNumber on Failed Simulation!
-      params.common.blockNumber += 1;
+      attemptNumber += 1;
+      console.warn(`Failed simulation attempt ${attemptNumber}`);
     }
   }
-  throw new Error(`failed simulations on ${numAttempts} blocks from `);
+  throw new Error(
+    `failed simulations on ${numAttempts} blocks beginning from ${params.startBlock}`
+  );
 }
 
 export function getInternalizedImbalance(
