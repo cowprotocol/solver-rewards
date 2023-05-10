@@ -104,11 +104,13 @@ interface SimulationPair {
 async function simulateBoth(
   simulator: TransactionSimulator,
   params: SettlementSimulationParams,
-  numAttempts: number = 2
+  numAttempts: number = 3
 ): Promise<SimulationPair> {
-  let attempts = 0;
-  while (attempts < numAttempts) {
+  const startBlock = params.common.blockNumber;
+  let attemptNumber = 0;
+  while (attemptNumber < numAttempts) {
     try {
+      params.common.blockNumber += attemptNumber;
       return {
         full: await simulator.simulate({
           ...params.common,
@@ -120,12 +122,13 @@ async function simulateBoth(
         }),
       };
     } catch (error) {
-      attempts += 1;
-      // Increment blockNumber on Failed Simulation!
-      params.common.blockNumber += 1;
+      attemptNumber += 1;
+      console.warn(`Failed simulation attempt ${attemptNumber}`);
     }
   }
-  throw new Error(`failed simulations on ${numAttempts} blocks from `);
+  throw new Error(
+    `failed simulations on ${numAttempts} blocks beginning from ${startBlock}`
+  );
 }
 
 export function getInternalizedImbalance(
