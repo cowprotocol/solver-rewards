@@ -16,7 +16,7 @@ from src.models.transfer import Transfer
 from src.models.vouch import RECOGNIZED_BONDING_POOLS, parse_vouches
 from src.pg_client import DualEnvDataframe
 from src.queries import QUERIES, QueryData
-from src.utils.print_store import PrintStore
+from src.utils.print_store import PrintStore, Category
 
 log = set_log(__name__)
 
