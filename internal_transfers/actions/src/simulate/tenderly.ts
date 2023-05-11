@@ -4,7 +4,7 @@ import {
   SimulationParams,
   TransactionSimulator,
 } from "./interface";
-import { EventLog } from "../models";
+import { Log } from "@tenderly/actions";
 
 export class TenderlySimulator implements TransactionSimulator {
   BASE_URL = "https://api.tenderly.co/api";
@@ -87,7 +87,7 @@ interface TenderlyBalanceDiff {
   dirty: bigint;
 }
 interface TenderlyTransactionLog {
-  raw: EventLog;
+  raw: Log;
 }
 
 export function isTenderlySimulationResponse(
@@ -122,7 +122,11 @@ export function parseTenderlySimulation(
       simulationID: `tenderly-${simulation.simulation.id}`,
       blockNumber: tx.transaction_info.block_number,
       gasUsed: simulation.simulation.gas_used,
-      logs: tx.transaction_info.logs.map((t: { raw: EventLog }) => t.raw) || [],
+      logs:
+        tx.transaction_info.logs.map((t: { raw: Log }, index) => ({
+          ...t.raw,
+          index,
+        })) || [],
       ethDelta: new Map(
         balanceDiff.map((t) => [
           t.address.toLowerCase(),

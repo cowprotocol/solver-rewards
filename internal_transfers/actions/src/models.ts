@@ -9,12 +9,14 @@ export interface TokenImbalance {
 }
 
 export interface EventLog {
+  // Block-wise index of Log
+  readonly index: number;
   // The contract address emitting the event
-  address: string;
+  readonly address: string;
   // The indexed topics from the event log
-  topics: string[];
+  readonly topics: string[];
   // The additional (non-indexed event data)
-  data: string;
+  readonly data: string;
 }
 
 export interface TradeEvent {

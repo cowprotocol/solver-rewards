@@ -88,6 +88,7 @@ describe("constructImbalanceMap(simulation, focalContract)", () => {
         "0x0e50d5447266171a4daf32880dfef3f55e31b7b80b285d14ddaefa6ad8098221",
       logs: [
         {
+          index: 0,
           address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
           topics: [
             "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
@@ -97,6 +98,7 @@ describe("constructImbalanceMap(simulation, focalContract)", () => {
           data: "0x000000000000000000000000000000000000000000000000000000000000000f", // +15
         },
         {
+          index: 1,
           address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
           topics: [
             "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
@@ -132,6 +134,7 @@ describe("constructImbalanceMap(simulation, focalContract)", () => {
       txHash: "0x",
       logs: [
         {
+          index: 0,
           address: "0xtoken",
           topics: [
             "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",

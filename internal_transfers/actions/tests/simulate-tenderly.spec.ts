@@ -95,6 +95,7 @@ describe("Tenderly Simulator", () => {
       ethDelta: new Map(),
       logs: [
         {
+          index: 0,
           address: "0xADDRESS",
           data: "0xDATA",
           topics: ["0xTOPIC_1"],

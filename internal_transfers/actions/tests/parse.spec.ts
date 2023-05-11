@@ -157,7 +157,9 @@ describe("partitionEventLogs(logs)", () => {
           ],
           data: "0x0000000000000000000000000000000000000000000000001ca811856c2c5a63",
         },
-      ],
+      ].map((value, index) => {
+        return { index, ...value };
+      }),
     };
     const { trades, transfers, settlements } = partitionEventLogs(
       simulationData.logs
@@ -217,30 +219,34 @@ describe("tryParseSettlementEvent(log, index)", () => {
   test("parses Trade Event", () => {
     const tradeOwner = "0xd5553C9726EA28e7EbEDfe9879cF8aB4d061dbf0";
     const tradeLog = {
+      index: 0,
       address: SETTLEMENT_CONTRACT_ADDRESS,
       data: "0x0000000000000000000000006b175474e89094c44da98b954eedeac495271d0f0000000000000000000000003432b6a60d23ca0dfca7761b7ab56459d9c964d000000000000000000000000000000000000000000000006c6b935b8bbd400000000000000000000000000000000000000000000000000019753399721b8078ee000000000000000000000000000000000000000000000000604fbfc634eef00000000000000000000000000000000000000000000000000000000000000000c00000000000000000000000000000000000000000000000000000000000000038bf293f652b46fe85a15838d7ff736add1b6098ed1c143f3902869d325f9e0069e2b424053b9ebfcedf89ecb8bf2972974e98700c63af639e0000000000000000",
       topics: [TRADE_EVENT_TOPIC, addressToTopic(tradeOwner)],
     };
-    const tradeEvent = tryParseSettlementEventLog(tradeLog, 1);
+    const tradeEvent = tryParseSettlementEventLog(tradeLog);
     expect(isTradeEvent(tradeEvent)).toStrictEqual(true);
     expect(isSettlementEvent(tradeEvent)).toStrictEqual(false);
     expect(tradeEvent).toStrictEqual({ owner: tradeOwner });
   });
   test("parses Settlement Event", () => {
     const solver = "0xb20B86C4e6DEEB432A22D773a221898bBBD03036";
+    const logIndex = 1;
     const settlementLog = {
+      index: logIndex,
       address: SETTLEMENT_CONTRACT_ADDRESS,
       topics: [SETTLEMENT_EVENT_TOPIC, addressToTopic(solver)],
       data: "0x",
     };
-    const logIndex = 1;
-    const settlementEvent = tryParseSettlementEventLog(settlementLog, logIndex);
+
+    const settlementEvent = tryParseSettlementEventLog(settlementLog);
     expect(isTradeEvent(settlementEvent)).toStrictEqual(false);
     expect(isSettlementEvent(settlementEvent)).toStrictEqual(true);
     expect(settlementEvent).toStrictEqual({ solver, logIndex });
   });
   test("parses Interaction Event as null", () => {
     const nullEventLog = {
+      index: 0,
       address: SETTLEMENT_CONTRACT_ADDRESS,
       topics: [
         "0xed99827efb37016f2275f98c4bcf71c7551c75d59e9b450f79fa32e60be672c2",
@@ -248,7 +254,7 @@ describe("tryParseSettlementEvent(log, index)", () => {
       ],
       data: "0x0000000000000000000000000000000000000000000000000000000000000000f021092900000000000000000000000000000000000000000000000000000000",
     };
-    const nullEvent = tryParseSettlementEventLog(nullEventLog, 0);
+    const nullEvent = tryParseSettlementEventLog(nullEventLog);
     expect(nullEvent).toStrictEqual(null);
   });
 });

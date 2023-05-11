@@ -2,8 +2,7 @@ import { SETTLEMENT_CONTRACT_ADDRESS } from "./constants";
 import { getSettlementCompetitionData } from "./orderbook";
 import { SimulationData, TransactionSimulator } from "./simulate/interface";
 import { partitionEventLogs } from "./parse";
-import { Log } from "@tenderly/actions";
-import { TokenImbalance, WinningSettlementData } from "./models";
+import { TokenImbalance, WinningSettlementData, EventLog } from "./models";
 import {
   aggregateTransfers,
   ImbalanceMap,
@@ -20,7 +19,7 @@ export interface MinimalTxData {
   readonly blockNumber: number;
   readonly from: string;
   readonly hash: string;
-  readonly logs: Log[];
+  readonly logs: EventLog[];
 }
 
 export function constructImbalanceMap(
