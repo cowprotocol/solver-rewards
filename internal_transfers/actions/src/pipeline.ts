@@ -3,9 +3,7 @@ import {
   getUnprocessedReceipts,
   insertPipelineResults,
   insertSettlementAndMarkProcessed,
-  insertSettlementEvent,
   insertTxReceipt,
-  markReceiptProcessed,
   recordExists,
 } from "./database";
 import {
@@ -65,7 +63,7 @@ export async function internalizedTokenImbalance(
   console.log(`processing settlement transaction with hash: ${txData.hash}`);
   // Duplication Guard!
   if (await recordExists(db, txHash)) {
-    console.warn(`record exists for tx: ${txHash}`);
+    console.warn(`event record exists for tx: ${txHash}`);
     return;
   }
 
