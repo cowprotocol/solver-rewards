@@ -55,7 +55,7 @@ export async function markReceiptProcessed(db: Queryable, hash: string) {
   const updateQuery = sql`UPDATE tx_receipts SET processed = true where hash = ${pgHash(
     hash
   )};`;
-  return db.query(updateQuery);
+  await db.query(updateQuery);
 }
 
 export async function recordExists(
