@@ -15,7 +15,7 @@ export const triggerInternalTransfersPipeline: ActionFn = async (
   const transactionEvent = event as TransactionEvent;
 
   const txHash = transactionEvent.hash;
-  console.log(`Received Settlement Event with txHash ${txHash}`);
+  console.log(`Received Settlement Transaction with hash ${txHash}`);
   const provider = ethers.getDefaultProvider(
     await context.secrets.get("NODE_URL")
   );
@@ -26,6 +26,7 @@ export const triggerInternalTransfersPipeline: ActionFn = async (
     provider,
     txHash
   );
+  console.log("Inserted to backlog");
   const simulator = new TenderlySimulator(
     "gp-v2",
     "solver-slippage",
