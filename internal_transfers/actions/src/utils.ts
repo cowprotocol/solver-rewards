@@ -25,6 +25,7 @@ export async function getTxDataFromHash(
       index,
       address,
       data,
+      // making a copy of a readonly field!
       topics: [...topics],
     })
   );
