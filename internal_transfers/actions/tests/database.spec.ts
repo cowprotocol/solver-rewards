@@ -11,6 +11,7 @@ import {
   insertTxReceipt,
   getUnprocessedReceipts,
   markReceiptProcessed,
+  insertSettlementAndMarkProcessed,
 } from "../src/database";
 import * as process from "process";
 import { sql } from "@databases/pg";
@@ -240,10 +241,50 @@ describe("All Database Tests", () => {
         },
       ]);
     });
-    test("markReceiptProcessed fails silently when hash doesn't exist", async () => {
+    test("markReceiptProcessed does nothing when hash doesn't exist", async () => {
       await expect(
         markReceiptProcessed(db, "0x01")
       ).resolves.not.toThrowError();
+    });
+
+    test("insertSettlementAndMarkProcessed works together", async () => {
+      const hash = "0x";
+      const solver = "0x50";
+      const receipt = {
+        logs: [],
+        blockNumber: 1,
+        hash,
+        from: solver,
+      };
+      await insertTxReceipt(db, receipt);
+      await insertSettlementAndMarkProcessed(
+        db,
+        { txHash: hash, blockNumber: 0 },
+        { solver: solver, logIndex: 0 }
+      );
+
+      expect(await db.query(sql`SELECT * from tx_receipts;`)).toEqual([
+        {
+          block_number: 1n,
+          data: {
+            blockNumber: 1,
+            from: "0x50",
+            hash: "0x",
+            logs: [],
+          },
+          hash: hexToBytea(hash),
+          // This is the key point (processed = true)
+          processed: true,
+        },
+      ]);
+      expect(await db.query(sql`SELECT * from settlements;`)).toStrictEqual([
+        {
+          block_number: 0n,
+          log_index: 0n,
+          solver: hexToBytea(solver),
+          tx_hash: hexToBytea(hash),
+        },
+      ]);
     });
   });
 
