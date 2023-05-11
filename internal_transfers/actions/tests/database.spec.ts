@@ -27,14 +27,10 @@ const dbURL: string =
   "postgresql://postgres:postgres@localhost:5432/postgres";
 const db = getDB(dbURL);
 async function truncateTables() {
-  for (const table_name of [
-    "settlements",
-    "internalized_imbalances",
-    "settlement_simulations",
-    "tx_receipts",
-  ]) {
-    await db.query(sql`TRUNCATE TABLE ${table_name};`);
-  }
+  await db.query(sql`TRUNCATE TABLE settlements;`);
+  await db.query(sql`TRUNCATE TABLE internalized_imbalances;`);
+  await db.query(sql`TRUNCATE TABLE settlement_simulations;`);
+  await db.query(sql`TRUNCATE TABLE tx_receipts;`);
 }
 
 const largeBigInt =
