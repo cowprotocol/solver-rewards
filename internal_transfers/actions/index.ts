@@ -26,7 +26,7 @@ export const triggerInternalTransfersPipeline: ActionFn = async (
     provider,
     txHash
   );
-  console.log("Inserted to backlog")
+  console.log("Inserted to backlog");
   const simulator = new TenderlySimulator(
     "gp-v2",
     "solver-slippage",
