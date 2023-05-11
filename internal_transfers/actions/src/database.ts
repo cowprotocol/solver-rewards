@@ -44,7 +44,7 @@ export async function getUnprocessedReceipts(
   db: Queryable,
   blockFrom: number
 ): Promise<MinimalTxData[]> {
-  const query = sql`SELECT data from tx_receipts where processed = false and block_number > ${blockFrom};`;
+  const query = sql`SELECT data from tx_receipts where processed = false and block_number < ${blockFrom};`;
   const unstructuredResults = await db.query(query);
   return unstructuredResults.map((value) => {
     return value.data as MinimalTxData;

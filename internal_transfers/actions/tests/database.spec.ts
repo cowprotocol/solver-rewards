@@ -216,11 +216,11 @@ describe("All Database Tests", () => {
       });
       await insertTxReceipt(db, receipts[0]);
       await insertTxReceipt(db, receipts[1]);
-      const emptyResults = await getUnprocessedReceipts(db, 1);
+      const emptyResults = await getUnprocessedReceipts(db, 0);
       expect(emptyResults).toEqual([]);
-      const oneResult = await getUnprocessedReceipts(db, 0);
-      expect(oneResult).toEqual(receipts.slice(1));
-      const twoResults = await getUnprocessedReceipts(db, -1);
+      const oneResult = await getUnprocessedReceipts(db, 1);
+      expect(oneResult).toEqual([receipts[0]]);
+      const twoResults = await getUnprocessedReceipts(db, 2);
       expect(twoResults).toEqual(receipts);
     });
     test("markReceiptProcessed works when exists", async () => {
