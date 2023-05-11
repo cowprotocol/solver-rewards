@@ -55,7 +55,7 @@ export async function markReceiptProcessed(db: Queryable, hash: string) {
   const updateQuery = sql`UPDATE tx_receipts SET processed = true where hash = ${pgHash(
     hash
   )};`;
-  await db.query(updateQuery);
+  return db.query(updateQuery);
 }
 
 export async function recordExists(
@@ -142,8 +142,7 @@ export async function insertPipelineResults(
     await insertTokenImbalances(db, eventMeta.txHash, imbalances);
     await insertSettlementSimulations(db, settlementSimulations);
     await insertSettlementEvent(db, eventMeta, settlementEvent);
-    // TODO - markReceiptProcessed in follow up PR.
-    // await markReceiptProcessed(db, eventMeta.txHash);
+    await markReceiptProcessed(db, eventMeta.txHash);
   });
   console.log(`wrote ${imbalances.length} imbalances for ${eventMeta.txHash}`);
 }

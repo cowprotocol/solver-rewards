@@ -25,16 +25,19 @@ const dbURL: string =
   process.env["DATABASE_URL"] ||
   "postgresql://postgres:postgres@localhost:5432/postgres";
 const db = getDB(dbURL);
+async function truncateTables() {
+  await db.query(sql`TRUNCATE TABLE settlements;`);
+  await db.query(sql`TRUNCATE TABLE internalized_imbalances;`);
+  await db.query(sql`TRUNCATE TABLE settlement_simulations;`);
+  await db.query(sql`TRUNCATE TABLE tx_receipts;`);
+}
 
 const largeBigInt =
   115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 const tinyBigInt = 1n;
 describe("All Database Tests", () => {
   beforeEach(async () => {
-    await db.query(sql`TRUNCATE TABLE settlements;`);
-    await db.query(sql`TRUNCATE TABLE internalized_imbalances;`);
-    await db.query(sql`TRUNCATE TABLE settlement_simulations;`);
-    await db.query(sql`TRUNCATE TABLE tx_receipts;`);
+    await truncateTables();
   });
 
   afterAll(async () => {
@@ -218,7 +221,7 @@ describe("All Database Tests", () => {
       const twoResults = await getUnprocessedReceipts(db, -1);
       expect(twoResults).toEqual(receipts);
     });
-    test("markReceiptProcessed(hash)", async () => {
+    test("markReceiptProcessed works when exists", async () => {
       const receipt = {
         logs: [],
         blockNumber: 0,
@@ -237,13 +240,16 @@ describe("All Database Tests", () => {
         },
       ]);
     });
+    test("markReceiptProcessed fails silently when hash doesn't exist", async () => {
+      await expect(
+        markReceiptProcessed(db, "0x01")
+      ).resolves.not.toThrowError();
+    });
   });
 
   describe("insertPipelineResults", () => {
     beforeEach(async () => {
-      await db.query(sql`TRUNCATE TABLE settlements;`);
-      await db.query(sql`TRUNCATE TABLE internalized_imbalances;`);
-      await db.query(sql`TRUNCATE TABLE settlement_simulations;`);
+      await truncateTables();
     });
 
     function getTestData() {
