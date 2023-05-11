@@ -1,4 +1,5 @@
 import {
+  EventLog,
   isSettlementEvent,
   isTradeEvent,
   SettlementEvent,
@@ -25,14 +26,14 @@ export interface ClassifiedEvents {
   settlements: SettlementEvent[];
 }
 
-export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
+export function partitionEventLogs(logs: EventLog[]): ClassifiedEvents {
   const result: ClassifiedEvents = {
     transfers: [],
     trades: [],
     settlements: [],
   };
 
-  logs.forEach((log, index) => {
+  logs.forEach((log) => {
     // We are only interested in Transfer Events from erc20 contracts
     // along with Settlement and Trade Events from the Settlement contract
     // All other event emissions can be ignored for our purposes.
@@ -47,7 +48,7 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
       return;
     }
 
-    const possibleSettlementEvent = tryParseSettlementEventLog(log, index);
+    const possibleSettlementEvent = tryParseSettlementEventLog(log);
     if (possibleSettlementEvent) {
       const settlementEventLog = possibleSettlementEvent;
       // Relevant Event Types
@@ -67,8 +68,7 @@ export function partitionEventLogs(logs: Log[]): ClassifiedEvents {
 }
 
 export function tryParseSettlementEventLog(
-  log: Log,
-  index: number
+  log: EventLog
 ): SettlementEvent | TradeEvent | null {
   const settlementEventLog = settlementInterface.parseLog(log);
   if (settlementEventLog === null) return null;
@@ -80,7 +80,7 @@ export function tryParseSettlementEventLog(
     const { solver } = settlementEventLog.args;
     return {
       solver,
-      logIndex: index,
+      logIndex: log.index,
     } as SettlementEvent;
   } else {
     // Placeholder for other Settlement Contract Events (e.g. Interaction)

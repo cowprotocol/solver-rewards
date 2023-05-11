@@ -105,6 +105,7 @@ describe("All Database Tests", () => {
       const simulationID = "sim-id";
       const largeBigInt = 99999999999999999999999999999999999999999999999999n;
       const exampleLog = {
+        index: 0,
         address: ethers.ZeroAddress,
         // The indexed topics from the event log
         topics: [ethers.ZeroHash, ethers.ZeroHash],
@@ -253,6 +254,7 @@ describe("All Database Tests", () => {
       const token2 = "0x34";
       const simulationBlock = 1;
       const exampleLog = {
+        index: 0,
         address: ethers.ZeroAddress,
         // The indexed topics from the event log
         topics: [ethers.ZeroHash, ethers.ZeroHash],
@@ -364,6 +366,7 @@ describe("jsonFromSettlementData", () => {
       blockNumber,
       logs: [
         {
+          index: 0,
           address: ethers.ZeroAddress,
           // The indexed topics from the event log
           topics: [ethers.ZeroHash],
@@ -379,6 +382,7 @@ describe("jsonFromSettlementData", () => {
       },
       logs: [
         {
+          index: 0,
           address: ethers.ZeroAddress,
           data: ethers.ZeroHash,
           topics: [ethers.ZeroHash],

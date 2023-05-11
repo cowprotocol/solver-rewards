@@ -74,3 +74,5 @@ jobs:
       - name: Tests
         run: npm run test --silent
         working-directory: ./internal_transfers/actions
+        env:
+          NODE_URL: ${{ secrets.NODE_URL }}

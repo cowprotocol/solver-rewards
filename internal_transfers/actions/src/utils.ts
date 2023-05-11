@@ -1,4 +1,4 @@
-import { TransferEvent } from "./models";
+import { EventLog, TransferEvent } from "./models";
 import { MinimalTxData } from "./accounting";
 import { AbstractProvider } from "ethers";
 
@@ -20,13 +20,15 @@ export async function getTxDataFromHash(
     throw new Error(`invalid transaction hash ${txHash} - try again`);
   }
   const { from, hash, blockNumber, logs: readonlyLogs } = transaction;
-  const logs = readonlyLogs.map((log) => {
-    return {
-      ...log,
-      // had to Map it to make a copy of a readonly field.
-      topics: log.topics.map((value) => value),
-    };
-  });
+  const logs: EventLog[] = readonlyLogs.map(
+    ({ index, address, data, topics }) => ({
+      index,
+      address,
+      data,
+      // making a copy of a readonly field!
+      topics: [...topics],
+    })
+  );
 
   return {
     from,
