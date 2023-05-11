@@ -2,7 +2,7 @@ import { partitionEventLogs } from "./parse";
 import {
   getUnprocessedReceipts,
   insertPipelineResults,
-  insertSettlementEvent,
+  insertSettlementAndMarkProcessed,
   insertTxReceipt,
   recordExists,
 } from "./database";
@@ -63,7 +63,7 @@ export async function internalizedTokenImbalance(
   console.log(`processing settlement transaction with hash: ${txData.hash}`);
   // Duplication Guard!
   if (await recordExists(db, txHash)) {
-    console.warn(`record exists for tx: ${txHash}`);
+    console.warn(`event record exists for tx: ${txHash}`);
     return;
   }
 
@@ -88,7 +88,7 @@ export async function internalizedTokenImbalance(
         settlementEvent,
       });
     } else {
-      await insertSettlementEvent(db, eventMeta, settlementEvent);
+      await insertSettlementAndMarkProcessed(db, eventMeta, settlementEvent);
     }
   }
 }

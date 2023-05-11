@@ -11,6 +11,7 @@ import {
   insertTxReceipt,
   getUnprocessedReceipts,
   markReceiptProcessed,
+  insertSettlementAndMarkProcessed,
 } from "../src/database";
 import * as process from "process";
 import { sql } from "@databases/pg";
@@ -25,16 +26,19 @@ const dbURL: string =
   process.env["DATABASE_URL"] ||
   "postgresql://postgres:postgres@localhost:5432/postgres";
 const db = getDB(dbURL);
+async function truncateTables() {
+  await db.query(sql`TRUNCATE TABLE settlements;`);
+  await db.query(sql`TRUNCATE TABLE internalized_imbalances;`);
+  await db.query(sql`TRUNCATE TABLE settlement_simulations;`);
+  await db.query(sql`TRUNCATE TABLE tx_receipts;`);
+}
 
 const largeBigInt =
   115792089237316195423570985008687907853269984665640564039457584007913129639935n;
 const tinyBigInt = 1n;
 describe("All Database Tests", () => {
   beforeEach(async () => {
-    await db.query(sql`TRUNCATE TABLE settlements;`);
-    await db.query(sql`TRUNCATE TABLE internalized_imbalances;`);
-    await db.query(sql`TRUNCATE TABLE settlement_simulations;`);
-    await db.query(sql`TRUNCATE TABLE tx_receipts;`);
+    await truncateTables();
   });
 
   afterAll(async () => {
@@ -219,7 +223,7 @@ describe("All Database Tests", () => {
       const twoResults = await getUnprocessedReceipts(db, -1);
       expect(twoResults).toEqual(receipts);
     });
-    test("markReceiptProcessed(hash)", async () => {
+    test("markReceiptProcessed works when exists", async () => {
       const receipt = {
         logs: [],
         blockNumber: 0,
@@ -238,13 +242,56 @@ describe("All Database Tests", () => {
         },
       ]);
     });
+    test("markReceiptProcessed does nothing when hash doesn't exist", async () => {
+      await expect(
+        markReceiptProcessed(db, "0x01")
+      ).resolves.not.toThrowError();
+    });
+
+    test("insertSettlementAndMarkProcessed works together", async () => {
+      const hash = "0x";
+      const solver = "0x50";
+      const receipt = {
+        logs: [],
+        blockNumber: 1,
+        hash,
+        from: solver,
+      };
+      await insertTxReceipt(db, receipt);
+      await insertSettlementAndMarkProcessed(
+        db,
+        { txHash: hash, blockNumber: 0 },
+        { solver: solver, logIndex: 0 }
+      );
+
+      expect(await db.query(sql`SELECT * from tx_receipts;`)).toEqual([
+        {
+          block_number: 1n,
+          data: {
+            blockNumber: 1,
+            from: "0x50",
+            hash: "0x",
+            logs: [],
+          },
+          hash: hexToBytea(hash),
+          // This is the key point (processed = true)
+          processed: true,
+        },
+      ]);
+      expect(await db.query(sql`SELECT * from settlements;`)).toStrictEqual([
+        {
+          block_number: 0n,
+          log_index: 0n,
+          solver: hexToBytea(solver),
+          tx_hash: hexToBytea(hash),
+        },
+      ]);
+    });
   });
 
   describe("insertPipelineResults", () => {
     beforeEach(async () => {
-      await db.query(sql`TRUNCATE TABLE settlements;`);
-      await db.query(sql`TRUNCATE TABLE internalized_imbalances;`);
-      await db.query(sql`TRUNCATE TABLE settlement_simulations;`);
+      await truncateTables();
     });
 
     function getTestData() {

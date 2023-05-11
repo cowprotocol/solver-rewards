@@ -132,6 +132,18 @@ export interface SlippagePipelineResults {
   eventMeta: EventMeta;
   settlementEvent: SettlementEvent;
 }
+
+export async function insertSettlementAndMarkProcessed(
+  db: ConnectionPool,
+  eventMeta: EventMeta,
+  settlementEvent: SettlementEvent
+) {
+  await db.tx(async (db) => {
+    await insertSettlementEvent(db, eventMeta, settlementEvent);
+    await markReceiptProcessed(db, eventMeta.txHash);
+  });
+}
+
 export async function insertPipelineResults(
   db: ConnectionPool,
   pipelineResults: SlippagePipelineResults
@@ -141,9 +153,7 @@ export async function insertPipelineResults(
   await db.tx(async (db) => {
     await insertTokenImbalances(db, eventMeta.txHash, imbalances);
     await insertSettlementSimulations(db, settlementSimulations);
-    await insertSettlementEvent(db, eventMeta, settlementEvent);
-    // TODO - markReceiptProcessed in follow up PR.
-    // await markReceiptProcessed(db, eventMeta.txHash);
+    await insertSettlementAndMarkProcessed(db, eventMeta, settlementEvent);
   });
   console.log(`wrote ${imbalances.length} imbalances for ${eventMeta.txHash}`);
 }
