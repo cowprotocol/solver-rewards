@@ -2,8 +2,10 @@ import { partitionEventLogs } from "./parse";
 import {
   getUnprocessedReceipts,
   insertPipelineResults,
+  insertSettlementAndMarkProcessed,
   insertSettlementEvent,
   insertTxReceipt,
+  markReceiptProcessed,
   recordExists,
 } from "./database";
 import {
@@ -88,7 +90,7 @@ export async function internalizedTokenImbalance(
         settlementEvent,
       });
     } else {
-      await insertSettlementEvent(db, eventMeta, settlementEvent);
+      await insertSettlementAndMarkProcessed(db, eventMeta, settlementEvent);
     }
   }
 }
