@@ -35,7 +35,13 @@ export async function preliminaryPipelineTask(
   numConfirmationBlocks: number = 70
 ): Promise<MinimalTxData[]> {
   const txReceipt = await getTxDataFromHash(provider, txHash);
-  await insertTxReceipt(db, txReceipt);
+  const { trades } = partitionEventLogs(txReceipt.logs);
+  if (trades.length > 0) {
+    await insertTxReceipt(db, txReceipt);
+  } else {
+    console.log("No trades in batch");
+  }
+
   return getUnprocessedReceipts(
     db,
     txReceipt.blockNumber - numConfirmationBlocks
