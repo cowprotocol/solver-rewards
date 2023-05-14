@@ -62,24 +62,46 @@ export async function simulateSolverSolution(
     console.log(`batch ${transaction.hash} was not internalized.`);
     return null;
   }
-
-  const { full, reduced } = await simulateBoth(simulator, {
-    full: competition.fullCallData,
-    reduced: competition.reducedCallData,
-    common: {
-      contractAddress: SETTLEMENT_CONTRACT_ADDRESS,
-      sender: solverAddress,
-      value: "0",
-    },
-    startBlock: competition.simulationBlock,
-  });
-
-  return {
-    txHash: transaction.hash,
-    winningSettlement: competition,
-    full,
-    reduced,
-  };
+  // Try all blocks between claimed simulation block and mined block.
+  const numAttempts = transaction.blockNumber - competition.simulationBlock + 1;
+  try {
+    const { full, reduced } = await simulateBoth(
+      simulator,
+      {
+        full: competition.fullCallData,
+        reduced: competition.reducedCallData,
+        common: {
+          contractAddress: SETTLEMENT_CONTRACT_ADDRESS,
+          sender: solverAddress,
+          value: "0",
+        },
+        startBlock: competition.simulationBlock,
+      },
+      numAttempts
+    );
+    return {
+      txHash: transaction.hash,
+      winningSettlement: competition,
+      full,
+      reduced,
+    };
+  } catch (error: any) {
+    // If we fail this many simulations, we will just have to assume there is none.
+    console.error(error.errorMessage);
+    const failedSimulation = {
+      simulationID: `failed all ${numAttempts} simulation attempts`,
+      blockNumber: -1,
+      gasUsed: -1,
+      logs: [],
+      ethDelta: new Map(),
+    };
+    return {
+      txHash: transaction.hash,
+      winningSettlement: competition,
+      full: failedSimulation,
+      reduced: failedSimulation,
+    };
+  }
 }
 
 interface commonSimulationParams {
