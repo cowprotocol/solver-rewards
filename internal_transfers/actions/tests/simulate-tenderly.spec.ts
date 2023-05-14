@@ -101,7 +101,7 @@ describe("Tenderly Simulator", () => {
           topics: ["0xTOPIC_1"],
         },
       ],
-      simulationID: "tenderly-id-value",
+      simulationID: "id-value",
     });
   });
   test("isTenderlySimulationResponse() returns false", () => {

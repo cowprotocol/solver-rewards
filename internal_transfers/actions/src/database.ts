@@ -108,8 +108,10 @@ export function bigIntMapToJSON(originalMap: Map<string, bigint>): object {
 }
 export function jsonFromSettlementData(datum: SimulationData): object {
   return {
-    logs: datum.logs,
+    id: datum.simulationID,
     blockNumber: datum.blockNumber,
+    gasUsed: datum.gasUsed,
+    logs: datum.logs,
     ethDelta: bigIntMapToJSON(datum.ethDelta),
   };
 }

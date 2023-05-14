@@ -113,15 +113,15 @@ export function isTenderlySimulationResponse(
   // Even more could be done here (like 0x prefixed strings, etc...)
 }
 export function parseTenderlySimulation(
-  simulation: TenderlySimulationResponse
+  simulationResponse: TenderlySimulationResponse
 ): SimulationData {
-  const { transaction: tx } = simulation;
+  const { transaction: tx, simulation } = simulationResponse;
   if (tx != undefined) {
     const balanceDiff = tx.transaction_info.balance_diff ?? [];
     return {
-      simulationID: `tenderly-${simulation.simulation.id}`,
+      simulationID: simulation.id,
       blockNumber: tx.transaction_info.block_number,
-      gasUsed: simulation.simulation.gas_used,
+      gasUsed: simulation.gas_used,
       logs:
         tx.transaction_info.logs.map((t: { raw: Log }, index) => ({
           ...t.raw,

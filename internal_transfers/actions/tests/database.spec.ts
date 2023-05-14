@@ -105,8 +105,6 @@ describe("All Database Tests", () => {
     });
     test("insertSimulations(datum) works and fails second attempt", async () => {
       const blockNumber = 1;
-      const gasUsed = 2;
-      const simulationID = "sim-id";
       const largeBigInt = 99999999999999999999999999999999999999999999999999n;
       const exampleLog = {
         index: 0,
@@ -119,16 +117,16 @@ describe("All Database Tests", () => {
       const dummySimData: SettlementSimulationData = {
         txHash: ethers.ZeroHash,
         full: {
-          simulationID,
-          gasUsed,
+          simulationID: "full-sim",
+          gasUsed: 4,
           blockNumber,
           // Note there are 2 logs here!
           logs: [exampleLog, exampleLog],
           ethDelta: exampleEthDelta,
         },
         reduced: {
-          simulationID,
-          gasUsed,
+          simulationID: "reduced-sim",
+          gasUsed: 2,
           blockNumber,
           // and only 1 log here!
           logs: [exampleLog],
@@ -147,11 +145,15 @@ describe("All Database Tests", () => {
       const expected = [
         {
           complete: {
+            gasUsed: 4,
+            id: "full-sim",
             blockNumber: blockNumber,
             ethDelta: bigIntMapToJSON(exampleEthDelta),
             logs: [exampleLog, exampleLog],
           },
           reduced: {
+            gasUsed: 2,
+            id: "reduced-sim",
             blockNumber: blockNumber,
             ethDelta: bigIntMapToJSON(exampleEthDelta),
             logs: [exampleLog],
@@ -423,7 +425,9 @@ describe("jsonFromSettlementData", () => {
       ethDelta: new Map([["0x1", bigNumber]]),
     };
     expect(jsonFromSettlementData(dummySimData)).toStrictEqual({
-      blockNumber: 1,
+      gasUsed,
+      id: simulationID,
+      blockNumber,
       ethDelta: {
         "0x1": bigNumber.toString(),
       },
