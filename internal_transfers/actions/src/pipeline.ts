@@ -35,7 +35,15 @@ export async function preliminaryPipelineTask(
   numConfirmationBlocks: number = 70
 ): Promise<MinimalTxData[]> {
   const txReceipt = await getTxDataFromHash(provider, txHash);
-  await insertTxReceipt(db, txReceipt);
+  const { trades } = partitionEventLogs(txReceipt.logs);
+  if (trades.length > 0) {
+    await insertTxReceipt(db, txReceipt);
+  } else {
+    // E.g. Fee Withdrawal:
+    // https://etherscan.io/tx/0x72971bf0203c472c58ba0970c9cd99c14c153badac787186f3856b416a6ff59c
+    console.log("No trades in batch");
+  }
+
   return getUnprocessedReceipts(
     db,
     txReceipt.blockNumber - numConfirmationBlocks
