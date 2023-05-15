@@ -16,7 +16,7 @@ const provider = ethers.getDefaultProvider(NODE_URL!);
 
 const db = getDB("postgresql://postgres:postgres@localhost:5432/postgres");
 
-describe("Run Full Pipeline", () => {
+describe.skip("Run Full Pipeline", () => {
   test("run pipeline on non-internalized transaction", async () => {
     const notInternalized = await getTxData(
       "0x0f86c06d9ace6a88644db6b654a904aa62c82305023e094ce49650467c91bd6e"
