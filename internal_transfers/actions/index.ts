@@ -34,6 +34,6 @@ export const triggerInternalTransfersPipeline: ActionFn = async (
   );
   for (const tx of finalizedTxReceipts) {
     // Theoretically, there are only be 1 or 2 of these to process in a single run.
-    await internalizedTokenImbalance(tx, db, simulator);
+    await internalizedTokenImbalance(tx, db, simulator, provider);
   }
 };

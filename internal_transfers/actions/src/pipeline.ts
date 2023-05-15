@@ -9,6 +9,7 @@ import {
 import {
   getInternalizedImbalance,
   MinimalTxData,
+  SettlementSimulationData,
   simulateSolverSolution,
 } from "./accounting";
 import { Queryable } from "@databases/pg";
@@ -61,11 +62,13 @@ export async function preliminaryPipelineTask(
  * @param txData -- Relevant transaction data from transaction receipt
  * @param db -- Connection to a database
  * @param simulator -- Instance of a TransactionSimulator
+ * @param provider -- web3 Provider (for making ETH calls)
  */
 export async function internalizedTokenImbalance(
   txData: MinimalTxData,
   db: Queryable,
-  simulator: TransactionSimulator
+  simulator: TransactionSimulator,
+  provider: AbstractProvider
 ): Promise<void> {
   const txHash = txData.hash;
   console.log(`processing settlement transaction with hash: ${txData.hash}`);
@@ -81,10 +84,20 @@ export async function internalizedTokenImbalance(
   // It's annoying to have to handle the possibility of multiple settlements
   // in the same transaction, but it could happen.
   for (const settlement of settlements) {
-    const settlementSimulations = await simulateSolverSolution(
-      txData,
-      simulator
-    );
+    let settlementSimulations: SettlementSimulationData | null;
+    try {
+      settlementSimulations = await simulateSolverSolution(txData, simulator);
+    } catch (error) {
+      // Block containing transaction was likely forked and no longer exists.
+      // The correct approach here is to validate this by re-fetching
+      // the transaction receipt and validating that logs = []
+      const reFetchedReceipt = await getTxDataFromHash(provider, txHash);
+      if (reFetchedReceipt.logs.length === 0) {
+        settlementSimulations = null;
+      } else {
+        throw error;
+      }
+    }
     const eventMeta = { txHash, blockNumber: txData.blockNumber };
     const settlementEvent = settlement;
     // If there is a simulation, get imbalances otherwise assume none.
