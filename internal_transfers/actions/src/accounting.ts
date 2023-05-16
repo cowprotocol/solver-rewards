@@ -91,7 +91,7 @@ export async function simulateSolverSolution(
     const failedSimulation = {
       simulationID: `failed all ${numAttempts} simulation attempts`,
       blockNumber: -1,
-      gasUsed: -1,
+      gasUsed: 0,
       logs: [],
       ethDelta: new Map(),
     };
