@@ -62,24 +62,48 @@ export async function simulateSolverSolution(
     console.log(`batch ${transaction.hash} was not internalized.`);
     return null;
   }
-
-  const { full, reduced } = await simulateBoth(simulator, {
-    full: competition.fullCallData,
-    reduced: competition.reducedCallData,
-    common: {
-      contractAddress: SETTLEMENT_CONTRACT_ADDRESS,
-      sender: solverAddress,
-      value: "0",
-    },
-    startBlock: competition.simulationBlock,
-  });
-
-  return {
-    txHash: transaction.hash,
-    winningSettlement: competition,
-    full,
-    reduced,
-  };
+  // Try all blocks between claimed simulation block and mined block.
+  const numAttempts = transaction.blockNumber - competition.simulationBlock + 1;
+  try {
+    const { full, reduced } = await simulateBoth(
+      simulator,
+      {
+        full: competition.fullCallData,
+        reduced: competition.reducedCallData,
+        common: {
+          contractAddress: SETTLEMENT_CONTRACT_ADDRESS,
+          sender: solverAddress,
+          value: "0",
+        },
+        startBlock: competition.simulationBlock,
+      },
+      numAttempts
+    );
+    return {
+      txHash: transaction.hash,
+      winningSettlement: competition,
+      full,
+      reduced,
+    };
+  } catch (error: any) {
+    console.error(error.errorMessage);
+    // Sometimes (rarely) we can't simulate both components of the solver competition data.
+    // When this happens, it is assumed that there were no internalized transfers
+    // and write a kind of placeholder/trivial record as follows:
+    const failedSimulation = {
+      simulationID: `failed all ${numAttempts} simulation attempts`,
+      blockNumber: -1, // easily identifiable "trivial simulation record"
+      gasUsed: 0, // 0 gasUsed will not affect aggregate sums on gas consumption.
+      logs: [], // implies no token transfers.
+      ethDelta: new Map(), // implies no eth balance diff.
+    };
+    return {
+      txHash: transaction.hash,
+      winningSettlement: competition,
+      full: failedSimulation,
+      reduced: failedSimulation,
+    };
+  }
 }
 
 interface commonSimulationParams {
