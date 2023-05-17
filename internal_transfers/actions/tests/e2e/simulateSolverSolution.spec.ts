@@ -33,7 +33,6 @@ describe.skip("simulateSolverSolution(transaction, simulator)", () => {
     const imbalance = await simulateSolverSolution(transaction, simulator);
     expect(imbalance).toMatchSnapshot();
   });
-
   test("run pipeline on transaction known to fail first simulation", async () => {
     const simFailer = await getTxData(
       "0x82c20f4583fb2a49a1db506ef2a1777a3efc99d90d100f7d2da9ca718de395f2"
@@ -45,6 +44,24 @@ describe.skip("simulateSolverSolution(transaction, simulator)", () => {
     expect(simulation.winningSettlement.simulationBlock + 1).toEqual(
       simulation.full.blockNumber
     );
+  }, 300000);
+  test("returns default when transaction fails all attempted blocks", async () => {
+    // Fails Tenderly (but apparently does not fail Phalcon).
+    const failingSimulation = await getTxData(
+      "0x9D5F8748D29893438B01A1CA9EE21A192A760997BCDA1987A9A368DCD733A0D6"
+    );
+    const simulation = (await simulateSolverSolution(
+      failingSimulation,
+      simulator
+    ))!;
+    expect(simulation.full).toEqual(simulation.reduced);
+    expect(simulation.full).toEqual({
+      blockNumber: -1,
+      ethDelta: new Map(),
+      gasUsed: 0,
+      logs: [],
+      simulationID: "failed all 3 simulation attempts",
+    });
   }, 300000);
 });
 describe.skip("completeComposition(transaction, simulator)", () => {
