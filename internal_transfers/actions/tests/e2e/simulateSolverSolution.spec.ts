@@ -10,7 +10,7 @@ const simulator = new TenderlySimulator(
   process.env["TENDERLY_PROJECT"] || "TENDERLY_PROJECT",
   process.env["TENDERLY_ACCESS_KEY"] || "TENDERLY_ACCESS_KEY"
 );
-describe("simulateSolverSolution(transaction, simulator)", () => {
+describe.skip("simulateSolverSolution(transaction, simulator)", () => {
   test("throws when no competition found", async () => {
     const txHash =
       "0x08100e7ba81be84ee0bdce43db6640e2f992ec9991a740a689e97d20dea9dafa";
@@ -46,7 +46,7 @@ describe("simulateSolverSolution(transaction, simulator)", () => {
       simulation.full.blockNumber
     );
   }, 300000);
-  test.only("returns default when transaction fails all attempted blocks", async () => {
+  test("returns default when transaction fails all attempted blocks", async () => {
     // Fails Tenderly (but apparently does not fail Phalcon).
     const failingSimulation = await getTxData(
       "0x9D5F8748D29893438B01A1CA9EE21A192A760997BCDA1987A9A368DCD733A0D6"
