@@ -38,7 +38,6 @@ describe.skip("simulateSolverSolution(transaction, simulator)", () => {
       "0x82c20f4583fb2a49a1db506ef2a1777a3efc99d90d100f7d2da9ca718de395f2"
     );
     const simulation = (await simulateSolverSolution(simFailer, simulator))!;
-
     expect(simulation.winningSettlement.simulationBlock + 1).toEqual(
       simulation.reduced.blockNumber
     );

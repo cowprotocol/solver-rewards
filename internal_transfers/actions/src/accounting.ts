@@ -92,9 +92,9 @@ export async function simulateSolverSolution(
     // and write a kind of placeholder/trivial record as follows:
     const failedSimulation = {
       simulationID: `failed all ${numAttempts} simulation attempts`,
-      blockNumber: -1,     // easily identifiable "trivial simulation record"
-      gasUsed: 0,          // 0 will not affect aggregate sums on gas consumption (i.e. analytics)
-      logs: [],            // implies no token transfers.
+      blockNumber: -1, // easily identifiable "trivial simulation record"
+      gasUsed: 0, // 0 will not affect aggregate sums on gas consumption (i.e. analytics)
+      logs: [], // implies no token transfers.
       ethDelta: new Map(), // implies no eth balance diff.
     };
     return {
