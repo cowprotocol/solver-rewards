@@ -86,14 +86,16 @@ export async function simulateSolverSolution(
       reduced,
     };
   } catch (error: any) {
-    // If we fail this many simulations, we will just have to assume there is none.
     console.error(error.errorMessage);
+    // Sometimes (rarely) we can't simulate both components of the solver competition data.
+    // When this happens, it is assumed that there were no internalized transfers
+    // and write a kind of placeholder/trivial record as follows:
     const failedSimulation = {
       simulationID: `failed all ${numAttempts} simulation attempts`,
-      blockNumber: -1,
-      gasUsed: -1,
-      logs: [],
-      ethDelta: new Map(),
+      blockNumber: -1, // easily identifiable "trivial simulation record"
+      gasUsed: 0, // 0 gasUsed will not affect aggregate sums on gas consumption.
+      logs: [], // implies no token transfers.
+      ethDelta: new Map(), // implies no eth balance diff.
     };
     return {
       txHash: transaction.hash,
