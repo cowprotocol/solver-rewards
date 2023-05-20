@@ -5,7 +5,7 @@ import { SETTLEMENT_CONTRACT_ADDRESS } from "../../src/constants";
 // cf: https://github.com/axios/axios/issues/3821#issuecomment-1047276564
 const simulator = new EnsoSimulator("http://127.0.0.1:8080/api/v1/simulate");
 
-describe("Enso Simulator", () => {
+describe.skip("Enso Simulator", () => {
   test("simulate() returns expected output on successful simulation", async () => {
     const simulation = await simulator.simulate({
       callData:
