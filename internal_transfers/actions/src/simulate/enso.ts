@@ -3,6 +3,7 @@
 // One can follow the instructions there to run a simulation API.
 import axios from "axios";
 import {
+  SIMULATION_GAS_LIMIT,
   SimulationData,
   SimulationParams,
   TransactionSimulator,
@@ -35,7 +36,7 @@ export class EnsoSimulator implements TransactionSimulator {
         from: sender,
         to: contractAddress,
         data: callData,
-        gasLimit: 5000000,
+        gasLimit: SIMULATION_GAS_LIMIT,
         blockNumber,
         value,
       },
@@ -46,10 +47,14 @@ export class EnsoSimulator implements TransactionSimulator {
         },
       }
     );
-    if (!isEnsoSimulationResponse(response.data)) {
-      throw Error(`Invalid Response ${JSON.stringify(response.data)}`);
+    if (response.status != 200) {
+      throw Error(
+        `Invalid Response with status ${response.status} - ${JSON.stringify(
+          response
+        )}`
+      );
     }
-    return parseEnsoSimulation(response.data);
+    return parseEnsoSimulation(response.data as EnsoSimulationResponse);
   }
 }
 
@@ -60,20 +65,6 @@ interface EnsoSimulationResponse {
   success: boolean;
   trace: Trace[];
   logs: Log[];
-}
-
-export function isEnsoSimulationResponse(
-  value: any
-): value is EnsoSimulationResponse {
-  if (!value || typeof value !== "object") return false;
-  const { simulationId, gasUsed, blockNumber, success, trace, logs } = value;
-  if (!simulationId || typeof simulationId !== "number") return false;
-  if (!gasUsed || typeof gasUsed !== "number") return false;
-  if (!blockNumber || typeof blockNumber !== "number") return false;
-  if (!success || typeof success !== "boolean") return false;
-  return Array.isArray(logs) && Array.isArray(trace);
-  // Even more could be done here (like 0x prefixed strings, etc...)
-  // or logs & traces are actually logs and traces.
 }
 export function parseEnsoSimulation(
   simulation: EnsoSimulationResponse
@@ -91,5 +82,5 @@ export function parseEnsoSimulation(
       ethDelta: ethDeltaFromTraces(simulation.trace),
     };
   }
-  throw Error(`Invalid simulation data ${JSON.stringify(simulation)}`);
+  throw Error(`simulation failed ${JSON.stringify(simulation)}`);
 }
