@@ -8,6 +8,14 @@ export interface TokenImbalance {
   amount: bigint;
 }
 
+export interface Trace {
+  callType: string;
+  from: string;
+  to: string;
+  // This is a hex representation of a bigint
+  value: string;
+}
+
 export interface EventLog {
   // Block-wise index of Log
   readonly index: number;

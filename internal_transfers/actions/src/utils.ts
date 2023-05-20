@@ -1,4 +1,4 @@
-import { EventLog, TransferEvent } from "./models";
+import { EventLog, Trace, TransferEvent } from "./models";
 import { MinimalTxData } from "./accounting";
 import { AbstractProvider } from "ethers";
 
@@ -36,4 +36,21 @@ export async function getTxDataFromHash(
     blockNumber,
     logs,
   };
+}
+
+export function ethDeltaFromTraces(traces: Trace[]): Map<string, bigint> {
+  const accumulator = new Map<string, bigint>();
+  traces.map((trace) => {
+    let { to, from, value } = trace;
+    const amount = BigInt(value);
+    if (amount > 0) {
+      to = to.toLowerCase();
+      from = from.toLowerCase();
+      const currToVal = accumulator.get(to) ?? 0n;
+      const currFromVal = accumulator.get(from) ?? 0n;
+      accumulator.set(to, currToVal + amount);
+      accumulator.set(from, currFromVal - amount);
+    }
+  });
+  return accumulator;
 }

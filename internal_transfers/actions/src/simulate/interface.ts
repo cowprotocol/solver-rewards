@@ -1,5 +1,6 @@
 import { EventLog } from "../models";
 
+export const SIMULATION_GAS_LIMIT = 10e6;
 export interface SimulationParams {
   // Ethereum address transaction should be sent to.
   contractAddress: string;

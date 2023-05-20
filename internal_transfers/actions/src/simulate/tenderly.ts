@@ -1,5 +1,6 @@
 import axios from "axios";
 import {
+  SIMULATION_GAS_LIMIT,
   SimulationData,
   SimulationParams,
   TransactionSimulator,
@@ -34,7 +35,7 @@ export class TenderlySimulator implements TransactionSimulator {
         to: contractAddress,
         input: callData,
         block_number: blockNumber,
-        gas: 5000000,
+        gas: SIMULATION_GAS_LIMIT,
         gas_price: "0",
         value,
         // simulation config (tenderly specific)

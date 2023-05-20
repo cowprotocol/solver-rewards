@@ -1,4 +1,8 @@
-import { getTxDataFromHash, transferInvolves } from "../src/utils";
+import {
+  ethDeltaFromTraces,
+  getTxDataFromHash,
+  transferInvolves,
+} from "../src/utils";
 import { TransferEvent } from "../src/models";
 import { ethers } from "ethers";
 import { tryParseSettlementEventLog } from "../src/parse";
@@ -69,5 +73,89 @@ describe("getTxDataFromHash(hash)", () => {
       logIndex: 227,
       solver: "0x398890BE7c4FAC5d766E1AEFFde44B2EE99F38EF",
     });
+  });
+});
+
+describe("ethDeltaFromTraces(transfer, address)", () => {
+  test("computes ethDelta from real transaction traces", () => {
+    // Non-Zero Traces from: 0xd51ed193555e780f09c54ffcca0d93821a8ec5ce18df4ace8cd6ff2b6e2f4da7
+    const trace = [
+      {
+        callType: "CALL",
+        from: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+        to: "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+        value: "0x2ba14232b75d7c4a0",
+      },
+      {
+        callType: "CALL",
+        from: "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+        to: "0xd13c2691e0715efc6070f48242bf4317c84884f1",
+        value: "0x4563918244f40000",
+      },
+      {
+        callType: "CALL",
+        from: "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+        to: "0xb5d26158102181dc4ceee75f260a60debd752e45",
+        value: "0x1f7f7ca4e4f971b44",
+      },
+      {
+        callType: "CALL",
+        from: "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+        to: "0x11ebee2bf244325b5559f0f583722d35659ddce8",
+        value: "0xa688906bd8b0000",
+      },
+      {
+        callType: "CALL",
+        from: "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+        to: "0xc225c612926ef5f9e9578b865275a02bec6999ee",
+        value: "0x568ed0ecd4f9a95c",
+      },
+      {
+        callType: "CALL",
+        from: "0x9008d19f58aabd9ed0d60971565aa8510560ab41",
+        to: "0x3ea58745320b3ff174474841058903777573eea7",
+        value: "0x1bc16d674ec80000",
+      },
+    ];
+    expect(ethDeltaFromTraces(trace)).toEqual(
+      new Map([
+        ["0x9008d19f58aabd9ed0d60971565aa8510560ab41", 0n],
+        ["0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2", -50301868807575553184n],
+        ["0xd13c2691e0715efc6070f48242bf4317c84884f1", 5000000000000000000n],
+        ["0xb5d26158102181dc4ceee75f260a60debd752e45", 36314716558016846660n],
+        ["0x11ebee2bf244325b5559f0f583722d35659ddce8", 750000000000000000n],
+        ["0xc225c612926ef5f9e9578b865275a02bec6999ee", 6237152249558706524n],
+        ["0x3ea58745320b3ff174474841058903777573eea7", 2000000000000000000n],
+      ])
+    );
+  });
+  test("computes ethDelta on basic, but comprehensive, example", () => {
+    const trace = [
+      {
+        callType: "CALL",
+        from: "0x1",
+        to: "0x2",
+        value: "0x1",
+      },
+      {
+        callType: "CALL",
+        from: "0x2",
+        to: "0x3",
+        value: "0x2",
+      },
+      {
+        callType: "CALL",
+        from: "0x4",
+        to: "0x5",
+        value: "0x0",
+      },
+    ];
+    expect(ethDeltaFromTraces(trace)).toEqual(
+      new Map([
+        ["0x1", -1n],
+        ["0x2", -1n],
+        ["0x3", 2n],
+      ])
+    );
   });
 });
