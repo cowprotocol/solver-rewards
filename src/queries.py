@@ -60,4 +60,9 @@ QUERIES = {
         filepath="period_slippage.sql",
         q_id=2259597,
     ),
+    "DASHBOARD_SLIPPAGE": QueryData(
+        name="Dashboard Slippage for Period",
+        filepath="not currently stored in project",
+        q_id=2283297,
+    ),
 }
