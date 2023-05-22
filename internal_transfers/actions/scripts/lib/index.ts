@@ -20,25 +20,3 @@ export async function backFillTokenImbalances(
     await internalizedTokenImbalance(tx, db, simulator, provider);
   }
 }
-
-//   // Capped Parallel Processing:
-//   const cap = 5;
-//   const skipLog = [
-//       "0x755fee04e6c2a09f3c356f5b192a00830894e42008725ae1f0119fe1a7c44f97" // January 3
-//   ]
-//   for (const part of partition(batchDataForDate, cap)) {
-//     await Promise.all(
-//       part.map((tx) => {
-//         if (!skipLog.includes(tx.hash)) {
-//           internalizedTokenImbalance(tx, db, simulator, provider, true);
-//         }
-//       })
-//     );
-//     console.log("nap time;")
-//     await sleep(2);
-//   }
-// function partition(array: MinimalTxData[], size: number): MinimalTxData[][] {
-//   return array.length
-//     ? [array.splice(0, size)].concat(partition(array, size))
-//     : [];
-// }

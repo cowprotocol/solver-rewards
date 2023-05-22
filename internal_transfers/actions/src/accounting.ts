@@ -8,7 +8,6 @@ import {
   ImbalanceMap,
   imbalanceMapDiff,
 } from "./imbalance";
-import { sleep } from "@cowprotocol/ts-dune-client/dist/utils";
 
 const ETH_TOKEN = "0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee";
 
@@ -147,7 +146,6 @@ async function simulateBoth(
       };
     } catch (error) {
       attemptNumber += 1;
-      await sleep(1);
       console.warn(`Failed simulation attempt ${attemptNumber}`);
     }
   }

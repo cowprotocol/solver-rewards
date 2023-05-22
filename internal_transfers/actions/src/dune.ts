@@ -11,8 +11,8 @@ export async function getSampleSet(
     // Will take a VERY LONG TIME
     // ~ 7 minutes / day with Tenderly ==> (3.5 HOURS)
     // ~ 39 minutes / day with Enso ==> (19 HOURS)
-    // .refresh(2492342, [QueryParameter.date("Month", `${dateStr} 00:00:00`)])
-    .refresh(2470893, [QueryParameter.date("BlockDate", `${dateStr} 00:00:00`)])
+    .refresh(2492342, [QueryParameter.date("Month", `${dateStr} 00:00:00`)])
+    // .refresh(2470893, [QueryParameter.date("BlockDate", `${dateStr} 00:00:00`)])
     .then((executionResult) => executionResult.result);
   if (historicalTransactionData === undefined) {
     throw new Error("Failure");
