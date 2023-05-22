@@ -169,6 +169,15 @@ class DuneFetcher:
         Returns a class representation of the results as two lists (positive & negative).
         """
         token_list = get_trusted_tokens()
+        params = self._period_params() + [
+            QueryParameter.text_type("TxHash", "0x"),
+            QueryParameter.text_type("TokenList", ",".join(token_list)),
+        ]
+        # trigger dashboard update
+        self.dune.execute(
+            self._parameterized_query(QUERIES["DASHBOARD_SLIPPAGE"], params=params)
+        )
+
         return self._get_query_results(
             self._parameterized_query(
                 QUERIES["PERIOD_SLIPPAGE"],
