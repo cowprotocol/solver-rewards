@@ -7,12 +7,14 @@ import { TransactionSimulator } from "../../src/simulate/interface";
 
 export async function backFillTokenImbalances(
   dateStr: string,
+  dbUrl: string,
+  nodeUrl: string,
+  duneApiKey: string,
   simulator: TransactionSimulator
 ) {
-  const { DUNE_API_KEY, DB_URL, NODE_URL } = process.env;
-  const dune = new DuneClient(DUNE_API_KEY!);
-  const db = getDB(DB_URL!);
-  const provider = ethers.getDefaultProvider(NODE_URL!);
+  const dune = new DuneClient(duneApiKey);
+  const db = getDB(dbUrl);
+  const provider = ethers.getDefaultProvider(nodeUrl);
 
   const batchDataForDate = await getSampleSet(dune, dateStr);
   console.log(`Recovered ${batchDataForDate.length} records for ${dateStr}`);
