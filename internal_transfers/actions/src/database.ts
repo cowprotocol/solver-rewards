@@ -111,6 +111,7 @@ export function jsonFromSettlementData(datum: SimulationData): object {
     logs: datum.logs,
     blockNumber: datum.blockNumber,
     ethDelta: bigIntMapToJSON(datum.ethDelta),
+    simId: datum.simulationID,
   };
 }
 

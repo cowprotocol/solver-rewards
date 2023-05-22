@@ -147,11 +147,13 @@ describe("All Database Tests", () => {
       const expected = [
         {
           complete: {
+            simId: "sim-id",
             blockNumber: blockNumber,
             ethDelta: bigIntMapToJSON(exampleEthDelta),
             logs: [exampleLog, exampleLog],
           },
           reduced: {
+            simId: "sim-id",
             blockNumber: blockNumber,
             ethDelta: bigIntMapToJSON(exampleEthDelta),
             logs: [exampleLog],
@@ -423,6 +425,7 @@ describe("jsonFromSettlementData", () => {
       ethDelta: new Map([["0x1", bigNumber]]),
     };
     expect(jsonFromSettlementData(dummySimData)).toStrictEqual({
+      simId: "sim-id",
       blockNumber: 1,
       ethDelta: {
         "0x1": bigNumber.toString(),
