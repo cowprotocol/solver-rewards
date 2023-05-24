@@ -8,16 +8,28 @@ function getDuneClient(): DuneClient {
   return new DuneClient(DUNE_API_KEY!);
 }
 
-describe("Run Back Fill!", () => {
+describe.skip("Run Back Fill!", () => {
   test("back fill January 1, 2023", async () => {
+    const { DUNE_API_KEY, NODE_URL, DB_URL } = process.env;
     const simulator = new EnsoSimulator(
       "http://127.0.0.1:8080/api/v1/simulate"
     );
-    await backFillTokenImbalances("2023-02-01", simulator);
+    await backFillTokenImbalances(
+      "2023-02-01",
+      "2023-02-02",
+      DB_URL,
+      NODE_URL,
+      DUNE_API_KEY,
+      simulator
+    );
   }, 30000000);
 
   test("get sample set", async () => {
-    const sampleSet = await getSampleSet(getDuneClient(), "2023-01-01");
+    const sampleSet = await getSampleSet(
+      getDuneClient(),
+      "2023-01-01",
+      "2023-01-02"
+    );
 
     expect(sampleSet.length).toEqual(519);
     expect(sampleSet[0]).toEqual({
