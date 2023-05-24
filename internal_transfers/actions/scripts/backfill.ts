@@ -55,18 +55,8 @@ function validateDate(value: string): string {
 }
 
 export const args = parse<RuntimeArgs>({
-  dateFrom: (value: string) => {
-    if (!dateRegex.test(value)) {
-      throw new Error("Invalid date format. Please use the YYYY-MM-DD format.");
-    }
-    return value;
-  },
-  dateTo: (value: string) => {
-    if (!dateRegex.test(value)) {
-      throw new Error("Invalid date format. Please use the YYYY-MM-DD format.");
-    }
-    return value;
-  },
+  dateFrom: validateDate,
+  dateTo: validateDate,
 });
 
 backFillTokenImbalances(
