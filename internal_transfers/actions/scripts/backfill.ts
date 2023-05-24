@@ -32,18 +32,17 @@ if (!NODE_URL) {
   throw new Error("Missing NODE_URL");
 }
 
-let simulator: TransactionSimulator = new EnsoSimulator(
-  "http://127.0.0.1:8080/api/v1/simulate"
-);
-if (
-  TENDERLY_ACCESS_KEY && TENDERLY_USER && TENDERLY_PROJECT
-) {
+let simulator: TransactionSimulator;
+if (TENDERLY_ACCESS_KEY && TENDERLY_USER && TENDERLY_PROJECT) {
   console.log("Using Tenderly Simulator");
   simulator = new TenderlySimulator(
-    TENDERLY_USER!,
-    TENDERLY_PROJECT!,
-    TENDERLY_ACCESS_KEY!
+    TENDERLY_USER,
+    TENDERLY_PROJECT,
+    TENDERLY_ACCESS_KEY
   );
+} else {
+  console.log("Using Default (Local Enso) Simulator");
+  simulator = new EnsoSimulator("http://127.0.0.1:8080/api/v1/simulate");
 }
 
 export const args = parse<RuntimeArgs>({
