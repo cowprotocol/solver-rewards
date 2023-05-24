@@ -13,7 +13,9 @@ CREATE TABLE tx_receipts
     -- processing only occurs after current_block > block_number + 65
     processed    bool   NOT NULL DEFAULT false,
     -- any relevant content from transaction receipt.
-    data         jsonb  NOT NULL
+    data         jsonb  NOT NULL,
+
+    PRIMARY KEY (hash)
 );
 
 CREATE INDEX tx_receipt_idx ON tx_receipts (processed);

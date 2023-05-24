@@ -33,7 +33,7 @@ export async function insertTxReceipt(
   db: ConnectionPool,
   receipt: MinimalTxData
 ) {
-  await tx_receipts(db).insert({
+  await tx_receipts(db).insertOrIgnore({
     hash: hexToBytea(receipt.hash),
     block_number: receipt.blockNumber,
     data: receipt,
