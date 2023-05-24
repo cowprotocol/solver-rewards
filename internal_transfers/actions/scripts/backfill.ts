@@ -7,7 +7,7 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
-const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+const DATE_REGEX = /^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/;
 
 interface RuntimeArgs {
   // YYYY-MM-DD
