@@ -17,9 +17,9 @@ describe.skip("Run Back Fill!", () => {
     await backFillTokenImbalances(
       "2023-02-01",
       "2023-02-02",
-      DB_URL,
-      NODE_URL,
-      DUNE_API_KEY,
+      DB_URL!,
+      NODE_URL!,
+      DUNE_API_KEY!,
       simulator
     );
   }, 30000000);
