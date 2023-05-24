@@ -19,7 +19,7 @@ export async function getSampleSet(
     throw new Error("Failure");
   }
 
-  return historicalTransactionData!.rows.map((row: Record<string, any>) => {
+  return historicalTransactionData.rows.map((row: Record<string, any>) => {
     const { blockNumber, from, hash, logs } = row;
     if (!isEventLogArray(logs)) {
       throw Error(`Invalid Row ${JSON.stringify(row)}`);
