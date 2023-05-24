@@ -36,7 +36,7 @@ let simulator: TransactionSimulator = new EnsoSimulator(
   "http://127.0.0.1:8080/api/v1/simulate"
 );
 if (
-  ![TENDERLY_ACCESS_KEY, TENDERLY_USER, TENDERLY_PROJECT].includes(undefined)
+  TENDERLY_ACCESS_KEY && TENDERLY_USER && TENDERLY_PROJECT
 ) {
   console.log("Using Tenderly Simulator");
   simulator = new TenderlySimulator(
@@ -57,4 +57,4 @@ backFillTokenImbalances(
   NODE_URL,
   DUNE_API_KEY,
   simulator
-).then((_) => console.log("Execution Complete"));
+).then(() => console.log("Execution Complete"));

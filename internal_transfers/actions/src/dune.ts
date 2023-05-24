@@ -26,8 +26,8 @@ export async function getSampleSet(
     }
     return {
       blockNumber: parseInt(blockNumber),
-      from: from,
-      hash: hash,
+      from,
+      hash,
       logs: logs.map((log) => JSON.parse(log)),
     };
   });
