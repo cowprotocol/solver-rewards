@@ -6,6 +6,7 @@ import {
   preliminaryPipelineTask,
 } from "./src/pipeline";
 import { TenderlySimulator } from "./src/simulate/tenderly";
+import { alertSlack } from "./src/alert/slack";
 
 export const triggerInternalTransfersPipeline: ActionFn = async (
   context: Context,
@@ -34,6 +35,11 @@ export const triggerInternalTransfersPipeline: ActionFn = async (
   );
   for (const tx of finalizedTxReceipts) {
     // Theoretically, there are only be 1 or 2 of these to process in a single run.
-    await internalizedTokenImbalance(tx, db, simulator, provider);
+    try {
+      await internalizedTokenImbalance(tx, db, simulator, provider);
+    } catch (error: any) {
+      const slackWebhook = await context.secrets.get("slackEmergencyChannel");
+      await alertSlack(slackWebhook, error.message);
+    }
   }
 };

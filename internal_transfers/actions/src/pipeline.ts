@@ -95,7 +95,6 @@ export async function internalizedTokenImbalance(
       if (reFetchedReceipt.logs.length === 0) {
         settlementSimulations = null;
       } else {
-        // TODO - TENDERLY ALERT?!
         throw error;
       }
     }
