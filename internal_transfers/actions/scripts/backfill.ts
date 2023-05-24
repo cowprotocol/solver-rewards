@@ -47,6 +47,13 @@ if (TENDERLY_ACCESS_KEY && TENDERLY_USER && TENDERLY_PROJECT) {
   simulator = new EnsoSimulator("http://127.0.0.1:8080/api/v1/simulate");
 }
 
+function validateDate(value: string): string {
+  if (!DATE_REGEX.test(value)) {
+    throw new Error("Invalid date format. Please use the YYYY-MM-DD format.");
+  }
+  return value;
+}
+
 export const args = parse<RuntimeArgs>({
   dateFrom: (value: string) => {
     if (!dateRegex.test(value)) {
