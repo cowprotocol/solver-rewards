@@ -9,7 +9,8 @@ dotenv.config();
 
 interface RuntimeArgs {
   // YYYY-MM-DD
-  monthString: string;
+  dateFrom: string;
+  dateTo: string;
 }
 
 const {
@@ -46,10 +47,12 @@ if (
 }
 
 export const args = parse<RuntimeArgs>({
-  monthString: String,
+  dateFrom: String,
+  dateTo: String,
 });
 backFillTokenImbalances(
-  args.monthString,
+  args.dateFrom,
+  args.dateTo,
   DB_URL,
   NODE_URL,
   DUNE_API_KEY,
