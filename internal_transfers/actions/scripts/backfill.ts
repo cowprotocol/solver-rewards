@@ -7,6 +7,8 @@ const dotenv = require("dotenv");
 
 dotenv.config();
 
+const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+
 interface RuntimeArgs {
   // YYYY-MM-DD
   dateFrom: string;
@@ -46,9 +48,20 @@ if (TENDERLY_ACCESS_KEY && TENDERLY_USER && TENDERLY_PROJECT) {
 }
 
 export const args = parse<RuntimeArgs>({
-  dateFrom: String,
-  dateTo: String,
+  dateFrom: (value: string) => {
+    if (!dateRegex.test(value)) {
+      throw new Error("Invalid date format. Please use the YYYY-MM-DD format.");
+    }
+    return value;
+  },
+  dateTo: (value: string) => {
+    if (!dateRegex.test(value)) {
+      throw new Error("Invalid date format. Please use the YYYY-MM-DD format.");
+    }
+    return value;
+  },
 });
+
 backFillTokenImbalances(
   args.dateFrom,
   args.dateTo,
