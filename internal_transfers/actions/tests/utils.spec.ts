@@ -160,3 +160,17 @@ describe("ethDeltaFromTraces(transfer, address)", () => {
     );
   });
 });
+
+describe('validateDate', () => {
+  it('should return the valid date string', () => {
+    const validDate = '2023-05-24';
+    expect(validateDate(validDate)).toBe(validDate);
+  });
+
+  it('should throw an error for an invalid date format', () => {
+    const invalidDate = '05/24/2023';
+    expect(() => validateDate(invalidDate)).toThrow(
+      'Invalid date format. Please use the YYYY-MM-DD format.'
+    );
+  });
+});
