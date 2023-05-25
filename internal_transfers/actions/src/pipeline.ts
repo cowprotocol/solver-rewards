@@ -4,6 +4,7 @@ import {
   insertPipelineResults,
   insertSettlementAndMarkProcessed,
   insertTxReceipt,
+  markReceiptProcessed,
   recordExists,
 } from "./database";
 import {
@@ -75,6 +76,7 @@ export async function internalizedTokenImbalance(
   // Duplication Guard!
   if (await recordExists(db, txHash)) {
     console.warn(`event record exists for tx: ${txHash}`);
+    await markReceiptProcessed(db, txHash);
     return;
   }
 
