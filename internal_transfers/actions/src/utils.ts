@@ -54,3 +54,16 @@ export function ethDeltaFromTraces(traces: Trace[]): Map<string, bigint> {
   });
   return accumulator;
 }
+
+/**
+ * Validates a date string to ensure it follows the format YYYY-MM-DD.
+ * @param {string} value - The date string to validate.
+ * @returns {string} The validated date string.
+ * @throws {Error} If the date format is invalid.
+ */
+export function validateDate(value: string): string {
+  if (!/^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/.test(value)) {
+    throw new Error("Invalid date format. Please use the YYYY-MM-DD format.");
+  }
+  return value;
+}

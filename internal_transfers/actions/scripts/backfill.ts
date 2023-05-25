@@ -1,12 +1,12 @@
 import { backFillTokenImbalances } from "./lib";
 import { EnsoSimulator } from "../src/simulate/enso";
 import { TenderlySimulator } from "../src/simulate/tenderly";
+import { validateDate } from "../src/utils";
 import { TransactionSimulator } from "../src/simulate/interface";
 import { parse } from "ts-command-line-args";
 const dotenv = require("dotenv");
 
 dotenv.config();
-
 interface RuntimeArgs {
   // YYYY-MM-DD
   dateFrom: string;
@@ -46,9 +46,10 @@ if (TENDERLY_ACCESS_KEY && TENDERLY_USER && TENDERLY_PROJECT) {
 }
 
 export const args = parse<RuntimeArgs>({
-  dateFrom: String,
-  dateTo: String,
+  dateFrom: validateDate,
+  dateTo: validateDate,
 });
+
 backFillTokenImbalances(
   args.dateFrom,
   args.dateTo,
