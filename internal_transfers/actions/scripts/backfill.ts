@@ -1,6 +1,7 @@
 import { backFillTokenImbalances } from "./lib";
 import { EnsoSimulator } from "../src/simulate/enso";
 import { TenderlySimulator } from "../src/simulate/tenderly";
+import { validateDate } from "../src/utils";
 import { TransactionSimulator } from "../src/simulate/interface";
 import { parse } from "ts-command-line-args";
 const dotenv = require("dotenv");
