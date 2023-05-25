@@ -2,7 +2,7 @@ import {
   ethDeltaFromTraces,
   getTxDataFromHash,
   transferInvolves,
-  validateDate
+  validateDate,
 } from "../src/utils";
 import { TransferEvent } from "../src/models";
 import { ethers } from "ethers";
@@ -161,44 +161,44 @@ describe("ethDeltaFromTraces(transfer, address)", () => {
   });
 });
 
-describe('validateDate', () => {
-  it('should return the valid date string', () => {
-    const validDate = '2023-05-24';
+describe("validateDate", () => {
+  it("should return the valid date string", () => {
+    const validDate = "2023-05-24";
     expect(validateDate(validDate)).toBe(validDate);
   });
 
-  it('should throw an error for an invalid date format', () => {
-    const invalidDate = '05/24/2023';
+  it("should throw an error for an invalid date format", () => {
+    const invalidDate = "05/24/2023";
     expect(() => validateDate(invalidDate)).toThrow(
-      'Invalid date format. Please use the YYYY-MM-DD format.'
+      "Invalid date format. Please use the YYYY-MM-DD format."
     );
   });
 
-  it('should throw an error for an empty string', () => {
-    const emptyDate = '';
+  it("should throw an error for an empty string", () => {
+    const emptyDate = "";
     expect(() => validateDate(emptyDate)).toThrow(
-      'Invalid date format. Please use the YYYY-MM-DD format.'
+      "Invalid date format. Please use the YYYY-MM-DD format."
     );
   });
 
-  it('should throw an error for a date with an invalid year', () => {
-    const invalidYearDate = '202x-05-24';
+  it("should throw an error for a date with an invalid year", () => {
+    const invalidYearDate = "202x-05-24";
     expect(() => validateDate(invalidYearDate)).toThrow(
-      'Invalid date format. Please use the YYYY-MM-DD format.'
+      "Invalid date format. Please use the YYYY-MM-DD format."
     );
   });
 
-  it('should throw an error for a date with an invalid month', () => {
-    const invalidMonthDate = '2023-13-24';
+  it("should throw an error for a date with an invalid month", () => {
+    const invalidMonthDate = "2023-13-24";
     expect(() => validateDate(invalidMonthDate)).toThrow(
-      'Invalid date format. Please use the YYYY-MM-DD format.'
+      "Invalid date format. Please use the YYYY-MM-DD format."
     );
   });
 
-  it('should throw an error for a date with an invalid day', () => {
-    const invalidDayDate = '2023-05-32';
+  it("should throw an error for a date with an invalid day", () => {
+    const invalidDayDate = "2023-05-32";
     expect(() => validateDate(invalidDayDate)).toThrow(
-      'Invalid date format. Please use the YYYY-MM-DD format.'
+      "Invalid date format. Please use the YYYY-MM-DD format."
     );
   });
 });
