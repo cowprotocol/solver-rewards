@@ -54,3 +54,11 @@ export function ethDeltaFromTraces(traces: Trace[]): Map<string, bigint> {
   });
   return accumulator;
 }
+
+
+export function validateDate(value: string): string {
+  if (!/^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/.test(value)) {
+    throw new Error("Invalid date format. Please use the YYYY-MM-DD format.");
+  }
+  return value;
+}
