@@ -180,4 +180,25 @@ describe('validateDate', () => {
       'Invalid date format. Please use the YYYY-MM-DD format.'
     );
   });
+
+  it('should throw an error for a date with an invalid year', () => {
+    const invalidYearDate = '202x-05-24';
+    expect(() => validateDate(invalidYearDate)).toThrow(
+      'Invalid date format. Please use the YYYY-MM-DD format.'
+    );
+  });
+
+  it('should throw an error for a date with an invalid month', () => {
+    const invalidMonthDate = '2023-13-24';
+    expect(() => validateDate(invalidMonthDate)).toThrow(
+      'Invalid date format. Please use the YYYY-MM-DD format.'
+    );
+  });
+
+  it('should throw an error for a date with an invalid day', () => {
+    const invalidDayDate = '2023-05-32';
+    expect(() => validateDate(invalidDayDate)).toThrow(
+      'Invalid date format. Please use the YYYY-MM-DD format.'
+    );
+  });
 });
