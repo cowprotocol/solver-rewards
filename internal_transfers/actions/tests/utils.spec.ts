@@ -173,4 +173,11 @@ describe('validateDate', () => {
       'Invalid date format. Please use the YYYY-MM-DD format.'
     );
   });
+
+  it('should throw an error for an empty string', () => {
+    const emptyDate = '';
+    expect(() => validateDate(emptyDate)).toThrow(
+      'Invalid date format. Please use the YYYY-MM-DD format.'
+    );
+  });
 });
