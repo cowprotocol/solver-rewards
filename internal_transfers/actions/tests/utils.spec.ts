@@ -2,6 +2,7 @@ import {
   ethDeltaFromTraces,
   getTxDataFromHash,
   transferInvolves,
+  validateDate
 } from "../src/utils";
 import { TransferEvent } from "../src/models";
 import { ethers } from "ethers";
