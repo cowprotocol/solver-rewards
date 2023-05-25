@@ -7,9 +7,6 @@ import { parse } from "ts-command-line-args";
 const dotenv = require("dotenv");
 
 dotenv.config();
-
-const DATE_REGEX = /^\d{4}\-(0[1-9]|1[012])\-(0[1-9]|[12][0-9]|3[01])$/;
-
 interface RuntimeArgs {
   // YYYY-MM-DD
   dateFrom: string;
