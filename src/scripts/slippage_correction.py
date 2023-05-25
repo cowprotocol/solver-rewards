@@ -1,3 +1,4 @@
+"""Basic script combining a bunch of Dune CSV results to correct Slippage calculation."""
 import os
 
 import pandas as pd
@@ -27,6 +28,9 @@ NEW_SLIPPAGE_EXECUTION_IDS = {
 def join_coalesce_fillna(
     df_1: pd.DataFrame, df_2: pd.DataFrame, suffixes: tuple[str, str] = ("_old", "_new")
 ) -> pd.DataFrame:
+    """
+    Joins `df_1` and `df_2` on column `solver_address` with name suffixes provided (or old-new)
+    """
     merged = pd.merge(
         df_1, df_2, on="solver_address", how="outer", suffixes=list(suffixes)
     )
@@ -81,7 +85,16 @@ if __name__ == "__main__":
             agg_result, diff_df, suffixes=(str(month - 1), str(month))
         )
 
-    agg_result["total_wei"] = sum([agg_result[f"eth_diff_wei{i}"] for i in months])
-    agg_result["total_us"] = sum([agg_result[f"us_diff{i}"] for i in months])
-    agg_result["total_eth"] = agg_result["total"] / 1e18
-    agg_result.to_csv("./whateva.csv")
+    agg_result["total_wei"] = sum(agg_result[f"eth_diff_wei{i}"] for i in months)
+    agg_result["total_us"] = sum(agg_result[f"us_diff{i}"] for i in months)
+    agg_result["total_eth"] = agg_result["total_wei"] / 1e18
+
+    agg_result.to_csv("./slippage_correction.csv", index=False)
+
+    # Negatives are outgoing from us, positives are incoming to us.
+    # transfer_file = agg_result[["solver_address", "total_eth"]]
+    # transfer_file = transfer_file.assign(token_address="")
+    # transfer_file = transfer_file.rename(
+    #     columns={"solver_address": "receiver", "total_eth": "amount"}
+    # )
+    # transfer_file.to_csv("./transfer_file.csv", index=False)
