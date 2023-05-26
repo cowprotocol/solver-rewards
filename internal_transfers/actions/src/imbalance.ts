@@ -14,14 +14,14 @@ export function aggregateTransfers(
   focalAccount: string
 ): ImbalanceMap {
   const accumulator: ImbalanceMap = new Map<string, bigint>();
-  transfers.map((transfer) => {
+  transfers.forEach((transfer) => {
     let { to, from, amount, token } = transfer;
     token = token.toLowerCase();
     const currVal = accumulator.get(token) ?? 0n;
-    if (to.toLowerCase() == focalAccount.toLowerCase()) {
+    if (to.toLowerCase() === focalAccount.toLowerCase()) {
       // Incoming Transfer
       accumulator.set(token, currVal + amount);
-    } else if (from.toLowerCase() == focalAccount.toLowerCase()) {
+    } else if (from.toLowerCase() === focalAccount.toLowerCase()) {
       // Outgoing Transfer
       accumulator.set(token, currVal - amount);
     } else {

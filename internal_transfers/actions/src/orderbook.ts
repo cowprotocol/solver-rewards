@@ -30,7 +30,9 @@ async function getWinningSettlementFromOrderbookAPI(
   } catch (exception) {
     if (axios.isAxiosError(exception)) {
       if (exception.response?.status != 404) {
-        throw `ERROR response status from ${apiUrl}: ${exception.response}`;
+        throw new Error(
+          `ERROR response status from ${apiUrl}: ${exception.response}`
+        );
       }
       // Not Found (404) is an expected response from the API.
       // Could be for any of the following reasons:
@@ -42,7 +44,9 @@ async function getWinningSettlementFromOrderbookAPI(
       //  its cheaper and faster to query orderbook API for the data we want without validation.
       return undefined;
     } else {
-      throw `ERROR unexpected response received from ${apiUrl}: ${exception}`;
+      throw new Error(
+        `ERROR unexpected response received from ${apiUrl}: ${exception}`
+      );
     }
   }
 }
