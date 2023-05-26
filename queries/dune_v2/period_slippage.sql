@@ -1,4 +1,5 @@
 -- https://github.com/cowprotocol/solver-rewards/pull/259
+-- Query Here: https://dune.com/queries/2421375
 with
 batch_meta as (
     select b.block_time,
@@ -356,7 +357,7 @@ incoming_and_outgoing as (
         sum(usd_value) as usd_value,
         sum(eth_slippage_wei) as eth_slippage_wei,
         concat(
-            '<a href="https://dune.com/queries/2259597?SolverAddress=',
+            '<a href="https://dune.com/queries/2421375?SolverAddress=',
             cast(solver_address as varchar),
             '&CTE_NAME=results_per_tx',
             '&StartTime={{StartTime}}',
