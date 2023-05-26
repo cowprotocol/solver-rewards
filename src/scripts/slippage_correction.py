@@ -46,8 +46,9 @@ def join_coalesce_fillna(
         merged[col] = merged[f"{col}{suffixes[0]}"].combine_first(
             merged[f"{col}{suffixes[1]}"]
         )
-        del merged[f"{col}{suffixes[0]}"]
-        del merged[f"{col}{suffixes[1]}"]
+        merged.drop(f"{col}{suffixes[0]}")
+        merged.drop(f"{col}{suffixes[1]}")
+
     except KeyError:
         # No solver name column.
         pass
