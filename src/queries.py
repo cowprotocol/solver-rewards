@@ -58,11 +58,11 @@ QUERIES = {
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
         filepath="period_slippage.sql",
-        q_id=2259597,
+        q_id=2421375,
     ),
     "DASHBOARD_SLIPPAGE": QueryData(
-        name="Dashboard Slippage for Period",
+        name="Period Solver Rewards",
         filepath="not currently stored in project",
-        q_id=2283297,
+        q_id=2510345,
     ),
 }
