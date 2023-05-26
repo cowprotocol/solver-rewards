@@ -34,7 +34,7 @@ def join_coalesce_fillna(
     df_1: pd.DataFrame,
     df_2: pd.DataFrame,
     suffixes: tuple[str, str] = ("_old", "_new"),
-    join_col: str = "solver_address",
+    join_col: str | list[str] = "solver_address",
 ) -> pd.DataFrame:
     """
     Joins `df_1` and `df_2` on column `join_col` with name suffixes provided (or old-new)
@@ -46,8 +46,8 @@ def join_coalesce_fillna(
         merged[col] = merged[f"{col}{suffixes[0]}"].combine_first(
             merged[f"{col}{suffixes[1]}"]
         )
-        merged.drop(f"{col}{suffixes[0]}")
-        merged.drop(f"{col}{suffixes[1]}")
+        merged.drop(f"{col}{suffixes[0]}", axis=1, inplace=True)
+        merged.drop(f"{col}{suffixes[1]}", axis=1, inplace=True)
 
     except KeyError:
         # No solver name column.
@@ -71,7 +71,9 @@ def compute_slippage_correction(dune: DuneClient) -> None:
             usecols=desired_columns,
         )
 
-        combined_df = join_coalesce_fillna(old_df, new_df)
+        combined_df = join_coalesce_fillna(
+            old_df, new_df, join_col=["solver_address", "solver_name"]
+        )
 
         combined_df["eth_diff_wei"] = (
             combined_df["eth_slippage_wei_old"] - combined_df["eth_slippage_wei_new"]
