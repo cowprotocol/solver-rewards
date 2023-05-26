@@ -24,33 +24,40 @@ NEW_SLIPPAGE_EXECUTION_IDS = {
     # 5: ""
 }
 
+PER_TX_SLIPPAGE = {
+    "new": "01H19PW76SB71Y1W6WF0ZJD409",
+    "old": "01H19PQE2APRXGM01F8X7H71WY",
+}
+
 
 def join_coalesce_fillna(
-    df_1: pd.DataFrame, df_2: pd.DataFrame, suffixes: tuple[str, str] = ("_old", "_new")
+    df_1: pd.DataFrame,
+    df_2: pd.DataFrame,
+    suffixes: tuple[str, str] = ("_old", "_new"),
+    join_col: str = "solver_address",
 ) -> pd.DataFrame:
     """
     Joins `df_1` and `df_2` on column `solver_address` with name suffixes provided (or old-new)
     """
-    merged = pd.merge(
-        df_1, df_2, on="solver_address", how="outer", suffixes=list(suffixes)
-    )
-
-    # coalesce solver names
-    col = "solver_name"
-    merged[col] = merged[f"{col}{suffixes[0]}"].combine_first(
-        merged[f"{col}{suffixes[1]}"]
-    )
-    del merged[f"{col}{suffixes[0]}"]
-    del merged[f"{col}{suffixes[1]}"]
+    merged = pd.merge(df_1, df_2, on=join_col, how="outer", suffixes=list(suffixes))
+    try:
+        # coalesce solver names
+        col = "solver_name"
+        merged[col] = merged[f"{col}{suffixes[0]}"].combine_first(
+            merged[f"{col}{suffixes[1]}"]
+        )
+        del merged[f"{col}{suffixes[0]}"]
+        del merged[f"{col}{suffixes[1]}"]
+    except KeyError:
+        # No solver name column.
+        pass
 
     merged.fillna(0, inplace=True)
     return merged
 
 
-if __name__ == "__main__":
-    load_dotenv()
-    dune = DuneClient(os.environ["DUNE_API_KEY"])
-
+def compute_slippage_correction(dune: DuneClient) -> None:
+    """Slippage Correction over months."""
     month_diffs = {}
     for month in months:
         old_df = pd.read_csv(
@@ -91,10 +98,23 @@ if __name__ == "__main__":
 
     agg_result.to_csv("./slippage_correction.csv", index=False)
 
-    # Negatives are outgoing from us, positives are incoming to us.
-    # transfer_file = agg_result[["solver_address", "total_eth"]]
-    # transfer_file = transfer_file.assign(token_address="")
-    # transfer_file = transfer_file.rename(
-    #     columns={"solver_address": "receiver", "total_eth": "amount"}
-    # )
-    # transfer_file.to_csv("./transfer_file.csv", index=False)
+
+def compute_large_diffs_per_tx(dune: DuneClient) -> None:
+    """Largest differences in slippage per transaction"""
+    per_tx_df = join_coalesce_fillna(
+        df_1=pd.read_csv(dune.get_result_csv(PER_TX_SLIPPAGE["old"]).data),
+        df_2=pd.read_csv(dune.get_result_csv(PER_TX_SLIPPAGE["new"]).data),
+        join_col="tx_hash",
+    )
+    per_tx_df["diff_us"] = per_tx_df["usd_value_new"] - per_tx_df["usd_value_old"]
+
+    # Everything differing by 100 USD in absolute value.
+    reduced = per_tx_df[abs(per_tx_df["diff_us"]) > 100]
+    reduced.to_csv("./biggest_diff.csv", index=False)
+
+
+if __name__ == "__main__":
+    load_dotenv()
+    dune_client = DuneClient(os.environ["DUNE_API_KEY"])
+    compute_slippage_correction(dune_client)
+    compute_large_diffs_per_tx(dune_client)
