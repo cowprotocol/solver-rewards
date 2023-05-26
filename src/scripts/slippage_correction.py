@@ -37,7 +37,7 @@ def join_coalesce_fillna(
     join_col: str = "solver_address",
 ) -> pd.DataFrame:
     """
-    Joins `df_1` and `df_2` on column `solver_address` with name suffixes provided (or old-new)
+    Joins `df_1` and `df_2` on column `join_col` with name suffixes provided (or old-new)
     """
     merged = pd.merge(df_1, df_2, on=join_col, how="outer", suffixes=list(suffixes))
     try:
@@ -59,17 +59,16 @@ def join_coalesce_fillna(
 def compute_slippage_correction(dune: DuneClient) -> None:
     """Slippage Correction over months."""
     month_diffs = {}
+    desired_columns = ["solver_address", "solver_name", "usd_value", "eth_slippage_wei"]
     for month in months:
         old_df = pd.read_csv(
-            dune.get_result_csv(OLD_SLIPPAGE_EXECUTION_IDS[month]).data
+            dune.get_result_csv(OLD_SLIPPAGE_EXECUTION_IDS[month]).data,
+            usecols=desired_columns,
         )
         new_df = pd.read_csv(
-            dune.get_result_csv(NEW_SLIPPAGE_EXECUTION_IDS[month]).data
+            dune.get_result_csv(NEW_SLIPPAGE_EXECUTION_IDS[month]).data,
+            usecols=desired_columns,
         )
-
-        # Take out the trash
-        del old_df["batchwise_breakdown"]
-        del new_df["batchwise_breakdown"]
 
         combined_df = join_coalesce_fillna(old_df, new_df)
 
@@ -80,7 +79,6 @@ def compute_slippage_correction(dune: DuneClient) -> None:
         combined_df["us_diff"] = (
             combined_df["usd_value_old"] - combined_df["usd_value_new"]
         )
-        # combined_df["eth_diff"] = combined_df["eth_diff_wei"] / 1e18
 
         month_diffs[month] = combined_df[
             ["solver_address", "solver_name", "eth_diff_wei", "us_diff"]
@@ -96,7 +94,7 @@ def compute_slippage_correction(dune: DuneClient) -> None:
     agg_result["total_us"] = sum(agg_result[f"us_diff{i}"] for i in months)
     agg_result["total_eth"] = agg_result["total_wei"] / 1e18
 
-    agg_result.to_csv("./slippage_correction.csv", index=False)
+    agg_result.to_csv("./data/slippage_correction.csv", index=False)
 
 
 def compute_large_diffs_per_tx(dune: DuneClient) -> None:
@@ -110,7 +108,7 @@ def compute_large_diffs_per_tx(dune: DuneClient) -> None:
 
     # Everything differing by 100 USD in absolute value.
     reduced = per_tx_df[abs(per_tx_df["diff_us"]) > 100]
-    reduced.to_csv("./biggest_diff.csv", index=False)
+    reduced.to_csv("./data/biggest_diff.csv", index=False)
 
 
 if __name__ == "__main__":
