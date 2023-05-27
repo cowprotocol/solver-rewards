@@ -59,7 +59,6 @@ export function partitionEventLogs(logs: EventLog[]): ClassifiedEvents {
       } else {
         // Placeholder for other Settlement Contract Events (e.g. Interaction)
       }
-      return;
     }
     // Placeholder for any event emitted not by erc20 token or Settlement contract.
     // Examples here include WETH deposit/withdrawals, AMM Swaps etc.

@@ -40,7 +40,7 @@ export async function getTxDataFromHash(
 
 export function ethDeltaFromTraces(traces: Trace[]): Map<string, bigint> {
   const accumulator = new Map<string, bigint>();
-  traces.map((trace) => {
+  traces.forEach((trace) => {
     let { to, from, value } = trace;
     const amount = BigInt(value);
     if (amount > 0) {

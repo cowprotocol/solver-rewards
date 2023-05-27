@@ -130,13 +130,15 @@ if __name__ == "__main__":
         payout_transfers = Transfer.consolidate(payout_transfers)
 
     if args.post_tx:
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
         auto_propose(
             transfers=payout_transfers,
             log_saver=dune.log_saver,
             slack_client=WebClient(
                 token=os.environ["SLACK_TOKEN"],
                 # https://stackoverflow.com/questions/59808346/python-3-slack-client-ssl-sslcertverificationerror
-                ssl=ssl.create_default_context(cafile=certifi.where()),
+                ssl=ssl_context,
             ),
             dry_run=args.dry_run,
         )
