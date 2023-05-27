@@ -17,5 +17,5 @@ pg_dump --host $SOURCE_HOST --port $SOURCE_PORT --user $SOURCE_USER --data-only 
 psql -h $DEST_HOST -U $DEST_WRITE_USER -d $DEST_DB -a -f ./backup.sql
 
 # 5. Update `WAREHOUSE_URL` in dune-sync configuration in https://github.com/cowprotocol/infrastructure/
-export DEST_READ_URL=postgresql://${DEST_READ_USER}:${DEST_READ_PASSWORD}@${DEST_HOST}:${DEST_PORT}/${DEST_DB}
+export DEST_READ_URL=${DEST_READ_USER}:${DEST_READ_PASSWORD}@${DEST_HOST}:${DEST_PORT}/${DEST_DB}
 pulumi config set --secret warehouseUrl $DEST_READ_URL
