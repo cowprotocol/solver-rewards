@@ -21,7 +21,11 @@ batch_meta as (
 ,filtered_trades as (
     select t.tx_hash,
            t.block_number,
-           trader                                       as trader_in,
+           case
+                when trader = 0x9008d19f58aabd9ed0d60971565aa8510560ab41
+                then 0x0000000000000000000000000000000000000000
+                else trader
+           end as trader_in,
            receiver                                     as trader_out,
            sell_token_address                           as sell_token,
            buy_token_address                            as buy_token,
@@ -90,6 +94,7 @@ batch_meta as (
       and 0x9008d19f58aabd9ed0d60971565aa8510560ab41 in (to, "from")
       and not contains(traders_in, "from")
       and not contains(traders_out, to)
+      and to != "from"
       and "from" not in ( -- ETH FLOW ORDERS ARE NOT AMM TRANSFERS!
           select distinct contract_address
           from cow_protocol_ethereum.CoWSwapEthFlow_evt_OrderPlacement
