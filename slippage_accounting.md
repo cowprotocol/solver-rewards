@@ -19,8 +19,8 @@ In all cases `IN` represents settlement contract as `recipient` and `OUT` as `se
 - `AMM_{IN/OUT}` classification is assigned to all on-chain transfers that are NOT user transfers
 - `PHANTOM_TRANSFER` represents token transfers associated with _internalized buffer trades_. In brief, these are
   transfers related to AMM interactions that were "skipped" for the purpose of gas optimization in favour of using the
-  settlement contract's internal holdings. The process for including this "off-chain" data in rather involved so we
-  dedicate and entire section to it (see below).
+  settlement contract's internal holdings. The process for including this "off-chain" data is rather involved so we
+  dedicate an entire section to it (see below).
 
 Note that `AMM_IN/OUT` also captures `WETH` token (un)wraps.
 
