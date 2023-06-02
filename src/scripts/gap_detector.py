@@ -2,8 +2,10 @@
 Gap detection script for finding missing transaction hashes of settlements.
 Uses a form of binary search to minimize/reduce API requests.
 """
+from __future__ import annotations
 import argparse
 import os
+from dataclasses import dataclass
 
 import pandas as pd
 from pandas import DataFrame
@@ -27,6 +29,35 @@ DUNE_COUNT_QUERY_ID = 2481826
 DUNE_HASH_QUERY_ID = 2532671
 
 JANUARY_2023 = 16308190
+
+
+@dataclass
+class SourceDiff:
+    """Dataclass of set differences"""
+
+    dune_not_db: set[str]
+    db_not_dune: set[str]
+
+    @classmethod
+    def from_pair(cls, dune: set[str], database: set[str]) -> SourceDiff:
+        """constructor from two sets"""
+        return cls(dune_not_db=dune - database, db_not_dune=database - dune)
+
+    @classmethod
+    def default(cls) -> SourceDiff:
+        """Empty object"""
+        return cls(dune_not_db=set(), db_not_dune=set())
+
+    def union(self, other: SourceDiff) -> SourceDiff:
+        """component wise set union"""
+        return SourceDiff(
+            dune_not_db=self.dune_not_db.union(other.dune_not_db),
+            db_not_dune=self.db_not_dune.union(other.db_not_dune),
+        )
+
+    def is_empty(self) -> bool:
+        """equivalent to is default object with both empty components"""
+        return not self.db_not_dune and not self.dune_not_db
 
 
 class GapDetector:
@@ -57,18 +88,6 @@ class GapDetector:
             self.database.connections[0],
         )
 
-    def tx_list_diff(
-        self,
-        start: int,
-        end: int,
-    ) -> set[str]:
-        """Gets the list of differing transaction hashes between Dune and Database"""
-        dune_hashes = set(self.dune_df(DUNE_HASH_QUERY_ID, start, end)["tx_hash"])
-        db_hashes = set(self.db_df(DB_HASH_QUERY, start, end)["tx_hash"])
-        # TODO - usually its the database missing something (i.e. we assume Dune contains all).
-        #  However, we could also return an object that keeps track of what is missing where.
-        return dune_hashes.symmetric_difference(db_hashes)
-
     def count_diff(
         self,
         start: int,
@@ -84,32 +103,32 @@ class GapDetector:
         dune_count = self.dune_df(DUNE_COUNT_QUERY_ID, start, end)
         db_count = self.db_df(DB_COUNT_QUERY, start, end)
 
-        return int(dune_count["batches"][0]) - int(db_count["batches"][0])
+        return abs(int(dune_count["batches"][0]) - int(db_count["batches"][0]))
 
     def find_missing(
         self,
         start: int,
         end: int,
-    ) -> set[str]:
+    ) -> SourceDiff:
         """
         A recursive binary search, returning any disagreement
         in transaction hash sets (between dune and database) for a given block range.
         """
         print("Inspecting Block Range...", start, end)
         count_diff = self.count_diff(start, end)
+        print("count diff", count_diff)
         if count_diff == 0:
             # Nothing missing here!
             print("counts agree on", start, end)
-            return set()
+            return SourceDiff.default()
 
         if count_diff < 200:  # TODO - make this configurable.
             # getting down into the trees.
-            diff = self.tx_list_diff(start, end)
-            print("Diff", diff)
-            if diff:
-                return diff
+            return SourceDiff.from_pair(
+                dune=set(self.dune_df(DUNE_HASH_QUERY_ID, start, end)["tx_hash"]),
+                database=set(self.db_df(DB_HASH_QUERY, start, end)["tx_hash"]),
+            )
 
-        print("count diff", count_diff)
         mid = (start + end) // 2
         # Note that this implementation always prefers left side first.
         return self.find_missing(start, mid).union(self.find_missing(mid + 1, end))
@@ -131,17 +150,13 @@ if __name__ == "__main__":
         dune=dune_client,
         database=MultiInstanceDBFetcher(db_urls=[os.environ["DB_URL"]]),
     )
-    gap_detector.find_missing(
+    missing = gap_detector.find_missing(
         start=args.start,
         end=int(
             dune_client.refresh(
-                Query(
-                    name="Sync Lag",
-                    query_id=2261565,
-                    params=[
-                        QueryParameter.text_type("table_name", "raw_internal_imbalance")
-                    ],
-                )
-            ).get_rows()[0]["last_sync_block"]
+                Query(name="Latest Dune Block", query_id=2603762)
+            ).get_rows()[0]["latest_block"]
         ),
     )
+
+    print(missing)
