@@ -48,14 +48,4 @@ Please find the source code for internal imbalances at https://github.com/cowpro
 
 Token prices are taken as the _hourly mean_ over Dune's `prices.usd` table in combination with the "intrinsic" token
 prices provided in settlements. SQL code for price table
-is [here](https://github.com/cowprotocol/solver-rewards/blob/dd2cb170cf6c214b8c2edf1d82eec333d2fa35a1/queries/dune_v2/period_slippage.sql#L258-L324)  
-
-
-
-
-
-
-
-
-
-
+is [here](https://github.com/cowprotocol/solver-rewards/blob/dd2cb170cf6c214b8c2edf1d82eec333d2fa35a1/queries/dune_v2/period_slippage.sql#L258-L324)
