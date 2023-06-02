@@ -7,7 +7,7 @@ or [Dune Analytics](https://dune.com/queries/2421375)
 
 ## 1. Batch-wise Token Imbalance
 
-The token balance sheet represents a classified ledger all incoming and outgoing token transfers relative to the settlement contract. 
+The token balance sheet represents a classified account of all incoming and outgoing token transfers relative to the settlement contract. 
 Classification categories are `USER_{IN/OUT}`, `AMM_{IN/OUT}` and `PHANTOM_TRANSFER`
 
 ### Transfer Type Classification
