@@ -29,6 +29,24 @@ DUNE_COUNT_QUERY_ID = 2481826
 DUNE_HASH_QUERY_ID = 2532671
 
 JANUARY_2023 = 16308190
+MAX_QUERYABLE_HASH_SET = 500
+MAX_QUERYABLE_BLOCK_RANGE = 10000
+
+
+@dataclass
+class BatchCounts:
+    """Data class holding batch number counts with a few elementary helper methods"""
+
+    dune: int
+    database: int
+
+    def diff(self) -> int:
+        """Absolute difference between counts (ideally zero)"""
+        return abs(self.dune - self.database)
+
+    def max(self) -> int:
+        """Larger of the two batch counts"""
+        return max(self.dune, self.database)
 
 
 @dataclass
@@ -88,11 +106,11 @@ class GapDetector:
             self.database.connections[0],
         )
 
-    def count_diff(
+    def get_batch_counts(
         self,
         start: int,
         end: int,
-    ) -> int:
+    ) -> BatchCounts:
         """
         This function acts as a quick comparison between data sources for a block range.
         The assumption is that if the number of batches between a certain block range agrees,
@@ -102,8 +120,9 @@ class GapDetector:
         """
         dune_count = self.dune_df(DUNE_COUNT_QUERY_ID, start, end)
         db_count = self.db_df(DB_COUNT_QUERY, start, end)
-
-        return abs(int(dune_count["batches"][0]) - int(db_count["batches"][0]))
+        return BatchCounts(
+            dune=int(dune_count["batches"][0]), database=int(db_count["batches"][0])
+        )
 
     def find_missing(
         self,
@@ -115,15 +134,18 @@ class GapDetector:
         in transaction hash sets (between dune and database) for a given block range.
         """
         print("Inspecting Block Range...", start, end)
-        count_diff = self.count_diff(start, end)
-        print("count diff", count_diff)
-        if count_diff == 0:
+        batch_counts = self.get_batch_counts(start, end)
+        print(batch_counts)
+        if batch_counts.diff() == 0:
             # Nothing missing here!
             print("counts agree on", start, end)
             return SourceDiff.default()
 
-        if count_diff < 200:  # TODO - make this configurable.
-            # getting down into the trees.
+        if (
+            end - start < MAX_QUERYABLE_BLOCK_RANGE
+            or batch_counts.max() < MAX_QUERYABLE_HASH_SET
+        ):
+            # At this point the query set is small enough to fetch
             return SourceDiff.from_pair(
                 dune=set(self.dune_df(DUNE_HASH_QUERY_ID, start, end)["tx_hash"]),
                 database=set(self.db_df(DB_HASH_QUERY, start, end)["tx_hash"]),
