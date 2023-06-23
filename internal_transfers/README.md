@@ -50,3 +50,54 @@ source
  export DB_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}
 npx @databases/pg-schema-cli --database $DB_URL --directory src/__generated__
 ```
+
+
+## Build and Deploy Lambda Function
+
+Using env vars specified in .env.lambda
+
+### Build Container Image
+```shell
+cd actions
+ export IMAGE_NAME=internal-transfers
+docker build -t ${IMAGE_NAME} .
+```
+
+Run locally with 
+```shell
+docker run -p 9000:8080 \
+  --env NODE_URL=$NODE_URL \
+  --env DATABASE_URL=$DATABASE_URL \
+  --env TENDERLY_ACCESS_KEY=$TENDERLY_ACCESS_KEY \
+  ${IMAGE_NAME}
+```
+this will have `FUNCTION_URL=http://localhost:9000/2015-03-31/functions/function/invocations` to which you can post:
+
+```shell
+curl -XPOST ${FUNCTION_URL} -d '{"txHash": "0x42"}'
+```
+
+### Publish Container Image
+
+```shell
+aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${AWS_URL}
+aws ecr create-repository --repository-name ${IMAGE_NAME} --region ${AWS_REGION} --image-scanning-configuration scanOnPush=true --image-tag-mutability MUTABLE
+docker tag ${IMAGE_NAME}:latest ${AWS_URL}/${IMAGE_NAME}:latest & docker push ${AWS_URL}/${IMAGE_NAME}:latest 
+```
+
+## Create Lambda from Image
+
+Via AWS Console this can now be selected. 
+In the configuration settings,
+- Set relevant _environment variables_ (in our case this is `NODE_URL`, `DATABASE_URL` and `TENDERLY_ACCESS_KEY`)
+- enable `functionURL` 
+
+Once the `functionURL` is acquired try to invoke it as follows:
+
+```shell
+ export FUNCTION_URL=
+curl -XPOST \
+      ${FUNCTION_URL} \
+      -H 'content-type: application/json' \
+      -d '{"txHash": "YourFavouriteSettlementTransactionHash"}'
+```

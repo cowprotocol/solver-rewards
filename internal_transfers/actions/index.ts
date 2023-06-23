@@ -1,5 +1,6 @@
 import { ActionFn, Context, Event, TransactionEvent } from "@tenderly/actions";
 import { txHandler } from "./src/pipeline";
+import axios from "axios";
 
 export const triggerInternalTransfersPipeline: ActionFn = async (
   context: Context,
@@ -13,4 +14,13 @@ export const triggerInternalTransfersPipeline: ActionFn = async (
     simulatorKey: await context.secrets.get("TENDERLY_ACCESS_KEY"),
   };
   await txHandler(transactionEvent.hash, secrets);
+};
+
+export const triggerLambdaPipeline: ActionFn = async (
+  context: Context,
+  event: Event
+) => {
+  const transactionEvent = event as TransactionEvent;
+  const functionURL = await context.secrets.get("FUNCTION_URL");
+  await axios.post(functionURL, { txHash: transactionEvent.hash });
 };

@@ -23,6 +23,7 @@
   "dependencies": {
     "@cowprotocol/ts-dune-client": "^0.0.2",
     "@tenderly/actions": "^0.1.0",
+    "@types/aws-lambda": "^8.10.119",
     "axios": "^1.3.4",
     "ethers": "^6.0.3",
     "ts-command-line-args": "^2.5.0"
