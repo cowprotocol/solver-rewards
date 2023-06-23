@@ -3,6 +3,12 @@
 // For example, this program only requires the owner of the trade so
 // that transfers can be classified AMM_{IN/OUT} or USER_{IN/OUT}.
 
+export interface PipelineSecrets {
+  nodeUrl: string;
+  dbUrl: string;
+  simulatorKey: string;
+}
+
 export interface TokenImbalance {
   token: string;
   amount: bigint;

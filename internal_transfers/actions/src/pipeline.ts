@@ -1,5 +1,6 @@
 import { partitionEventLogs } from "./parse";
 import {
+  getDB,
   getUnprocessedReceipts,
   insertPipelineResults,
   insertSettlementAndMarkProcessed,
@@ -15,8 +16,10 @@ import {
 } from "./accounting";
 import { Queryable } from "@databases/pg";
 import { TransactionSimulator } from "./simulate/interface";
-import { AbstractProvider } from "ethers";
+import { AbstractProvider, ethers } from "ethers";
 import { getTxDataFromHash } from "./utils";
+import { PipelineSecrets } from "./models";
+import { TenderlySimulator } from "./simulate/tenderly";
 
 /** Consumes a transaction hash, fetches corresponding transaction receipt,
  * writes the receipt to a database, then fetches and returns all previously
@@ -114,5 +117,27 @@ export async function internalizedTokenImbalance(
     } else {
       await insertSettlementAndMarkProcessed(db, eventMeta, settlementEvent);
     }
+  }
+}
+
+export async function txHandler(txHash: string, secrets: PipelineSecrets) {
+  console.log(`Received Settlement Transaction with hash ${txHash}`);
+  const provider = ethers.getDefaultProvider(secrets.nodeUrl);
+  const db = getDB(secrets.dbUrl);
+
+  const finalizedTxReceipts = await preliminaryPipelineTask(
+    db,
+    provider,
+    txHash
+  );
+  console.log("Inserted to backlog");
+  const simulator = new TenderlySimulator(
+    "gp-v2",
+    "solver-slippage",
+    secrets.simulatorKey
+  );
+  for (const tx of finalizedTxReceipts) {
+    // Theoretically, there are only be 1 or 2 of these to process in a single run.
+    await internalizedTokenImbalance(tx, db, simulator, provider);
   }
 }
