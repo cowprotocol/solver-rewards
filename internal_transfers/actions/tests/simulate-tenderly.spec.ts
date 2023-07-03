@@ -51,7 +51,7 @@ describe("Tenderly Simulator", () => {
         sender: "0x",
         value: "0",
       })
-    ).rejects.toThrow('Invalid Response ""');
+    ).rejects.toThrow("Request failed with status code 403");
   });
   test("simulate() throws bad request error", async () => {
     const badRequestSimulator = new TenderlySimulator("", "", "");

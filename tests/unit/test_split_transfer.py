@@ -18,7 +18,7 @@ ONE_ETH = 10**18
 
 class TestSplitTransfers(unittest.TestCase):
     def setUp(self) -> None:
-        self.period = AccountingPeriod("2022-06-14")
+        self.period = AccountingPeriod("2023-06-14")
         self.solver = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
         self.solver_name = "solver_0"
         self.redirect_map = {
@@ -249,7 +249,7 @@ class TestSplitTransfers(unittest.TestCase):
                     recipient=self.solver,
                     # This is the amount of COW deducted based on a "deterministic" price
                     # on the date of the fixed accounting period.
-                    amount_wei=cow_reward - 11549056229718590750720,
+                    amount_wei=cow_reward - 25369802491025623613440,
                     redirect=self.redirect_map[self.solver].reward_target,
                 )
             ],
@@ -280,7 +280,7 @@ class TestSplitTransfers(unittest.TestCase):
                     period=self.period,
                     account=self.solver,
                     name=self.solver_name,
-                    wei=1913412838234630144,
+                    wei=1960583059314169344,
                 )
             },
         )
