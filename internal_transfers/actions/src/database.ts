@@ -112,6 +112,7 @@ export function jsonFromSettlementData(datum: SimulationData): object {
     blockNumber: datum.blockNumber,
     ethDelta: bigIntMapToJSON(datum.ethDelta),
     simId: datum.simulationID,
+    gasUsed: datum.gasUsed,
   };
 }
 
