@@ -14,7 +14,7 @@ from gnosis.safe.safe import Safe
 # https://github.com/safe-global/safe-eth-py/issues/284
 from safe_cli.api.transaction_service_api import TransactionServiceApi
 
-from src.constants import LOG_CONFIG_FILE
+from src.constants import LOG_CONFIG_FILE, web3
 from src.abis.load import weth9
 
 log = logging.getLogger(__name__)
@@ -24,7 +24,9 @@ logging.config.fileConfig(
 
 # This contract address can be removed once this issue is resolved:
 # https://github.com/safe-global/safe-eth-py/issues/283
-MULTISEND_CONTRACT = "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
+MULTISEND_CONTRACT = web3.to_checksum_address(
+    "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
+)
 
 
 def build_encoded_multisend(
@@ -49,7 +51,7 @@ def prepend_unwrap_if_necessary(
     the total outgoing ETH is sufficient and unwraps entire WETH balance when it isn't.
     Raises if the ETH + WETH balance is still insufficient.
     """
-    eth_balance = client.get_balance(safe_address)
+    eth_balance = client.get_balance(web3.to_checksum_address(safe_address))
     # Amount of outgoing ETH from transfer
     eth_needed = sum(t.value for t in transactions)
     if eth_balance < eth_needed:
