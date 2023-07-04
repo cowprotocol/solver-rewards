@@ -344,10 +344,16 @@ def construct_payouts(
     price_day = dune.period.end - timedelta(days=1)
     reward_token = TokenId.COW
 
+    quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
+    batch_rewards_df = orderbook.get_solver_rewards(dune.start_block, dune.end_block)
+    merged_df = pandas.merge(
+        quote_rewards_df, batch_rewards_df, on="solver", how="outer"
+    )
+
     complete_payout_df = construct_payout_dataframe(
         # Fetch and extend auction data from orderbook.
         payment_df=extend_payment_df(
-            pdf=orderbook.get_solver_rewards(dune.start_block, dune.end_block),
+            pdf=merged_df,
             # provide token conversion functions (ETH <--> COW)
             converter=TokenConversion(
                 eth_to_token=lambda t: eth_in_token(reward_token, t, price_day),
