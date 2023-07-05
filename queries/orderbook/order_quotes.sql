@@ -1,9 +1,12 @@
 with winning_quotes as (SELECT concat('0x', encode(oq.solver, 'hex')) as solver,
                                oq.order_uid
                         FROM trades t
-                               JOIN order_quotes oq on t.order_uid = oq.order_uid
-                        where block_number between {{start_block}} and {{end_block}})
+                               INNER JOIN orders o ON order_uid = uid
+                               JOIN order_quotes oq ON t.order_uid = oq.order_uid
+                        WHERE o.class = 'market'
+                          AND block_number BETWEEN {{start_block}} AND {{end_block}}
+                          AND oq.solver != '\x0000000000000000000000000000000000000000')
 
-select solver, count(*) as num_quotes
-from winning_quotes
-group by solver
+SELECT solver, count(*) AS num_quotes
+FROM winning_quotes
+GROUP BY solver
