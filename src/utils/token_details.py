@@ -23,9 +23,9 @@ def get_token_decimals(web3: Web3, address: str | Address) -> int:
     # This requires a real web3 connection
     log.info(f"fetching decimals for token {address}")
     if isinstance(address, Address):
-        checksum_address = web3.toChecksumAddress(address.address)
+        checksum_address = web3.to_checksum_address(address.address)
     else:
-        checksum_address = web3.toChecksumAddress(address)
+        checksum_address = web3.to_checksum_address(address)
     token = erc20(web3, checksum_address)
     # This "trick" is because of the unknown type returned from the contract call.
     token_decimals: int = token.functions.decimals().call()

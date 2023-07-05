@@ -8,17 +8,17 @@ from typing import Any, Optional
 from eth_typing.evm import ChecksumAddress
 from typing_extensions import Type
 from web3 import Web3
-from web3.contract import Contract
+
+# TODO - following this issue: https://github.com/ethereum/web3.py/issues/3017
+from web3.contract import Contract  # type: ignore
 
 from src.constants import PROJECT_ROOT
 from src.logger import set_log
 
 ABI_PATH = PROJECT_ROOT / Path("src/abis")
 
-WETH9_ADDRESS = Web3().toChecksumAddress("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
-# web3.eth.contract returns this ugly type,
-# probably for backwards compatibility with old python versions
-ContractInterface = Type[Contract] | Contract
+WETH9_ADDRESS = Web3().to_checksum_address("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
+
 
 log = set_log(__name__)
 
@@ -44,8 +44,8 @@ class IndexedContract(Enum):
 
     def get_contract(
         self, web3: Optional[Web3], address: Optional[ChecksumAddress]
-    ) -> ContractInterface:
-        """Loads ContractInterface instance from abi and optional"""
+    ) -> Contract | Type[Contract]:
+        """Loads Contract instance from abi and optional"""
         abi = self.load_contract_abi()
         if not web3:
             # Use dummy web3
@@ -62,14 +62,14 @@ class IndexedContract(Enum):
 # don't have to import a bunch of stuff to get the contract then want
 
 
-def weth9(web3: Optional[Web3] = None) -> ContractInterface:
+def weth9(web3: Optional[Web3] = None) -> Contract:
     """Returns an instance of WETH9 Contract"""
     return IndexedContract.WETH9.get_contract(web3, WETH9_ADDRESS)
 
 
 def erc20(
     web3: Optional[Web3] = None, address: Optional[ChecksumAddress] = None
-) -> ContractInterface:
+) -> Contract:
     """
     Returns an instance of the ERC20 Contract when address provided
     Generic ERC20Interface otherwise.

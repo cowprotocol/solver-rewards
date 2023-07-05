@@ -10,20 +10,17 @@ from src.fetch.cow_rewards import aggregate_orderbook_rewards
 from src.fetch.token_list import get_trusted_tokens
 from src.logger import set_log
 from src.models.accounting_period import AccountingPeriod
-from src.models.period_totals import PeriodTotals
 from src.models.slippage import SplitSlippages
 from src.models.split_transfers import SplitTransfers
 from src.models.transfer import Transfer
 from src.models.vouch import RECOGNIZED_BONDING_POOLS, parse_vouches
 from src.pg_client import DualEnvDataframe
-from src.queries import QUERIES, DuneVersion, QueryData
-from src.utils.print_store import PrintStore
+from src.queries import QUERIES, QueryData
+from src.utils.print_store import PrintStore, Category
 
 log = set_log(__name__)
 
 
-# TODO - eliminate the use of Address class (or refactor)
-#  because Web3.toChecksumAddress is very SLOW and should be replaced by str.lower()
 class DuneFetcher:
     """
     Class Contains DuneAPI Instance and Accounting Period along with several get methods
@@ -38,12 +35,10 @@ class DuneFetcher:
         self,
         dune: DuneClient,
         period: AccountingPeriod,
-        dune_version: DuneVersion = DuneVersion.V2,
     ):
         self.dune = dune
         self.period = period
         self.log_saver = PrintStore()
-        self.dune_version = dune_version
         # Already have period set, so we might as well store this upon construction.
         # This may become an issue when we make the fetchers async;
         # since python does not allow async constructors
@@ -56,7 +51,7 @@ class DuneFetcher:
     def _parameterized_query(
         self, query_data: QueryData, params: list[QueryParameter]
     ) -> Query:
-        return query_data.with_params(params, dune_version=self.dune_version)
+        return query_data.with_params(params)
 
     def _get_query_results(
         self, query: Query, job_id: Optional[str] = None
@@ -69,6 +64,9 @@ class DuneFetcher:
             exec_result = self.dune.get_result(job_id)
 
         log.info(f"Fetch completed for execution {exec_result.execution_id}")
+        self.log_saver.print(
+            f"{query.name} execution ID: {exec_result.execution_id}", Category.EXECUTION
+        )
         # TODO - use a real logger:
         #  https://github.com/cowprotocol/dune-client/issues/34
         if exec_result.result is not None:
@@ -163,30 +161,21 @@ class DuneFetcher:
             )
         )
 
-    def get_period_totals(self) -> PeriodTotals:
-        """
-        Fetches & Returns Dune Results for accounting period totals.
-        """
-        data_set = self._get_query_results(
-            query=self._parameterized_query(
-                query_data=QUERIES["PERIOD_TOTALS"], params=self._period_params()
-            )
-        )
-        assert len(data_set) == 1
-        rec = data_set[0]
-        return PeriodTotals(
-            period=self.period,
-            execution_cost_eth=int(rec["execution_cost_eth"]),
-            cow_rewards=int(rec["cow_rewards"]),
-            realized_fees_eth=int(rec["realized_fees_eth"]),
-        )
-
     def get_period_slippage(self, job_id: Optional[str] = None) -> list[DuneRecord]:
         """
         Executes & Fetches results of slippage query per solver for specified accounting period.
         Returns a class representation of the results as two lists (positive & negative).
         """
         token_list = get_trusted_tokens()
+        params = self._period_params() + [
+            QueryParameter.text_type("TxHash", "0x"),
+            QueryParameter.text_type("TokenList", ",".join(token_list)),
+        ]
+        # trigger dashboard update
+        self.dune.execute(
+            self._parameterized_query(QUERIES["DASHBOARD_SLIPPAGE"], params=params)
+        )
+
         return self._get_query_results(
             self._parameterized_query(
                 QUERIES["PERIOD_SLIPPAGE"],

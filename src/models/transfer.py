@@ -187,7 +187,7 @@ class Transfer:
 
     def as_multisend_tx(self) -> MultiSendTx:
         """Converts Transfer into encoded MultiSendTx bytes"""
-        receiver = Web3.toChecksumAddress(self.recipient.address)
+        receiver = Web3.to_checksum_address(self.recipient.address)
         if self.token_type == TokenType.NATIVE:
             return MultiSendTx(
                 operation=MultiSendOperation.CALL,

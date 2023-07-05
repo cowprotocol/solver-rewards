@@ -42,6 +42,6 @@ def aggregate_orderbook_rewards(
     )
     # Convert float amounts to WEI
     result_agg["amount"] = result_agg["amount"].apply(
-        lambda x: int(Web3().toWei(x, "ether"))
+        lambda x: int(Web3().to_wei(x, "ether"))
     )
     return result_agg

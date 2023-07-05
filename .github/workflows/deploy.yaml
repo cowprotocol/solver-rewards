@@ -28,7 +28,7 @@ jobs:
           labels: |
             org.opencontainers.image.licenses=MIT OR Apache-2.0
 
-      - name: Push Project Image
+      - name: Push Reward Script Image
         uses: docker/build-push-action@v3
         with:
           context: .
@@ -36,3 +36,19 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
+
+      - id: meta_db_migration
+        uses: docker/metadata-action@v4
+        with:
+          images: ghcr.io/${{ github.repository }}-db-migration
+          labels: |
+            org.opencontainers.image.licenses=MIT OR Apache-2.0
+
+      - name: Push DB Migration Image
+        uses: docker/build-push-action@v3
+        with:
+          context: internal_transfers/database
+          file: internal_transfers/database/Dockerfile
+          push: true
+          tags: ${{ steps.meta_db_migration.outputs.tags }}
+          labels: ${{ steps.meta_db_migration.outputs.labels }}

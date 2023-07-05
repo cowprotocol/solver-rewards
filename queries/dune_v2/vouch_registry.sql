@@ -1,14 +1,14 @@
--- -- V2 Query: https://dune.com/queries/1541516
+-- -- V3 Query: https://dune.com/queries/1541516
 with
 bonding_pools (pool, name, initial_funder) as (
-  select lower(pool), name, lower(funder) from (
+  select from_hex(pool), name, from_hex(funder) from (
     values {{BondingPoolData}}
   ) as _ (pool, name, funder)
 ),
 
 last_block_before_timestamp as (
     select max(number) from ethereum.blocks
-    where time < '{{EndTime}}'
+    where time < cast('{{EndTime}}' as timestamp)
 ),
 
 -- Query Logic Begins here!
@@ -80,7 +80,7 @@ valid_vouches as (
   from current_active_vouches
   where time_rank = 1
 ),
-complete_results as (
+named_results as (
     select
         solver,
         concat(environment, '-', s.name) as solver_name,
@@ -95,4 +95,3 @@ complete_results as (
 )
 
 select * from {{VOUCH_CTE_NAME}}
-

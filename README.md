@@ -30,15 +30,6 @@ StartTime <= block_time < EndTime
 
 # Testing & Contributing
 
-## Hooks
-
-To install hooks
-
-```shell
-cp hooks/pre-commit .git/hooks/ && chmod +x .git/hooks/pre-commit
-cp hooks/pre-push .git/hooks/ && chmod +x .git/hooks/pre-push
-```
-
 ## Testing
 
 To run the unit tests
@@ -83,7 +74,7 @@ looking at the script help menu can help provide a list of options!
 ```shell
 $ python -m src.fetch.transfer_file --help            
 
-usage: Fetch Complete Reimbursement [-h] [--start START] [--post-tx POST_TX] [--post-cip20 POST_CIP20] [--dune-version {DuneVersion.V1,DuneVersion.V2}]
+usage: Fetch Complete Reimbursement [-h] [--start START] [--post-tx POST_TX] [--post-cip20 POST_CIP20]
                                     [--consolidate-transfers CONSOLIDATE_TRANSFERS] [--dry-run DRY_RUN]
 
 options:
@@ -92,8 +83,6 @@ options:
   --post-tx POST_TX     Flag indicating whether multisend should be posted to safe (requires valid env var `PROPOSER_PK`)
   --post-cip20 POST_CIP20
                         Flag payout should be made according to pre or post CIP 20 (temporary during switch over)
-  --dune-version {DuneVersion.V1,DuneVersion.V2}
-                        Which Dune Client version to use (legacy or official)
   --consolidate-transfers CONSOLIDATE_TRANSFERS
                         Flag to indicate whether payout transfer file should be optimized (i.e. squash transfers having same receiver-token pair)
   --dry-run DRY_RUN     Flag indicating whether script should not post alerts or transactions. Only relevant in combination with --post-tx TruePrimarily intended for
