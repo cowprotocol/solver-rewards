@@ -19,7 +19,7 @@ class TestMultiSend(unittest.TestCase):
 
     def test_prepend_unwrap(self):
         many_eth = 99999999 * 10**18
-        safe_address = Web3().toChecksumAddress(
+        safe_address = Web3().to_checksum_address(
             "0xA03be496e67Ec29bC62F01a428683D7F9c204930"
         )
         big_native_transfer = Transfer(
@@ -68,7 +68,6 @@ class TestMultiSend(unittest.TestCase):
             build_encoded_multisend([], client=self.client),
             "0x8d80ff0a"  # MethodID
             "0000000000000000000000000000000000000000000000000000000000000020"
-            "0000000000000000000000000000000000000000000000000000000000000000"
             "0000000000000000000000000000000000000000000000000000000000000000",
         )
 

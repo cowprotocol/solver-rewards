@@ -26,12 +26,12 @@ class TestTransactionPost(unittest.TestCase):
         token_transfer = Transfer(
             token=self.cow,
             amount_wei=15,
-            solver=self.receiver,
+            recipient=self.receiver,
         )
-        native_transfer = Transfer(token=None, solver=self.receiver, amount_wei=2)
+        native_transfer = Transfer(token=None, recipient=self.receiver, amount_wei=2)
 
         post_multisend(
-            safe_address=Web3().toChecksumAddress(self.test_safe),
+            safe_address=Web3().to_checksum_address(self.test_safe),
             network=EthereumNetwork.GOERLI,
             transactions=[
                 token_transfer.as_multisend_tx(),

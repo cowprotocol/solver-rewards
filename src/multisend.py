@@ -14,7 +14,7 @@ from gnosis.safe.safe import Safe
 # https://github.com/safe-global/safe-eth-py/issues/284
 from safe_cli.api.transaction_service_api import TransactionServiceApi
 
-from src.constants import LOG_CONFIG_FILE
+from src.constants import LOG_CONFIG_FILE, web3
 from src.abis.load import weth9
 
 log = logging.getLogger(__name__)
@@ -24,7 +24,9 @@ logging.config.fileConfig(
 
 # This contract address can be removed once this issue is resolved:
 # https://github.com/safe-global/safe-eth-py/issues/283
-MULTISEND_CONTRACT = "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
+MULTISEND_CONTRACT = web3.to_checksum_address(
+    "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
+)
 
 
 def build_encoded_multisend(
@@ -40,7 +42,7 @@ def build_encoded_multisend(
 
 def prepend_unwrap_if_necessary(
     client: EthereumClient,
-    safe_address: str | ChecksumAddress,
+    safe_address: ChecksumAddress,
     transactions: list[MultiSendTx],
     skip_validation: bool = False,
 ) -> list[MultiSendTx]:
