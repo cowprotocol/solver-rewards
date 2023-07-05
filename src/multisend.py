@@ -42,7 +42,7 @@ def build_encoded_multisend(
 
 def prepend_unwrap_if_necessary(
     client: EthereumClient,
-    safe_address: str | ChecksumAddress,
+    safe_address: ChecksumAddress,
     transactions: list[MultiSendTx],
     skip_validation: bool = False,
 ) -> list[MultiSendTx]:
