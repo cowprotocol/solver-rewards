@@ -51,7 +51,7 @@ def prepend_unwrap_if_necessary(
     the total outgoing ETH is sufficient and unwraps entire WETH balance when it isn't.
     Raises if the ETH + WETH balance is still insufficient.
     """
-    eth_balance = client.get_balance(web3.to_checksum_address(safe_address))
+    eth_balance = client.get_balance(safe_address)
     # Amount of outgoing ETH from transfer
     eth_needed = sum(t.value for t in transactions)
     if eth_balance < eth_needed:
