@@ -1,7 +1,7 @@
 PYTHON = python3
 
 VENV      = venv
-ACTIVATE := source $(VENV)/bin/activate
+ACTIVATE := . $(VENV)/bin/activate
 
 DOCKER = docker
 TESTDB = solver-rewards-test-db
