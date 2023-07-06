@@ -8,7 +8,7 @@ from src.fetch.cow_rewards import aggregate_orderbook_rewards, map_reward
 
 
 def to_wei(t) -> int:
-    return Web3().toWei(t, "ether")
+    return Web3().to_wei(t, "ether")
 
 
 class MyTestCase(unittest.TestCase):

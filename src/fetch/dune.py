@@ -21,8 +21,6 @@ from src.utils.print_store import PrintStore, Category
 log = set_log(__name__)
 
 
-# TODO - eliminate the use of Address class (or refactor)
-#  because Web3.toChecksumAddress is very SLOW and should be replaced by str.lower()
 class DuneFetcher:
     """
     Class Contains DuneAPI Instance and Accounting Period along with several get methods

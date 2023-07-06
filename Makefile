@@ -1,56 +1,67 @@
-VENV = venv
-PYTHON = $(VENV)/bin/python3
-PIP = $(VENV)/bin/pip
+PYTHON = python3
 
+VENV      = venv
+ACTIVATE := . $(VENV)/bin/activate
 
-$(VENV)/bin/activate: requirements.txt
-	python3 -m venv $(VENV)
-	$(PIP) install --upgrade pip
-	$(PIP) install -r requirements.txt
+DOCKER = docker
+TESTDB = solver-rewards-test-db
 
+# Write a marker .install file to indicate that the dependencies have been
+# installed.
+INST := $(VENV)/.install
+$(INST): requirements.txt
+	$(PYTHON) -m venv $(VENV)
+	$(ACTIVATE); pip install --upgrade pip
+	$(ACTIVATE); pip install -r requirements.txt
+	touch $@
 
-install:
-	make $(VENV)/bin/activate
+.PHONY: install
+install: $(INST)
 
+.PHONY: clean
 clean:
-	rm -rf __pycache__
+	rm -rf __pycache__ venv
 
-fmt:
-	black ./
+.PHONY: fmt
+fmt: install
+	$(ACTIVATE); black ./
 
-lint:
-	pylint src/
+.PHONY: lint
+lint: install
+	$(ACTIVATE); pylint src/
 
-types:
-	mypy src/ --strict
+.PHONY: types
+types: install
+	$(ACTIVATE); mypy src/ --strict
 
-check:
-	make install
-	make fmt
-	make lint
-	make types
+.PHONY: check
+check: fmt lint types
 
-test-unit:
-	python -m pytest tests/unit
+.PHONY: test-unit
+test-unit: install
+	$(ACTIVATE); python -m pytest tests/unit
 
-test-e2e:
-	python -m pytest tests/e2e
+.PHONY: test-e2e
+test-e2e: install
+	$(ACTIVATE); python -m pytest tests/e2e
 
+.PHONY: db
 db:
-	# TODO - Should only build if necessary.
-	docker build -t test_db -f Dockerfile.db .;
-	# We try to run the container, but if its already running it will result in
-	# docker: Error response from daemon: Conflict. The container name "/testDB" is already in use by container
-	# So we supress this error with ; exit 0 and continue.
-	docker run -d -p 5432:5432 test_db; exit 0;
-	# sleep just long enough for the machine to recognize the establishing container.
-	sleep 1s
+	$(DOCKER) build -t $(TESTDB) -f Dockerfile.db .;
 
-test-db:
-	if !(docker ps | grep test_db >/dev/null); then make db; fi
-	python -m pytest tests/queries
+.PHONY: test-db
+test-db: install db
+	if ! $(DOCKER) container inspect $(TESTDB) >/dev/null 2>&1; then \
+		$(DOCKER) run --rm -d -p 5432:5432 $(TESTDB) \
+		`# sleep just long enough for the machine to recognize the establishing container.` \
+		sleep 1s \
+	fi
+	$(ACTIVATE); python -m pytest tests/db
+	$(ACTIVATE); python -m pytest tests/queries
 
-test-all:
-	make test-unit
-	make test-e2e
-	make test-db
+.PHONY: test-integration
+test-integration: install
+	$(ACTIVATE); python -m pytest tests/integration
+
+.PHONY: test-all
+test-all: test-unit test-e2e test-db test-integration
