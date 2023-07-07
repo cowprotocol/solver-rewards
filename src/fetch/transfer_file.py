@@ -22,7 +22,11 @@ from src.constants import (
     FILE_OUT_DIR,
     DOCS_URL,
 )
+<<<<<<< HEAD
 from src.fetch.payouts import construct_payouts
+=======
+from src.fetch.payouts import post_cip27_payouts
+>>>>>>> e8e43df (added quote rewards payment logic)
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
