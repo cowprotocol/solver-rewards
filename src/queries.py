@@ -30,30 +30,15 @@ class QueryData:
 
 
 QUERIES = {
-    "TRADE_COUNT": QueryData(
-        name="Trade Counts",
-        q_id=1785586,
-        filepath="dune_trade_counts.sql",
-    ),
     "PERIOD_BLOCK_INTERVAL": QueryData(
         name="Block Interval for Accounting Period",
         filepath="period_block_interval.sql",
         q_id=1541504,
     ),
-    "RISK_FREE_BATCHES": QueryData(
-        name="Risk Free Batches",
-        filepath="risk_free_batches.sql",
-        q_id=1788438,
-    ),
     "VOUCH_REGISTRY": QueryData(
         name="Vouch Registry",
         filepath="vouch_registry.sql",
         q_id=1541516,
-    ),
-    "ETH_SPENT": QueryData(
-        name="ETH Reimbursement",
-        filepath="eth_spent.sql",
-        q_id=1320174,
     ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",

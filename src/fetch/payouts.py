@@ -336,7 +336,7 @@ def construct_payout_dataframe(
     return merged_df
 
 
-def post_cip20_payouts(
+def construct_payouts(
     dune: DuneFetcher, orderbook: MultiInstanceDBFetcher
 ) -> list[Transfer]:
     """Workflow of solver reward payout logic post-CIP20"""
