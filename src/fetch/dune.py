@@ -5,10 +5,10 @@ from dune_client.client import DuneClient
 from dune_client.query import Query
 from dune_client.types import QueryParameter, DuneRecord
 
+from src.constants import RECOGNIZED_BONDING_POOLS
 from src.fetch.token_list import get_trusted_tokens
 from src.logger import set_log
 from src.models.accounting_period import AccountingPeriod
-from src.models.vouch import RECOGNIZED_BONDING_POOLS
 from src.queries import QUERIES, QueryData
 from src.utils.print_store import PrintStore, Category
 
@@ -122,18 +122,3 @@ class DuneFetcher:
             ),
             job_id,
         )
-
-    # def get_transfers(self) -> list[Transfer]:
-    #     """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
-    #     # TODO - fetch these three results asynchronously!
-    #     reimbursements = self.get_eth_spent()
-    #     rewards = self.get_cow_rewards()
-    #     split_transfers = SplitTransfers(
-    #         period=self.period,
-    #         mixed_transfers=reimbursements + rewards,
-    #         log_saver=self.log_saver,
-    #     )
-    #     return split_transfers.process(
-    #         slippages=SplitSlippages.from_data_set(self.get_period_slippage()),
-    #         cow_redirects=parse_vouches(self.get_vouches()),
-    #     )
