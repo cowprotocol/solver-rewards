@@ -261,12 +261,7 @@ class TestPayoutTransformations(unittest.TestCase):
         # Need Example of every possible scenario
         full_payout_data = DataFrame(
             {
-                "solver": [
-                    "0x0000000000000000000000000000000000000001",
-                    "0x0000000000000000000000000000000000000002",
-                    "0x0000000000000000000000000000000000000003",
-                    "0x0000000000000000000000000000000000000004",
-                ],
+                "solver": self.solvers,
                 "num_quotes": self.num_quotes,
                 "payment_eth": [600000000000000.0, 1.045e16, -1e16, 0.0],
                 "execution_cost_eth": [800000000000000.0, 450000000000000.0, 0.0, 0.0],
@@ -324,6 +319,11 @@ class TestPayoutTransformations(unittest.TestCase):
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[1]),
                     amount_wei=10018181818181818180,
+                ),
+                Transfer(
+                    token=Token(COW_TOKEN_ADDRESS),
+                    recipient=Address(self.solvers[3]),
+                    amount_wei=180000000000000000000,
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
