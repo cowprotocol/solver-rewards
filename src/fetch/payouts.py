@@ -22,7 +22,7 @@ from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 from src.utils.print_store import Category
 
-PERIOD_BUDGET_COW = 306646 * 10**18
+PERIOD_BUDGET_COW = 383307 * 10**18
 QUOTE_REWARD = 9 * 10**18
 
 PAYMENT_COLUMNS = {
@@ -278,7 +278,9 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
         converter.token_to_eth
     )
 
-    pdf["quote_reward_cow"] = QUOTE_REWARD * pdf["num_quotes"]
+    # Pandas has poor support for large integers, must cast the constant to float here,
+    # otherwise the dtype would be inferred as int64 (which overflows).
+    pdf["quote_reward_cow"] = float(QUOTE_REWARD) * pdf["num_quotes"]
 
     for number_col in NUMERICAL_COLUMNS:
         pdf[number_col] = pandas.to_numeric(pdf[number_col])
