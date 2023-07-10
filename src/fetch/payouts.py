@@ -22,7 +22,7 @@ from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 from src.utils.print_store import Category
 
-PERIOD_BUDGET_COW = 383307 * 10**18
+PERIOD_BUDGET_COW = 306646 * 10**18
 QUOTE_REWARD = 9 * 10**18
 
 PAYMENT_COLUMNS = {
