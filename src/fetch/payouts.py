@@ -145,8 +145,18 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         Isolating the logic of how solvers are paid out according to their
             execution costs, rewards and slippage
         """
-        # We do not handle overdraft scenario here!
-        assert not self.is_overdraft()
+        result = []
+        if quote_reward_cow > 0:
+            result.append(
+                Transfer(
+                    token=Token(COW_TOKEN_ADDRESS),
+                    recipient=self.reward_target,
+                    amount_wei=quote_reward_cow,
+                )
+            )
+        if self.is_overdraft():
+            return result
+
         total_eth_reward = int(self.total_eth_reward())
         total_cow_reward = int(self.total_cow_reward())
         quote_reward_cow = self.quote_reward_cow
@@ -159,21 +169,6 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             if total_eth_reward != 0
             else 0
         )
-
-        result = []
-        if quote_reward_cow > 0:
-            try:
-                result.append(
-                    Transfer(
-                        token=Token(COW_TOKEN_ADDRESS),
-                        recipient=self.reward_target,
-                        amount_wei=quote_reward_cow,
-                    )
-                )
-            except AssertionError:
-                logging.warning(
-                    f"Invalid COW Transfer {self.solver} with amount={quote_reward_cow}"
-                )
 
         if reimbursement_eth > 0 > total_cow_reward:
             # If the total payment is positive but the total rewards are negative,
@@ -215,7 +210,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 )
             except AssertionError:
                 logging.warning(
-                    f"Invalid COW Transfer {self.solver} with amount={total_cow_reward}"
+                    f"Invalid COW Transfer {self.solver} with amount={reimbursement_cow + total_cow_reward}"
                 )
 
             return result
@@ -310,9 +305,7 @@ def prepare_transfers(payout_df: DataFrame, period: AccountingPeriod) -> PeriodP
             )
             print(f"Solver Overdraft! {overdraft}")
             overdrafts.append(overdraft)
-        else:
-            # No overdraft, always results in at least one transfer.
-            transfers += payout_datum.as_payouts()
+        transfers += payout_datum.as_payouts()
 
     return PeriodPayouts(overdrafts, transfers)
 
