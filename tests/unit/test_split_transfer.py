@@ -225,7 +225,8 @@ class TestSplitTransfers(unittest.TestCase):
         self.assertEqual(accounting.unprocessed_cow, [])
         self.assertEqual(accounting.unprocessed_native, [])
 
-    def test_process_with_overdraft_exceeding_eth_not_cow(self):
+    @unittest.mock.patch('src.models.split_transfers.token_in_eth')
+    def test_process_with_overdraft_exceeding_eth_not_cow(self, mock_token_in_eth):
         eth_amount = 2 * ONE_ETH
         cow_reward = 100_000 * ONE_ETH  # This is huge so COW is not exceeded!
         slippage_amount = -3 * ONE_ETH
@@ -236,6 +237,11 @@ class TestSplitTransfers(unittest.TestCase):
             slippage_amounts=[slippage_amount],
             redirects=self.redirect_map,
         )
+
+        # Configure the mock to return the desired value
+        cow_deduction = cow_reward - 25369802491025623613440
+        mock_token_in_eth.return_value = cow_deduction
+
         self.assertEqual(
             accounting.eth_transfers,
             [],
