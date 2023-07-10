@@ -14,10 +14,7 @@ from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
 from web3 import Web3
 
 from src.abis.load import erc20
-from src.models.slippage import SolverSlippage
 from src.models.token import TokenType, Token
-from src.models.vouch import Vouch
-from src.utils.print_store import Category, PrintStore
 
 ERC20_CONTRACT = erc20()
 
@@ -148,20 +145,6 @@ class Transfer:
         assert self.token is not None
         return self.amount_wei / int(10**self.token.decimals)
 
-    def add_slippage(self, slippage: SolverSlippage, log_saver: PrintStore) -> None:
-        """Adds Adjusts Transfer amount by Slippage amount"""
-        assert self.recipient == slippage.solver_address, "receiver != solver"
-        adjustment = slippage.amount_wei
-        log_saver.print(
-            f"Deducting slippage for solver {self.recipient}"
-            f"by {adjustment / 10 ** 18:.5f} ({slippage.solver_name})",
-            category=Category.SLIPPAGE,
-        )
-        new_amount = self.amount_wei + adjustment
-        if new_amount <= 0:
-            raise ValueError(f"Invalid adjustment {self} by {adjustment / 10 ** 18}")
-        self.amount_wei = new_amount
-
     def merge(self, other: Transfer) -> Transfer:
         """
         Merge two transfers (acts like addition) if all fields except amount are equal,
@@ -218,42 +201,6 @@ class Transfer:
                 f"amount={self.amount})"
             )
         raise ValueError(f"Invalid Token Type {self.token_type}")
-
-    def try_redirect(
-        self, redirects: dict[Address, Vouch], log_saver: PrintStore
-    ) -> None:
-        """
-        Redirects Transfers via Address => Vouch.reward_target
-        This function modifies self!
-        """
-        recipient = self.recipient
-        if recipient in redirects:
-            # Redirect COW rewards to reward target specific by VouchRegistry
-            redirect_address = redirects[recipient].reward_target
-            log_saver.print(
-                f"Redirecting {recipient} Transfer of {self.amount} to {redirect_address}",
-                category=Category.ETH_REDIRECT
-                if self.token is None
-                else Category.COW_REDIRECT,
-            )
-            # This is the only place where recipient can be overwritten
-            # sort_key is not updated here because sorted transfers should be
-            # grouped by "initial recipient" before they were redirected.
-            # This is a business requirement for making non-consolidated
-            # multisend transaction validation more visually straight-forward.
-            self._recipient = redirect_address
-
-    @classmethod
-    def from_slippage(cls, slippage: SolverSlippage) -> Transfer:
-        """
-        Slippage is always in ETH, so this converts
-        slippage into an ETH Transfer with Null token address
-        """
-        return cls(
-            token=None,
-            recipient=slippage.solver_address,
-            amount_wei=slippage.amount_wei,
-        )
 
     @staticmethod
     def sort_list(transfer_list: list[Transfer]) -> None:

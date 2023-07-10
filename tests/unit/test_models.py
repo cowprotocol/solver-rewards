@@ -8,11 +8,9 @@ from web3 import Web3
 
 from src.abis.load import erc20
 from src.constants import COW_TOKEN_ADDRESS
-from src.models.slippage import SolverSlippage
 from src.fetch.transfer_file import Transfer
 from src.models.accounting_period import AccountingPeriod
 from src.models.token import Token
-from src.models.vouch import Vouch
 from src.utils.print_store import PrintStore
 
 from tests.queries.test_internal_trades import TransferType
@@ -47,38 +45,6 @@ class TestTransfer(unittest.TestCase):
     def setUp(self) -> None:
         self.token_1 = Token(Address.from_int(1), 18)
         self.token_2 = Token(Address.from_int(2), 18)
-
-    def test_add_slippage(self):
-        solver = Address.zero()
-        transfer = Transfer(
-            token=None,
-            recipient=solver,
-            amount_wei=ONE_ETH,
-        )
-        positive_slippage = SolverSlippage(
-            solver_name="Test Solver", solver_address=solver, amount_wei=ONE_ETH // 2
-        )
-        negative_slippage = SolverSlippage(
-            solver_name="Test Solver",
-            solver_address=solver,
-            amount_wei=-ONE_ETH // 2,
-        )
-        transfer.add_slippage(positive_slippage, PrintStore())
-        self.assertAlmostEqual(transfer.amount, 1.5, delta=0.0000000001)
-        transfer.add_slippage(negative_slippage, PrintStore())
-        self.assertAlmostEqual(transfer.amount, 1.0, delta=0.0000000001)
-
-        overdraft_slippage = SolverSlippage(
-            solver_name="Test Solver", solver_address=solver, amount_wei=-2 * ONE_ETH
-        )
-
-        with self.assertRaises(ValueError) as err:
-            transfer.add_slippage(overdraft_slippage, PrintStore())
-        self.assertEqual(
-            str(err.exception),
-            f"Invalid adjustment {transfer} "
-            f"by {overdraft_slippage.amount_wei / 10**18}",
-        )
 
     def test_basic_consolidation(self):
         recipients = [
@@ -370,23 +336,6 @@ class TestTransfer(unittest.TestCase):
             str(err.exception),
         )
 
-    def test_receiver_error(self):
-        transfer = Transfer(
-            token=None,
-            recipient=Address.from_int(1),
-            amount_wei=1 * ONE_ETH,
-        )
-        with self.assertRaises(AssertionError) as err:
-            transfer.add_slippage(
-                SolverSlippage(
-                    solver_name="Test Solver",
-                    solver_address=Address.from_int(2),
-                    amount_wei=0,
-                ),
-                PrintStore(),
-            )
-            self.assertEqual(err, "receiver != solver")
-
     def test_from_dict(self):
         receiver = Address.from_int(1)
         self.assertEqual(
@@ -526,45 +475,6 @@ class TestTransfer(unittest.TestCase):
         self.assertEqual(
             result,
             "Total ETH Funds needed: 123.4568\nTotal COW Funds needed: 10000000.0000\n",
-        )
-
-    def test_try_redirect(self):
-        """
-        Test demonstrates that try_redirect works as expected for our use case.
-        However, it also demonstrates how bad it is to pass in an unstructured hashmap
-        that expects the keys to be equal the solver field of its values!
-        TODO - fix this strange error prone issue!
-        """
-        dummy_print_store = PrintStore()
-        receiver = Address.from_int(1)
-        redirect = Address.from_int(2)
-        # Try redirect elsewhere
-        t1 = Transfer(token=None, amount_wei=1, recipient=receiver)
-        vouch_forward = Vouch(
-            bonding_pool=Address.zero(), reward_target=redirect, solver=receiver
-        )
-        t1.try_redirect({vouch_forward.solver: vouch_forward}, dummy_print_store)
-        self.assertEqual(t1.recipient, redirect)
-
-        vouch_reverse = Vouch(
-            bonding_pool=Address.zero(), reward_target=receiver, solver=redirect
-        )
-        # Redirect back!
-        t1.try_redirect({vouch_reverse.solver: vouch_reverse}, dummy_print_store)
-        self.assertEqual(t1.recipient, receiver)
-
-        # no action redirect.
-        another_address = Address.from_int(5)
-        t2 = Transfer(token=None, amount_wei=1, recipient=another_address)
-        disjoint_redirect_map = {
-            vouch_forward.solver: vouch_forward,
-            vouch_reverse.solver: vouch_reverse,
-        }
-        # This assertion implies we should expect t2 to remain unchanged after "try_redirect"
-        self.assertFalse(t2.recipient in disjoint_redirect_map.keys())
-        t2.try_redirect(disjoint_redirect_map, dummy_print_store)
-        self.assertEqual(
-            t2, Transfer(token=None, amount_wei=1, recipient=another_address)
         )
 
     def test_sorted_output(self):

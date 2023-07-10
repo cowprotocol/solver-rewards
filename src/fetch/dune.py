@@ -1,20 +1,14 @@
 """All Dune related query fetching is defined here in the DuneFetcherClass"""
 from typing import Optional
 
-import pandas as pd
 from dune_client.client import DuneClient
 from dune_client.query import Query
 from dune_client.types import QueryParameter, DuneRecord
 
-from src.fetch.cow_rewards import aggregate_orderbook_rewards
+from src.constants import RECOGNIZED_BONDING_POOLS
 from src.fetch.token_list import get_trusted_tokens
 from src.logger import set_log
 from src.models.accounting_period import AccountingPeriod
-from src.models.slippage import SplitSlippages
-from src.models.split_transfers import SplitTransfers
-from src.models.transfer import Transfer
-from src.models.vouch import RECOGNIZED_BONDING_POOLS, parse_vouches
-from src.pg_client import DualEnvDataframe
 from src.queries import QUERIES, QueryData
 from src.utils.print_store import PrintStore, Category
 
@@ -48,8 +42,9 @@ class DuneFetcher:
         """Easier access to these parameters."""
         return self.period.as_query_params()
 
+    @staticmethod
     def _parameterized_query(
-        self, query_data: QueryData, params: list[QueryParameter]
+        query_data: QueryData, params: list[QueryParameter]
     ) -> Query:
         return query_data.with_params(params)
 
@@ -84,66 +79,6 @@ class DuneFetcher:
         )
         assert len(results) == 1, "Block Interval Query should return only 1 result!"
         return str(results[0]["start_block"]), str(results[0]["end_block"])
-
-    def get_eth_spent(self) -> list[Transfer]:
-        """
-        Fetches ETH spent on successful settlements by all solvers during `period`
-        """
-        results = self._get_query_results(
-            self._parameterized_query(QUERIES["ETH_SPENT"], self._period_params())
-        )
-        return [Transfer.from_dict(t) for t in results]
-
-    def get_risk_free_batches(self) -> set[str]:
-        """Fetches Risk Free Batches from Dune"""
-        results = self._get_query_results(
-            self._parameterized_query(
-                QUERIES["RISK_FREE_BATCHES"], self._period_params()
-            )
-        )
-        return {row["tx_hash"].lower() for row in results}
-
-    def get_trade_counts(self) -> list[DuneRecord]:
-        """Fetches Trade Counts for Period"""
-        return self._get_query_results(
-            query=self._parameterized_query(
-                query_data=QUERIES["TRADE_COUNT"],
-                params=[
-                    QueryParameter.text_type("start_block", self.start_block),
-                    QueryParameter.text_type("end_block", self.end_block),
-                ],
-            )
-        )
-
-    def get_cow_rewards(self) -> list[Transfer]:
-        """
-        Fetches COW token rewards from orderbook database returning a list of Transfers
-        """
-        print(
-            f"Fetching CoW Rewards for block interval {self.start_block}, {self.end_block}"
-        )
-        per_order_df = DualEnvDataframe.get_orderbook_rewards(
-            self.start_block, self.end_block
-        )
-        cow_rewards_df = aggregate_orderbook_rewards(
-            per_order_df,
-            risk_free_transactions=self.get_risk_free_batches(),
-        )
-
-        # Validation of results - using characteristics of results from two sources.
-        trade_counts = self.get_trade_counts()
-        # Number of trades per solver retrieved from orderbook agrees ethereum events.
-        duplicates = pd.concat(
-            [
-                pd.DataFrame(trade_counts),
-                cow_rewards_df[["receiver", "num_trades"]].rename(
-                    columns={"receiver": "solver"}
-                ),
-            ]
-        ).drop_duplicates(keep=False)
-
-        assert len(duplicates) == 0, f"solver sets disagree: {duplicates}"
-        return Transfer.from_dataframe(cow_rewards_df)
 
     def get_vouches(self) -> list[DuneRecord]:
         """
@@ -186,19 +121,4 @@ class DuneFetcher:
                 ],
             ),
             job_id,
-        )
-
-    def get_transfers(self) -> list[Transfer]:
-        """Fetches and returns slippage-adjusted Transfers for solver reimbursement"""
-        # TODO - fetch these three results asynchronously!
-        reimbursements = self.get_eth_spent()
-        rewards = self.get_cow_rewards()
-        split_transfers = SplitTransfers(
-            period=self.period,
-            mixed_transfers=reimbursements + rewards,
-            log_saver=self.log_saver,
-        )
-        return split_transfers.process(
-            slippages=SplitSlippages.from_data_set(self.get_period_slippage()),
-            cow_redirects=parse_vouches(self.get_vouches()),
         )

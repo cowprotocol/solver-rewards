@@ -6,9 +6,6 @@ from dataclasses import dataclass
 from dune_client.types import Address
 
 from src.models.accounting_period import AccountingPeriod
-from src.models.slippage import SolverSlippage
-from src.models.token import TokenType
-from src.models.transfer import Transfer
 
 
 @dataclass
@@ -22,22 +19,6 @@ class Overdraft:
     account: Address
     name: str
     wei: int
-
-    @classmethod
-    def from_objects(
-        cls, transfer: Transfer, slippage: SolverSlippage, period: AccountingPeriod
-    ) -> Overdraft:
-        """Constructs an overdraft instance based on Transfer & Slippage"""
-        assert transfer.recipient == slippage.solver_address
-        assert transfer.token_type == TokenType.NATIVE
-        overdraft = transfer.amount_wei + slippage.amount_wei
-        assert overdraft < 0, "This is why we are here."
-        return cls(
-            period=period,
-            name=slippage.solver_name,
-            account=slippage.solver_address,
-            wei=abs(overdraft),
-        )
 
     @property
     def eth(self) -> float:
