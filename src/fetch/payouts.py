@@ -190,12 +190,13 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                     Transfer(
                         token=None,
                         recipient=self.solver,
-                        amount_wei=reimbursement_eth,
+                        amount_wei=reimbursement_eth + total_eth_reward,
                     )
                 )
             except AssertionError:
                 logging.warning(
-                    f"Invalid ETH Transfer {self.solver} with amount={reimbursement_eth}"
+                    f"Invalid ETH Transfer {self.solver} "
+                    f"with amount={reimbursement_eth + total_eth_reward}"
                 )
 
             return result
