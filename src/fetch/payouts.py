@@ -210,7 +210,8 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 )
             except AssertionError:
                 logging.warning(
-                    f"Invalid COW Transfer {self.solver} with amount={reimbursement_cow + total_cow_reward}"
+                    f"Invalid COW Transfer {self.solver} "
+                    f"with amount={reimbursement_cow + total_cow_reward}"
                 )
 
             return result
