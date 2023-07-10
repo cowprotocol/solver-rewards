@@ -322,7 +322,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
-                    recipient=Address(self.solvers[3]),
+                    recipient=Address(self.reward_targets[3]),
                     amount_wei=180000000000000000000,
                 ),
                 Transfer(
