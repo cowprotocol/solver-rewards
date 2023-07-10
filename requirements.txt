@@ -2,7 +2,7 @@ black==23.3.0
 certifi==2022.6.15
 duneapi==8.0.0
 dune-client==1.1.1
-mypy<=1.0.0
+mypy<1.0.0
 psycopg2-binary>=2.9.6
 pylint==2.17.4
 pytest==7.4.0
@@ -13,7 +13,7 @@ safe-cli==0.7.0
 safe-eth-py==5.5.0
 slackclient==2.9.4
 web3==6.5.0
-SQLAlchemy<=2.0.0
+SQLAlchemy<2.0.0
 sqlalchemy-stubs==0.4
 pandas==2.0.3
 pandas-stubs==2.0.2.230605
