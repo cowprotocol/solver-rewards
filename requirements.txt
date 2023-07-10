@@ -3,7 +3,7 @@ certifi==2022.6.15
 duneapi==8.0.0
 dune-client==1.0.0
 mypy<1.0.0
-psycopg2-binary==2.9.3
+psycopg2-binary>=2.9.6
 pylint==2.14.4
 pytest==7.1.2
 python-dotenv>=0.20.0
@@ -15,5 +15,5 @@ slackclient==2.9.4
 web3==6.5.0
 SQLAlchemy~=1.4.48
 sqlalchemy-stubs==0.4
-pandas==1.5.0
-pandas-stubs==1.5.1.221024
+pandas==2.0.3
+pandas-stubs==2.0.2.230605
