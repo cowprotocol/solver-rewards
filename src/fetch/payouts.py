@@ -145,6 +145,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         Isolating the logic of how solvers are paid out according to their
             execution costs, rewards and slippage
         """
+        quote_reward_cow = self.quote_reward_cow
         result = []
         if quote_reward_cow > 0:
             result.append(
@@ -159,7 +160,6 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
 
         total_eth_reward = int(self.total_eth_reward())
         total_cow_reward = int(self.total_cow_reward())
-        quote_reward_cow = self.quote_reward_cow
 
         reimbursement_eth = int(self.exec_cost + self.slippage_eth)
         # We do not have access to token conversion here, but we do have other converted values
