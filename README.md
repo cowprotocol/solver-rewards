@@ -72,21 +72,22 @@ However, many IDEs can be configured to auto format on save.
 looking at the script help menu can help provide a list of options!
 
 ```shell
-$ python -m src.fetch.transfer_file --help            
+$  python -m src.fetch.transfer_file --help 
 
-usage: Fetch Complete Reimbursement [-h] [--start START] [--post-tx POST_TX] [--post-cip20 POST_CIP20]
-                                    [--consolidate-transfers CONSOLIDATE_TRANSFERS] [--dry-run DRY_RUN]
+usage: Fetch Complete Reimbursement [-h] [--start START] [--post-tx POST_TX] [--consolidate-transfers CONSOLIDATE_TRANSFERS] [--dry-run DRY_RUN]
+                                    [--min-transfer-amount-wei MIN_TRANSFER_AMOUNT_WEI]
 
 options:
   -h, --help            show this help message and exit
   --start START         Accounting Period Start. Defaults to previous Tuesday
   --post-tx POST_TX     Flag indicating whether multisend should be posted to safe (requires valid env var `PROPOSER_PK`)
-  --post-cip20 POST_CIP20
-                        Flag payout should be made according to pre or post CIP 20 (temporary during switch over)
   --consolidate-transfers CONSOLIDATE_TRANSFERS
                         Flag to indicate whether payout transfer file should be optimized (i.e. squash transfers having same receiver-token pair)
   --dry-run DRY_RUN     Flag indicating whether script should not post alerts or transactions. Only relevant in combination with --post-tx TruePrimarily intended for
                         deployment in staging environment.
+  --min-transfer-amount-wei MIN_TRANSFER_AMOUNT_WEI
+                        Ignore transfers with amount less than this
+
 ```
 
 The solver reimbursements are executed each Tuesday with the accounting period of the last 7 days.
@@ -98,7 +99,7 @@ To generate the CSV Transfer file manually run the "quickstart" variant of the s
 A more fine-tuned variant of the script execution could look like this:
 
 ```shell
-python -m src.fetch.transfer_file --start 2023-03-14 --post-cip20 True --post-tx True
+python -m src.fetch.transfer_file --start 2023-03-14 --post-tx True
 ```
 
 which would run for the accounting period March 14 - 21, 2023, using the Post CIP-20 reward scheme and post the payout
@@ -133,11 +134,10 @@ This project has a strict requirement of python >= 3.10 which may not be common 
 In order to make the reimbursement effort seamless, we have prepared the following docker container.
 
 ```shell
-docker pull ghcr.io/cowprotocol/solver-rewards:main
 # Prepare environment variables
 cp .env.sample .env  # Fill in your Dune Credentials
-# Run
-docker run -it --rm \
+# Run (always ensuring latest version is being used).
+docker run --pull=always -it --rm \
   --env-file .env \
   -v $PWD:/app/out \
   ghcr.io/cowprotocol/solver-rewards:main \
@@ -146,14 +146,3 @@ docker run -it --rm \
 ```
 
 and (usually after about 30 seconds) find the transfer file written to your current working directory.
-
-For a one-liner that makes sure that the latest version of the code is the one being used, you can run Docker with:
-
-```sh
-docker run --pull=always -it --rm \
-  --env-file .env \
-  -v $PWD:/app/out \
-  ghcr.io/cowprotocol/solver-rewards:main \
-  src.fetch.transfer_file \
-  --start 'YYYY-MM-DD'
-```
