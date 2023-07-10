@@ -62,14 +62,14 @@ class IndexedContract(Enum):
 # don't have to import a bunch of stuff to get the contract then want
 
 
-def weth9(web3: Optional[Web3] = None) -> Contract:
+def weth9(web3: Optional[Web3] = None) -> Contract | Type[Contract]:
     """Returns an instance of WETH9 Contract"""
     return IndexedContract.WETH9.get_contract(web3, WETH9_ADDRESS)
 
 
 def erc20(
     web3: Optional[Web3] = None, address: Optional[ChecksumAddress] = None
-) -> Contract:
+) -> Contract | Type[Contract]:
     """
     Returns an instance of the ERC20 Contract when address provided
     Generic ERC20Interface otherwise.

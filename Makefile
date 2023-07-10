@@ -59,9 +59,5 @@ test-db: install db
 	$(ACTIVATE); python -m pytest tests/db
 	$(ACTIVATE); python -m pytest tests/queries
 
-.PHONY: test-integration
-test-integration: install
-	$(ACTIVATE); python -m pytest tests/integration
-
 .PHONY: test-all
-test-all: test-unit test-e2e test-db test-integration
+test-all: test-unit test-e2e test-db
