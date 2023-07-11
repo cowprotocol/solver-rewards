@@ -56,12 +56,13 @@ def generic_script_init(description: str) -> ScriptArgs:
         "Primarily intended for deployment in staging environment.",
         default=False,
     )
-    # TODO: this should be per token (like list[tuple[Token,minAmount]])
+    # Define the per-token minimum transfer thresholds
     parser.add_argument(
         "--min-transfer-amount-wei",
-        type=int,
-        help="Ignore transfers with amount less than this",
-        default=1000000000000000,
+        type=lambda x: tuple(x.split(',')),
+        nargs='+',
+        help="Minimum transfer amount per token (format: Token, MinAmount)",
+        default=[("ETH", 1000000000000000)],  # Default minimum transfer amount for ETH
     )
     args = parser.parse_args()
     return ScriptArgs(
