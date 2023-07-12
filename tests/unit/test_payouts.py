@@ -13,6 +13,7 @@ from src.fetch.payouts import (
     TokenConversion,
     prepare_transfers,
     RewardAndPenaltyDatum,
+    QUOTE_REWARD,
 )
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
@@ -35,6 +36,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 ],
             )
         )
+        self.num_quotes = [0, 0, 10, 20]
         self.reward_targets = list(
             map(
                 str,
@@ -73,6 +75,7 @@ class TestPayoutTransformations(unittest.TestCase):
     def test_extend_payment_df(self):
         base_data_dict: dict = {
             "solver": self.solvers,
+            "num_quotes": self.num_quotes,
             "payment_eth": self.eth_payments,
             "execution_cost_eth": self.execution_costs,
             "num_participating_batches": self.batch_participation,
@@ -81,6 +84,7 @@ class TestPayoutTransformations(unittest.TestCase):
         result = extend_payment_df(base_payout_df, converter=self.mock_converter)
         expected_data_dict = {
             "solver": self.solvers,
+            "num_quotes": self.num_quotes,
             "payment_eth": self.eth_payments,
             "execution_cost_eth": self.execution_costs,
             "num_participating_batches": self.batch_participation,
@@ -97,16 +101,22 @@ class TestPayoutTransformations(unittest.TestCase):
                 0,
             ],
             "secondary_reward_cow": [
-                121961381818181816942592.00000,
-                34846109090909089955840.00000,
-                121961381818181816942592.00000,
-                104538327272727274061824.00000,
+                97569245454545450000000.00000,
+                27876927272727270000000.00000,
+                97569245454545450000000.00000,
+                83630781818181820000000.00000,
             ],
             "secondary_reward_eth": [
-                121961381818181812224.00000,
-                34846109090909089792.00000,
-                121961381818181812224.00000,
-                104538327272727281664.00000,
+                97569245454545450000.00000,
+                27876927272727273000.00000,
+                97569245454545450000.00000,
+                83630781818181810000.00000,
+            ],
+            "quote_reward_cow": [
+                0.00000,
+                0.00000,
+                90000000000000000000.00000,
+                180000000000000000000.00000,
             ],
         }
         expected = DataFrame(expected_data_dict)
@@ -136,6 +146,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 "reward_cow": [],
                 "secondary_reward_cow": [],
                 "secondary_reward_eth": [],
+                "quote_reward_cow": [],
             }
         )
         legit_slippages = DataFrame(
@@ -176,6 +187,7 @@ class TestPayoutTransformations(unittest.TestCase):
             pdf=DataFrame(
                 {
                     "solver": self.solvers,
+                    "num_quotes": self.num_quotes,
                     "payment_eth": self.eth_payments,
                     "execution_cost_eth": self.execution_costs,
                     "num_participating_batches": self.batch_participation,
@@ -202,12 +214,8 @@ class TestPayoutTransformations(unittest.TestCase):
         )
         expected = DataFrame(
             {
-                "solver": [
-                    "0x0000000000000000000000000000000000000001",
-                    "0x0000000000000000000000000000000000000002",
-                    "0x0000000000000000000000000000000000000003",
-                    "0x0000000000000000000000000000000000000004",
-                ],
+                "solver": self.solvers,
+                "num_quotes": self.num_quotes,
                 "payment_eth": [600000000000000.0, 1.045e16, -1e16, 0.0],
                 "execution_cost_eth": [800000000000000.0, 450000000000000.0, 0.0, 0.0],
                 "num_participating_batches": [7, 2, 7, 6],
@@ -219,16 +227,22 @@ class TestPayoutTransformations(unittest.TestCase):
                     0,
                 ],
                 "secondary_reward_cow": [
-                    121961381818181816942592.00000,
-                    34846109090909089955840.00000,
-                    121961381818181816942592.00000,
-                    104538327272727274061824.00000,
+                    97569245454545450000000.00000,
+                    27876927272727270000000.00000,
+                    97569245454545450000000.00000,
+                    83630781818181820000000.00000,
                 ],
                 "secondary_reward_eth": [
-                    121961381818181812224.00000,
-                    34846109090909089792.00000,
-                    121961381818181812224.00000,
-                    104538327272727281664.00000,
+                    97569245454545450000.00000,
+                    27876927272727273000.00000,
+                    97569245454545450000.00000,
+                    83630781818181810000.00000,
+                ],
+                "quote_reward_cow": [
+                    0.00000,
+                    0.00000,
+                    90000000000000000000.00000,
+                    180000000000000000000.00000,
                 ],
                 "solver_name": ["S_1", "S_2", "S_3", None],
                 "eth_slippage_wei": [1.0, 0.0, -1.0, None],
@@ -247,12 +261,8 @@ class TestPayoutTransformations(unittest.TestCase):
         # Need Example of every possible scenario
         full_payout_data = DataFrame(
             {
-                "solver": [
-                    "0x0000000000000000000000000000000000000001",
-                    "0x0000000000000000000000000000000000000002",
-                    "0x0000000000000000000000000000000000000003",
-                    "0x0000000000000000000000000000000000000004",
-                ],
+                "solver": self.solvers,
+                "num_quotes": self.num_quotes,
                 "payment_eth": [600000000000000.0, 1.045e16, -1e16, 0.0],
                 "execution_cost_eth": [800000000000000.0, 450000000000000.0, 0.0, 0.0],
                 "reward_eth": [-200000000000000.0, 1e16, -1e16, 0.0],
@@ -273,6 +283,12 @@ class TestPayoutTransformations(unittest.TestCase):
                     18181818181818.0,
                     63636363636363.0,
                     54545454545454.0,
+                ],
+                "quote_reward_cow": [
+                    0.00000,
+                    0.00000,
+                    90000000000000000000.00000,
+                    180000000000000000000.00000,
                 ],
                 "solver_name": ["S_1", "S_2", "S_3", None],
                 "eth_slippage_wei": [1.0, 0.0, -1.0, None],
@@ -303,6 +319,16 @@ class TestPayoutTransformations(unittest.TestCase):
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[1]),
                     amount_wei=10018181818181818180,
+                ),
+                Transfer(
+                    token=Token(COW_TOKEN_ADDRESS),
+                    recipient=Address(self.reward_targets[2]),
+                    amount_wei=90000000000000000000,
+                ),
+                Transfer(
+                    token=Token(COW_TOKEN_ADDRESS),
+                    recipient=Address(self.reward_targets[3]),
+                    amount_wei=180000000000000000000,
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
@@ -339,6 +365,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         cost: int,
         participation: int,
         slippage: int,
+        num_quotes: int,
     ):
         """Assumes a conversion rate of ETH:COW <> 1:self.conversion_rate"""
         return RewardAndPenaltyDatum(
@@ -351,23 +378,24 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             secondary_reward_eth=participation,
             secondary_reward_cow=participation * self.conversion_rate,
             slippage_eth=slippage,
+            quote_reward_cow=QUOTE_REWARD * num_quotes,
         )
 
     def test_invalid_input(self):
         with self.assertRaises(AssertionError):
-            self.sample_record(0, -1, 0, 0)
+            self.sample_record(0, -1, 0, 0, 0)
 
         with self.assertRaises(AssertionError):
-            self.sample_record(0, 0, -1, 0)
+            self.sample_record(0, 0, -1, 0, 0)
 
     def test_reward_datum_0_0_0_0(self):
-        test_datum = self.sample_record(0, 0, 0, 0)
+        test_datum = self.sample_record(0, 0, 0, 0, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(test_datum.as_payouts(), [])
 
     def test_reward_datum_1_1_0_0(self):
         cost = 1
-        test_datum = self.sample_record(1, cost, 0, 0)
+        test_datum = self.sample_record(1, cost, 0, 0, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -376,7 +404,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
 
     def test_reward_datum_3_2_0_minus1(self):
         payment, cost, participation, slippage = 3, 2, 0, -1
-        test_datum = self.sample_record(payment, cost, participation, slippage)
+        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -397,7 +425,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
     def test_reward_datum_cost_exceeds_payment_degenerate(self):
         # Degenerate Case!
         payment, cost, participation, slippage = 1, 10, 0, -1
-        test_datum = self.sample_record(payment, cost, participation, slippage)
+        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -411,7 +439,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         cost = max(sum(x) for x in triplets) + 1
 
         for payment, participation, slippage in triplets:
-            test_datum = self.sample_record(payment, cost, participation, slippage)
+            test_datum = self.sample_record(payment, cost, participation, slippage, 0)
             self.assertFalse(test_datum.is_overdraft())
             self.assertLess(test_datum.total_outgoing_eth(), cost)
             self.assertEqual(
@@ -434,12 +462,12 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         for payment, participation, slippage in triplets:
             for cost in [0, 1, 100]:
                 # Doesn't matter their costs, they are in overdraft state!
-                rec = self.sample_record(payment, cost, participation, slippage)
+                rec = self.sample_record(payment, cost, participation, slippage, 0)
                 self.assertTrue(rec.is_overdraft())
 
     def test_reward_datum_1_1_1_1(self):
         payment, cost, participation, slippage = 1, 1, 1, 1
-        test_datum = self.sample_record(payment, cost, participation, slippage)
+        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
 
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
@@ -463,7 +491,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
 
     def test_payout_negative_payments(self):
         payment, cost, participation, slippage = -1, 1, 1, 1
-        test_datum = self.sample_record(payment, cost, participation, slippage)
+        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
         self.assertEqual(
             test_datum.as_payouts(),
             [
