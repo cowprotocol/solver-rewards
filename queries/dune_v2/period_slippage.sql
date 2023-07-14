@@ -20,7 +20,7 @@ batch_meta as (
 )
 ,filtered_trades as (
     select t.tx_hash,
-           t.block_number,
+           b.block_number,
            case
                 when trader = 0x9008d19f58aabd9ed0d60971565aa8510560ab41
                 then 0x0000000000000000000000000000000000000000
@@ -29,13 +29,12 @@ batch_meta as (
            receiver                                     as trader_out,
            sell_token_address                           as sell_token,
            buy_token_address                            as buy_token,
-           atoms_sold - coalesce(surplus_fee, 0)        as atoms_sold,
+           atoms_sold - coalesce(surplus_fee, cast(0 as uint256))        as atoms_sold,
            atoms_bought,
            0x9008d19f58aabd9ed0d60971565aa8510560ab41 as contract_address
     from cow_protocol_ethereum.trades t
          join cow_protocol_ethereum.batches b
-            on t.block_number = b.block_number
-            and t.tx_hash = b.tx_hash
+            on t.tx_hash = b.tx_hash
     left outer join cow_protocol_ethereum.order_rewards f
         on f.tx_hash = t.tx_hash
         and f.order_uid = t.order_uid
