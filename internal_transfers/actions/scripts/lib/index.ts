@@ -1,5 +1,5 @@
 import { internalizedTokenImbalance } from "../../src/pipeline";
-import { getDB } from "../../src/database";
+import { getDB, getUnprocessedReceipts } from "../../src/database";
 import { getSampleSet } from "../../src/dune";
 import { DuneClient } from "@cowprotocol/ts-dune-client";
 import { ethers } from "ethers";
@@ -22,6 +22,30 @@ export async function backFillTokenImbalances(
     `Recovered ${batchDataForDate.length} records for ${dateFrom} ${dateTo}`
   );
   for (const tx of batchDataForDate) {
+    try {
+      await internalizedTokenImbalance(tx, db, simulator, provider);
+    } catch (error: any) {
+      // Can't process 0x841ecfc5846f2d5b75f717fa460c81276feabc6140fa8081344c1f3c4178a8c7
+      // https://cowservices.slack.com/archives/C0375NV72SC/p1684863431797069
+      console.error(error.message);
+    }
+  }
+}
+
+export async function clearBacklog(
+  dbUrl: string,
+  nodeUrl: string,
+  simulator: TransactionSimulator
+) {
+  const db = getDB(dbUrl);
+  const provider = ethers.getDefaultProvider(nodeUrl);
+
+  const receipts = await getUnprocessedReceipts(
+    db,
+    (await provider.getBlockNumber()) - 70
+  );
+  console.log(`Recovered ${receipts.length} records for processing`);
+  for (const tx of receipts) {
     try {
       await internalizedTokenImbalance(tx, db, simulator, provider);
     } catch (error: any) {
