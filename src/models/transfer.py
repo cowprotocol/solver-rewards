@@ -57,12 +57,6 @@ class Transfer:
         self._recipient = recipient
         self.amount_wei = amount_wei
 
-        # It ensures that transfers are grouped
-        # 1. first by initial recipient (i.e. solvers),
-        # 2. then by token address (with native ETH last) and
-        # 3. finally ordered by amount descending (so that largest in category occur first).
-        self._sort_key = (recipient, str(token), -amount_wei)
-
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> Transfer:
         """Converts Dune data dict to object with types"""
