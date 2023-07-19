@@ -114,7 +114,6 @@ if __name__ == "__main__":
             [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
         ),
     )
-    Transfer.sort_list(payout_transfers)
     payout_transfers = list(
         filter(
             lambda payout: payout.amount_wei > args.min_transfer_amount_wei,

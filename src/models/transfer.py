@@ -57,12 +57,6 @@ class Transfer:
         self._recipient = recipient
         self.amount_wei = amount_wei
 
-        # It ensures that transfers are grouped
-        # 1. first by initial recipient (i.e. solvers),
-        # 2. then by token address (with native ETH last) and
-        # 3. finally ordered by amount descending (so that largest in category occur first).
-        self._sort_key = (recipient, str(token), -amount_wei)
-
     @classmethod
     def from_dict(cls, obj: dict[str, str]) -> Transfer:
         """Converts Dune data dict to object with types"""
@@ -103,11 +97,6 @@ class Transfer:
     def recipient(self) -> Address:
         """Read access to the recipient of a transfer"""
         return self._recipient
-
-    @property
-    def sort_key(self) -> tuple[Address, str, int]:
-        """Read access to the recipient of a transfer"""
-        return self._sort_key
 
     @staticmethod
     def consolidate(transfer_list: list[Transfer]) -> list[Transfer]:
@@ -201,11 +190,3 @@ class Transfer:
                 f"amount={self.amount})"
             )
         raise ValueError(f"Invalid Token Type {self.token_type}")
-
-    @staticmethod
-    def sort_list(transfer_list: list[Transfer]) -> None:
-        """
-        This is the preferred and tested sort order we use for generating the transfer file.
-        Note that this method mutates the input data and nothing in returned.
-        """
-        transfer_list.sort(key=lambda t: t.sort_key)
