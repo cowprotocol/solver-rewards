@@ -113,7 +113,7 @@ class DuneFetcher:
         ]
         # trigger dashboard update
         self.dune.execute(
-            self._parameterized_query(QUERIES["DASHBOARD_SLIPPAGE"], params=params),
+            self._parameterized_query(QUERIES["DASHBOARD_SLIPPAGE"], params=params)
         )
 
         return self._get_query_results(
