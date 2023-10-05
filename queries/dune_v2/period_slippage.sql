@@ -1,4 +1,4 @@
--- https://github.com/cowprotocol/solver-rewards/pull/259
+-- https://github.com/cowprotocol/solver-rewards/pull/322
 -- Query Here: https://dune.com/queries/2421375
 with
 batch_meta as (
@@ -121,7 +121,7 @@ batch_meta as (
         and success = true
     and 0x9008d19f58aabd9ed0d60971565aa8510560ab41 in (to, "from")
     -- WETH unwraps don't have cancelling WETH transfer.
-    and "from" != 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+    and not 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2 in (to, "from")
     -- ETH transfers to traders are already part of USER_OUT
     and not contains(traders_out, to)
 )
