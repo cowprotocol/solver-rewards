@@ -264,6 +264,8 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     """
     # Note that this can be negative!
     pdf["reward_eth"] = pdf["payment_eth"] - pdf["execution_cost_eth"]
+    # num = pdf._get_numeric_data()
+    # num[num < 0] = 0
     pdf["reward_cow"] = pdf["reward_eth"].apply(converter.eth_to_token)
 
     secondary_allocation = max(PERIOD_BUDGET_COW - pdf["reward_cow"].sum(), 0)

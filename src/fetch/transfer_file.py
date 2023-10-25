@@ -108,18 +108,21 @@ if __name__ == "__main__":
         category=Category.GENERAL,
     )
 
-    payout_transfers = construct_payouts(
+    payout_transfers_temp = construct_payouts(
         args.dune,
         orderbook=MultiInstanceDBFetcher(
             [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
         ),
     )
-    payout_transfers = list(
-        filter(
-            lambda payout: payout.amount_wei > args.min_transfer_amount_wei,
-            payout_transfers,
-        )
-    )
+    payout_transfers = []
+    for tr in payout_transfers_temp:
+        if tr.token is None:
+            if tr.amount_wei > args.min_transfer_amount_wei:
+                payout_transfers.append(tr)
+        else:
+            if tr.amount_wei > args.min_transfer_amount_cow_atoms:
+                payout_transfers.append(tr)
+
     if args.consolidate_transfers:
         payout_transfers = Transfer.consolidate(payout_transfers)
 
