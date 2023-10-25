@@ -57,7 +57,6 @@ def generic_script_init(description: str) -> ScriptArgs:
         "Primarily intended for deployment in staging environment.",
         default=False,
     )
-    # TODO: this should be per token (like list[tuple[Token,minAmount]])
     parser.add_argument(
         "--min-transfer-amount-wei",
         type=int,
@@ -68,7 +67,7 @@ def generic_script_init(description: str) -> ScriptArgs:
         "--min-transfer-amount-cow-atoms",
         type=int,
         help="Ignore COW transfers with amount less than this",
-        default=10,
+        default=100000000000000000000,
     )
     args = parser.parse_args()
     return ScriptArgs(
