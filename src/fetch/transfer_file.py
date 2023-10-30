@@ -117,10 +117,10 @@ if __name__ == "__main__":
     payout_transfers = []
     for tr in payout_transfers_temp:
         if tr.token is None:
-            if tr.amount_wei > args.min_transfer_amount_wei:
+            if tr.amount_wei >= args.min_transfer_amount_wei:
                 payout_transfers.append(tr)
         else:
-            if tr.amount_wei > args.min_transfer_amount_cow_atoms:
+            if tr.amount_wei >= args.min_transfer_amount_cow_atoms:
                 payout_transfers.append(tr)
 
     if args.consolidate_transfers:
