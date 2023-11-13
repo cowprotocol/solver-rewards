@@ -160,7 +160,7 @@ batch_meta as (
     -- These batches involve a token AXS (Old)
     -- whose transfer function doesn't align with the emitted transfer event.
     where 0xf5d669627376ebd411e34b98f19c868c8aba5ada in (buy_token, sell_token)
-    -- Batches involving depeddeg R stable coin
+    -- Batches involving depegged R stable coin
     or tx_hash in (
         0x4b8b031baebd7c13652f51ab33feaec078093c992edcb23c3e9f531fa9310131,
         0x11a7b6e9591a391972ec0ba14e7f6d2cdde6b6101835fc068aa781486edbd586,
