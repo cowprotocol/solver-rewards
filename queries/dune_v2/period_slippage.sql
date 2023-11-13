@@ -154,11 +154,23 @@ batch_meta as (
     join pre_batch_transfers pbt
         on bm.tx_hash = pbt.tx_hash
 )
--- These batches involve a token AXS (Old)
--- whose transfer function doesn't align with the emitted transfer event.
+-- These batches are excluded from slippage accounting
 ,excluded_batches as (
     select tx_hash from filtered_trades
+    -- These batches involve a token AXS (Old)
+    -- whose transfer function doesn't align with the emitted transfer event.
     where 0xf5d669627376ebd411e34b98f19c868c8aba5ada in (buy_token, sell_token)
+    -- Batches involving depeddeg R stable coin
+    or tx_hash in (
+        0x4b8b031baebd7c13652f51ab33feaec078093c992edcb23c3e9f531fa9310131,
+        0x11a7b6e9591a391972ec0ba14e7f6d2cdde6b6101835fc068aa781486edbd586,
+        0xab4ecb6c331c4aa54da361d189d0f8d064720d29c66ac06311875c845c444437,
+        0xc7289412dd9a8de54a266d3d4763d72c8d0d465d6157ed6da4d9360df1fe5ef7,
+        0x3603837611b1670f743325ab81ba2ab50b092e5a8defc8d111b554264d600cd7,
+        0x27fe348aa539ed1647ceced2808b63161ed3b3bf5a46b877c247341acd74754e,
+        0xd8356e52dafc2c749da8b0f2bee69736c83fae986ce3f5b14e2a8dd603c3092e,
+        0xaa037b87eba06781f0699b6c021fa84d67a197502d3141c00c9e274055899118
+    )
 ),
 incoming_and_outgoing as (
     SELECT
