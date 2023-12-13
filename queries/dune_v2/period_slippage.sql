@@ -125,6 +125,33 @@ batch_meta as (
     -- ETH transfers to traders are already part of USER_OUT
     and not contains(traders_out, to)
 )
+-- sDAI emit only one transfer event for deposits and withdrawls.
+-- This reconstructs the missing transfer from event logs.
+,sdai_deposit_withdrawl_transfers as (
+    -- withdraw events result in additional AMM_IN transfer
+    select
+        tx_hash,
+        0x9008d19f58aabd9ed0d60971565aa8510560ab41 as sender,
+        0x0000000000000000000000000000000000000000 as receiver,
+        contract_address as token,
+        cast(shares as int256) as amount_wei,
+        'AMM_IN' as transfer_type
+    from batch_meta bm
+    join maker_ethereum.SavingsDai_evt_Withdraw w
+    on w.evt_tx_hash= bm.tx_hash
+    union all
+    -- for deposit events result in additional AMM_OUT transfer
+    select
+        tx_hash,
+        0x0000000000000000000000000000000000000000 as sender,
+        0x9008d19f58aabd9ed0d60971565aa8510560ab41 as receiver,
+        contract_address as token,
+        cast(shares as int256) as amount_wei,
+        'AMM_OUT' as transfer_type
+    from batch_meta bm
+    join maker_ethereum.SavingsDai_evt_Deposit w
+    on w.evt_tx_hash= bm.tx_hash
+)
 ,pre_batch_transfers as (
     select * from (
         select * from user_in
@@ -134,6 +161,8 @@ batch_meta as (
         select * from other_transfers
         union all
         select * from eth_transfers
+        union all
+        select * from sdai_deposit_withdrawl_transfers
         ) as _
     order by tx_hash
 )
