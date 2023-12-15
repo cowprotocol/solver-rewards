@@ -1,4 +1,4 @@
--- https://github.com/cowprotocol/solver-rewards/pull/322
+-- https://github.com/cowprotocol/solver-rewards/pull/327
 -- Query Here: https://dune.com/queries/3093726
 with
 batch_meta as (
