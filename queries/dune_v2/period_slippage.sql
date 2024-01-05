@@ -14,7 +14,8 @@ batch_meta as (
            num_trades,
            b.solver_address
     from cow_protocol_ethereum.batches b
-    where b.block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+    where b.block_time > cast('{{StartTime}}' as timestamp)
+    and b.block_time <= cast('{{EndTime}}' as timestamp)
     and (b.solver_address = from_hex('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
     and (b.tx_hash = from_hex('{{TxHash}}') or '{{TxHash}}' = '0x')
 )
@@ -38,8 +39,10 @@ batch_meta as (
     left outer join cow_protocol_ethereum.order_rewards f
         on f.tx_hash = t.tx_hash
         and f.order_uid = t.order_uid
-    where b.block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
-    and t.block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+    where b.block_time > cast('{{StartTime}}' as timestamp)
+    and b.block_time <= cast('{{EndTime}}' as timestamp)
+    and t.block_time > cast('{{StartTime}}' as timestamp)
+    and t.block_time <= cast('{{EndTime}}' as timestamp)
     and (b.solver_address = from_hex('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
     and (t.tx_hash = from_hex('{{TxHash}}') or '{{TxHash}}' = '0x')
 )
@@ -89,7 +92,8 @@ batch_meta as (
                 and evt_tx_hash = b.tx_hash
              inner join batchwise_traders bt
                 on evt_tx_hash = bt.tx_hash
-    where b.block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+    where b.block_time > cast('{{StartTime}}' as timestamp)
+      and b.block_time <= cast('{{EndTime}}' as timestamp)
       and 0x9008d19f58aabd9ed0d60971565aa8510560ab41 in (to, "from")
       and not contains(traders_in, "from")
       and not contains(traders_out, to)
@@ -257,7 +261,8 @@ incoming_and_outgoing as (
     join tokens.erc20 t
         on contract_address = from_hex(token)
         and blockchain = 'ethereum'
-    where i.block_number between (select start_block from block_range) and (select end_block from block_range)
+    where i.block_number > (select start_block from block_range)
+    and i.bloc_number <= (select end_block from block_range)
     and ('{{SolverAddress}}' = '0x' or b.solver_address = from_hex('{{SolverAddress}}'))
     and ('{{TxHash}}' = '0x' or b.tx_hash = from_hex('{{TxHash}}'))
 )
@@ -305,7 +310,7 @@ incoming_and_outgoing as (
     from
         prices.usd pusd
     inner join token_times tt
-        on minute between date(hour) and date(hour) + interval '1' day -- query execution speed optimization since minute is indexed
+        on minute >= date(hour) and minute <= date(hour) + interval '1' day -- query execution speed optimization since minute is indexed
         and date_trunc('hour', minute) = hour
         and contract_address = token
         and blockchain = 'ethereum'
@@ -327,7 +332,8 @@ incoming_and_outgoing as (
             date_trunc('hour', block_time) as hour,
             usd_value / units_bought as price
         FROM cow_protocol_ethereum.trades
-        WHERE block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+        WHERE block_time > cast('{{StartTime}}' as timestamp)
+        AND block_time <= cast('{{EndTime}}' as timestamp)
         AND units_bought > 0
     UNION
         select
@@ -336,7 +342,8 @@ incoming_and_outgoing as (
             date_trunc('hour', block_time) as hour,
             usd_value / units_sold as price
         FROM cow_protocol_ethereum.trades
-        WHERE block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+        WHERE block_time > cast('{{StartTime}}' as timestamp)
+        AND block_time <= cast('{{EndTime}}' as timestamp)
         AND units_sold > 0
     ) as combined
     GROUP BY hour, contract_address, decimals
@@ -371,7 +378,8 @@ incoming_and_outgoing as (
     from prices.usd
     where blockchain = 'ethereum'
     and contract_address = 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
-    and minute between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+    and minute >= cast('{{StartTime}}' as timestamp)
+    and minute <= cast('{{EndTime}}' as timestamp)
     group by date_trunc('hour', minute)
 )
 ,results_per_tx as (
