@@ -37,7 +37,7 @@ where
            num_trades,
            b.solver_address
     from cow_protocol_ethereum.batches b
-    where b.block_number >= (select start_block from block_range) and b.block_number<= (select end_block from block_range)
+    where b.block_number >= (select start_block from block_range) and b.block_number <= (select end_block from block_range)
     and (b.solver_address = from_hex('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
     and (b.tx_hash = from_hex('{{TxHash}}') or '{{TxHash}}' = '0x')
 )
@@ -112,7 +112,7 @@ where
                 and evt_tx_hash = b.tx_hash
              inner join batchwise_traders bt
                 on evt_tx_hash = bt.tx_hash
-    where b.block_number >= (select start_block from block_range) and b.block_number<= (select end_block from block_range)
+    where b.block_number >= (select start_block from block_range) and b.block_number <= (select end_block from block_range)
       and 0x9008d19f58aabd9ed0d60971565aa8510560ab41 in (to, "from")
       and not contains(traders_in, "from")
       and not contains(traders_out, to)
