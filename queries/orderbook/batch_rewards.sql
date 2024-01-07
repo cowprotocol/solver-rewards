@@ -18,14 +18,14 @@ WITH observed_settlements AS (SELECT
                                             AND s.tx_nonce = at.tx_nonce
                                      JOIN settlement_scores ss
                                           ON at.auction_id = ss.auction_id
-                              WHERE ss.block_deadline > {{start_block}}
+                              WHERE ss.block_deadline >= {{start_block}}
                                 AND ss.block_deadline <= {{end_block}}),
 
      auction_participation as (SELECT ss.auction_id, array_agg(participant) as participating_solvers
                                FROM auction_participants
                                       JOIN settlement_scores ss
                                            ON auction_participants.auction_id = ss.auction_id
-                               WHERE block_deadline > {{start_block}}
+                               WHERE block_deadline >= {{start_block}}
                                  AND block_deadline <= {{end_block}}
                                GROUP BY ss.auction_id),
      reward_data AS (SELECT
