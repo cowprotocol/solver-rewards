@@ -1,4 +1,4 @@
--- https://github.com/cowprotocol/solver-rewards/pull/327
+-- https://github.com/cowprotocol/solver-rewards/pull/330
 -- Query Here: https://dune.com/queries/3333368
 with
 block_range_start as (
