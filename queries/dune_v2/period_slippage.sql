@@ -1,28 +1,12 @@
 -- https://github.com/cowprotocol/solver-rewards/pull/330
 -- Query Here: https://dune.com/queries/3333368
 with
-block_range_start as (
-  select
-    max("number") + 1 as start_block
-  from
-    ethereum.blocks
-where
-      time <= cast('{{StartTime}}' as timestamp)
-)
-,block_range_stop as (
+block_range as (
     select
-      max("number") as end_block
-    from
-      ethereum.blocks
-    where
-      time <= cast('{{EndTime}}' as timestamp)
-  )
-,block_range as (
-    select
-      *
-    from
-      block_range_start
-      cross join block_range_stop
+        min("number") as start_block,
+        max("number") as end_block
+    from ethereum.blocks
+    where time >= cast('{{StartTime}}' as timestamp) and time < cast('{{EndTime}}' as timestamp)
   )
 ,batch_meta as (
     select b.block_time,
