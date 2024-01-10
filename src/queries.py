@@ -33,7 +33,7 @@ QUERIES = {
     "PERIOD_BLOCK_INTERVAL": QueryData(
         name="Block Interval for Accounting Period",
         filepath="period_block_interval.sql",
-        q_id=1541504,
+        q_id=3333356,
     ),
     "VOUCH_REGISTRY": QueryData(
         name="Vouch Registry",
@@ -43,7 +43,7 @@ QUERIES = {
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
         filepath="period_slippage.sql",
-        q_id=3093726,
+        q_id=3333368,
     ),
     "DASHBOARD_SLIPPAGE": QueryData(
         name="Period Solver Rewards",

@@ -1,7 +1,14 @@
--- https://github.com/cowprotocol/solver-rewards/pull/327
--- Query Here: https://dune.com/queries/3093726
+-- https://github.com/cowprotocol/solver-rewards/pull/330
+-- Query Here: https://dune.com/queries/3333368
 with
-batch_meta as (
+block_range as (
+    select
+        min("number") as start_block,
+        max("number") as end_block
+    from ethereum.blocks
+    where time >= cast('{{StartTime}}' as timestamp) and time < cast('{{EndTime}}' as timestamp)
+  )
+,batch_meta as (
     select b.block_time,
            b.block_number,
            b.tx_hash,
@@ -14,7 +21,7 @@ batch_meta as (
            num_trades,
            b.solver_address
     from cow_protocol_ethereum.batches b
-    where b.block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+    where b.block_number >= (select start_block from block_range) and b.block_number <= (select end_block from block_range)
     and (b.solver_address = from_hex('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
     and (b.tx_hash = from_hex('{{TxHash}}') or '{{TxHash}}' = '0x')
 )
@@ -38,8 +45,8 @@ batch_meta as (
     left outer join cow_protocol_ethereum.order_rewards f
         on f.tx_hash = t.tx_hash
         and f.order_uid = t.order_uid
-    where b.block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
-    and t.block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+    where b.block_number >= (select start_block from block_range) and b.block_number <= (select end_block from block_range)
+    and t.block_number >= (select start_block from block_range) and t.block_number <= (select end_block from block_range)
     and (b.solver_address = from_hex('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
     and (t.tx_hash = from_hex('{{TxHash}}') or '{{TxHash}}' = '0x')
 )
@@ -89,7 +96,7 @@ batch_meta as (
                 and evt_tx_hash = b.tx_hash
              inner join batchwise_traders bt
                 on evt_tx_hash = bt.tx_hash
-    where b.block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+    where b.block_number >= (select start_block from block_range) and b.block_number <= (select end_block from block_range)
       and 0x9008d19f58aabd9ed0d60971565aa8510560ab41 in (to, "from")
       and not contains(traders_in, "from")
       and not contains(traders_out, to)
@@ -225,12 +232,6 @@ incoming_and_outgoing as (
     SELECT from_hex(address_str) as address
     FROM ( VALUES {{TokenList}} ) as _ (address_str)
 )
-,block_range as (
-  select min(number) as start_block,
-       max(number) as end_block
-  from ethereum.blocks
-  where time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
-)
 ,internalized_imbalances as (
   select  b.block_time,
           b.tx_hash,
@@ -246,7 +247,7 @@ incoming_and_outgoing as (
     join tokens.erc20 t
         on contract_address = from_hex(token)
         and blockchain = 'ethereum'
-    where i.block_number between (select start_block from block_range) and (select end_block from block_range)
+    where i.block_number >= (select start_block from block_range) and i.block_number <= (select end_block from block_range)
     and ('{{SolverAddress}}' = '0x' or b.solver_address = from_hex('{{SolverAddress}}'))
     and ('{{TxHash}}' = '0x' or b.tx_hash = from_hex('{{TxHash}}'))
 )
@@ -316,7 +317,7 @@ incoming_and_outgoing as (
             date_trunc('hour', block_time) as hour,
             usd_value / units_bought as price
         FROM cow_protocol_ethereum.trades
-        WHERE block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+        WHERE block_number >= (select start_block from block_range) and block_number <= (select end_block from block_range)
         AND units_bought > 0
     UNION
         select
@@ -325,7 +326,7 @@ incoming_and_outgoing as (
             date_trunc('hour', block_time) as hour,
             usd_value / units_sold as price
         FROM cow_protocol_ethereum.trades
-        WHERE block_time between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
+        WHERE block_number >= (select start_block from block_range) and block_number <= (select end_block from block_range)
         AND units_sold > 0
     ) as combined
     GROUP BY hour, contract_address, decimals
