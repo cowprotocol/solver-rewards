@@ -34,11 +34,12 @@ CREATE TABLE IF NOT EXISTS auction_participants
 
 CREATE TABLE IF NOT EXISTS settlement_scores
 (
-  auction_id      bigint PRIMARY KEY,
-  block_deadline  bigint         NOT NULL,
-  winner          bytea          NOT NULL,
-  winning_score   numeric(78, 0) NOT NULL,
-  reference_score numeric(78, 0) NOT NULL
+  auction_id       bigint PRIMARY KEY,
+  winner           bytea          NOT NULL,
+  winning_score    numeric(78, 0) NOT NULL,
+  reference_score  numeric(78, 0) NOT NULL,
+  block_deadline   bigint         NOT NULL,
+  simulation_block bigint         NOT NULL
 );
 
 -- Populated after block finalization via transactionReceipt.
@@ -104,16 +105,16 @@ VALUES (1, '\x5222222222222222222222222222222222222222'::bytea),
        (10, '\x5444444444444444444444444444444444444444'::bytea),
        (10, '\x5333333333333333333333333333333333333333'::bytea);
 
-INSERT INTO settlement_scores (auction_id, block_deadline, winning_score, reference_score, winner)
-VALUES (1, 10, 5000000000000000000, 4000000000000000000, '\x5111111111111111111111111111111111111111'::bytea),
-       (2, 11, 6000000000000000000, 3000000000000000000, '\x5222222222222222222222222222222222222222'::bytea),
-       (3, 12, 21000000000000000000, 3000000000000000000, '\x5111111111111111111111111111111111111111'::bytea),
-       (5, 14, 5000000000000000000, 3000000000000000000, '\x5111111111111111111111111111111111111111'::bytea),  -- jump in auction id
-       (6, 15, 10000000000000000000, 9000000000000000000, '\x5111111111111111111111111111111111111111'::bytea), -- settled too late
-       (7, 30, 5000000000000000000, 0, '\x5111111111111111111111111111111111111111'::bytea),                    -- no competition
-       (8, 35, 5000000000000000000, 0, '\x5111111111111111111111111111111111111111'::bytea),                    -- no competition, failed transaction
-       (9, 36, 5000000000000000000, 1000000000000000000, '\x5111111111111111111111111111111111111111'::bytea),  -- score larger than quality
-       (10, 37, 5000000000000000000, 4000000000000000000, '\x5333333333333333333333333333333333333333'::bytea); -- participant with net negative payment
+INSERT INTO settlement_scores (auction_id, winning_score, reference_score, winner, block_deadline, simulation_block)
+VALUES (1, 5000000000000000000, 4000000000000000000, '\x5111111111111111111111111111111111111111'::bytea, 10, 0),
+       (2, 6000000000000000000, 3000000000000000000, '\x5222222222222222222222222222222222222222'::bytea, 11, 1),
+       (3, 21000000000000000000, 3000000000000000000, '\x5111111111111111111111111111111111111111'::bytea, 12, 2),
+       (5, 5000000000000000000, 3000000000000000000, '\x5111111111111111111111111111111111111111'::bytea, 14, 4),  -- jump in auction id
+       (6, 10000000000000000000, 9000000000000000000, '\x5111111111111111111111111111111111111111'::bytea, 15, 5), -- settled too late
+       (7, 5000000000000000000, 0, '\x5111111111111111111111111111111111111111'::bytea, 30, 6),                    -- no competition
+       (8, 5000000000000000000, 0, '\x5111111111111111111111111111111111111111'::bytea, 35, 7),                    -- no competition, failed transaction
+       (9, 5000000000000000000, 1000000000000000000, '\x5111111111111111111111111111111111111111'::bytea, 36, 8),  -- score larger than quality
+       (10, 5000000000000000000, 4000000000000000000, '\x5333333333333333333333333333333333333333'::bytea, 37, 9); -- participant with net negative payment
 
 INSERT INTO settlement_observations (block_number, log_index, gas_used, effective_gas_price, surplus, fee)
 VALUES (1, 0, 100000, 2000000000, 6000000000000000000, 200000000000000),
