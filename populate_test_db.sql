@@ -10,6 +10,8 @@ DROP TYPE IF EXISTS TokenBalance;
 DROP TYPE IF EXISTS OrderClass;
 DROP TABLE IF EXISTS order_quotes;
 DROP TABLE IF EXISTS trades;
+DROP TABLE IF EXISTS fee_policies;
+DROP TYPE IF EXISTS PolicyKind;
 
 CREATE TABLE IF NOT EXISTS settlements
 (
@@ -115,6 +117,23 @@ CREATE TABLE IF NOT EXISTS trades
   PRIMARY KEY (block_number, log_index)
 );
 
+CREATE TYPE PolicyKind AS ENUM ('priceimprovement', 'volume');
+
+CREATE TABLE fee_policies (
+  auction_id bigint NOT NULL,
+  order_uid bytea NOT NULL,
+  -- The order in which the fee policies are inserted and applied.
+  application_order SERIAL NOT NULL,
+  -- The type of the fee policy.
+  kind PolicyKind NOT NULL,
+  -- The fee should be taken as a percentage of the price improvement. The value is between 0 and 1.
+  price_improvement_factor double precision,
+  -- Cap the fee at a certain percentage of the order volume. The value is between 0 and 1.
+  max_volume_factor double precision,
+  -- The fee should be taken as a percentage of the order volume. The value is between 0 and 1.
+  volume_factor double precision,
+  PRIMARY KEY (auction_id, order_uid, application_order)
+);
 
 TRUNCATE settlements;
 TRUNCATE auction_transaction;
@@ -124,6 +143,7 @@ TRUNCATE settlement_observations;
 TRUNCATE orders;
 TRUNCATE order_quotes;
 TRUNCATE trades;
+TRUNCATE fee_policies;
 
 
 INSERT INTO settlements (block_number, log_index, solver, tx_hash, tx_from, tx_nonce)
@@ -192,30 +212,36 @@ VALUES (1, 10, 100000, 2000000000, 6000000000000000000, 200000000000000),
 
 INSERT INTO orders (uid, owner, creation_timestamp, sell_token, buy_token, sell_amount, buy_amount, valid_to, fee_amount, kind, partially_fillable, signature, cancellation_timestamp, receiver, app_data, signing_scheme, settlement_contract, sell_token_balance, buy_token_balance, full_fee_amount, class)
 VALUES ('\x1111'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 100000000000000000, 'sell', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 200000000000000000, 'market'), -- normal sell market order
+', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1700000000, 200000000000000000, 'sell', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 200000000000000000, 'market'), -- sell market order
 ('\x2222'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 100000000000000000, 'buy', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 200000000000000000, 'market'), -- normal buy market order
+', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1700000000, 200000000000000000, 'buy', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 200000000000000000, 'market'), -- buy market order
 ('\x3333'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 100000000000000000, 'sell', 't', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 200000000000000000, 'limit'), -- partially fillable sell limit order
+', '\x11'::bytea, '\x22'::bytea, 6200000000000000000, 4000000000000000000, 1700000000, 0, 'sell', 't', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 0, 'limit'), -- partially fillable sell limit order
 ('\x4444'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 0, 'buy', 't', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 0, 'limit'), -- partially fillable buy limit order
+', '\x11'::bytea, '\x22'::bytea, 6200000000000000000, 4000000000000000000, 1700000000, 0, 'buy', 't', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 0, 'limit'), -- partially fillable buy limit order
 ('\x5555'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 0, 'sell', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 0, 'limit'), -- in market sell limit order
+', '\x11'::bytea, '\x22'::bytea, 6200000000000000000, 4000000000000000000, 1700000000, 0, 'sell', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 0, 'limit'), -- in market sell limit order
 ('\x6666'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 0, 'buy', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 0, 'limit'); -- in market buy limit order
+', '\x11'::bytea, '\x22'::bytea, 6200000000000000000, 4000000000000000000, 1700000000, 0, 'buy', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 0, 'limit'); -- in market buy limit order
 
 INSERT INTO order_quotes (order_uid, gas_amount, gas_price, sell_token_price, sell_amount, buy_amount, solver)
-VALUES ('\x1111'::bytea, 200000, 110000000000, 0.123, 6000000000000000000, 4500000000000000000, '\x5111111111111111111111111111111111111111'::bytea),
-('\x2222'::bytea, 200000, 110000000000, 0.123, 5500000000000000000, 4000000000000000000, '\x5333333333333333333333333333333333333333'::bytea),
-('\x3333'::bytea, 200000, 110000000000, 0.123, 6000000000000000000, 3000000000000000000, '\x5222222222222222222222222222222222222222'::bytea),
-('\x4444'::bytea, 200000, 110000000000, 0.123, 7000000000000000000, 4000000000000000000, '\x5222222222222222222222222222222222222222'::bytea),
-('\x5555'::bytea, 200000, 110000000000, 0.123, 6000000000000000000, 4500000000000000000, '\x5333333333333333333333333333333333333333'::bytea),
-('\x6666'::bytea, 200000, 110000000000, 0.123, 5500000000000000000, 4000000000000000000, '\x5444444444444444444444444444444444444444'::bytea);
+VALUES ('\x1111'::bytea, 200000, 100000000000, 0.123, 6000000000000000000, 4500000000000000000, '\x5111111111111111111111111111111111111111'::bytea),
+('\x2222'::bytea, 200000, 100000000000, 0.123, 5500000000000000000, 4000000000000000000, '\x5333333333333333333333333333333333333333'::bytea),
+('\x3333'::bytea, 200000, 100000000000, 0.123, 6000000000000000000, 3000000000000000000, '\x5222222222222222222222222222222222222222'::bytea),
+('\x4444'::bytea, 200000, 100000000000, 0.123, 7000000000000000000, 4000000000000000000, '\x5222222222222222222222222222222222222222'::bytea),
+('\x5555'::bytea, 200000, 100000000000, 0.123, 6000000000000000000, 4500000000000000000, '\x5333333333333333333333333333333333333333'::bytea),
+('\x6666'::bytea, 200000, 100000000000, 0.123, 5500000000000000000, 4000000000000000000, '\x5444444444444444444444444444444444444444'::bytea);
 
 INSERT INTO trades (block_number, log_index, order_uid, sell_amount, buy_amount, fee_amount)
 VALUES (1, 0, '\x1111'::bytea, 6200000000000000000, 4600000000000000000, 200000000000000000),
 (2, 0, '\x2222'::bytea, 5600000000000000000, 4000000000000000000, 200000000000000000),
-(2, 1, '\x3333'::bytea, 6200000000000000000, 4600000000000000000, 200000000000000000),
-(5, 0, '\x4444'::bytea, 5600000000000000000, 4000000000000000000, 200000000000000000),
-(5, 1, '\x5555'::bytea, 6200000000000000000, 4600000000000000000, 200000000000000000),
-(20, 0, '\x6666'::bytea, 5600000000000000000, 4000000000000000000, 200000000000000000);
+(2, 1, '\x3333'::bytea, 6200000000000000000, 4600000000000000000, 0),
+(5, 0, '\x4444'::bytea, 5600000000000000000, 4000000000000000000, 0),
+(5, 1, '\x5555'::bytea, 6200000000000000000, 4600000000000000000, 0),
+(20, 0, '\x6666'::bytea, 5600000000000000000, 4000000000000000000, 0);
+
+INSERT INTO fee_policies (auction_id, order_uid, application_order, kind, price_improvement_factor, max_volume_factor, volume_factor)
+VALUES (2, '\x3333'::bytea, 3, 'priceimprovement', 0.5, 0.01, NULL),
+(5, '\x4444'::bytea, 4, 'priceimprovement', 0.2, 0.1, NULL),
+(5, '\x5555'::bytea, 5, 'volume', NULL, NULL, 0.0015),
+(6, '\x6666'::bytea, 6, 'priceimprovement', 0.2, 0.1, NULL);
