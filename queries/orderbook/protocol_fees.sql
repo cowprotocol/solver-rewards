@@ -1,13 +1,13 @@
 WITH order_surplus AS (
     SELECT
+        ss.winner as solver,
         at.auction_id,
-        s.tx_hash,
         t.order_uid,
-        o.sell_token,
+        o.sell_token, -- the total amount the user sends
         o.buy_token,
         t.sell_amount,
         t.buy_amount,
-        oe.surplus_fee,
+        oe.surplus_fee as observed_fee,
         o.kind,
         CASE
             WHEN o.kind = 'sell'
@@ -35,9 +35,16 @@ WITH order_surplus AS (
     WHERE ss.block_deadline > 0
         AND ss.block_deadline <= 100
 )
-,protocol_fees_raw AS (
+,order_observation AS (
     SELECT
-        os.*, -- TODO: select data
+        os.auction_id,
+        os.solver,
+        os.sell_amount, -- the total amount the user sends
+        os.buy_amount,
+        os.sell_token,
+        os.observed_fee,
+        os.surplus,
+        os.surplus_token,
         CASE
             WHEN fp.kind = 'surplus'
                 THEN
@@ -68,20 +75,35 @@ WITH order_surplus AS (
     JOIN fee_policies fp -- contains protocol fee policy
         ON os.auction_id = fp.auction_id AND os.order_uid = fp.order_uid
 )
-,order_fees AS (
+,order_observations_prices AS (
     SELECT
-        pfr.*, -- TODO: select data
-        ap_sell.price as sell_token_price,
-        ap_protocol.price as protocol_fee_token_price,
+        oo.solver,
+        oo.surplus,
+        oo.protocol_fee,
         CASE
-            WHEN pfr.sell_token != pfr.protocol_fee_token
-                THEN ap_sell.price / pow(10, 18) * (pfr.surplus_fee - (pfr.sell_amount - pfr.surplus_fee) / pfr.buy_amount * pfr.protocol_fee)
-            ELSE ap_sell.price / pow(10, 18) * (pfr.surplus_fee - pfr.protocol_fee)
-        END AS network_fee
-    FROM protocol_fees_raw pfr
-    JOIN auction_prices ap_sell -- contains prices
-        ON pfr.auction_id = ap_sell.auction_id AND pfr.sell_token = ap_sell.token
-    JOIN auction_prices ap_protocol -- contains prices
-        ON pfr.auction_id = ap_protocol.auction_id AND pfr.protocol_fee_token = ap_protocol.token
+            WHEN oo.sell_token != oo.protocol_fee_token
+                THEN oo.observed_fee - (oo.sell_amount - oo.observed_fee) / oo.buy_amount * oo.protocol_fee
+            ELSE oo.observed_fee - oo.protocol_fee
+        END AS network_fee,
+        oo.sell_token as network_fee_token,
+        ap_surplus.price / pow(10, 18) as surplus_token_price,
+        ap_protocol.price / pow(10, 18) as protocol_fee_token_price,
+        ap_sell.price / pow(10, 18) as network_fee_token_price
+    FROM order_observation oo
+    JOIN auction_prices ap_sell -- contains price: sell token
+        ON oo.auction_id = ap_sell.auction_id AND oo.sell_token = ap_sell.token
+    JOIN auction_prices ap_surplus -- contains price: surplus token
+        ON oo.auction_id = ap_surplus.auction_id AND oo.surplus_token = ap_surplus.token
+    JOIN auction_prices ap_protocol -- contains price: protocol fee token
+        ON oo.auction_id = ap_protocol.auction_id AND oo.protocol_fee_token = ap_protocol.token
+),
+batch_aggregate AS (
+    SELECT
+        concat('0x', encode(solver, 'hex')) as solver,
+        -- sum(surplus * surplus_token_price) as surplus,
+        sum(protocol_fee * protocol_fee_token_price) as protocol_fee,
+        sum(network_fee * network_fee_token_price) as network_fee
+    FROM order_observations_prices oop
+    group by solver
 )
-select * from order_fees
+SELECT * FROM batch_aggregate
