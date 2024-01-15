@@ -11,7 +11,7 @@ DROP TYPE IF EXISTS TokenBalance;
 DROP TYPE IF EXISTS OrderClass;
 DROP TABLE IF EXISTS order_quotes;
 DROP TABLE IF EXISTS trades;
-DROP TABLE IF EXISTS order_executions;
+DROP TABLE IF EXISTS order_execution;
 DROP TABLE IF EXISTS fee_policies;
 DROP TYPE IF EXISTS PolicyKind;
 
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS trades
   PRIMARY KEY (block_number, log_index)
 );
 
-CREATE TABLE IF NOT EXISTS order_executions
+CREATE TABLE IF NOT EXISTS order_execution
 (
   order_uid bytea NOT NULL,
   auction_id bigint NOT NULL,
@@ -139,7 +139,7 @@ CREATE TABLE IF NOT EXISTS order_executions
   PRIMARY KEY (order_uid, auction_id)
 );
 
-CREATE TYPE PolicyKind AS ENUM ('priceimprovement', 'volume');
+CREATE TYPE PolicyKind AS ENUM ('surplus', 'volume');
 
 CREATE TABLE fee_policies (
   auction_id bigint NOT NULL,
@@ -149,7 +149,7 @@ CREATE TABLE fee_policies (
   -- The type of the fee policy.
   kind PolicyKind NOT NULL,
   -- The fee should be taken as a percentage of the price improvement. The value is between 0 and 1.
-  price_improvement_factor double precision,
+  surplus_factor double precision,
   -- Cap the fee at a certain percentage of the order volume. The value is between 0 and 1.
   max_volume_factor double precision,
   -- The fee should be taken as a percentage of the order volume. The value is between 0 and 1.
@@ -274,14 +274,14 @@ VALUES (1, 0, '\x1111'::bytea, 6020000000000000000, 4600000000000000000, 2000000
 (5, 1, '\x5555'::bytea, 6020000000000000000, 4600000000000000000, 0),
 (20, 0, '\x6666'::bytea, 5600000000000000000, 4000000000000000000, 0);
 
-INSERT INTO order_executions (order_uid, auction_id, reward, surplus_fee, solver_fee)
+INSERT INTO order_execution (order_uid, auction_id, reward, surplus_fee, solver_fee)
 VALUES ('\x3333'::bytea, 2, 0, 66464646464646470, NULL),
 ('\x4444'::bytea, 5, 0, 125000000000000000, NULL),
 ('\x5555'::bytea, 5, 0, 29043565348022034, NULL),
 ('\x6666'::bytea, 6, 0, 20000000000000000, NULL);
 
-INSERT INTO fee_policies (auction_id, order_uid, application_order, kind, price_improvement_factor, max_volume_factor, volume_factor)
-VALUES (2, '\x3333'::bytea, 3, 'priceimprovement', 0.5, 0.01, NULL),
-(5, '\x4444'::bytea, 4, 'priceimprovement', 0.2, 0.1, NULL),
+INSERT INTO fee_policies (auction_id, order_uid, application_order, kind, surplus_factor, max_volume_factor, volume_factor)
+VALUES (2, '\x3333'::bytea, 3, 'surplus', 0.5, 0.01, NULL),
+(5, '\x4444'::bytea, 4, 'surplus', 0.2, 0.1, NULL),
 (5, '\x5555'::bytea, 5, 'volume', NULL, NULL, 0.0015),
-(6, '\x6666'::bytea, 6, 'priceimprovement', 0.2, 0.1, NULL);
+(6, '\x6666'::bytea, 6, 'surplus', 0.2, 0.1, NULL);
