@@ -10,7 +10,7 @@ class TestQuoteRewards(unittest.TestCase):
     def setUp(self) -> None:
         db_url = "postgres:postgres@localhost:5432/postgres"
         self.fetcher = MultiInstanceDBFetcher([db_url])
-        with open("./populate_test_db.sql", "r", encoding="utf-8") as file:
+        with open("./tests/queries/quote_rewards_test_db.sql", "r", encoding="utf-8") as file:
             self.fetcher.connections[0].execute(file.read())
 
     def test_get_quote_rewards(self):
@@ -19,14 +19,14 @@ class TestQuoteRewards(unittest.TestCase):
         expected = DataFrame(
             {
                 "solver": [
-                    "0x5111111111111111111111111111111111111111",
-                    "0x5333333333333333333333333333333333333333",
-                    "0x5444444444444444444444444444444444444444",
+                    "0x01",
+                    "0x02",
+                    "0x03",
                 ],
                 "num_quotes": [
                     1,
-                    2,
                     1,
+                    2,
                 ],
             }
         )
