@@ -6,16 +6,16 @@ from pandas import DataFrame
 from src.pg_client import MultiInstanceDBFetcher
 
 
-class TestBatchRewards(unittest.TestCase):
+class TestQuoteRewards(unittest.TestCase):
     def setUp(self) -> None:
         db_url = "postgres:postgres@localhost:5432/postgres"
         self.fetcher = MultiInstanceDBFetcher([db_url])
         with open("./populate_test_db.sql", "r", encoding="utf-8") as file:
             self.fetcher.connections[0].execute(file.read())
 
-    def test_get_batch_rewards(self):
+    def test_get_quote_rewards(self):
         start_block, end_block = "0", "100"
-        batch_rewards = self.fetcher.get_quote_rewards(start_block, end_block)
+        quote_rewards = self.fetcher.get_quote_rewards(start_block, end_block)
         expected = DataFrame(
             {
                 "solver": [
@@ -30,7 +30,7 @@ class TestBatchRewards(unittest.TestCase):
                 ],
             }
         )
-        self.assertIsNone(pandas.testing.assert_frame_equal(expected, batch_rewards))
+        self.assertIsNone(pandas.testing.assert_frame_equal(expected, quote_rewards))
 
 
 if __name__ == "__main__":
