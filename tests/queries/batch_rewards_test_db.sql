@@ -3,13 +3,6 @@ DROP TABLE IF EXISTS auction_transaction;
 DROP TABLE IF EXISTS auction_participants;
 DROP TABLE IF EXISTS settlement_scores;
 DROP TABLE IF EXISTS settlement_observations;
-DROP TABLE IF EXISTS orders;
-DROP TYPE IF EXISTS OrderKind;
-DROP TYPE IF EXISTS SigningScheme;
-DROP TYPE IF EXISTS TokenBalance;
-DROP TYPE IF EXISTS OrderClass;
-DROP TABLE IF EXISTS order_quotes;
-DROP TABLE IF EXISTS trades;
 
 CREATE TABLE IF NOT EXISTS settlements
 (
@@ -62,68 +55,12 @@ CREATE TABLE IF NOT EXISTS settlement_observations
   PRIMARY KEY (block_number, log_index)
 );
 
--- orders table
-CREATE TYPE OrderKind AS ENUM ('buy', 'sell');
-CREATE TYPE SigningScheme AS ENUM ('presign', 'eip712', 'ethsign');
-CREATE TYPE TokenBalance AS ENUM ('erc20', 'external');
-CREATE TYPE OrderClass AS ENUM ('market', 'limit');
-
-CREATE TABLE orders (
-    uid bytea PRIMARY KEY,
-    owner bytea NOT NULL,
-    creation_timestamp timestamptz NOT NULL,
-    sell_token bytea NOT NULL,
-    buy_token bytea NOT NULL,
-    sell_amount numeric(78,0) NOT NULL,
-    buy_amount numeric(78,0) NOT NULL,
-    valid_to bigint NOT NULL,
-    fee_amount numeric(78,0) NOT NULL,
-    kind OrderKind NOT NULL,
-    partially_fillable boolean NOT NULL,
-    signature bytea NOT NULL,
-    cancellation_timestamp timestamptz,
-    receiver bytea NOT NULL,
-    app_data bytea NOT NULL,
-    signing_scheme SigningScheme NOT NULL,
-    settlement_contract bytea NOT NULL,
-    sell_token_balance TokenBalance NOT NULL,
-    buy_token_balance TokenBalance NOT NULL,
-    full_fee_amount numeric(78,0) NOT NULL,
-    class OrderClass NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS order_quotes
-(
-  order_uid bytea PRIMARY KEY,
-  gas_amount double precision NOT NULL,
-  gas_price double precision NOT NULL,
-  sell_token_price double precision NOT NULL,
-  sell_amount numeric(78, 0) NOT NULL,
-  buy_amount numeric(78, 0) NOT NULL,
-  solver bytea NOT NULL
-);
-
-CREATE TABLE IF NOT EXISTS trades
-(
-  block_number bigint         NOT NULL,
-  log_index    bigint         NOT NULL,
-  order_uid    bytea          NOT NULL,
-  sell_amount  numeric(78, 0) NOT NULL,
-  buy_amount   numeric(78, 0) NOT NULL,
-  fee_amount   numeric(78, 0) NOT NULL,
-
-  PRIMARY KEY (block_number, log_index)
-);
-
 
 TRUNCATE settlements;
 TRUNCATE auction_transaction;
 TRUNCATE auction_participants;
 TRUNCATE settlement_scores;
 TRUNCATE settlement_observations;
-TRUNCATE orders;
-TRUNCATE order_quotes;
-TRUNCATE trades;
 
 
 INSERT INTO settlements (block_number, log_index, solver, tx_hash, tx_from, tx_nonce)
@@ -189,33 +126,3 @@ VALUES (1, 10, 100000, 2000000000, 6000000000000000000, 200000000000000),
        (20, 10, 100000, 2000000000, 0, 0), -- would that entry be in the data base? (submitted too late)
        (25, 10, 100000, 2000000000, 6000000000000000000, 200000000000000),
        (26, 10, 100000, 2000000000, 0, 400000000000000);
-
-INSERT INTO orders (uid, owner, creation_timestamp, sell_token, buy_token, sell_amount, buy_amount, valid_to, fee_amount, kind, partially_fillable, signature, cancellation_timestamp, receiver, app_data, signing_scheme, settlement_contract, sell_token_balance, buy_token_balance, full_fee_amount, class)
-VALUES ('\x1111'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 100000000000000000, 'sell', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 200000000000000000, 'market'), -- normal sell market order
-('\x2222'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 100000000000000000, 'buy', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 200000000000000000, 'market'), -- normal buy market order
-('\x3333'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 100000000000000000, 'sell', 't', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 200000000000000000, 'limit'), -- partially fillable sell limit order
-('\x4444'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 0, 'buy', 't', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 0, 'limit'), -- partially fillable buy limit order
-('\x5555'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 0, 'sell', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 0, 'limit'), -- in market sell limit order
-('\x6666'::bytea, '\x1111111111'::bytea, '2024-01-01 00:00:00.000000+00
-', '\x11'::bytea, '\x22'::bytea, 6000000000000000000, 4000000000000000000, 1655195621, 0, 'buy', 'f', '\x987987987987'::bytea, NULL, '\x12341234'::bytea, '\x1234512345'::bytea, 'presign', '\x123456123456'::bytea, 'erc20', 'external', 0, 'limit'); -- in market buy limit order
-
-INSERT INTO order_quotes (order_uid, gas_amount, gas_price, sell_token_price, sell_amount, buy_amount, solver)
-VALUES ('\x1111'::bytea, 200000, 110000000000, 0.123, 6000000000000000000, 4500000000000000000, '\x5111111111111111111111111111111111111111'::bytea),
-('\x2222'::bytea, 200000, 110000000000, 0.123, 5500000000000000000, 4000000000000000000, '\x5333333333333333333333333333333333333333'::bytea),
-('\x3333'::bytea, 200000, 110000000000, 0.123, 6000000000000000000, 3000000000000000000, '\x5222222222222222222222222222222222222222'::bytea),
-('\x4444'::bytea, 200000, 110000000000, 0.123, 7000000000000000000, 4000000000000000000, '\x5222222222222222222222222222222222222222'::bytea),
-('\x5555'::bytea, 200000, 110000000000, 0.123, 6000000000000000000, 4500000000000000000, '\x5333333333333333333333333333333333333333'::bytea),
-('\x6666'::bytea, 200000, 110000000000, 0.123, 5500000000000000000, 4000000000000000000, '\x5444444444444444444444444444444444444444'::bytea);
-
-INSERT INTO trades (block_number, log_index, order_uid, sell_amount, buy_amount, fee_amount)
-VALUES (1, 0, '\x1111'::bytea, 6200000000000000000, 4600000000000000000, 200000000000000000),
-(2, 0, '\x2222'::bytea, 5600000000000000000, 4000000000000000000, 200000000000000000),
-(2, 1, '\x3333'::bytea, 6200000000000000000, 4600000000000000000, 200000000000000000),
-(5, 0, '\x4444'::bytea, 5600000000000000000, 4000000000000000000, 200000000000000000),
-(5, 1, '\x5555'::bytea, 6200000000000000000, 4600000000000000000, 200000000000000000),
-(20, 0, '\x6666'::bytea, 5600000000000000000, 4000000000000000000, 200000000000000000);
