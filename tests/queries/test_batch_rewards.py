@@ -10,7 +10,9 @@ class TestBatchRewards(unittest.TestCase):
     def setUp(self) -> None:
         db_url = "postgres:postgres@localhost:5432/postgres"
         self.fetcher = MultiInstanceDBFetcher([db_url])
-        with open("./populate_cip_20.sql", "r", encoding="utf-8") as file:
+        with open(
+            "./tests/queries/batch_rewards_test_db.sql", "r", encoding="utf-8"
+        ) as file:
             self.fetcher.connections[0].execute(file.read())
 
     def test_get_batch_rewards(self):
