@@ -24,6 +24,7 @@ block_range as (
     where b.block_number >= (select start_block from block_range) and b.block_number <= (select end_block from block_range)
     and (b.solver_address = from_hex('{{SolverAddress}}') or '{{SolverAddress}}' = '0x')
     and (b.tx_hash = from_hex('{{TxHash}}') or '{{TxHash}}' = '0x')
+    and (b.tx_hash !=0xd881e90f4afb020d92b8fa1b4931d2352aab4179e4f8d9a4aeafd01ebc75f808)
 )
 ,filtered_trades as (
     select t.tx_hash,
