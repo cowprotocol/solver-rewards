@@ -28,9 +28,9 @@ class TestProtocolFees(unittest.TestCase):
                     5.751126690035052e14,
                     2.0303030303030302e15,
                 ],
-                "network_fee": [
-                    5424887053768772.0,
-                    3969696969696969.5,
+                "network_fee_correction": [
+                    -540798946231228.0,
+                    -2030303030303030.5,
                 ],
             }
         )

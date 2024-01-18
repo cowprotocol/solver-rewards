@@ -32,8 +32,8 @@ WITH order_surplus AS (
         ON t.order_uid = o.uid
     JOIN order_execution oe -- contains surplus fee
         ON t.order_uid = oe.order_uid AND at.auction_id = oe.auction_id
-    WHERE ss.block_deadline > 0
-        AND ss.block_deadline <= 100
+    WHERE ss.block_deadline >= {{start_block}}
+        AND ss.block_deadline <= {{end_block}}
 )
 ,order_observation AS (
     SELECT
@@ -51,16 +51,26 @@ WITH order_surplus AS (
                     CASE
                         WHEN os.kind = 'sell'
                             THEN
-                                LEAST(
-                                    fp.max_volume_factor / (1 - fp.max_volume_factor) * os.buy_amount, -- at most charge a fraction of volume
-                                    fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
-                                )
+                                CASE
+                                    WHEN fp.max_volume_factor = 1 -- this is done to avoid a division by zero bug
+                                        THEN fp.surplus_factor / (1 - fp.surplus_factor) * surplus
+                                    ELSE
+                                        LEAST(
+                                            fp.max_volume_factor / (1 - fp.max_volume_factor) * os.buy_amount, -- at most charge a fraction of volume
+                                            fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
+                                        )
+                                END
                         WHEN os.kind = 'buy'
                             THEN
-                                LEAST(
-                                    fp.max_volume_factor / (1 - fp.max_volume_factor) * os.sell_amount, -- at most charge a fraction of volume
-                                    fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
-                                )
+                                CASE
+                                    WHEN fp.max_volume_factor = 1
+                                        THEN fp.surplus_factor / (1 - fp.surplus_factor) * surplus
+                                    ELSE
+                                        LEAST(
+                                            fp.max_volume_factor / (1 - fp.max_volume_factor) * os.sell_amount, -- at most charge a fraction of volume
+                                            fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
+                                        )
+                                END
                     END
             WHEN fp.kind = 'volume'
                 THEN fp.volume_factor / (1 - fp.volume_factor) * os.sell_amount
@@ -82,9 +92,9 @@ WITH order_surplus AS (
         oo.protocol_fee,
         CASE
             WHEN oo.sell_token != oo.protocol_fee_token
-                THEN oo.observed_fee - (oo.sell_amount - oo.observed_fee) / oo.buy_amount * oo.protocol_fee
-            ELSE oo.observed_fee - oo.protocol_fee
-        END AS network_fee,
+                THEN - (oo.sell_amount - oo.observed_fee) / oo.buy_amount * oo.protocol_fee
+            ELSE - oo.protocol_fee
+        END AS network_fee_correction,
         oo.sell_token as network_fee_token,
         ap_surplus.price / pow(10, 18) as surplus_token_price,
         ap_protocol.price / pow(10, 18) as protocol_fee_token_price,
@@ -102,7 +112,7 @@ batch_aggregate AS (
         concat('0x', encode(solver, 'hex')) as solver,
         -- sum(surplus * surplus_token_price) as surplus,
         sum(protocol_fee * protocol_fee_token_price) as protocol_fee,
-        sum(network_fee * network_fee_token_price) as network_fee
+        sum(network_fee_correction * network_fee_token_price) as network_fee_correction
     FROM order_observations_prices oop
     group by solver
 )
