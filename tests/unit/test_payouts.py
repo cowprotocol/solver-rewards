@@ -67,6 +67,12 @@ class TestPayoutTransformations(unittest.TestCase):
             7,
             6,
         ]
+        self.protocol_fees = [
+            300000000000000.0,
+            200000000000000.0,
+            100000000000000.0,
+            0.0,
+        ]
         # Mocking TokenConversion!
         self.mock_converter = TokenConversion(
             eth_to_token=lambda t: int(t * 1000), token_to_eth=lambda t: t // 1000
@@ -79,6 +85,7 @@ class TestPayoutTransformations(unittest.TestCase):
             "payment_eth": self.eth_payments,
             "execution_cost_eth": self.execution_costs,
             "num_participating_batches": self.batch_participation,
+            "protocol_fee_eth": self.protocol_fees
         }
         base_payout_df = DataFrame(base_data_dict)
         result = extend_payment_df(base_payout_df, converter=self.mock_converter)
@@ -88,6 +95,7 @@ class TestPayoutTransformations(unittest.TestCase):
             "payment_eth": self.eth_payments,
             "execution_cost_eth": self.execution_costs,
             "num_participating_batches": self.batch_participation,
+            "protocol_fee_eth": self.protocol_fees,
             "reward_eth": [
                 -200000000000000.00000,
                 10000000000000000.00000,
@@ -142,6 +150,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 "payment_eth": [],
                 "execution_cost_eth": [],
                 "num_participating_batches": [],
+                "protocol_fee_eth": [],
                 "reward_eth": [],
                 "reward_cow": [],
                 "secondary_reward_cow": [],
@@ -191,6 +200,7 @@ class TestPayoutTransformations(unittest.TestCase):
                     "payment_eth": self.eth_payments,
                     "execution_cost_eth": self.execution_costs,
                     "num_participating_batches": self.batch_participation,
+                    "protocol_fee_eth": self.protocol_fees,
                 }
             ),
             converter=self.mock_converter,
@@ -219,6 +229,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 "payment_eth": [600000000000000.0, 1.045e16, -1e16, 0.0],
                 "execution_cost_eth": [800000000000000.0, 450000000000000.0, 0.0, 0.0],
                 "num_participating_batches": [7, 2, 7, 6],
+                "protocol_fee_eth": self.protocol_fees,
                 "reward_eth": [-200000000000000.0, 1e16, -1e16, 0.0],
                 "reward_cow": [
                     -200000000000000000,
@@ -290,6 +301,12 @@ class TestPayoutTransformations(unittest.TestCase):
                     90000000000000000000.00000,
                     180000000000000000000.00000,
                 ],
+                "protocol_fee_eth": [
+                    300000000000000.0,
+                    200000000000000.0,
+                    100000000000000.0,
+                    0.0,
+                ],
                 "solver_name": ["S_1", "S_2", "S_3", None],
                 "eth_slippage_wei": [1.0, 0.0, -1.0, None],
                 "reward_target": [
@@ -308,12 +325,12 @@ class TestPayoutTransformations(unittest.TestCase):
                 Transfer(
                     token=None,
                     recipient=Address(self.solvers[0]),
-                    amount_wei=663636363636364,
+                    amount_wei=363636363636364,
                 ),
                 Transfer(
                     token=None,
                     recipient=Address(self.solvers[1]),
-                    amount_wei=450000000000000,
+                    amount_wei=250000000000000,
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
@@ -344,7 +361,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 Overdraft(
                     period,
                     account=Address(self.solvers[2]),
-                    wei=9936363636363638,
+                    wei=10036363636363638,
                     name="S_3",
                 )
             ],
@@ -366,6 +383,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         participation: int,
         slippage: int,
         num_quotes: int,
+        protocol_fee: int,
     ):
         """Assumes a conversion rate of ETH:COW <> 1:self.conversion_rate"""
         return RewardAndPenaltyDatum(
@@ -379,32 +397,39 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             secondary_reward_cow=participation * self.conversion_rate,
             slippage_eth=slippage,
             quote_reward_cow=QUOTE_REWARD * num_quotes,
+            protocol_fee_eth=protocol_fee,
         )
 
     def test_invalid_input(self):
         with self.assertRaises(AssertionError):
-            self.sample_record(0, -1, 0, 0, 0)
+            self.sample_record(0, -1, 0, 0, 0, 0)
 
         with self.assertRaises(AssertionError):
-            self.sample_record(0, 0, -1, 0, 0)
+            self.sample_record(0, 0, -1, 0, 0, 0)
 
-    def test_reward_datum_0_0_0_0(self):
-        test_datum = self.sample_record(0, 0, 0, 0, 0)
+        with self.assertRaises(AssertionError):
+            self.sample_record(0, 0, 0, 0, -1, 0)
+
+        with self.assertRaises(AssertionError):
+            self.sample_record(0, 0, 0, 0, 0, -1)
+
+    def test_reward_datum_0_0_0_0_0(self):
+        test_datum = self.sample_record(0, 0, 0, 0, 0, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(test_datum.as_payouts(), [])
 
-    def test_reward_datum_1_1_0_0(self):
+    def test_reward_datum_1_1_0_0_0_0(self):
         cost = 1
-        test_datum = self.sample_record(1, cost, 0, 0, 0)
+        test_datum = self.sample_record(1, cost, 0, 0, 0, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
             [Transfer(token=None, recipient=self.solver, amount_wei=cost)],
         )
 
-    def test_reward_datum_3_2_0_minus1(self):
+    def test_reward_datum_3_2_0_minus1_0_0(self):
         payment, cost, participation, slippage = 3, 2, 0, -1
-        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
+        test_datum = self.sample_record(payment, cost, participation, slippage, 0, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -421,11 +446,30 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                 ),
             ],
         )
+    def test_reward_datum_8_4_0_minus1_0_2(self):
+        payment, cost, participation, slippage, protocol_fee = 8, 4, 0, -1, 2
+        test_datum = self.sample_record(payment, cost, participation, slippage, 0, protocol_fee)
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [
+                Transfer(
+                    token=None,
+                    recipient=self.solver,
+                    amount_wei=cost + slippage - protocol_fee,
+                ),
+                Transfer(
+                    token=self.cow_token,
+                    recipient=self.reward_target,
+                    amount_wei=(payment - cost) * self.conversion_rate,
+                ),
+            ],
+        )
 
     def test_reward_datum_cost_exceeds_payment_degenerate(self):
         # Degenerate Case!
         payment, cost, participation, slippage = 1, 10, 0, -1
-        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
+        test_datum = self.sample_record(payment, cost, participation, slippage, 0, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -439,7 +483,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         cost = max(sum(x) for x in triplets) + 1
 
         for payment, participation, slippage in triplets:
-            test_datum = self.sample_record(payment, cost, participation, slippage, 0)
+            test_datum = self.sample_record(payment, cost, participation, slippage, 0, 0)
             self.assertFalse(test_datum.is_overdraft())
             self.assertLess(test_datum.total_outgoing_eth(), cost)
             self.assertEqual(
@@ -462,12 +506,12 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         for payment, participation, slippage in triplets:
             for cost in [0, 1, 100]:
                 # Doesn't matter their costs, they are in overdraft state!
-                rec = self.sample_record(payment, cost, participation, slippage, 0)
+                rec = self.sample_record(payment, cost, participation, slippage, 0, 0)
                 self.assertTrue(rec.is_overdraft())
 
-    def test_reward_datum_1_1_1_1(self):
+    def test_reward_datum_1_1_1_1_0_0(self):
         payment, cost, participation, slippage = 1, 1, 1, 1
-        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
+        test_datum = self.sample_record(payment, cost, participation, slippage, 0, 0)
 
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
@@ -491,7 +535,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
 
     def test_payout_negative_payments(self):
         payment, cost, participation, slippage = -1, 1, 1, 1
-        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
+        test_datum = self.sample_record(payment, cost, participation, slippage, 0, 0)
         self.assertEqual(
             test_datum.as_payouts(),
             [

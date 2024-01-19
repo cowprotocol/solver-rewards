@@ -33,6 +33,7 @@ PAYMENT_COLUMNS = {
     "reward_cow",
     "secondary_reward_cow",
     "quote_reward_cow",
+    "protocol_fee_eth",
 }
 SLIPPAGE_COLUMNS = {
     "solver",
@@ -79,10 +80,13 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         primary_reward_cow: int,
         secondary_reward_cow: int,
         quote_reward_cow: int,
+        protocol_fee_eth: int,
     ):
         assert exec_cost >= 0, f"invalid execution cost {exec_cost}"
         assert secondary_reward_eth >= 0, "invalid secondary_reward_eth"
         assert secondary_reward_cow >= 0, "invalid secondary_reward_cow"
+        assert quote_reward_cow >= 0, "invalid quote reward"
+        assert protocol_fee_eth >= 0, "invalid protocol_fee_eth"
 
         self.solver = solver
         self.solver_name = solver_name
@@ -94,6 +98,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         self.secondary_reward_eth = secondary_reward_eth
         self.secondary_reward_cow = secondary_reward_cow
         self.quote_reward_cow = quote_reward_cow
+        self.protocol_fee_eth = protocol_fee_eth
 
     @classmethod
     def from_series(cls, frame: Series) -> RewardAndPenaltyDatum:
@@ -120,11 +125,12 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             secondary_reward_eth=int(frame["secondary_reward_eth"]),
             secondary_reward_cow=int(frame["secondary_reward_cow"]),
             quote_reward_cow=int(frame["quote_reward_cow"]),
+            protocol_fee_eth=int(frame["protocol_fee_eth"]),
         )
 
     def total_outgoing_eth(self) -> int:
         """Total outgoing amount (including slippage) for the payout."""
-        return self.payment_eth + self.secondary_reward_eth + self.slippage_eth
+        return self.payment_eth + self.secondary_reward_eth + self.slippage_eth - self.protocol_fee_eth
 
     def total_cow_reward(self) -> int:
         """Total outgoing COW token reward"""
@@ -161,7 +167,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         total_eth_reward = int(self.total_eth_reward())
         total_cow_reward = int(self.total_cow_reward())
 
-        reimbursement_eth = int(self.exec_cost + self.slippage_eth)
+        reimbursement_eth = int(self.exec_cost + self.slippage_eth - self.protocol_fee_eth)
         # We do not have access to token conversion here, but we do have other converted values
         # x_eth:x_cow = y_eth:y_cow --> y_cow = y_eth * x_cow / x_eth
         reimbursement_cow = (
