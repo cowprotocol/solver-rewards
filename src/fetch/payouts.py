@@ -130,7 +130,12 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
 
     def total_outgoing_eth(self) -> int:
         """Total outgoing amount (including slippage) for the payout."""
-        return self.payment_eth + self.secondary_reward_eth + self.slippage_eth - self.protocol_fee_eth
+        return (
+            self.payment_eth
+            + self.secondary_reward_eth
+            + self.slippage_eth
+            - self.protocol_fee_eth
+        )
 
     def total_cow_reward(self) -> int:
         """Total outgoing COW token reward"""
@@ -167,7 +172,9 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         total_eth_reward = int(self.total_eth_reward())
         total_cow_reward = int(self.total_cow_reward())
 
-        reimbursement_eth = int(self.exec_cost + self.slippage_eth - self.protocol_fee_eth)
+        reimbursement_eth = int(
+            self.exec_cost + self.slippage_eth - self.protocol_fee_eth
+        )
         # We do not have access to token conversion here, but we do have other converted values
         # x_eth:x_cow = y_eth:y_cow --> y_cow = y_eth * x_cow / x_eth
         reimbursement_cow = (
