@@ -179,8 +179,8 @@ batch_protocol_fees AS (
                        -- auction_participation
                        participating_solvers,
                        -- protocol_fees
-                       protocol_fee,
-                       network_fee_correction
+                       coalesce(cast(protocol_fee as numeric(78, 0)), 0) as protocol_fee,
+                       coalesce(cast(network_fee_correction as numeric(78, 0)), 0) as network_fee_correction
                      FROM settlement_scores ss
                             -- If there are reported scores,
                             -- there will always be a record of auction participants
@@ -198,9 +198,9 @@ batch_protocol_fees AS (
                                    solver,
                                    execution_cost,
                                    surplus,
-                                   fee - coalesce(network_fee_correction, 0) as fee, -- an estimated network fee
-                                   coalesce(protocol_fee, 0) as protocol_fee, -- the protocol fee
-                                   surplus + coalesce(protocol_fee - network_fee_correction, 0) + fee - reference_score as uncapped_reward_eth,
+                                   protocol_fee + fee - network_fee_correction as fee,-- total fee for ranking
+                                   protocol_fee, -- the protocol fee
+                                   surplus + protocol_fee + fee - network_fee_correction - reference_score as uncapped_reward_eth,
                                    -- Uncapped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
                                    LEAST(GREATEST(-{{EPSILON}}, surplus + coalesce(protocol_fee - network_fee_correction, 0) + fee - reference_score),
                                      {{EPSILON}} + execution_cost) as capped_payment,
@@ -232,7 +232,7 @@ batch_protocol_fees AS (
                                                   ON pr.solver = pc.solver
                                   LEFT OUTER JOIN protocol_fees pf
                                                   ON pf.solver = pc.solver)
-
+--
 select *
 from aggregate_results
 order by solver;
