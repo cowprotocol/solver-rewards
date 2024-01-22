@@ -67,7 +67,7 @@ order_surplus AS (
     WHERE ss.block_deadline >= {{start_block}}
         AND ss.block_deadline <= {{end_block}}
 )
-,order_observations AS (
+,order_protocol_fee AS (
     SELECT
         os.auction_id,
         os.solver,
@@ -122,28 +122,28 @@ order_surplus AS (
     JOIN fee_policies fp -- contains protocol fee policy
         ON os.auction_id = fp.auction_id AND os.order_uid = fp.order_uid
 )
-,order_observations_prices AS (
+,order_protocol_fee_prices AS (
     SELECT
-        oo.solver,
-        oo.tx_hash,
-        oo.surplus,
-        oo.protocol_fee,
+        opf.solver,
+        opf.tx_hash,
+        opf.surplus,
+        opf.protocol_fee,
         CASE
-            WHEN oo.sell_token != oo.protocol_fee_token
-                THEN (oo.sell_amount - oo.observed_fee) / oo.buy_amount * oo.protocol_fee
-            ELSE oo.protocol_fee
+            WHEN opf.sell_token != opf.protocol_fee_token
+                THEN (opf.sell_amount - opf.observed_fee) / opf.buy_amount * opf.protocol_fee
+            ELSE opf.protocol_fee
         END AS network_fee_correction,
-        oo.sell_token as network_fee_token,
+        opf.sell_token as network_fee_token,
         ap_surplus.price / pow(10, 18) as surplus_token_price,
         ap_protocol.price / pow(10, 18) as protocol_fee_token_price,
         ap_sell.price / pow(10, 18) as network_fee_token_price
-    FROM order_observations oo
+    FROM order_protocol_fee opf
     JOIN auction_prices ap_sell -- contains price: sell token
-        ON oo.auction_id = ap_sell.auction_id AND oo.sell_token = ap_sell.token
+        ON opf.auction_id = ap_sell.auction_id AND opf.sell_token = ap_sell.token
     JOIN auction_prices ap_surplus -- contains price: surplus token
-        ON oo.auction_id = ap_surplus.auction_id AND oo.surplus_token = ap_surplus.token
+        ON opf.auction_id = ap_surplus.auction_id AND opf.surplus_token = ap_surplus.token
     JOIN auction_prices ap_protocol -- contains price: protocol fee token
-        ON oo.auction_id = ap_protocol.auction_id AND oo.protocol_fee_token = ap_protocol.token
+        ON opf.auction_id = ap_protocol.auction_id AND opf.protocol_fee_token = ap_protocol.token
 ),
 batch_protocol_fees AS (
     SELECT
@@ -152,7 +152,7 @@ batch_protocol_fees AS (
         -- sum(surplus * surplus_token_price) as surplus,
         sum(protocol_fee * protocol_fee_token_price) as protocol_fee,
         sum(network_fee_correction * network_fee_token_price) as network_fee_correction
-    FROM order_observations_prices oop
+    FROM order_protocol_fee_prices
     group by solver, tx_hash
 ),
      reward_data AS (SELECT
@@ -198,10 +198,10 @@ batch_protocol_fees AS (
                                    solver,
                                    execution_cost,
                                    surplus,
-                                   protocol_fee + fee - network_fee_correction as fee,-- total fee for ranking
-                                   protocol_fee, -- the protocol fee
+                                   protocol_fee,
+                                   fee - network_fee_correction as network_fee,
                                    surplus + protocol_fee + fee - network_fee_correction - reference_score as uncapped_reward_eth,
-                                   -- Uncapped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
+                                   -- capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
                                    LEAST(GREATEST(-{{EPSILON}}, surplus + coalesce(protocol_fee - network_fee_correction, 0) + fee - reference_score),
                                      {{EPSILON}} + execution_cost) as capped_payment,
                                    winning_score,
