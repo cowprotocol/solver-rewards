@@ -57,20 +57,6 @@ class MultiInstanceDBFetcher:
 
         return pd.concat(results)
 
-    def get_protocol_fees(self, start_block: str, end_block: str) -> DataFrame:
-        """Returns aggregated solver protocol fees for block range"""
-        protocol_fee_query = (
-            open_query("orderbook/protocol_fees.sql")
-            .replace("{{start_block}}", start_block)
-            .replace("{{end_block}}", end_block)
-        )
-        results = [
-            self.exec_query(query=protocol_fee_query, engine=engine)
-            for engine in self.connections
-        ]
-
-        return pd.concat(results)
-
 
 def pg_hex2bytea(hex_address: str) -> str:
     """
