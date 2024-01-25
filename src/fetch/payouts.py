@@ -25,6 +25,8 @@ from src.utils.print_store import Category
 PERIOD_BUDGET_COW = 306646 * 10**18
 QUOTE_REWARD = 9 * 10**18
 
+PROTOCOL_FEE_SAFE = Address("0xB64963f95215FDe6510657e719bd832BB8bb941B")
+
 PAYMENT_COLUMNS = {
     "solver",
     "payment_eth",
@@ -33,6 +35,7 @@ PAYMENT_COLUMNS = {
     "reward_cow",
     "secondary_reward_cow",
     "quote_reward_cow",
+    "protocol_fee_eth",
 }
 SLIPPAGE_COLUMNS = {
     "solver",
@@ -50,6 +53,7 @@ NUMERICAL_COLUMNS = [
     "secondary_reward_cow",
     "secondary_reward_eth",
     "quote_reward_cow",
+    "protocol_fee_eth",
 ]
 
 
@@ -307,6 +311,14 @@ def prepare_transfers(payout_df: DataFrame, period: AccountingPeriod) -> PeriodP
             print(f"Solver Overdraft! {overdraft}")
             overdrafts.append(overdraft)
         transfers += payout_datum.as_payouts()
+
+    transfers.append(
+        Transfer(
+            token=None,
+            recipient=PROTOCOL_FEE_SAFE,
+            amount_wei=payout_df.protocol_fee_eth.sum(),
+        )
+    )
 
     return PeriodPayouts(overdrafts, transfers)
 

@@ -14,6 +14,7 @@ from src.fetch.payouts import (
     prepare_transfers,
     RewardAndPenaltyDatum,
     QUOTE_REWARD,
+    PROTOCOL_FEE_SAFE,
 )
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
@@ -67,6 +68,12 @@ class TestPayoutTransformations(unittest.TestCase):
             7,
             6,
         ]
+        self.protocol_fee_eth = [
+            1000000000000000.0,
+            2000000000000000.0,
+            0.0,
+            0.0,
+        ]
         # Mocking TokenConversion!
         self.mock_converter = TokenConversion(
             eth_to_token=lambda t: int(t * 1000), token_to_eth=lambda t: t // 1000
@@ -79,6 +86,7 @@ class TestPayoutTransformations(unittest.TestCase):
             "payment_eth": self.eth_payments,
             "execution_cost_eth": self.execution_costs,
             "num_participating_batches": self.batch_participation,
+            "protocol_fee_eth": self.protocol_fee_eth,
         }
         base_payout_df = DataFrame(base_data_dict)
         result = extend_payment_df(base_payout_df, converter=self.mock_converter)
@@ -88,6 +96,7 @@ class TestPayoutTransformations(unittest.TestCase):
             "payment_eth": self.eth_payments,
             "execution_cost_eth": self.execution_costs,
             "num_participating_batches": self.batch_participation,
+            "protocol_fee_eth": self.protocol_fee_eth,
             "reward_eth": [
                 -200000000000000.00000,
                 10000000000000000.00000,
@@ -142,6 +151,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 "payment_eth": [],
                 "execution_cost_eth": [],
                 "num_participating_batches": [],
+                "protocol_fee_eth": [],
                 "reward_eth": [],
                 "reward_cow": [],
                 "secondary_reward_cow": [],
@@ -191,6 +201,7 @@ class TestPayoutTransformations(unittest.TestCase):
                     "payment_eth": self.eth_payments,
                     "execution_cost_eth": self.execution_costs,
                     "num_participating_batches": self.batch_participation,
+                    "protocol_fee_eth": self.protocol_fee_eth,
                 }
             ),
             converter=self.mock_converter,
@@ -219,6 +230,12 @@ class TestPayoutTransformations(unittest.TestCase):
                 "payment_eth": [600000000000000.0, 1.045e16, -1e16, 0.0],
                 "execution_cost_eth": [800000000000000.0, 450000000000000.0, 0.0, 0.0],
                 "num_participating_batches": [7, 2, 7, 6],
+                "protocol_fee_eth": [
+                    1000000000000000.0,
+                    2000000000000000.0,
+                    0.0,
+                    0.0,
+                ],
                 "reward_eth": [-200000000000000.0, 1e16, -1e16, 0.0],
                 "reward_cow": [
                     -200000000000000000,
@@ -265,6 +282,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 "num_quotes": self.num_quotes,
                 "payment_eth": [600000000000000.0, 1.045e16, -1e16, 0.0],
                 "execution_cost_eth": [800000000000000.0, 450000000000000.0, 0.0, 0.0],
+                "protocol_fee_eth": self.protocol_fee_eth,
                 "reward_eth": [-200000000000000.0, 1e16, -1e16, 0.0],
                 "reward_cow": [
                     -200000000000000000,
@@ -334,6 +352,11 @@ class TestPayoutTransformations(unittest.TestCase):
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[3]),
                     amount_wei=54545454545454544,
+                ),
+                Transfer(
+                    token=None,
+                    recipient=PROTOCOL_FEE_SAFE,
+                    amount_wei=3000000000000000,
                 ),
             ],
         )
