@@ -84,30 +84,20 @@ order_surplus AS (
                     CASE
                         WHEN os.kind = 'sell'
                             THEN
-                                CASE
-                                    WHEN fp.max_volume_factor = 1 -- this is done to avoid a division by zero errors
-                                    -- We assume that the case surplus_factor != 1 always. In
-                                    -- that case reconstructing the protocol fee would be
-                                    -- impossible anyways. This query will return a division by
-                                    -- zero error in that case.
-                                        THEN fp.surplus_factor / (1 - fp.surplus_factor) * surplus
-                                    ELSE
-                                        LEAST(
-                                            fp.max_volume_factor / (1 - fp.max_volume_factor) * os.buy_amount, -- at most charge a fraction of volume
-                                            fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
-                                        )
-                                END
+                                -- We assume that the case surplus_factor != 1 always. In
+                                -- that case reconstructing the protocol fee would be
+                                -- impossible anyways. This query will return a division by
+                                -- zero error in that case.
+                                LEAST(
+                                    fp.max_volume_factor * os.sell_amount * os.buy_amount / (os.sell_amount - os.observed_fee), -- at most charge a fraction of volume
+                                    fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
+                                )
                         WHEN os.kind = 'buy'
                             THEN
-                                CASE
-                                    WHEN fp.max_volume_factor = 1
-                                        THEN fp.surplus_factor / (1 - fp.surplus_factor) * surplus
-                                    ELSE
-                                        LEAST(
-                                            fp.max_volume_factor / (1 - fp.max_volume_factor) * os.sell_amount, -- at most charge a fraction of volume
-                                            fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
-                                        )
-                                END
+                                LEAST(
+                                    fp.max_volume_factor / (1 + fp.max_volume_factor) * os.sell_amount, -- at most charge a fraction of volume
+                                    fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
+                                )
                     END
             WHEN fp.kind = 'volume'
                 THEN fp.volume_factor / (1 - fp.volume_factor) * os.sell_amount
