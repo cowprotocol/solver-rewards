@@ -7,17 +7,13 @@ WITH observed_settlements AS (SELECT
                                 effective_gas_price * gas_used AS execution_cost,
                                 surplus,
                                 fee,
-                                -- auction_transaction
-                                at.auction_id
+                                s.auction_id
                               FROM settlement_observations so
                                      JOIN settlements s
                                           ON s.block_number = so.block_number
                                             AND s.log_index = so.log_index
-                                     JOIN auction_transaction at
-                                          ON s.tx_from = at.tx_from
-                                            AND s.tx_nonce = at.tx_nonce
                                      JOIN settlement_scores ss
-                                          ON at.auction_id = ss.auction_id
+                                          ON s.auction_id = ss.auction_id
                               WHERE ss.block_deadline >= {{start_block}}
                                 AND ss.block_deadline <= {{end_block}}),
 
