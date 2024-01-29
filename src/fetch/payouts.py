@@ -408,10 +408,12 @@ def construct_payouts(
     performance_reward = complete_payout_df["reward_cow"].sum()
     participation_reward = complete_payout_df["secondary_reward_cow"].sum()
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
+    protocol_fee = complete_payout_df["protocol_fee_eth"].sum()
     dune.log_saver.print(
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n"
-        f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n",
+        f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n"
+        f"Protocol Fees: {protocol_fee / 10 ** 18:.4f}\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(complete_payout_df, dune.period)
