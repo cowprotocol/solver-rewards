@@ -100,7 +100,7 @@ order_surplus AS (
                                 )
                     END
             WHEN fp.kind = 'volume'
-                THEN fp.volume_factor / (1 - fp.volume_factor) * os.sell_amount
+                THEN fp.volume_factor / (1 + fp.volume_factor) * os.sell_amount
         END AS protocol_fee,
         CASE
             WHEN fp.kind = 'surplus'
