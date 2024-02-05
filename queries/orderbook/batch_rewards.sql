@@ -7,17 +7,13 @@ WITH observed_settlements AS (SELECT
                                 effective_gas_price * gas_used AS execution_cost,
                                 surplus,
                                 fee,
-                                -- auction_transaction
-                                at.auction_id
+                                s.auction_id
                               FROM settlement_observations so
                                      JOIN settlements s
                                           ON s.block_number = so.block_number
                                             AND s.log_index = so.log_index
-                                     JOIN auction_transaction at
-                                          ON s.tx_from = at.tx_from
-                                            AND s.tx_nonce = at.tx_nonce
                                      JOIN settlement_scores ss
-                                          ON at.auction_id = ss.auction_id
+                                          ON s.auction_id = ss.auction_id
                               WHERE ss.block_deadline >= {{start_block}}
                                 AND ss.block_deadline <= {{end_block}}),
 
@@ -32,7 +28,7 @@ WITH observed_settlements AS (SELECT
 order_surplus AS (
     SELECT
         ss.winner as solver,
-        at.auction_id,
+        s.auction_id,
         s.tx_hash,
         t.order_uid,
         o.sell_token,
@@ -53,17 +49,15 @@ order_surplus AS (
             WHEN o.kind = 'buy'
                 THEN o.sell_token
         END AS surplus_token
-    FROM settlements s -- links block_number and log_index to tx_from and tx_nonce
-    JOIN auction_transaction at -- links auction_id to tx_from and tx_nonce
-        ON s.tx_from = at.tx_from AND s.tx_nonce = at.tx_nonce
+    FROM settlements s
     JOIN settlement_scores ss -- contains block_deadline
-        ON at.auction_id = ss.auction_id
+        ON s.auction_id = ss.auction_id
     JOIN trades t -- contains traded amounts
         ON s.block_number = t.block_number -- log_index cannot be checked, does not work correctly with multiple auctions on the same block
     JOIN orders o -- contains tokens and limit amounts
         ON t.order_uid = o.uid
     JOIN order_execution oe -- contains surplus fee
-        ON t.order_uid = oe.order_uid AND at.auction_id = oe.auction_id
+        ON t.order_uid = oe.order_uid AND s.auction_id = oe.auction_id
     WHERE ss.block_deadline >= {{start_block}}
         AND ss.block_deadline <= {{end_block}}
 )
@@ -188,11 +182,11 @@ batch_protocol_fees AS (
                                    solver,
                                    execution_cost,
                                    surplus,
-                                   protocol_fee,
-                                   fee - network_fee_correction as network_fee,
-                                   surplus + protocol_fee + fee - network_fee_correction - reference_score as uncapped_reward_eth,
-                                   -- capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
-                                   LEAST(GREATEST(-{{EPSILON}}, surplus + coalesce(protocol_fee - network_fee_correction, 0) + fee - reference_score),
+                                   protocol_fee, -- the protocol fee
+                                   fee - network_fee_correction as network_fee,-- the network fee
+                                   surplus + protocol_fee + fee - network_fee_correction - reference_score as uncapped_payment_eth,
+                                   -- Capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
+                                   LEAST(GREATEST(-{{EPSILON}}, surplus + protocol_fee + fee - network_fee_correction - reference_score),
                                      {{EPSILON}} + execution_cost) as capped_payment,
                                    winning_score,
                                    reference_score,

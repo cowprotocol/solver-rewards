@@ -1,5 +1,4 @@
 DROP TABLE IF EXISTS settlements;
-DROP TABLE IF EXISTS auction_transaction;
 DROP TABLE IF EXISTS auction_participants;
 DROP TABLE IF EXISTS settlement_scores;
 DROP TABLE IF EXISTS settlement_observations;
@@ -20,19 +19,12 @@ CREATE TABLE IF NOT EXISTS settlements
   tx_hash      bytea  NOT NULL,
   tx_from      bytea  NOT NULL,
   tx_nonce     bigint NOT NULL,
+  auction_id   bigint,
 
   PRIMARY KEY (block_number, log_index)
 );
 
 CREATE INDEX settlements_tx_from_tx_nonce ON settlements (tx_from, tx_nonce);
-
-CREATE TABLE IF NOT EXISTS auction_transaction
-(
-  auction_id bigint PRIMARY KEY,
-  tx_from    bytea  NOT NULL,
-  tx_nonce   bigint NOT NULL,
-  UNIQUE (tx_from, tx_nonce)
-);
 
 CREATE TABLE IF NOT EXISTS auction_participants
 (
@@ -132,7 +124,6 @@ CREATE TABLE fee_policies (
 
 
 TRUNCATE settlements;
-TRUNCATE auction_transaction;
 TRUNCATE auction_participants;
 TRUNCATE settlement_scores;
 TRUNCATE settlement_observations;
@@ -142,36 +133,20 @@ TRUNCATE trades;
 TRUNCATE fee_policies;
 
 
-INSERT INTO settlements (block_number, log_index, solver, tx_hash, tx_from, tx_nonce)
-VALUES (1, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7111'::bytea, '\x5111111111111111111111111111111111111111'::bytea, 1),
-       (2, 10, '\x5222222222222222222222222222222222222222'::bytea, '\x7222'::bytea, '\x5222222222222222222222222222222222222222'::bytea, 1),
-       (5, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7333'::bytea, '\x5111111111111111111111111111111111111111'::bytea, 2),
+INSERT INTO settlements (block_number, log_index, solver, tx_hash, tx_from, tx_nonce, auction_id)
+VALUES (1, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7111'::bytea, '\x5111111111111111111111111111111111111111'::bytea, 1, 1),
+       (2, 10, '\x5222222222222222222222222222222222222222'::bytea, '\x7222'::bytea, '\x5222222222222222222222222222222222222222'::bytea, 1, 2),
+       (5, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7333'::bytea, '\x5111111111111111111111111111111111111111'::bytea, 2, 5),
        -- would the following entry be in the data base? (submitted too late) -- YES
-       (20, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7444'::bytea, '\x5111111111111111111111111111111111111111'::bytea, 3),
-       (25, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7555'::bytea, '\x5111111111111111111111111111111111111111'::bytea, 4),
-       (26, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7666'::bytea, '\x5111111111111111111111111111111111111111'::bytea, 6),
-       (51, 10, '\x01'::bytea, '\x01'::bytea, '\x01'::bytea, 1),
-       (52, 10, '\x02'::bytea, '\x02'::bytea, '\x02'::bytea, 1),
-       (53, 10, '\x01'::bytea, '\x03'::bytea, '\x01'::bytea, 2),
-       (54, 10, '\x02'::bytea, '\x04'::bytea, '\x02'::bytea, 2),
-       (55, 10, '\x01'::bytea, '\x05'::bytea, '\x01'::bytea, 3),
-       (56, 10, '\x02'::bytea, '\x06'::bytea, '\x02'::bytea, 3);
-
-INSERT INTO auction_transaction (auction_id, tx_from, tx_nonce)
-VALUES (1, '\x5111111111111111111111111111111111111111'::bytea, 1),
-       (2, '\x5222222222222222222222222222222222222222'::bytea, 1),
-       (5, '\x5111111111111111111111111111111111111111'::bytea, 2),
-       (6, '\x5111111111111111111111111111111111111111'::bytea, 3), -- would that entry be in the data base? (submitted too late)
-       (7, '\x5111111111111111111111111111111111111111'::bytea, 4),
-       (8, '\x5111111111111111111111111111111111111111'::bytea, 5), -- would that entry be in the data base? (failed transaction)
-       (9, '\x5111111111111111111111111111111111111111'::bytea, 6),
-       (10, '\x5333333333333333333333333333333333333333'::bytea, 1), -- would that entry be in the data base? (failed transaction)
-       (51, '\x01'::bytea, 1),
-       (52, '\x02'::bytea, 1),
-       (53, '\x01'::bytea, 2),
-       (54, '\x02'::bytea, 2),
-       (55, '\x01'::bytea, 3),
-       (56, '\x02'::bytea, 3);
+       (20, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7444'::bytea, '\x5111111111111111111111111111111111111111'::bytea, 3, 6),
+       (25, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7555'::bytea, '\x5111111111111111111111111111111111111111'::bytea, 4, 7),
+       (26, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7666'::bytea, '\x5111111111111111111111111111111111111111'::bytea, 6, 9),
+       (51, 10, '\x01'::bytea, '\x01'::bytea, '\x01'::bytea, 1, 51),
+       (52, 10, '\x02'::bytea, '\x02'::bytea, '\x02'::bytea, 1, 52),
+       (53, 10, '\x01'::bytea, '\x03'::bytea, '\x01'::bytea, 2, 53),
+       (54, 10, '\x02'::bytea, '\x04'::bytea, '\x02'::bytea, 2, 54),
+       (55, 10, '\x01'::bytea, '\x05'::bytea, '\x01'::bytea, 3, 55),
+       (56, 10, '\x02'::bytea, '\x06'::bytea, '\x02'::bytea, 3, 56);
 
 INSERT INTO auction_participants (auction_id, participant)
 VALUES (1, '\x5222222222222222222222222222222222222222'::bytea),
