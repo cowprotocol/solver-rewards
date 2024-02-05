@@ -1,11 +1,13 @@
 DROP TABLE IF EXISTS orders;
 DROP TYPE IF EXISTS OrderKind;
+DROP TYPE IF EXISTS OrderClass;
 DROP TABLE IF EXISTS order_quotes;
 DROP TABLE IF EXISTS trades;
 
 
 -- orders table
 CREATE TYPE OrderKind AS ENUM ('buy', 'sell');
+CREATE TYPE OrderClass AS ENUM ('market', 'limit');
 
 CREATE TABLE IF NOT EXISTS orders
 (
@@ -14,12 +16,16 @@ CREATE TABLE IF NOT EXISTS orders
     buy_amount numeric(78,0) NOT NULL,
     fee_amount numeric(78,0) NOT NULL,
     kind OrderKind NOT NULL,
-    partially_fillable boolean NOT NULL
+    partially_fillable boolean NOT NULL,
+    class OrderClass NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS order_quotes
 (
   order_uid bytea PRIMARY KEY,
+  gas_amount numeric(78, 0) NOT NULL,
+  gas_price numeric(78, 0) NOT NULL,
+  sell_token_price float NOT NULL,
   sell_amount numeric(78, 0) NOT NULL,
   buy_amount numeric(78, 0) NOT NULL,
   solver bytea NOT NULL
@@ -42,21 +48,21 @@ TRUNCATE order_quotes;
 TRUNCATE trades;
 
 
-INSERT INTO orders (uid, sell_amount, buy_amount, fee_amount, kind, partially_fillable)
-VALUES ('\x01'::bytea, 95000000, 94000000000000000000, 5000000, 'sell', 'f'), -- normal sell market order
-('\x02'::bytea, 101000000, 100000000000000000000, 5000000, 'buy', 'f'), -- normal buy market order
-('\x03'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't'), -- partially fillable sell limit order
-('\x04'::bytea, 100000000, 100000000000000000000, 0, 'buy', 't'), -- partially fillable buy limit order
-('\x05'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f'), -- in market sell limit order
-('\x06'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f'); -- in market buy limit order
+INSERT INTO orders (uid, sell_amount, buy_amount, fee_amount, kind, partially_fillable, class)
+VALUES ('\x01'::bytea, 95000000, 94000000000000000000, 5000000, 'sell', 'f', 'market'), -- normal sell market order
+('\x02'::bytea, 101000000, 100000000000000000000, 5000000, 'buy', 'f', 'market'), -- normal buy market order
+('\x03'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't', 'limit'), -- partially fillable sell limit order
+('\x04'::bytea, 100000000, 100000000000000000000, 0, 'buy', 't', 'limit'), -- partially fillable buy limit order
+('\x05'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 'limit'), -- in market sell limit order
+('\x06'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 'limit'); -- in market buy limit order
 
-INSERT INTO order_quotes (order_uid, sell_amount, buy_amount, solver)
-VALUES ('\x01'::bytea, 95000000, 95000000000000000000, '\x01'::bytea),
-('\x02'::bytea, 101000000, 100000000000000000000, '\x02'::bytea),
-('\x03'::bytea, 100000000, 95000000000000000000, '\x03'::bytea),
-('\x04'::bytea, 105000000, 100000000000000000000, '\x03'::bytea),
-('\x05'::bytea, 100000000, 95000000000000000000, '\x03'::bytea),
-('\x06'::bytea, 105000000, 100000000000000000000, '\x03'::bytea);
+INSERT INTO order_quotes (order_uid, gas_amount, gas_price, sell_token_price, sell_amount, buy_amount, solver)
+VALUES ('\x01'::bytea, 100000, 25000000000, 500000000., 95000000, 95000000000000000000, '\x01'::bytea),
+('\x02'::bytea, 100000, 25000000000, 500000000., 100000000, 100000000000000000000, '\x02'::bytea),
+('\x03'::bytea, 100000, 25000000000, 500000000., 100000000, 100000000000000000000, '\x03'::bytea),
+('\x04'::bytea, 100000, 25000000000, 500000000., 100000000, 100000000000000000000, '\x03'::bytea),
+('\x05'::bytea, 100000, 25000000000, 500000000., 100000000, 100000000000000000000, '\x03'::bytea),
+('\x06'::bytea, 100000, 25000000000, 500000000., 100000000, 100000000000000000000, '\x03'::bytea);
 
 INSERT INTO trades (block_number, log_index, order_uid, sell_amount, buy_amount)
 VALUES (1, 0, '\x01'::bytea, 100000000, 95000000000000000000),
