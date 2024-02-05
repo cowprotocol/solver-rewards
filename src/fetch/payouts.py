@@ -316,7 +316,7 @@ def prepare_transfers(payout_df: DataFrame, period: AccountingPeriod) -> PeriodP
         Transfer(
             token=None,
             recipient=PROTOCOL_FEE_SAFE,
-            amount_wei=payout_df.protocol_fee_eth.sum(),
+            amount_wei=int(payout_df.protocol_fee_eth.sum()),
         )
     )
 
