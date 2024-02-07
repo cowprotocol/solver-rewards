@@ -1,4 +1,4 @@
-WITH observed_settlements AS (SELECT
+WITH observed_settlements AS MATERIALIZED (SELECT
                                 -- settlement
                                 tx_hash,
                                 solver,
@@ -17,7 +17,7 @@ WITH observed_settlements AS (SELECT
                               WHERE ss.block_deadline >= {{start_block}}
                                 AND ss.block_deadline <= {{end_block}}),
 
-     auction_participation as (SELECT ss.auction_id, array_agg(participant) as participating_solvers
+     auction_participation as MATERIALIZED (SELECT ss.auction_id, array_agg(participant) as participating_solvers
                                FROM auction_participants
                                       JOIN settlement_scores ss
                                            ON auction_participants.auction_id = ss.auction_id
@@ -129,7 +129,7 @@ order_surplus AS (
     JOIN auction_prices ap_protocol -- contains price: protocol fee token
         ON opf.auction_id = ap_protocol.auction_id AND opf.protocol_fee_token = ap_protocol.token
 ),
-batch_protocol_fees AS (
+batch_protocol_fees AS MATERIALIZED (
     SELECT
         solver,
         tx_hash,
