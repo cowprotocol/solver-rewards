@@ -13,7 +13,7 @@ from src.fetch.payouts import (
     TokenConversion,
     prepare_transfers,
     RewardAndPenaltyDatum,
-    QUOTE_REWARD,
+    QUOTE_REWARD_COW,
     PROTOCOL_FEE_SAFE,
 )
 from src.models.accounting_period import AccountingPeriod
@@ -401,7 +401,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             secondary_reward_eth=participation,
             secondary_reward_cow=participation * self.conversion_rate,
             slippage_eth=slippage,
-            quote_reward_cow=QUOTE_REWARD * num_quotes,
+            quote_reward_cow=QUOTE_REWARD_COW * num_quotes,
         )
 
     def test_invalid_input(self):
