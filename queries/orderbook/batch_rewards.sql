@@ -199,10 +199,8 @@ reward_per_auction as (
         solver,
         execution_cost,
         surplus,
-        protocol_fee,
-        -- the protocol fee
-        fee - network_fee_correction as network_fee,
-        -- the network fee
+        protocol_fee, -- the protocol fee
+        fee - network_fee_correction as network_fee, -- the network fee
         surplus + protocol_fee + fee - network_fee_correction - reference_score as uncapped_payment_eth,
         -- Capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
         LEAST(
