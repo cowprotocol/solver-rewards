@@ -290,7 +290,7 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     # Pandas has poor support for large integers, must cast the constant to float here,
     # otherwise the dtype would be inferred as int64 (which overflows).
     pdf["quote_reward_cow"] = (
-        min(float(QUOTE_REWARD), converter.eth_to_token(QUOTE_REWARD_CAP))
+        float(min(QUOTE_REWARD, converter.eth_to_token(QUOTE_REWARD_CAP)))
         * pdf["num_quotes"]
     )
 
