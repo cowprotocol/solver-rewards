@@ -13,7 +13,7 @@ from src.fetch.payouts import (
     TokenConversion,
     prepare_transfers,
     RewardAndPenaltyDatum,
-    QUOTE_REWARD,
+    QUOTE_REWARD_COW,
     PROTOCOL_FEE_SAFE,
 )
 from src.models.accounting_period import AccountingPeriod
@@ -110,22 +110,22 @@ class TestPayoutTransformations(unittest.TestCase):
                 0,
             ],
             "secondary_reward_cow": [
-                97569245454545450000000.00000,
-                27876927272727270000000.00000,
-                97569245454545450000000.00000,
-                83630781818181820000000.00000,
+                1909090909090909000000.00000,
+                545454545454545440000.00000,
+                1909090909090909000000.00000,
+                1636363636363636200000.00000,
             ],
             "secondary_reward_eth": [
-                97569245454545450000.00000,
-                27876927272727273000.00000,
-                97569245454545450000.00000,
-                83630781818181810000.00000,
+                1909090909090909000.00000,
+                545454545454545440.00000,
+                1909090909090909000.00000,
+                1636363636363636200.00000,
             ],
             "quote_reward_cow": [
                 0.00000,
                 0.00000,
-                90000000000000000000.00000,
-                180000000000000000000.00000,
+                6000000000000000000.00000,
+                12000000000000000000.00000,
             ],
         }
         expected = DataFrame(expected_data_dict)
@@ -244,22 +244,22 @@ class TestPayoutTransformations(unittest.TestCase):
                     0,
                 ],
                 "secondary_reward_cow": [
-                    97569245454545450000000.00000,
-                    27876927272727270000000.00000,
-                    97569245454545450000000.00000,
-                    83630781818181820000000.00000,
+                    1909090909090909000000.00000,
+                    545454545454545440000.00000,
+                    1909090909090909000000.00000,
+                    1636363636363636200000.00000,
                 ],
                 "secondary_reward_eth": [
-                    97569245454545450000.00000,
-                    27876927272727273000.00000,
-                    97569245454545450000.00000,
-                    83630781818181810000.00000,
+                    1909090909090909000.00000,
+                    545454545454545440.00000,
+                    1909090909090909000.00000,
+                    1636363636363636200.00000,
                 ],
                 "quote_reward_cow": [
                     0.00000,
                     0.00000,
-                    90000000000000000000.00000,
-                    180000000000000000000.00000,
+                    6000000000000000000.00000,
+                    12000000000000000000.00000,
                 ],
                 "solver_name": ["S_1", "S_2", "S_3", None],
                 "eth_slippage_wei": [1.0, 0.0, -1.0, None],
@@ -401,7 +401,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             secondary_reward_eth=participation,
             secondary_reward_cow=participation * self.conversion_rate,
             slippage_eth=slippage,
-            quote_reward_cow=QUOTE_REWARD * num_quotes,
+            quote_reward_cow=QUOTE_REWARD_COW * num_quotes,
         )
 
     def test_invalid_input(self):

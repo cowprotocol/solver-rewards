@@ -34,7 +34,8 @@ class MultiInstanceDBFetcher:
             open_query("orderbook/batch_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
-            .replace("{{EPSILON}}", "10000000000000000")
+            .replace("{{EPSILON_LOWER}}", "10000000000000000")
+            .replace("{{EPSILON_UPPER}}", "12000000000000000")
         )
         results = [
             self.exec_query(query=batch_reward_query, engine=engine)

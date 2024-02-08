@@ -1,4 +1,5 @@
 """Logic for Post CIP 20 Solver Payout Calculation"""
+
 from __future__ import annotations
 
 import logging
@@ -22,8 +23,10 @@ from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 from src.utils.print_store import Category
 
-PERIOD_BUDGET_COW = 306646 * 10**18
-QUOTE_REWARD = 9 * 10**18
+PERIOD_BUDGET_COW = 250000 * 10**18
+CONSISTENCY_REWARD_CAP_ETH = 6 * 10**18
+QUOTE_REWARD_COW = 6 * 10**18
+QUOTE_REWARD_CAP_ETH = 6 * 10**14
 
 PROTOCOL_FEE_SAFE = Address("0xB64963f95215FDe6510657e719bd832BB8bb941B")
 
@@ -270,7 +273,13 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     pdf["reward_eth"] = pdf["payment_eth"] - pdf["execution_cost_eth"]
     pdf["reward_cow"] = pdf["reward_eth"].apply(converter.eth_to_token)
 
-    secondary_allocation = max(PERIOD_BUDGET_COW - pdf["reward_cow"].sum(), 0)
+    secondary_allocation = max(
+        min(
+            PERIOD_BUDGET_COW - pdf["reward_cow"].sum(),
+            converter.eth_to_token(CONSISTENCY_REWARD_CAP_ETH),
+        ),
+        0,
+    )
     participation_total = pdf["num_participating_batches"].sum()
     pdf["secondary_reward_cow"] = (
         secondary_allocation * pdf["num_participating_batches"] / participation_total
@@ -281,7 +290,10 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
 
     # Pandas has poor support for large integers, must cast the constant to float here,
     # otherwise the dtype would be inferred as int64 (which overflows).
-    pdf["quote_reward_cow"] = float(QUOTE_REWARD) * pdf["num_quotes"]
+    pdf["quote_reward_cow"] = (
+        float(min(QUOTE_REWARD_COW, converter.eth_to_token(QUOTE_REWARD_CAP_ETH)))
+        * pdf["num_quotes"]
+    )
 
     for number_col in NUMERICAL_COLUMNS:
         pdf[number_col] = pandas.to_numeric(pdf[number_col])
