@@ -1,4 +1,5 @@
 """Logic for Post CIP 20 Solver Payout Calculation"""
+
 from __future__ import annotations
 
 import logging
