@@ -40,12 +40,9 @@ order_surplus AS (
         t.order_uid,
         o.sell_token,
         o.buy_token,
-        t.sell_amount,
-        -- the total amount the user sends
-        t.buy_amount,
-        -- the total amount the user receives
-        oe.surplus_fee as observed_fee,
-        -- the total discrepancy between what the user sends and what they would have send if they traded at clearing price
+        t.sell_amount, -- the total amount the user sends
+        t.buy_amount, -- the total amount the user receives
+        oe.surplus_fee as observed_fee, -- the total discrepancy between what the user sends and what they would have send if they traded at clearing price
         o.kind,
         CASE
             WHEN o.kind = 'sell' THEN t.buy_amount - t.sell_amount * o.buy_amount / (o.sell_amount + o.fee_amount)
@@ -83,7 +80,8 @@ order_protocol_fee AS (
         os.surplus_token,
         CASE
             WHEN fp.kind = 'surplus' THEN CASE
-                WHEN os.kind = 'sell' THEN -- We assume that the case surplus_factor != 1 always. In
+                WHEN os.kind = 'sell' THEN
+                -- We assume that the case surplus_factor != 1 always. In
                 -- that case reconstructing the protocol fee would be
                 -- impossible anyways. This query will return a division by
                 -- zero error in that case.
