@@ -22,7 +22,8 @@ from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 from src.utils.print_store import Category
 
-PERIOD_BUDGET_COW = 306646 * 10**18
+PERIOD_BUDGET_COW = 250000 * 10**18
+CONSISTENCY_REWARD_CAP = 6 * 10**18
 QUOTE_REWARD = 9 * 10**18
 
 PROTOCOL_FEE_SAFE = Address("0xB64963f95215FDe6510657e719bd832BB8bb941B")
@@ -270,7 +271,13 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     pdf["reward_eth"] = pdf["payment_eth"] - pdf["execution_cost_eth"]
     pdf["reward_cow"] = pdf["reward_eth"].apply(converter.eth_to_token)
 
-    secondary_allocation = max(PERIOD_BUDGET_COW - pdf["reward_cow"].sum(), 0)
+    secondary_allocation = max(
+        min(
+            PERIOD_BUDGET_COW - pdf["reward_cow"].sum(),
+            converter.eth_to_token(CONSISTENCY_REWARD_CAP),
+        ),
+        0,
+    )
     participation_total = pdf["num_participating_batches"].sum()
     pdf["secondary_reward_cow"] = (
         secondary_allocation * pdf["num_participating_batches"] / participation_total
