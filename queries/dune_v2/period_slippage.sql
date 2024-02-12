@@ -171,7 +171,7 @@ block_range as (
         union all
         select * from eth_transfers
         union all
-        select * from sdai_deposit_with
+        select * from sdai_deposit_withdrawal_transfers
         ) as _
     order by tx_hash
 )
