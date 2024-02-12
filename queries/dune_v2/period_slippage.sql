@@ -1,4 +1,4 @@
--- https://github.com/cowprotocol/solver-rewards/pull/330
+-- https://github.com/cowprotocol/solver-rewards/pull/340
 -- Query Here: https://dune.com/queries/3333368
 with
 block_range as (
@@ -7,7 +7,7 @@ block_range as (
         max("number") as end_block
     from ethereum.blocks
     where time >= cast('{{StartTime}}' as timestamp) and time < cast('{{EndTime}}' as timestamp)
-  )
+)
 ,batch_meta as (
     select b.block_time,
            b.block_number,
@@ -192,17 +192,7 @@ block_range as (
     join pre_batch_transfers pbt
         on bm.tx_hash = pbt.tx_hash
 )
--- These batches involve a token who do not emit standard transfer events.
-,excluded_batches as (
-    select tx_hash from filtered_trades
-    where 0xf5d669627376ebd411e34b98f19c868c8aba5ada in (buy_token, sell_token) -- exclude AXS (Old)
-    -- exclude ERC404 tokens:
-    or 0xf66434c34f3644473d91f065bF35225aec9e0Cfd in (buy_token, sell_token) -- exclude 404
-    or 0x9E9FbDE7C7a83c43913BddC8779158F1368F0413 in (buy_token, sell_token) -- exclude PANDORA
-    or 0x6C061D18D2b5bbfBe8a8D1EEB9ee27eFD544cC5D in (buy_token, sell_token) -- exclude MNRCH
-    or 0xbE33F57f41a20b2f00DEc91DcC1169597f36221F in (buy_token, sell_token) -- exclude Rug
-),
-incoming_and_outgoing as (
+,incoming_and_outgoing as (
     SELECT
         block_time,
         tx_hash,
@@ -229,7 +219,6 @@ incoming_and_outgoing as (
         left outer join tokens.erc20 t
             on i.token = t.contract_address
             and blockchain = 'ethereum'
-    where tx_hash not in (select tx_hash from excluded_batches)
 )
 -- -- V3 PoC Query For Token List: https://dune.com/queries/2259926
 ,token_list as (
@@ -270,6 +259,17 @@ incoming_and_outgoing as (
     ) as _
     order by block_time
 )
+-- These batches involve a token who do not emit standard transfer events.
+,excluded_batches as (
+    select tx_hash from filtered_trades
+    where 0xf5d669627376ebd411e34b98f19c868c8aba5ada in (buy_token, sell_token) -- exclude AXS (Old)
+    -- mixed ERC20/ERC721 tokens:
+    or 0xf66434c34f3644473d91f065bF35225aec9e0Cfd in (buy_token, sell_token) -- exclude 404
+    or 0x9E9FbDE7C7a83c43913BddC8779158F1368F0413 in (buy_token, sell_token) -- exclude PANDORA
+    or 0x6C061D18D2b5bbfBe8a8D1EEB9ee27eFD544cC5D in (buy_token, sell_token) -- exclude MNRCH
+    or 0xbE33F57f41a20b2f00DEc91DcC1169597f36221F in (buy_token, sell_token) -- exclude Rug
+    or 0x938403C5427113C67b1604d3B407D995223C2B78 in (buy_token, sell_token) -- exclude OOZ
+)
 ,final_token_balance_sheet as (
     select
         solver_address,
@@ -280,6 +280,7 @@ incoming_and_outgoing as (
         date_trunc('hour', block_time) as hour
     from
         incoming_and_outgoing_with_internalized_imbalances
+    where tx_hash not in (select tx_hash from excluded_batches)
     group by
         symbol, token, solver_address, tx_hash, block_time
     having
