@@ -161,28 +161,6 @@ block_range as (
     on w.evt_tx_hash= bm.tx_hash
     where owner = 0x9008d19f58aabd9ed0d60971565aa8510560ab41
 )
--- correction for PANDORA token which uses ERC20Transfer events
-,pandora_transfers as (
-    select
-        bm.tx_hash,
-        "from" as sender,
-        to as receiver,
-        contract_address as token,
-        cast(amount as int256) as amount_wei,
-        case
-          when 0x9008d19f58aabd9ed0d60971565aa8510560ab41 = to
-          then 'AMM_IN'
-          else 'AMM_OUT'
-        end as transfer_type
-    from batch_meta bm
-    join batchwise_traders bt
-    on bt.tx_hash = bm.tx_hash
-    join pandoranew_ethereum.Pandora_evt_ERC20Transfer t
-    on t.evt_tx_hash= bm.tx_hash
-    where 0x9008d19f58aabd9ed0d60971565aa8510560ab41 in (to, "from")
-    and not contains(traders_in, "from")
-    and not contains(traders_out, to)
-)
 ,pre_batch_transfers as (
     select * from (
         select * from user_in
@@ -193,9 +171,7 @@ block_range as (
         union all
         select * from eth_transfers
         union all
-        select * from sdai_deposit_withdrawal_transfers
-        union all
-        select * from pandora_transfers
+        select * from sdai_deposit_with
         ) as _
     order by tx_hash
 )
@@ -216,11 +192,15 @@ block_range as (
     join pre_batch_transfers pbt
         on bm.tx_hash = pbt.tx_hash
 )
--- These batches involve a token AXS (Old)
--- whose transfer function doesn't align with the emitted transfer event.
+-- These batches involve a token who do not emit standard transfer events.
 ,excluded_batches as (
     select tx_hash from filtered_trades
-    where 0xf5d669627376ebd411e34b98f19c868c8aba5ada in (buy_token, sell_token)
+    where 0xf5d669627376ebd411e34b98f19c868c8aba5ada in (buy_token, sell_token) -- exclude AXS (Old)
+    -- exclude ERC404 tokens:
+    or 0xf66434c34f3644473d91f065bF35225aec9e0Cfd in (buy_token, sell_token) -- exclude 404
+    or 0x9E9FbDE7C7a83c43913BddC8779158F1368F0413 in (buy_token, sell_token) -- exclude PANDORA
+    or 0x6C061D18D2b5bbfBe8a8D1EEB9ee27eFD544cC5D in (buy_token, sell_token) -- exclude MNRCH
+    or 0xbE33F57f41a20b2f00DEc91DcC1169597f36221F in (buy_token, sell_token) -- exclude Rug
 ),
 incoming_and_outgoing as (
     SELECT
