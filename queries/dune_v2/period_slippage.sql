@@ -161,6 +161,28 @@ block_range as (
     on w.evt_tx_hash= bm.tx_hash
     where owner = 0x9008d19f58aabd9ed0d60971565aa8510560ab41
 )
+-- correction for PANDORA token which uses ERC20Transfer events
+,pandora_transfers as (
+    select
+        bm.tx_hash,
+        "from" as sender,
+        to as receiver,
+        contract_address as token,
+        cast(amount as int256) as amount_wei,
+        case
+          when 0x9008d19f58aabd9ed0d60971565aa8510560ab41 = to
+          then 'AMM_IN'
+          else 'AMM_OUT'
+        end as transfer_type
+    from batch_meta bm
+    join batchwise_traders bt
+    on bt.tx_hash = bm.tx_hash
+    join pandoranew_ethereum.Pandora_evt_ERC20Transfer t
+    on t.evt_tx_hash= bm.tx_hash
+    where 0x9008d19f58aabd9ed0d60971565aa8510560ab41 in (to, "from")
+    and not contains(traders_in, "from")
+    and not contains(traders_out, to)
+)
 ,pre_batch_transfers as (
     select * from (
         select * from user_in
@@ -172,6 +194,8 @@ block_range as (
         select * from eth_transfers
         union all
         select * from sdai_deposit_withdrawal_transfers
+        union all
+        select * from pandora_transfers
         ) as _
     order by tx_hash
 )
