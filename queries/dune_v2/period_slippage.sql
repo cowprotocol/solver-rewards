@@ -468,7 +468,6 @@ block_range as (
         on address = solver_address
     group by
         solver_address,
-        concat(environment
-, '-', name)
+        concat(environment, '-', name)
 )
 select * from {{CTE_NAME}}
