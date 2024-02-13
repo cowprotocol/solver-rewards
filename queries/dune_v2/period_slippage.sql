@@ -1,5 +1,5 @@
 -- https://github.com/cowprotocol/solver-rewards/pull/340
--- Query Here: https://dune.com/queries/3333368
+-- Query Here: https://dune.com/queries/3427668
 with
 block_range as (
     select
@@ -399,7 +399,7 @@ block_range as (
         sum(usd_value) as usd_value,
         sum(eth_slippage_wei) as eth_slippage_wei,
         concat(
-            '<a href="https://dune.com/queries/2421375?SolverAddress=',
+            '<a href="https://dune.com/queries/3427668?SolverAddress=',
             cast(solver_address as varchar),
             '&CTE_NAME=results_per_tx',
             '&StartTime={{StartTime}}',
