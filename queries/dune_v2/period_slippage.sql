@@ -269,6 +269,7 @@ block_range as (
     or 0x6C061D18D2b5bbfBe8a8D1EEB9ee27eFD544cC5D in (buy_token, sell_token) -- exclude MNRCH
     or 0xbE33F57f41a20b2f00DEc91DcC1169597f36221F in (buy_token, sell_token) -- exclude Rug
     or 0x938403C5427113C67b1604d3B407D995223C2B78 in (buy_token, sell_token) -- exclude OOZ
+    or 0x54832d8724f8581e7Cc0914b3A4e70aDC0D94872 in (buy_token, sell_token) -- exclude DN404
 )
 ,final_token_balance_sheet as (
     select
