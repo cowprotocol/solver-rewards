@@ -244,7 +244,7 @@ block_range as (
     and ('{{SolverAddress}}' = '0x' or b.solver_address = from_hex('{{SolverAddress}}'))
     and ('{{TxHash}}' = '0x' or b.tx_hash = from_hex('{{TxHash}}'))
 )
-,incoming_and_outgoing_with_internalized_imbalances as (
+,incoming_and_outgoing_with_internalized_imbalances_temp as (
     select * from (
         select block_time,
               tx_hash,
@@ -256,6 +256,62 @@ block_range as (
         from incoming_and_outgoing
         union all
         select * from internalized_imbalances
+    ) as _
+    order by block_time
+)
+-- add correction for protocol fees
+,raw_protocol_fee_data as (
+    select
+        order_uid,
+        tx_hash,
+        cast(cast(data.protocol_fee as varchar) as int256) as protocol_fee,
+        data.protocol_fee_token as protocol_fee_token,
+        cast(cast(data.surplus_fee as varchar) as int256) as surplus_fee,
+        solver,
+        symbol
+    from cowswap.raw_order_rewards ror
+    join tokens.erc20 t
+        on t.contract_address = from_hex(ror.data.protocol_fee_token)
+        and blockchain = 'ethereum'
+    where
+        block_number >= (select start_block from block_range) and block_number <= (select end_block from block_range)
+        and data.protocol_fee_native_price > 0
+)
+,buy_token_imbalance_due_to_protocol_fee as (
+    select
+        t.block_time as block_time,
+        from_hex(r.tx_hash) as tx_hash,
+        from_hex(r.solver) as solver_address,
+        symbol,
+        t.buy_token_address as token,
+        (-1) * r.protocol_fee as amount,
+        'protocol_fee_correction' as transfer_type
+    from raw_protocol_fee_data r
+    join cow_protocol_ethereum.trades t
+        on from_hex(r.order_uid) = t.order_uid and from_hex(r.tx_hash) = t.tx_hash
+    where t.order_type='SELL'
+)
+,sell_token_imbalance_due_to_protocol_fee as (
+    select
+        t.block_time as block_time,
+        from_hex(r.tx_hash) as tx_hash,
+        from_hex(r.solver) as solver_address,
+        symbol,
+        t.sell_token_address as token,
+        r.protocol_fee * (t.atoms_sold - r.surplus_fee) / t.atoms_bought as amount,
+        'protocol_fee_correction' as transfer_type
+    from raw_protocol_fee_data r
+    join cow_protocol_ethereum.trades t
+        on from_hex(r.order_uid) = t.order_uid and from_hex(r.tx_hash) = t.tx_hash
+    where t.order_type='SELL'
+)
+,incoming_and_outgoing_with_internalized_imbalances as (
+    select * from (
+        select * from incoming_and_outgoing_with_internalized_imbalances_temp
+        union all
+        select * from buy_token_imbalance_due_to_protocol_fee
+        union all
+        select * from sell_token_imbalance_due_to_protocol_fee
     ) as _
     order by block_time
 )
@@ -412,6 +468,7 @@ block_range as (
         on address = solver_address
     group by
         solver_address,
-        concat(environment, '-', name)
+        concat(environment
+, '-', name)
 )
 select * from {{CTE_NAME}}
