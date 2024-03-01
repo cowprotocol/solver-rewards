@@ -192,7 +192,7 @@ block_range as (
     join pre_batch_transfers pbt
         on bm.tx_hash = pbt.tx_hash
 )
-,incoming_and_outgoing as (
+,incoming_and_outgoing_prelim as (
     SELECT
         block_time,
         tx_hash,
@@ -225,26 +225,7 @@ block_range as (
     SELECT from_hex(address_str) as address
     FROM ( VALUES {{TokenList}} ) as _ (address_str)
 )
-,internalized_imbalances as (
-  select  b.block_time,
-          b.tx_hash,
-          b.solver_address,
-          t.symbol,
-          from_hex(i.token) as token,
-          cast(cast(i.amount as varchar) as int256) as amount,
-          'PHANTOM_TRANSFER' as transfer_type
-    from cowswap.raw_internal_imbalance i
-    inner join cow_protocol_ethereum.batches b
-        on i.block_number = b.block_number
-        and from_hex(i.tx_hash) = b.tx_hash
-    join tokens.erc20 t
-        on contract_address = from_hex(token)
-        and blockchain = 'ethereum'
-    where i.block_number >= (select start_block from block_range) and i.block_number <= (select end_block from block_range)
-    and ('{{SolverAddress}}' = '0x' or b.solver_address = from_hex('{{SolverAddress}}'))
-    and ('{{TxHash}}' = '0x' or b.tx_hash = from_hex('{{TxHash}}'))
-)
-,incoming_and_outgoing_with_internalized_imbalances_temp as (
+,incoming_and_outgoing as (
     select * from (
         select block_time,
               tx_hash,
@@ -253,9 +234,7 @@ block_range as (
               token,
               amount,
               transfer_type
-        from incoming_and_outgoing
-        union all
-        select * from internalized_imbalances
+        from incoming_and_outgoing_prelim
     ) as _
     order by block_time
 )
@@ -305,16 +284,6 @@ block_range as (
         on from_hex(r.order_uid) = t.order_uid and from_hex(r.tx_hash) = t.tx_hash
     where t.order_type='SELL'
 )
-,incoming_and_outgoing_with_internalized_imbalances as (
-    select * from (
-        select * from incoming_and_outgoing_with_internalized_imbalances_temp
-        union all
-        select * from buy_token_imbalance_due_to_protocol_fee
-        union all
-        select * from sell_token_imbalance_due_to_protocol_fee
-    ) as _
-    order by block_time
-)
 -- These batches involve a token who do not emit standard transfer events.
 ,excluded_batches as (
     select tx_hash from filtered_trades
@@ -334,9 +303,9 @@ block_range as (
         symbol,
         token,
         tx_hash,
-        date_trunc('hour', block_time) as hour
+        date_add('minute', (-1) * (minute(date_trunc('minute', block_time)) % {{bucket_size_in_minutes}}), date_trunc('minute', block_time)) as time_slot
     from
-        incoming_and_outgoing_with_internalized_imbalances
+        incoming_and_outgoing
     where tx_hash not in (select tx_hash from excluded_batches)
     group by
         symbol, token, solver_address, tx_hash, block_time
@@ -344,39 +313,39 @@ block_range as (
         sum(amount) != cast(0 as int256)
 )
 ,token_times as (
-    select hour, token
+    select time_slot, token
     from final_token_balance_sheet
-    group by hour, token
+    group by time_slot, token
 )
 ,precise_prices as (
     select
         contract_address,
         decimals,
-        date_trunc('hour', minute) as hour,
+        date_add('minute', (-1) * (minute(pusd.minute) % {{bucket_size_in_minutes}}), pusd.minute) as time_slot,
         avg(price) as price
     from
         prices.usd pusd
     inner join token_times tt
-        on minute between date(hour) and date(hour) + interval '1' day -- query execution speed optimization since minute is indexed
-        and date_trunc('hour', minute) = hour
+        on minute between date(time_slot) and date(time_slot) + interval '1' day -- query execution speed optimization since minute is indexed
+        and date_add('minute', (-1) * (minute(pusd.minute) % {{bucket_size_in_minutes}}), pusd.minute) = time_slot
         and contract_address = token
         and blockchain = 'ethereum'
     group by
         contract_address,
         decimals,
-        date_trunc('hour', minute)
+        date_add('minute', (-1) * (minute(pusd.minute) % {{bucket_size_in_minutes}}), pusd.minute)
 )
-,intrinsic_prices as (
+,intrinsic_prices_prelim as (
     select
         contract_address,
         decimals,
-        hour,
+        minute,
         AVG(price) as price
     from (
         select
             buy_token_address as contract_address,
             ROUND(LOG(10, atoms_bought / units_bought)) as decimals,
-            date_trunc('hour', block_time) as hour,
+            date_trunc('minute', block_time) as minute,
             usd_value / units_bought as price
         FROM cow_protocol_ethereum.trades
         WHERE block_number >= (select start_block from block_range) and block_number <= (select end_block from block_range)
@@ -385,19 +354,30 @@ block_range as (
         select
             sell_token_address as contract_address,
             ROUND(LOG(10, atoms_sold / units_sold)) as decimals,
-            date_trunc('hour', block_time) as hour,
+            date_trunc('minute', block_time) as minute,
             usd_value / units_sold as price
         FROM cow_protocol_ethereum.trades
         WHERE block_number >= (select start_block from block_range) and block_number <= (select end_block from block_range)
         AND units_sold > 0
     ) as combined
-    GROUP BY hour, contract_address, decimals
-    order by hour
+    GROUP BY minute, contract_address, decimals
+    order by minute
+)
+,intrinsic_prices as (
+    select
+        contract_address,
+        decimals,
+        date_add('minute', (-1) * (minute(minute) % {{bucket_size_in_minutes}}), minute) as time_slot,
+        AVG(price) as price
+    from
+    intrinsic_prices_prelim
+    group by date_add('minute', (-1) * (minute(minute) % {{bucket_size_in_minutes}}), minute), contract_address, decimals
+    order by date_add('minute', (-1) * (minute(minute) % {{bucket_size_in_minutes}}), minute)
 )
 -- -- Price Construction: https://dune.com/queries/1579091?
 ,prices as (
     select
-        tt.hour as hour,
+        tt.time_slot as time_slot,
         tt.token as contract_address,
         COALESCE(
             precise.decimals,
@@ -409,26 +389,26 @@ block_range as (
         ) as price
     from token_times tt
     LEFT JOIN precise_prices precise
-        ON precise.hour = tt.hour
+        ON precise.time_slot = tt.time_slot
         AND precise.contract_address = token
     LEFT JOIN intrinsic_prices intrinsic
-        ON intrinsic.hour = tt.hour
+        ON intrinsic.time_slot = tt.time_slot
         and intrinsic.contract_address = token
 )
 -- -- ETH Prices: https://dune.com/queries/1578626?d=1
 ,eth_prices as (
     select
-        date_trunc('hour', minute) as hour,
+        date_add('minute', (-1) * (minute(minute) % {{bucket_size_in_minutes}}), minute) as time_slot,
         avg(price) as eth_price
     from prices.usd
     where blockchain = 'ethereum'
     and contract_address = 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
     and minute between cast('{{StartTime}}' as timestamp) and cast('{{EndTime}}' as timestamp)
-    group by date_trunc('hour', minute)
+    group by date_add('minute', (-1) * (minute(minute) % {{bucket_size_in_minutes}}), minute)
 )
 ,results_per_tx as (
     select
-        ftbs.hour,
+        ftbs.time_slot,
         tx_hash,
         solver_address,
         sum(cast(token_imbalance_wei as double) * price / pow(10, p.decimals)) as usd_value,
@@ -438,11 +418,11 @@ block_range as (
         final_token_balance_sheet ftbs
     left join prices p
         on token = p.contract_address
-        and p.hour = ftbs.hour
+        and p.time_slot = ftbs.time_slot
     left join eth_prices ep
-        on ftbs.hour = ep.hour
+        on ftbs.time_slot = ep.time_slot
     group by
-        ftbs.hour,
+        ftbs.time_slot,
         solver_address,
         tx_hash
     having
