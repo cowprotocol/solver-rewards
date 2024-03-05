@@ -201,14 +201,14 @@ reward_per_auction as (
         surplus,
         protocol_fee, -- the protocol fee
         fee - network_fee_correction as network_fee, -- the network fee
-        surplus + protocol_fee + fee - network_fee_correction - reference_score as uncapped_payment_eth,
+        surplus + protocol_fee - reference_score as uncapped_payment,
         -- Capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
         LEAST(
             GREATEST(
                 - {{EPSILON_LOWER}},
-                surplus + protocol_fee + fee - network_fee_correction - reference_score
+                surplus + protocol_fee - reference_score
             ),
-            {{EPSILON_UPPER}} + execution_cost
+            {{EPSILON_UPPER}}
         ) as capped_payment,
         winning_score,
         reference_score,
@@ -235,17 +235,9 @@ participation_counts as (
 primary_rewards as (
     SELECT
         rpt.solver,
-        SUM(capped_payment) as payment_wei,
-        SUM(execution_cost) as exececution_cost_wei
-    FROM
-        reward_per_auction rpt
-    GROUP BY
-        solver
-),
-protocol_fees as (
-    SELECT
-        solver,
-        SUM(protocol_fee) as protocol_fee_wei
+        SUM(capped_payment) as payment,
+        SUM(protocol_fee) as protocol_fee,
+        SUM(network_fee) as network_fee
     FROM
         reward_per_auction rpt
     GROUP BY
@@ -254,14 +246,13 @@ protocol_fees as (
 aggregate_results as (
     SELECT
         concat('0x', encode(pc.solver, 'hex')) as solver,
-        coalesce(payment_wei, 0) as payment_eth,
-        coalesce(exececution_cost_wei, 0) as execution_cost_eth,
+        coalesce(payment, 0) as primary_reward_eth,
         num_participating_batches,
-        coalesce(protocol_fee_wei, 0) as protocol_fee_eth
+        coalesce(protocol_fee, 0) as protocol_fee_eth,
+        coalesce(network_fee, 0) as network_fee_eth
     FROM
         participation_counts pc
         LEFT OUTER JOIN primary_rewards pr ON pr.solver = pc.solver
-        LEFT OUTER JOIN protocol_fees pf ON pf.solver = pc.solver
 ) --
 select
     *

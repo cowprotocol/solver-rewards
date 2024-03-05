@@ -32,10 +32,9 @@ PROTOCOL_FEE_SAFE = Address("0xB64963f95215FDe6510657e719bd832BB8bb941B")
 
 PAYMENT_COLUMNS = {
     "solver",
-    "payment_eth",
-    "execution_cost_eth",
+    "primary_reward_eth",
+    "primary_reward_cow",
     "secondary_reward_eth",
-    "reward_cow",
     "secondary_reward_cow",
     "quote_reward_cow",
     "protocol_fee_eth",
@@ -49,10 +48,8 @@ REWARD_TARGET_COLUMNS = {"solver", "reward_target"}
 
 COMPLETE_COLUMNS = PAYMENT_COLUMNS.union(SLIPPAGE_COLUMNS).union(REWARD_TARGET_COLUMNS)
 NUMERICAL_COLUMNS = [
-    "payment_eth",
-    "execution_cost_eth",
-    "reward_eth",
-    "reward_cow",
+    "primary_reward_eth",
+    "primary_reward_cow",
     "secondary_reward_cow",
     "secondary_reward_eth",
     "quote_reward_cow",
@@ -79,24 +76,22 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         solver: Address,
         solver_name: str,
         reward_target: Address,
-        exec_cost: int,
-        payment_eth: int,
+        primary_reward_eth: int,
         secondary_reward_eth: int,
         slippage_eth: int,
         primary_reward_cow: int,
         secondary_reward_cow: int,
         quote_reward_cow: int,
     ):
-        assert exec_cost >= 0, f"invalid execution cost {exec_cost}"
         assert secondary_reward_eth >= 0, "invalid secondary_reward_eth"
         assert secondary_reward_cow >= 0, "invalid secondary_reward_cow"
+        assert quote_reward_cow >= 0, "invalid secondary_reward_cow"
 
         self.solver = solver
         self.solver_name = solver_name
         self.reward_target = reward_target
-        self.exec_cost = exec_cost
-        self.payment_eth = payment_eth
         self.slippage_eth = slippage_eth
+        self.primary_reward_eth = primary_reward_eth
         self.primary_reward_cow = primary_reward_cow
         self.secondary_reward_eth = secondary_reward_eth
         self.secondary_reward_cow = secondary_reward_cow
@@ -120,10 +115,9 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             solver=Address(solver),
             solver_name=frame["solver_name"],
             reward_target=Address(reward_target),
-            payment_eth=int(frame["payment_eth"]),
             slippage_eth=slippage,
-            primary_reward_cow=int(frame["reward_cow"]),
-            exec_cost=int(frame["execution_cost_eth"]),
+            primary_reward_eth=int(frame["primary_reward_eth"]),
+            primary_reward_cow=int(frame["primary_reward_cow"]),
             secondary_reward_eth=int(frame["secondary_reward_eth"]),
             secondary_reward_cow=int(frame["secondary_reward_cow"]),
             quote_reward_cow=int(frame["quote_reward_cow"]),
@@ -131,7 +125,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
 
     def total_outgoing_eth(self) -> int:
         """Total outgoing amount (including slippage) for the payout."""
-        return self.payment_eth + self.secondary_reward_eth + self.slippage_eth
+        return self.primary_reward_eth + self.secondary_reward_eth + self.slippage_eth
 
     def total_cow_reward(self) -> int:
         """Total outgoing COW token reward"""
@@ -139,7 +133,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
 
     def total_eth_reward(self) -> int:
         """Total outgoing ETH reward"""
-        return self.payment_eth - self.exec_cost + self.secondary_reward_eth
+        return self.primary_reward_eth + self.secondary_reward_eth
 
     def is_overdraft(self) -> bool:
         """
@@ -168,7 +162,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         total_eth_reward = int(self.total_eth_reward())
         total_cow_reward = int(self.total_cow_reward())
 
-        reimbursement_eth = int(self.exec_cost + self.slippage_eth)
+        reimbursement_eth = int(self.slippage_eth)
         # We do not have access to token conversion here, but we do have other converted values
         # x_eth:x_cow = y_eth:y_cow --> y_cow = y_eth * x_cow / x_eth
         reimbursement_cow = (
@@ -270,12 +264,11 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
         This is evaluated in both ETH and COW (for different use cases).
     """
     # Note that this can be negative!
-    pdf["reward_eth"] = pdf["payment_eth"] - pdf["execution_cost_eth"]
-    pdf["reward_cow"] = pdf["reward_eth"].apply(converter.eth_to_token)
+    pdf["primary_reward_cow"] = pdf["primary_reward_eth"].apply(converter.eth_to_token)
 
     secondary_allocation = max(
         min(
-            PERIOD_BUDGET_COW - pdf["reward_cow"].sum(),
+            PERIOD_BUDGET_COW - pdf["primary_reward_cow"].sum(),
             converter.eth_to_token(CONSISTENCY_REWARD_CAP_ETH),
         ),
         0,
@@ -383,6 +376,12 @@ def construct_payout_dataframe(
     merged_df = payment_df.merge(slippage_df, on=join_column, how="left").merge(
         reward_target_df, on=join_column, how="left"
     )
+
+    # 4. Add slippage from fees to slippage
+    merged_df["eth_slippage_wei"] = (
+        merged_df["eth_slippage_wei"].fillna(0) + merged_df["network_fee_eth"]
+    )
+
     return merged_df
 
 

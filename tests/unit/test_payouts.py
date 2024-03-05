@@ -50,16 +50,10 @@ class TestPayoutTransformations(unittest.TestCase):
             )
         )
 
-        self.eth_payments = [
+        self.primary_reward_eth = [
             600000000000000.00000,
-            10450000000000000.00000,
+            12000000000000000.00000,
             -10000000000000000.00000,
-            0.00000,
-        ]
-        self.execution_costs = [
-            800000000000000.00000,
-            450000000000000.00000,
-            0.00000,
             0.00000,
         ]
         self.batch_participation = [
@@ -74,40 +68,45 @@ class TestPayoutTransformations(unittest.TestCase):
             0.0,
             0.0,
         ]
+        self.network_fee_eth = [
+            2000000000000000.0,
+            4000000000000000.0,
+            0.0,
+            0.0,
+        ]
         # Mocking TokenConversion!
         self.mock_converter = TokenConversion(
             eth_to_token=lambda t: int(t * 1000), token_to_eth=lambda t: t // 1000
         )
 
     def test_extend_payment_df(self):
-        base_data_dict: dict = {
+        base_data_dict = {
             "solver": self.solvers,
             "num_quotes": self.num_quotes,
-            "payment_eth": self.eth_payments,
-            "execution_cost_eth": self.execution_costs,
+            "primary_reward_eth": self.primary_reward_eth,
             "num_participating_batches": self.batch_participation,
             "protocol_fee_eth": self.protocol_fee_eth,
+            "network_fee_eth": self.network_fee_eth,
         }
         base_payout_df = DataFrame(base_data_dict)
         result = extend_payment_df(base_payout_df, converter=self.mock_converter)
         expected_data_dict = {
             "solver": self.solvers,
             "num_quotes": self.num_quotes,
-            "payment_eth": self.eth_payments,
-            "execution_cost_eth": self.execution_costs,
-            "num_participating_batches": self.batch_participation,
-            "protocol_fee_eth": self.protocol_fee_eth,
-            "reward_eth": [
-                -200000000000000.00000,
-                10000000000000000.00000,
+            "primary_reward_eth": [
+                600000000000000.00000,
+                12000000000000000.00000,
                 -10000000000000000.00000,
                 0.00000,
             ],
-            "reward_cow": [
-                -200000000000000000,
-                10000000000000000000,
-                -10000000000000000000,
-                0,
+            "num_participating_batches": self.batch_participation,
+            "protocol_fee_eth": self.protocol_fee_eth,
+            "network_fee_eth": self.network_fee_eth,
+            "primary_reward_cow": [
+                600000000000000000.0,
+                12000000000000000000.0,
+                -10000000000000000000.0,
+                0.0,
             ],
             "secondary_reward_cow": [
                 1909090909090909000000.00000,
@@ -149,11 +148,11 @@ class TestPayoutTransformations(unittest.TestCase):
             {
                 "solver": [],
                 "payment_eth": [],
-                "execution_cost_eth": [],
                 "num_participating_batches": [],
                 "protocol_fee_eth": [],
-                "reward_eth": [],
-                "reward_cow": [],
+                "network_fee_eth": [],
+                "primary_reward_eth": [],
+                "primary_reward_cow": [],
                 "secondary_reward_cow": [],
                 "secondary_reward_eth": [],
                 "quote_reward_cow": [],
@@ -198,10 +197,10 @@ class TestPayoutTransformations(unittest.TestCase):
                 {
                     "solver": self.solvers,
                     "num_quotes": self.num_quotes,
-                    "payment_eth": self.eth_payments,
-                    "execution_cost_eth": self.execution_costs,
+                    "primary_reward_eth": self.primary_reward_eth,
                     "num_participating_batches": self.batch_participation,
                     "protocol_fee_eth": self.protocol_fee_eth,
+                    "network_fee_eth": self.network_fee_eth,
                 }
             ),
             converter=self.mock_converter,
@@ -227,8 +226,7 @@ class TestPayoutTransformations(unittest.TestCase):
             {
                 "solver": self.solvers,
                 "num_quotes": self.num_quotes,
-                "payment_eth": [600000000000000.0, 1.045e16, -1e16, 0.0],
-                "execution_cost_eth": [800000000000000.0, 450000000000000.0, 0.0, 0.0],
+                "primary_reward_eth": [600000000000000.0, 1.2e16, -1e16, 0.0],
                 "num_participating_batches": [7, 2, 7, 6],
                 "protocol_fee_eth": [
                     1000000000000000.0,
@@ -236,12 +234,17 @@ class TestPayoutTransformations(unittest.TestCase):
                     0.0,
                     0.0,
                 ],
-                "reward_eth": [-200000000000000.0, 1e16, -1e16, 0.0],
-                "reward_cow": [
-                    -200000000000000000,
-                    10000000000000000000,
-                    -10000000000000000000,
-                    0,
+                "network_fee_eth": [
+                    2000000000000000.0,
+                    4000000000000000.0,
+                    0.0,
+                    0.0,
+                ],
+                "primary_reward_cow": [
+                    600000000000000000.0,
+                    12000000000000000000.0,
+                    -10000000000000000000.0,
+                    0.0,
                 ],
                 "secondary_reward_cow": [
                     1909090909090909000000.00000,
@@ -262,7 +265,7 @@ class TestPayoutTransformations(unittest.TestCase):
                     12000000000000000000.00000,
                 ],
                 "solver_name": ["S_1", "S_2", "S_3", None],
-                "eth_slippage_wei": [1.0, 0.0, -1.0, None],
+                "eth_slippage_wei": [2000000000000001.0, 4000000000000000.0, -1.0, 0.0],
                 "reward_target": [
                     "0x0000000000000000000000000000000000000005",
                     "0x0000000000000000000000000000000000000006",
@@ -272,7 +275,7 @@ class TestPayoutTransformations(unittest.TestCase):
             }
         )
 
-        self.assertIsNone(pandas.testing.assert_frame_equal(result, expected))
+        self.assertIsNone(pandas.testing.assert_frame_equal(expected, result))
 
     def test_prepare_transfers(self):
         # Need Example of every possible scenario
@@ -280,15 +283,13 @@ class TestPayoutTransformations(unittest.TestCase):
             {
                 "solver": self.solvers,
                 "num_quotes": self.num_quotes,
-                "payment_eth": [600000000000000.0, 1.045e16, -1e16, 0.0],
-                "execution_cost_eth": [800000000000000.0, 450000000000000.0, 0.0, 0.0],
+                "primary_reward_eth": [600000000000000.0, 1.2e16, -1e16, 0.0],
                 "protocol_fee_eth": self.protocol_fee_eth,
-                "reward_eth": [-200000000000000.0, 1e16, -1e16, 0.0],
-                "reward_cow": [
-                    -200000000000000000,
-                    10000000000000000000,
-                    -10000000000000000000,
-                    0,
+                "primary_reward_cow": [
+                    600000000000000000.0,
+                    12000000000000000000.0,
+                    -10000000000000000000.0,
+                    0.0,
                 ],
                 "secondary_reward_cow": [
                     6.363636363636364e16,
@@ -321,22 +322,21 @@ class TestPayoutTransformations(unittest.TestCase):
         period = AccountingPeriod("1985-03-10", 1)
         payout_transfers = prepare_transfers(full_payout_data, period)
         self.assertEqual(
-            payout_transfers.transfers,
             [
                 Transfer(
                     token=None,
                     recipient=Address(self.solvers[0]),
-                    amount_wei=663636363636364,
+                    amount_wei=1,
                 ),
                 Transfer(
-                    token=None,
-                    recipient=Address(self.solvers[1]),
-                    amount_wei=450000000000000,
+                    token=Token(COW_TOKEN_ADDRESS),
+                    recipient=Address(self.reward_targets[0]),
+                    amount_wei=663636363636363640,
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[1]),
-                    amount_wei=10018181818181818180,
+                    amount_wei=12018181818181818180,
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
@@ -359,6 +359,7 @@ class TestPayoutTransformations(unittest.TestCase):
                     amount_wei=3000000000000000,
                 ),
             ],
+            payout_transfers.transfers,
         )
 
         self.assertEqual(
@@ -384,9 +385,8 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
 
     def sample_record(
         self,
-        payment: int,
-        cost: int,
-        participation: int,
+        primary_reward: int,
+        secondary_reward: int,
         slippage: int,
         num_quotes: int,
     ):
@@ -395,39 +395,93 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             solver=self.solver,
             solver_name=self.solver_name,
             reward_target=self.reward_target,
-            payment_eth=payment,
-            exec_cost=cost,
-            primary_reward_cow=(payment - cost) * self.conversion_rate,
-            secondary_reward_eth=participation,
-            secondary_reward_cow=participation * self.conversion_rate,
+            primary_reward_eth=primary_reward,
+            primary_reward_cow=primary_reward * self.conversion_rate,
+            secondary_reward_eth=secondary_reward,
+            secondary_reward_cow=secondary_reward * self.conversion_rate,
             slippage_eth=slippage,
             quote_reward_cow=QUOTE_REWARD_COW * num_quotes,
         )
 
     def test_invalid_input(self):
-        with self.assertRaises(AssertionError):
-            self.sample_record(0, -1, 0, 0, 0)
+        """Test that negative and secondary and quote rewards throw an error."""
 
+        # invalid secondary reward
         with self.assertRaises(AssertionError):
-            self.sample_record(0, 0, -1, 0, 0)
+            self.sample_record(0, -1, 0, 0)
+
+        # invalid quote reward
+        with self.assertRaises(AssertionError):
+            self.sample_record(0, 0, 0, -1)
 
     def test_reward_datum_0_0_0_0(self):
-        test_datum = self.sample_record(0, 0, 0, 0, 0)
+        """Without data there is no payout and no overdraft."""
+        test_datum = self.sample_record(0, 0, 0, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(test_datum.as_payouts(), [])
 
-    def test_reward_datum_1_1_0_0(self):
-        cost = 1
-        test_datum = self.sample_record(1, cost, 0, 0, 0)
+    def test_reward_datum_pm1_0_0_0(self):
+        """Primary reward only."""
+
+        # positive reward is paid in COW
+        primary_reward = 1
+        test_datum = self.sample_record(primary_reward, 0, 0, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
-            [Transfer(token=None, recipient=self.solver, amount_wei=cost)],
+            [
+                Transfer(
+                    token=self.cow_token,
+                    recipient=self.reward_target,
+                    amount_wei=primary_reward * self.conversion_rate,
+                )
+            ],
         )
 
-    def test_reward_datum_3_2_0_minus1(self):
-        payment, cost, participation, slippage = 3, 2, 0, -1
-        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
+        # negative reward gives overdraft
+        primary_reward = -1
+        test_datum = self.sample_record(primary_reward, 0, 0, 0)
+        self.assertTrue(test_datum.is_overdraft())
+        self.assertEqual(test_datum.as_payouts(),[])
+
+    def test_reward_datum_0_0_pm1_0(self):
+        """Slippag only."""
+
+        # positive slippage is paid in ETH
+        slippage = 1
+        test_datum = self.sample_record(0, 0, slippage, 0)
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [Transfer(token=None, recipient=self.solver, amount_wei=slippage)],
+        )
+
+        # negative slippage gives overdraft
+        slippage = -1
+        test_datum = self.sample_record(0, 0, slippage, 0)
+        self.assertTrue(test_datum.is_overdraft())
+        self.assertEqual(test_datum.as_payouts(), [])
+
+    def test_reward_datum_0_0_0_1(self):
+        """Quote rewards only."""
+        num_quotes = 1
+        test_datum = self.sample_record(0, 0, 0, num_quotes)
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [
+                Transfer(
+                    token=self.cow_token,
+                    recipient=self.reward_target,
+                    amount_wei=6000000000000000000 * num_quotes,
+                )
+            ],
+        )
+
+    def test_reward_datum_4_2_1_0(self):
+        """COW payment for rewards, ETH payment for slippage."""
+        primary_reward, secondary_reward, slippage, num_quotes = 4, 2, 1, 0
+        test_datum = self.sample_record(primary_reward, secondary_reward, slippage, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -435,86 +489,49 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                 Transfer(
                     token=None,
                     recipient=self.solver,
-                    amount_wei=cost + slippage,
+                    amount_wei=slippage,
                 ),
                 Transfer(
                     token=self.cow_token,
                     recipient=self.reward_target,
-                    amount_wei=(payment - cost) * self.conversion_rate,
+                    amount_wei=(primary_reward + secondary_reward)
+                    * self.conversion_rate,
                 ),
             ],
         )
 
-    def test_reward_datum_cost_exceeds_payment_degenerate(self):
-        # Degenerate Case!
-        payment, cost, participation, slippage = 1, 10, 0, -1
-        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
+    def test_reward_datum_slippage_reduces_reward(self):
+        """Negative slippage reduces COW reward."""
+        primary_reward, secondary_reward, slippage, num_quotes = 4, 2, -1, 0
+        test_datum = self.sample_record(primary_reward, secondary_reward, slippage, 0)
         self.assertFalse(test_datum.is_overdraft())
-        self.assertEqual(
-            test_datum.as_payouts(),
-            [],
-        )
-
-    def test_reward_datum_cost_exceeds_payment_non_degenerate(self):
-        # Payment + Slippage combined do not exceed costs so only that is returned
-
-        triplets = [(1, 0, 1), (2, 0, -1), (1, 1, 1)]
-        cost = max(sum(x) for x in triplets) + 1
-
-        for payment, participation, slippage in triplets:
-            test_datum = self.sample_record(payment, cost, participation, slippage, 0)
-            self.assertFalse(test_datum.is_overdraft())
-            self.assertLess(test_datum.total_outgoing_eth(), cost)
-            self.assertEqual(
-                test_datum.as_payouts(),
-                [
-                    Transfer(
-                        token=None,
-                        recipient=self.solver,
-                        amount_wei=test_datum.total_outgoing_eth(),
-                    )
-                ],
-            )
-
-    def test_reward_datum_overdraft(self):
-        # Any time when payment + participation + slippage < 0
-        triplets = [
-            (-1, 0, 0),
-            (0, 0, -1),
-        ]
-        for payment, participation, slippage in triplets:
-            for cost in [0, 1, 100]:
-                # Doesn't matter their costs, they are in overdraft state!
-                rec = self.sample_record(payment, cost, participation, slippage, 0)
-                self.assertTrue(rec.is_overdraft())
-
-    def test_reward_datum_1_1_1_1(self):
-        payment, cost, participation, slippage = 1, 1, 1, 1
-        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
-
-        self.assertFalse(test_datum.is_overdraft())
-        self.assertEqual(
-            test_datum.total_cow_reward(), participation * self.conversion_rate
-        )
         self.assertEqual(
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=None,
-                    recipient=self.solver,
-                    amount_wei=cost + slippage,
-                ),
-                Transfer(
                     token=self.cow_token,
                     recipient=self.reward_target,
-                    amount_wei=test_datum.total_cow_reward(),
+                    amount_wei=(primary_reward + secondary_reward + slippage)
+                    * self.conversion_rate,
                 ),
             ],
         )
 
-    def test_payout_negative_payments(self):
-        payment, cost, participation, slippage = -1, 1, 1, 1
-        test_datum = self.sample_record(payment, cost, participation, slippage, 0)
+    def test_reward_datum_slippage_exceeds_reward(self):
+        """Negative slippage leads to overtraft."""
+        primary_reward, participation, slippage = 1, 2, -4
+        test_datum = self.sample_record(primary_reward, participation, slippage, 0)
+        self.assertTrue(test_datum.is_overdraft())
+        self.assertEqual(test_datum.as_payouts(),[])
+
+    def test_reward_datum_reward_reduces_slippage(self):
+        """Negative reward  reduces ETH slippage payment."""
+        primary_reward, secondary_reward, slippage = -2, 1, 3
+        test_datum = self.sample_record(primary_reward, secondary_reward, slippage, 0)
+        self.assertEqual(
+            test_datum.total_outgoing_eth(),
+            primary_reward + secondary_reward + slippage,
+        )
         self.assertEqual(
             test_datum.as_payouts(),
             [
