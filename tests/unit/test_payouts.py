@@ -442,7 +442,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         primary_reward = -1
         test_datum = self.sample_record(primary_reward, 0, 0, 0)
         self.assertTrue(test_datum.is_overdraft())
-        self.assertEqual(test_datum.as_payouts(),[])
+        self.assertEqual(test_datum.as_payouts(), [])
 
     def test_reward_datum_0_0_pm1_0(self):
         """Slippag only."""
@@ -522,7 +522,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         primary_reward, participation, slippage = 1, 2, -4
         test_datum = self.sample_record(primary_reward, participation, slippage, 0)
         self.assertTrue(test_datum.is_overdraft())
-        self.assertEqual(test_datum.as_payouts(),[])
+        self.assertEqual(test_datum.as_payouts(), [])
 
     def test_reward_datum_reward_reduces_slippage(self):
         """Negative reward  reduces ETH slippage payment."""
