@@ -417,7 +417,7 @@ def construct_payouts(
     # Sort by solver before breaking this data frame into Transfer objects.
     complete_payout_df = complete_payout_df.sort_values("solver")
 
-    performance_reward = complete_payout_df["reward_cow"].sum()
+    performance_reward = complete_payout_df["primary_reward_cow"].sum()
     participation_reward = complete_payout_df["secondary_reward_cow"].sum()
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
     protocol_fee = complete_payout_df["protocol_fee_eth"].sum()
