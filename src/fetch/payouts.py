@@ -38,6 +38,7 @@ PAYMENT_COLUMNS = {
     "secondary_reward_cow",
     "quote_reward_cow",
     "protocol_fee_eth",
+    "network_fee_eth",
 }
 SLIPPAGE_COLUMNS = {
     "solver",
@@ -85,7 +86,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
     ):
         assert secondary_reward_eth >= 0, "invalid secondary_reward_eth"
         assert secondary_reward_cow >= 0, "invalid secondary_reward_cow"
-        assert quote_reward_cow >= 0, "invalid secondary_reward_cow"
+        assert quote_reward_cow >= 0, "invalid quote_reward_cow"
 
         self.solver = solver
         self.solver_name = solver_name

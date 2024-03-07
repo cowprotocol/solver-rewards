@@ -160,17 +160,17 @@ reward_data AS (
         case
             when block_number is not null
             and block_number > block_deadline then 0
-            else coalesce(execution_cost, 0)
+            else coalesce(execution_cost, 0) -- if block_number is null, execution cost is 0
         end as execution_cost,
         case
             when block_number is not null
             and block_number > block_deadline then 0
-            else coalesce(surplus, 0)
+            else coalesce(surplus, 0) -- if block_number is null, surplus is 0
         end as surplus,
         case
             when block_number is not null
             and block_number > block_deadline then 0
-            else coalesce(fee, 0)
+            else coalesce(fee, 0) -- if block_number is null, fee is 0
         end as fee,
         -- scores
         winning_score,

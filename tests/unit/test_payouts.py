@@ -285,6 +285,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 "num_quotes": self.num_quotes,
                 "primary_reward_eth": [600000000000000.0, 1.2e16, -1e16, 0.0],
                 "protocol_fee_eth": self.protocol_fee_eth,
+                "network_fee_eth": [100.0, 200.0, 300.0, 0.0],
                 "primary_reward_cow": [
                     600000000000000000.0,
                     12000000000000000000.0,
