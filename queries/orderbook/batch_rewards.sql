@@ -86,7 +86,7 @@ order_protocol_fee AS (
                 -- impossible anyways. This query will return a division by
                 -- zero error in that case.
                 LEAST(
-                    fp.max_volume_factor * os.sell_amount * os.buy_amount / (os.sell_amount - os.observed_fee),
+                    fp.max_volume_factor / (1 - fp.max_volume_factor) * os.buy_amount,
                     -- at most charge a fraction of volume
                     fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
                 )
@@ -96,12 +96,14 @@ order_protocol_fee AS (
                     fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
                 )
             END
-            WHEN fp.kind = 'volume' THEN fp.volume_factor / (1 + fp.volume_factor) * os.sell_amount
+            WHEN fp.kind = 'volume' THEN CASE
+                WHEN os.kind = 'sell' THEN
+                    fp.volume_factor / (1 - fp.volume_factor) * os.buy_amount
+                WHEN os.kind = 'buy' THEN
+                    fp.volume_factor / (1 + fp.volume_factor) * os.sell_amount
+            END
         END AS protocol_fee,
-        CASE
-            WHEN fp.kind = 'surplus' THEN os.surplus_token
-            WHEN fp.kind = 'volume' THEN os.sell_token
-        END AS protocol_fee_token
+        os.surplus_token AS protocol_fee_token
     FROM
         order_surplus os
         JOIN fee_policies fp -- contains protocol fee policy
