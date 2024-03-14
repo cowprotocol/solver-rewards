@@ -45,12 +45,14 @@ class MultiInstanceDBFetcher:
             .replace("{{EPSILON_UPPER}}", "12000000000000000")
         )
         results = []
+
         results.append(
             self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
         )
-        results.append(
-            self.exec_query(query=batch_reward_query_barn, engine=self.connections[1])
-        )
+        for engine in self.connections[1:]:
+            results.append(
+                self.exec_query(query=batch_reward_query_barn, engine=engine)
+            )
 
         return pd.concat(results)
 
