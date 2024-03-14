@@ -46,6 +46,8 @@ class MultiInstanceDBFetcher:
         )
         results = []
 
+        # Here, we use the convention that we run the prod query for the first connection
+        # and the barn query to all other connections
         results.append(
             self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
         )
