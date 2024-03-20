@@ -86,12 +86,12 @@ order_protocol_fee AS (
                 -- impossible anyways. This query will return a division by
                 -- zero error in that case.
                 LEAST(
-                    fp.max_volume_factor / (1 - fp.max_volume_factor) * os.buy_amount,
+                    fp.surplus_max_volume_factor / (1 - fp.surplus_max_volume_factor) * os.buy_amount,
                     -- at most charge a fraction of volume
                     fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
                 )
                 WHEN os.kind = 'buy' THEN LEAST(
-                    fp.max_volume_factor / (1 + fp.max_volume_factor) * os.sell_amount,
+                    fp.surplus_max_volume_factor / (1 + fp.surplus_max_volume_factor) * os.sell_amount,
                     -- at most charge a fraction of volume
                     fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
                 )

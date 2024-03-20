@@ -395,9 +395,7 @@ def construct_payouts(
     reward_token = TokenId.COW
 
     quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
-    batch_rewards_df = orderbook.get_solver_rewards_temp(
-        dune.start_block, dune.end_block
-    )
+    batch_rewards_df = orderbook.get_solver_rewards(dune.start_block, dune.end_block)
     merged_df = pandas.merge(
         quote_rewards_df, batch_rewards_df, on="solver", how="outer"
     ).fillna(0)

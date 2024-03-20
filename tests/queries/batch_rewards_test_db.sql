@@ -116,7 +116,7 @@ CREATE TABLE fee_policies (
   -- The fee should be taken as a percentage of the price improvement. The value is between 0 and 1.
   surplus_factor double precision,
   -- Cap the fee at a certain percentage of the order volume. The value is between 0 and 1.
-  max_volume_factor double precision,
+  surplus_max_volume_factor double precision,
   -- The fee should be taken as a percentage of the order volume. The value is between 0 and 1.
   volume_factor double precision,
   PRIMARY KEY (auction_id, order_uid, application_order)
@@ -247,7 +247,7 @@ VALUES ('\x03'::bytea, 53, 0, 5931372, NULL),
 ('\x05'::bytea, 55, 0, 6000000, NULL),
 ('\x06'::bytea, 56, 0, 6000000, NULL);
 
-INSERT INTO fee_policies (auction_id, order_uid, application_order, kind, surplus_factor, max_volume_factor, volume_factor)
+INSERT INTO fee_policies (auction_id, order_uid, application_order, kind, surplus_factor, surplus_max_volume_factor, volume_factor)
 VALUES (53, '\x03'::bytea, 3, 'surplus', 0.5, 0.02, NULL),
 (54, '\x04'::bytea, 4, 'surplus', 0.75, 0.1, NULL),
 (55, '\x05'::bytea, 5, 'volume', NULL, NULL, 0.0015),

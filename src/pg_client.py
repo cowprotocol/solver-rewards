@@ -30,45 +30,31 @@ class MultiInstanceDBFetcher:
         """
         Returns aggregated solver rewards for accounting period defined by block range
         """
-        batch_reward_query = (
-            open_query("orderbook/batch_rewards.sql")
-            .replace("{{start_block}}", start_block)
-            .replace("{{end_block}}", end_block)
-            .replace("{{EPSILON_LOWER}}", "10000000000000000")
-            .replace("{{EPSILON_UPPER}}", "12000000000000000")
-        )
-        results = [
-            self.exec_query(query=batch_reward_query, engine=engine)
-            for engine in self.connections
-        ]
-
-        return pd.concat(results)
-
-    def get_solver_rewards_temp(self, start_block: str, end_block: str) -> DataFrame:
-        """
-        Returns aggregated solver rewards for accounting period defined by block range
-        """
         batch_reward_query_prod = (
-            open_query("orderbook/batch_rewards.sql")
+            open_query("orderbook/prod_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
             .replace("{{EPSILON_LOWER}}", "10000000000000000")
             .replace("{{EPSILON_UPPER}}", "12000000000000000")
         )
         batch_reward_query_barn = (
-            open_query("orderbook/batch_rewards_barn.sql")
+            open_query("orderbook/barn_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
             .replace("{{EPSILON_LOWER}}", "10000000000000000")
             .replace("{{EPSILON_UPPER}}", "12000000000000000")
         )
         results = []
+
+        # Here, we use the convention that we run the prod query for the first connection
+        # and the barn query to all other connections
         results.append(
             self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
         )
-        results.append(
-            self.exec_query(query=batch_reward_query_barn, engine=self.connections[1])
-        )
+        for engine in self.connections[1:]:
+            results.append(
+                self.exec_query(query=batch_reward_query_barn, engine=engine)
+            )
 
         return pd.concat(results)
 
