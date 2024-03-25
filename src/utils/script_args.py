@@ -36,6 +36,12 @@ def generic_script_init(description: str) -> ScriptArgs:
         default=str(date.today() - timedelta(days=7)),
     )
     parser.add_argument(
+        "--end",
+        type=str,
+        help="Accounting Period Start. Defaults to today",
+        default=str(date.today()),
+    )
+    parser.add_argument(
         "--post-tx",
         type=bool,
         help="Flag indicating whether multisend should be posted to safe "
@@ -73,7 +79,7 @@ def generic_script_init(description: str) -> ScriptArgs:
     return ScriptArgs(
         dune=DuneFetcher(
             dune=DuneClient(os.environ["DUNE_API_KEY"]),
-            period=AccountingPeriod(args.start),
+            period=AccountingPeriod(args.start, args.end),
         ),
         post_tx=args.post_tx,
         dry_run=args.dry_run,
