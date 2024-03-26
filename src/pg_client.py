@@ -30,31 +30,52 @@ class MultiInstanceDBFetcher:
         """
         Returns aggregated solver rewards for accounting period defined by block range
         """
+        transition_block = "19468663"
         batch_reward_query_prod = (
             open_query("orderbook/prod_batch_rewards.sql")
-            .replace("{{start_block}}", start_block)
+            .replace("{{start_block}}", transition_block)
             .replace("{{end_block}}", end_block)
             .replace("{{EPSILON_LOWER}}", "10000000000000000")
             .replace("{{EPSILON_UPPER}}", "12000000000000000")
         )
         batch_reward_query_barn = (
             open_query("orderbook/barn_batch_rewards.sql")
-            .replace("{{start_block}}", start_block)
+            .replace("{{start_block}}", transition_block)
             .replace("{{end_block}}", end_block)
             .replace("{{EPSILON_LOWER}}", "10000000000000000")
             .replace("{{EPSILON_UPPER}}", "12000000000000000")
         )
-        results = []
+        batch_reward_query_prod_cip20 = (
+            open_query("orderbook/prod_batch_rewards_cip20.sql")
+            .replace("{{start_block}}", start_block)
+            .replace("{{end_block}}", transition_block)
+            .replace("{{EPSILON_LOWER}}", "10000000000000000")
+            .replace("{{EPSILON_UPPER}}", "12000000000000000")
+        )
+
+        cip_20_prod_results = self.exec_query(query=batch_reward_query_prod_cip20, engine=self.connections[0])
+        cip_20_barn_results = self.exec_query(query=batch_reward_query_prod_cip20, engine=self.connections[1])
+        cip_38_prod_results = self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
+        cip_38_barn_results = self.exec_query(query=batch_reward_query_barn, engine=self.connections[1])
+
+        cip_20_prod_results = cip_20_prod_results.set_index(['solver'])
+        cip_20_barn_results = cip_20_barn_results.set_index(['solver'])
+        cip_38_prod_results = cip_38_prod_results.set_index(['solver'])
+        cip_38_barn_results = cip_38_barn_results.set_index(['solver'])
+
+        final_prod_results = cip_38_prod_results.add(cip_20_prod_results,fill_value=0)
+        final_barn_results = cip_38_barn_results.add(cip_20_barn_results, fill_value=0) #cip_20_barn_results + cip_38_barn_results
+        results = [final_prod_results, final_barn_results]
 
         # Here, we use the convention that we run the prod query for the first connection
         # and the barn query to all other connections
-        results.append(
-            self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
-        )
-        for engine in self.connections[1:]:
-            results.append(
-                self.exec_query(query=batch_reward_query_barn, engine=engine)
-            )
+        #results.append(
+        #    self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
+        #)
+        #for engine in self.connections[1:]:
+        #    results.append(
+        #        self.exec_query(query=batch_reward_query_barn, engine=engine)
+        #    )
 
         return pd.concat(results)
 
