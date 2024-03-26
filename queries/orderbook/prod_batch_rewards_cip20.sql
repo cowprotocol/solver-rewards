@@ -268,16 +268,10 @@ aggregate_results_temp as (
 aggregate_results as (
     SELECT
         solver,
-        CASE
-            WHEN payment_eth - execution_cost_eth > 0 THEN payment_eth - execution_cost_eth
-            ELSE 0
-        END AS primary_reward_eth,
+        payment_eth - execution_cost_eth as primary_reward_eth,
         num_participating_batches,
         protocol_fee_eth,
-        CASE
-            WHEN payment_eth - execution_cost_eth > 0 THEN execution_cost_eth
-            ELSE payment_eth
-        END AS network_fee_eth
+        execution_cost_eth as network_fee_eth
     FROM
         aggregate_results_temp
 )
