@@ -49,7 +49,7 @@ order_surplus AS (
             WHEN o.kind = 'buy' THEN t.buy_amount * (o.sell_amount + o.fee_amount) / o.buy_amount - t.sell_amount
         END AS surplus,
         CASE
-            WHEN o.kind = 'sell' THEN t.buy_amount - t.sell_amount * oq.buy_amount * (1 - 1 / oq.sell_amount * oq.gas_amount * oq.gas_price / oq.sell_token_price) / oq.sell_amount
+            WHEN o.kind = 'sell' THEN t.buy_amount - t.sell_amount * (oq.buy_amount - oq.buy_amount / oq.sell_amount * oq.gas_amount * oq.gas_price / oq.sell_token_price) / oq.sell_amount
             WHEN o.kind = 'buy' THEN t.buy_amount * (oq.sell_amount + oq.gas_amount * oq.gas_price / oq.sell_token_price) / oq.buy_amount - t.sell_amount
         END AS price_improvement,
         CASE
@@ -109,10 +109,8 @@ order_protocol_fee AS (
                     fp.price_improvement_max_volume_factor / (1 - fp.price_improvement_max_volume_factor) * os.buy_amount,
                     -- charge a fraction of price improvement, at most 0
                     GREATEST(
-                        LEAST(
-                            fp.price_improvement_factor / (1 - fp.price_improvement_factor) * price_improvement,
-                            fp.price_improvement_factor / (1 - fp.price_improvement_factor) * surplus
-                        ),
+                        fp.price_improvement_factor / (1 - fp.price_improvement_factor) * price_improvement
+                        ,
                         0
                     )
                 )
@@ -121,10 +119,7 @@ order_protocol_fee AS (
                     fp.price_improvement_max_volume_factor / (1 + fp.price_improvement_max_volume_factor) * os.sell_amount,
                     -- charge a fraction of price improvement
                     GREATEST(
-                        LEAST(
-                            fp.price_improvement_factor / (1 - fp.price_improvement_factor) * price_improvement,
-                            fp.price_improvement_factor / (1 - fp.price_improvement_factor) * surplus
-                        ),
+                        fp.price_improvement_factor / (1 - fp.price_improvement_factor) * price_improvement,
                         0
                     )
                 )
