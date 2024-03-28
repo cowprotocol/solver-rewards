@@ -6,6 +6,7 @@ DROP TABLE IF EXISTS auction_prices;
 DROP TABLE IF EXISTS orders;
 DROP TYPE IF EXISTS OrderKind;
 DROP TYPE IF EXISTS OrderClass;
+DROP TABLE IF EXISTS order_quotes;
 DROP TABLE IF EXISTS trades;
 DROP TABLE IF EXISTS order_execution;
 DROP TABLE IF EXISTS fee_policies;
@@ -81,6 +82,17 @@ CREATE TABLE orders (
     class OrderClass NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS order_quotes
+(
+  order_uid bytea PRIMARY KEY,
+  gas_amount numeric(78, 0) NOT NULL,
+  gas_price numeric(78, 0) NOT NULL,
+  sell_token_price float NOT NULL,
+  sell_amount numeric(78, 0) NOT NULL,
+  buy_amount numeric(78, 0) NOT NULL,
+  solver bytea NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS trades
 (
   block_number bigint         NOT NULL,
@@ -104,7 +116,7 @@ CREATE TABLE IF NOT EXISTS order_execution
   PRIMARY KEY (order_uid, auction_id)
 );
 
-CREATE TYPE PolicyKind AS ENUM ('surplus', 'volume');
+CREATE TYPE PolicyKind AS ENUM ('surplus', 'volume', 'priceimprovement');
 
 CREATE TABLE fee_policies (
   auction_id bigint NOT NULL,
@@ -119,6 +131,8 @@ CREATE TABLE fee_policies (
   surplus_max_volume_factor double precision,
   -- The fee should be taken as a percentage of the order volume. The value is between 0 and 1.
   volume_factor double precision,
+  price_improvement_factor double precision,
+  price_improvement_max_volume_factor double precision,
   PRIMARY KEY (auction_id, order_uid, application_order)
 );
 
@@ -129,6 +143,7 @@ TRUNCATE settlement_scores;
 TRUNCATE settlement_observations;
 TRUNCATE auction_prices;
 TRUNCATE orders;
+TRUNCATE order_quotes;
 TRUNCATE trades;
 TRUNCATE fee_policies;
 
@@ -146,7 +161,11 @@ VALUES (1, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7111'::by
        (53, 10, '\x01'::bytea, '\x03'::bytea, '\x01'::bytea, 2, 53),
        (54, 10, '\x02'::bytea, '\x04'::bytea, '\x02'::bytea, 2, 54),
        (55, 10, '\x01'::bytea, '\x05'::bytea, '\x01'::bytea, 3, 55),
-       (56, 10, '\x02'::bytea, '\x06'::bytea, '\x02'::bytea, 3, 56);
+       (56, 10, '\x02'::bytea, '\x06'::bytea, '\x02'::bytea, 3, 56),
+       (57, 10, '\x03'::bytea, '\x07'::bytea, '\x03'::bytea, 0, 57),
+       (58, 10, '\x03'::bytea, '\x08'::bytea, '\x03'::bytea, 1, 58),
+       (59, 10, '\x03'::bytea, '\x09'::bytea, '\x03'::bytea, 2, 59),
+       (60, 10, '\x03'::bytea, '\x0a'::bytea, '\x03'::bytea, 3, 60);
 
 INSERT INTO auction_participants (auction_id, participant)
 VALUES (1, '\x5222222222222222222222222222222222222222'::bytea),
@@ -176,7 +195,11 @@ VALUES (1, '\x5222222222222222222222222222222222222222'::bytea),
        (53, '\x01'::bytea),
        (54, '\x02'::bytea),
        (55, '\x01'::bytea),
-       (56, '\x02'::bytea);
+       (56, '\x02'::bytea),
+       (57, '\x03'::bytea),
+       (58, '\x03'::bytea),
+       (59, '\x03'::bytea),
+       (60, '\x03'::bytea);
 
 INSERT INTO settlement_scores (auction_id, winning_score, reference_score, winner, block_deadline, simulation_block)
 VALUES (1, 6000000000000000000, 4000000000000000000, '\x5111111111111111111111111111111111111111'::bytea, 10, 0),
@@ -193,7 +216,11 @@ VALUES (1, 6000000000000000000, 4000000000000000000, '\x511111111111111111111111
        (53, 1000000000000000, 0, '\x01'::bytea, 62, 52),
        (54, 2000000000000000, 0, '\x02'::bytea, 62, 52),
        (55, 500000000000000, 0, '\x01'::bytea, 64, 54),
-       (56, 500000000000000, 0, '\x02'::bytea, 65, 55); -- score probably wrong, does not take protocol fee into account
+       (56, 500000000000000, 0, '\x02'::bytea, 65, 55), -- score probably wrong, does not take protocol fee into account
+       (57, 1000000000000000, 0, '\x03'::bytea, 66, 56),
+       (58, 1500000000000000, 0, '\x03'::bytea, 67, 57),
+       (59, 500000000000000, 0, '\x03'::bytea, 68, 58),
+       (60, 500000000000000, 0, '\x03'::bytea, 69, 59);
 
 INSERT INTO settlement_observations (block_number, log_index, gas_used, effective_gas_price, surplus, fee)
 VALUES (1, 10, 100000, 2000000000, 6000000000000000000, 200000000000000),
@@ -209,7 +236,11 @@ VALUES (1, 10, 100000, 2000000000, 6000000000000000000, 200000000000000),
        (53, 10, 100000, 25000000000, 500000000000000, 3000000000000000),
        (54, 10, 100000, 25000000000, 500000000000000, 4000000000000000),
        (55, 10, 100000, 25000000000, 500000000000000, 2500000000000000),
-       (56, 10, 100000, 25000000000, 500000000000000, 2500000000000000);
+       (56, 10, 100000, 25000000000, 500000000000000, 2500000000000000),
+       (57, 10, 100000, 25000000000, 750000000000000, 2500000000000000),
+       (58, 10, 100000, 25000000000, 1000000000000000, 2500000000000000),
+       (59, 10, 100000, 25000000000, 500000000000000, 2500000000000000),
+       (60, 10, 100000, 25000000000, 250000000000000, 2500000000000000);
 
 INSERT INTO auction_prices (auction_id, token, price)
 VALUES (51, '\x01', 500000000000000000000000000),
@@ -223,7 +254,15 @@ VALUES (51, '\x01', 500000000000000000000000000),
 (55, '\x01', 500000000000000000000000000),
 (55, '\x02', 500000000000000),
 (56, '\x01', 500000000000000000000000000),
-(56, '\x02', 500000000000000);
+(56, '\x02', 500000000000000),
+(57, '\x01', 500000000000000000000000000),
+(57, '\x02', 500000000000000),
+(58, '\x01', 500000000000000000000000000),
+(58, '\x02', 500000000000000),
+(59, '\x01', 500000000000000000000000000),
+(59, '\x02', 500000000000000),
+(60, '\x01', 500000000000000000000000000),
+(60, '\x02', 500000000000000);
 
 INSERT INTO orders (uid, sell_token, buy_token, sell_amount, buy_amount, fee_amount, kind, partially_fillable, full_fee_amount, class)
 VALUES ('\x01'::bytea, '\x01'::bytea, '\x02'::bytea, 95000000, 94000000000000000000, 5000000, 'sell', 'f', 5000000, 'market'), -- sell market order
@@ -231,7 +270,17 @@ VALUES ('\x01'::bytea, '\x01'::bytea, '\x02'::bytea, 95000000, 94000000000000000
 ('\x03'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't', 0, 'limit'), -- partially fillable sell limit order
 ('\x04'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 100000000000000000000, 0, 'buy', 't', 0, 'limit'), -- partially fillable buy limit order
 ('\x05'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit'), -- in market sell limit order
-('\x06'::bytea, '\x01'::bytea, '\x02'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 0, 'limit'); -- in market buy limit order
+('\x06'::bytea, '\x01'::bytea, '\x02'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 0, 'limit'), -- in market buy limit order
+('\x07'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit'), -- in market sell limit order
+('\x08'::bytea, '\x01'::bytea, '\x02'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 0, 'limit'), -- in market buy limit order
+('\x09'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit'), -- in market sell limit order
+('\x0a'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit'); -- in market sell limit order
+
+INSERT INTO order_quotes (order_uid, gas_amount, gas_price, sell_token_price, sell_amount, buy_amount, solver)
+VALUES ('\x07'::bytea, 100000, 25000000000, 500000000., 100000000, 100000000000000000000, '\x01'::bytea),
+('\x08'::bytea, 100000, 25000000000, 500000000., 100000000, 100000000000000000000, '\x02'::bytea),
+('\x09'::bytea, 100000, 25000000000, 500000000., 100000000, 90000000000000000000, '\x02'::bytea),
+('\x0a'::bytea, 100000, 25000000000, 500000000., 100000000, 100000000000000000000, '\x02'::bytea);
 
 INSERT INTO trades (block_number, log_index, order_uid, sell_amount, buy_amount, fee_amount)
 VALUES (51, 0, '\x01'::bytea, 100000000, 95000000000000000000, 5000000),
@@ -239,16 +288,29 @@ VALUES (51, 0, '\x01'::bytea, 100000000, 95000000000000000000, 5000000),
 (53, 0, '\x03'::bytea, 100000000, 101000000000000000000, 0),
 (54, 0, '\x04'::bytea, 99000000, 100000000000000000000, 0),
 (55, 0, '\x05'::bytea, 100000000, 95000000000000000000, 0),
-(56, 0, '\x06'::bytea, 105000000, 100000000000000000000, 0);
+(56, 0, '\x06'::bytea, 105000000, 100000000000000000000, 0),
+(57, 0, '\x07'::bytea, 100000000, 95500000000000000000, 0),
+(58, 0, '\x08'::bytea, 104000000, 100000000000000000000, 0),
+(59, 0, '\x09'::bytea, 100000000, 95000000000000000000, 0),
+(60, 0, '\x0a'::bytea, 100000000, 94500000000000000000, 0);
 
 INSERT INTO order_execution (order_uid, auction_id, reward, surplus_fee, solver_fee)
 VALUES ('\x03'::bytea, 53, 0, 5931372, NULL),
 ('\x04'::bytea, 54, 0, 6000000, NULL),
 ('\x05'::bytea, 55, 0, 6000000, NULL),
-('\x06'::bytea, 56, 0, 6000000, NULL);
+('\x06'::bytea, 56, 0, 6000000, NULL),
+('\x07'::bytea, 57, 0, 6000000, NULL),
+('\x08'::bytea, 58, 0, 6000000, NULL),
+('\x09'::bytea, 59, 0, 6000000, NULL),
+('\x0a'::bytea, 60, 0, 6000000, NULL);
 
-INSERT INTO fee_policies (auction_id, order_uid, application_order, kind, surplus_factor, surplus_max_volume_factor, volume_factor)
-VALUES (53, '\x03'::bytea, 3, 'surplus', 0.5, 0.02, NULL),
-(54, '\x04'::bytea, 4, 'surplus', 0.75, 0.1, NULL),
-(55, '\x05'::bytea, 5, 'volume', NULL, NULL, 0.0015),
-(56, '\x06'::bytea, 6, 'surplus', 0.9, 0.01, NULL);
+INSERT INTO fee_policies (auction_id, order_uid, application_order, kind, surplus_factor, surplus_max_volume_factor, volume_factor, price_improvement_factor, price_improvement_max_volume_factor)
+VALUES (53, '\x03'::bytea, 3, 'surplus', 0.5, 0.02, NULL, NULL, NULL),
+(54, '\x04'::bytea, 4, 'surplus', 0.75, 0.1, NULL, NULL, NULL),
+(55, '\x05'::bytea, 5, 'volume', NULL, NULL, 0.0015, NULL, NULL),
+(56, '\x06'::bytea, 6, 'surplus', 0.9, 0.01, NULL, NULL, NULL),
+(57, '\x07'::bytea, 7, 'priceimprovement', NULL, NULL, NULL, 0.5, 0.01),
+(58, '\x08'::bytea, 8, 'priceimprovement', NULL, NULL, NULL, 0.5, 0.01),
+(59, '\x09'::bytea, 9, 'priceimprovement', NULL, NULL, NULL, 0.5, 0.01),
+(60, '\x0a'::bytea, 9, 'priceimprovement', NULL, NULL, NULL, 0.5, 0.01);
+
