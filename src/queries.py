@@ -32,17 +32,17 @@ class QueryData:
 QUERIES = {
     "PERIOD_BLOCK_INTERVAL": QueryData(
         name="Block Interval for Accounting Period",
-        filepath="period_block_interval.sql",
+        filepath="period_block_interval_3333356.sql",
         q_id=3333356,
     ),
     "VOUCH_REGISTRY": QueryData(
         name="Vouch Registry",
-        filepath="vouch_registry.sql",
+        filepath="vouch_registry_1541516.sql",
         q_id=1541516,
     ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
-        filepath="period_slippage.sql",
+        filepath="period_slippage_3427730.sql",
         q_id=3427730,
     ),
     "DASHBOARD_SLIPPAGE": QueryData(

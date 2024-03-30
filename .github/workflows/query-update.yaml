@@ -1,0 +1,32 @@
+name: On Merge to Main
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  update-queries:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Necessary to get a complete history for diff
+
+      - name: Install necessary tools
+        run: sudo apt-get install -y jq # Installing jq for JSON processing
+
+      - name: Get list of changed files in a specific directory
+        id: get-changed-files
+        run: |
+          CHANGED_FILES=$(git diff \
+            --name-only ${{ github.event.before }} ${{ github.sha }} \
+            -- queries/dune_v2 | paste -sd "," -)
+          echo "CHANGED_FILES=$CHANGED_FILES" >> $GITHUB_ENV
+          echo "changed_files=$CHANGED_FILES" >> $GITHUB_OUTPUT
+
+      - name: Update Queries
+        uses: bh2smith/dune-update@v0.1.0
+        with:
+          changedQueries: ${{ steps.get-changed-files.outputs.changed_files }}
+          duneApiKey: ${{ secrets.DUNE_API_KEY }}
