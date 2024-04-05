@@ -295,7 +295,9 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     return pdf
 
 
-def prepare_transfers(payout_df: DataFrame, period: AccountingPeriod) -> PeriodPayouts:
+def prepare_transfers(
+    payout_df: DataFrame, integrator_fees_df: DataFrame, period: AccountingPeriod
+) -> PeriodPayouts:
     """
     Manipulates the payout DataFrame to split into ETH and COW.
     Specifically, We deduct total_rewards by total_execution_cost (both initially in ETH)
@@ -318,13 +320,50 @@ def prepare_transfers(payout_df: DataFrame, period: AccountingPeriod) -> PeriodP
             overdrafts.append(overdraft)
         transfers += payout_datum.as_payouts()
 
+    raw_protocol_fee_wei = int(payout_df.protocol_fee_eth.sum())
+    integrators_fee_wei = {}
+    for _, row in integrator_fees_df.iterrows():
+        if row["integrators_list"] is None:
+            continue
+        n = len(row["integrators_list"])
+        for i in range(n):
+            address = row["integrators_list"][i]
+            amount_wei = int(row["integrators_payments_in_eth"][i])
+            if address in integrators_fee_wei.keys():
+                integrators_fee_wei[address] += amount_wei
+            else:
+                integrators_fee_wei[address] = amount_wei
+    total_integrators_fee_wei = 0
+    for address in integrators_fee_wei.keys():
+        total_integrators_fee_wei += integrators_fee_wei[address]
+
+    actual_protocol_fee = raw_protocol_fee_wei - total_integrators_fee_wei
+    integrators_fee_tax_wei = 0.15 * total_integrators_fee_wei
+    for address in integrators_fee_wei.keys():
+        integrators_fee_wei[address] = 0.85 * integrators_fee_wei[address]
+
     transfers.append(
         Transfer(
             token=None,
             recipient=PROTOCOL_FEE_SAFE,
-            amount_wei=int(payout_df.protocol_fee_eth.sum()),
+            amount_wei=actual_protocol_fee,
         )
     )
+    transfers.append(
+        Transfer(
+            token=None,
+            recipient=PROTOCOL_FEE_SAFE,
+            amount_wei=integrators_fee_tax_wei,
+        )
+    )
+    for address in integrators_fee_wei.keys():
+        transfers.append(
+            Transfer(
+                token=None,
+                recipient=address,
+                amount_wei=integrators_fee_wei[address],
+            )
+        )
 
     return PeriodPayouts(overdrafts, transfers)
 
@@ -396,6 +435,12 @@ def construct_payouts(
 
     quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
     batch_rewards_df = orderbook.get_solver_rewards(dune.start_block, dune.end_block)
+    integrator_fees_df = batch_rewards_df[
+        ["integrators_list", "integrators_payments_in_eth"]
+    ]
+    batch_rewards_df = batch_rewards_df.drop(
+        ["integrators_list", "integrators_payments_in_eth"], axis=1
+    )
     merged_df = pandas.merge(
         quote_rewards_df, batch_rewards_df, on="solver", how="outer"
     ).fillna(0)
@@ -428,7 +473,7 @@ def construct_payouts(
         f"Protocol Fees: {protocol_fee / 10 ** 18:.4f}\n",
         category=Category.TOTALS,
     )
-    payouts = prepare_transfers(complete_payout_df, dune.period)
+    payouts = prepare_transfers(complete_payout_df, integrator_fees_df, dune.period)
     for overdraft in payouts.overdrafts:
         dune.log_saver.print(str(overdraft), Category.OVERDRAFT)
     return payouts.transfers
