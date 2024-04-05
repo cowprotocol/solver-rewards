@@ -325,28 +325,29 @@ def prepare_transfers(
     for _, row in integrator_fees_df.iterrows():
         if row["integrators_list"] is None:
             continue
-        n = len(row["integrators_list"])
-        for i in range(n):
+        for i in range(len(row["integrators_list"])):
             address = row["integrators_list"][i]
-            amount_wei = int(row["integrators_payments_in_eth"][i])
-            if address in integrators_fee_wei.keys():
-                integrators_fee_wei[address] += amount_wei
+            if address in integrators_fee_wei:
+                integrators_fee_wei[address] += int(
+                    row["integrators_payments_in_eth"][i]
+                )
             else:
-                integrators_fee_wei[address] = amount_wei
+                integrators_fee_wei[address] = int(
+                    row["integrators_payments_in_eth"][i]
+                )
     total_integrators_fee_wei = 0
-    for address in integrators_fee_wei.keys():
+    for address in integrators_fee_wei:
         total_integrators_fee_wei += integrators_fee_wei[address]
-
-    actual_protocol_fee = raw_protocol_fee_wei - total_integrators_fee_wei
-    integrators_fee_tax_wei = 0.15 * total_integrators_fee_wei
-    for address in integrators_fee_wei.keys():
         integrators_fee_wei[address] = 0.85 * integrators_fee_wei[address]
+
+    final_protocol_fee_wei = raw_protocol_fee_wei - total_integrators_fee_wei
+    integrators_fee_tax_wei = 0.15 * total_integrators_fee_wei
 
     transfers.append(
         Transfer(
             token=None,
             recipient=PROTOCOL_FEE_SAFE,
-            amount_wei=actual_protocol_fee,
+            amount_wei=final_protocol_fee_wei,
         )
     )
     transfers.append(
