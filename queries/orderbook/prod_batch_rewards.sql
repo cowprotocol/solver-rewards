@@ -78,6 +78,7 @@ order_protocol_fee AS (
         os.auction_id,
         os.solver,
         os.tx_hash,
+        os.order_uid,
         os.sell_amount,
         os.buy_amount,
         os.sell_token,
@@ -140,18 +141,21 @@ order_protocol_fee AS (
 ),
 order_protocol_fee_prices AS (
     SELECT
+        opf.auction_id,
         opf.solver,
         opf.tx_hash,
+        opf.order_uid,
         opf.surplus,
         opf.protocol_fee,
+        opf.protocol_fee_token,
         CASE
             WHEN opf.sell_token != opf.protocol_fee_token THEN (opf.sell_amount - opf.observed_fee) / opf.buy_amount * opf.protocol_fee
             ELSE opf.protocol_fee
         END AS network_fee_correction,
         opf.sell_token as network_fee_token,
-        ap_surplus.price / pow(10, 18) as surplus_token_price,
-        ap_protocol.price / pow(10, 18) as protocol_fee_token_price,
-        ap_sell.price / pow(10, 18) as network_fee_token_price
+        ap_surplus.price / pow(10, 18) as surplus_token_native_price,
+        ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
+        ap_sell.price / pow(10, 18) as network_fee_token_native_price
     FROM
         order_protocol_fee opf
         JOIN auction_prices ap_sell -- contains price: sell token
@@ -169,8 +173,8 @@ batch_protocol_fees AS (
         solver,
         tx_hash,
         -- sum(surplus * surplus_token_price) as surplus,
-        sum(protocol_fee * protocol_fee_token_price) as protocol_fee,
-        sum(network_fee_correction * network_fee_token_price) as network_fee_correction
+        sum(protocol_fee * protocol_fee_token_native_price) as protocol_fee,
+        sum(network_fee_correction * network_fee_token_native_price) as network_fee_correction
     FROM
         order_protocol_fee_prices
     group by
@@ -214,9 +218,11 @@ reward_data AS (
             0
         ) as network_fee_correction
     FROM
-        settlement_scores ss -- If there are reported scores,
+        settlement_scores ss
+        -- If there are reported scores,
         -- there will always be a record of auction participants
-        JOIN auction_participation ap ON ss.auction_id = ap.auction_id -- outer joins made in order to capture non-existent settlements.
+        JOIN auction_participation ap ON ss.auction_id = ap.auction_id
+        -- outer joins made in order to capture non-existent settlements.
         LEFT OUTER JOIN observed_settlements os ON os.auction_id = ss.auction_id
         LEFT OUTER JOIN batch_protocol_fees bpf ON bpf.tx_hash = os.tx_hash
 ),
