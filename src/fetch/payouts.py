@@ -10,7 +10,6 @@ from datetime import timedelta
 from typing import Callable
 
 import pandas
-import numpy
 from dune_client.types import Address
 from pandas import DataFrame, Series
 
@@ -412,6 +411,7 @@ def construct_payouts(
     dune: DuneFetcher, orderbook: MultiInstanceDBFetcher
 ) -> list[Transfer]:
     """Workflow of solver reward payout logic post-CIP27"""
+    # pylint: disable-msg=too-many-locals
 
     price_day = dune.period.end - timedelta(days=1)
     reward_token = TokenId.COW
@@ -449,22 +449,22 @@ def construct_payouts(
     participation_reward = complete_payout_df["secondary_reward_cow"].sum()
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
     raw_protocol_fee_wei = int(complete_payout_df.protocol_fee_eth.sum())
-    """
-        We now decompose the raw_protocol_fee_wei amount integrator fees
-        into actual protocol fee and integrator fees. For convenience,
-        we use a dictionary integrators_fees_wei that contains the the
-        destination address of an integrator as a key, and the value is the
-        amount in wei to be transferred to that address, stored as an int.
-    """
+
+    # We now decompose the raw_protocol_fee_wei amount integrator fees
+    # into actual protocol fee and integrator fees. For convenience,
+    # we use a dictionary integrators_fees_wei that contains the the
+    # destination address of an integrator as a key, and the value is the
+    # amount in wei to be transferred to that address, stored as an int.
+
     integrators_fees_wei = {}
     for _, row in integrators_fees_df.iterrows():
         if row["integrators_list"] is None:
             continue
-        """
-            We assume the two lists used below, i.e.,
-            integrators_list and integrators_payments_in_eth,
-            are "aligned".
-        """
+
+        # We assume the two lists used below, i.e.,
+        # integrators_list and integrators_payments_in_eth,
+        # are "aligned".
+
         for i in range(len(row["integrators_list"])):
             address = row["integrators_list"][i]
             if address in integrators_fees_wei:
