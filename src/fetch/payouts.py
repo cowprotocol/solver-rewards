@@ -342,7 +342,7 @@ def prepare_transfers(
         transfers.append(
             Transfer(
                 token=None,
-                recipient=address,
+                recipient=Address(address),
                 amount_wei=integrators_fees_wei[address],
             )
         )
