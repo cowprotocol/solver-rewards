@@ -10,6 +10,7 @@ from datetime import timedelta
 from typing import Callable
 
 import pandas
+import numpy
 from dune_client.types import Address
 from pandas import DataFrame, Series
 
@@ -447,8 +448,6 @@ def construct_payouts(
     performance_reward = complete_payout_df["primary_reward_cow"].sum()
     participation_reward = complete_payout_df["secondary_reward_cow"].sum()
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
-    protocol_fee = complete_payout_df["protocol_fee_eth"].sum()
-
     raw_protocol_fee_wei = int(complete_payout_df.protocol_fee_eth.sum())
     """
         We now decompose the raw_protocol_fee_wei amount integrator fees
@@ -483,14 +482,14 @@ def construct_payouts(
 
     final_protocol_fee_wei = raw_protocol_fee_wei - total_integrators_fee_wei
     integrators_fee_tax_wei = 0.15 * total_integrators_fee_wei
-
+    total_integrators_fee_wei = 0.85 * total_integrators_fee_wei
     dune.log_saver.print(
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n"
         f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n"
-        f"Protocol Fees: {final_protocol_fee_wei / 10 ** 18:.4f}\n",
-        f"Integrators Fees Tax: {integrators_fee_tax_wei / 10 ** 18:.4f}\n",
-        f"Integrators Fees: {0.85 * total_integrators_fee_wei / 10 ** 18:.4f}\n",
+        f"Protocol Fees: {final_protocol_fee_wei / 10 ** 18:.4f}\n"
+        f"Integrators Fees Tax: {integrators_fee_tax_wei / 10 ** 18:.4f}\n"
+        f"Integrators Fees: {total_integrators_fee_wei / 10 ** 18:.4f}\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(
