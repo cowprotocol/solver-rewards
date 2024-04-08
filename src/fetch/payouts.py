@@ -299,7 +299,7 @@ def prepare_transfers(
     payout_df: DataFrame,
     final_protocol_fee_wei: int,
     integrators_fee_tax_wei: int,
-    integrators_fees_wei,
+    integrators_fees_wei: int,
     period: AccountingPeriod,
 ) -> PeriodPayouts:
     """
@@ -456,7 +456,7 @@ def construct_payouts(
     # destination address of an integrator as a key, and the value is the
     # amount in wei to be transferred to that address, stored as an int.
 
-    integrators_fees_wei = {}
+    integrators_fees_wei: dict[str, int] = {}
     for _, row in integrators_fees_df.iterrows():
         if row["integrators_list"] is None:
             continue
@@ -481,8 +481,8 @@ def construct_payouts(
         integrators_fees_wei[address] = 0.85 * value
 
     final_protocol_fee_wei = raw_protocol_fee_wei - total_integrators_fee_wei
-    integrators_fee_tax_wei = 0.15 * total_integrators_fee_wei
-    total_integrators_fee_wei = 0.85 * total_integrators_fee_wei
+    integrators_fee_tax_wei = int(0.15 * total_integrators_fee_wei)
+    total_integrators_fee_wei = int(0.85 * total_integrators_fee_wei)
     dune.log_saver.print(
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n"
