@@ -476,9 +476,9 @@ def construct_payouts(
                     row["integrators_payments_in_eth"][i]
                 )
     total_integrators_fee_wei = 0
-    for address in integrators_fees_wei:
-        total_integrators_fee_wei += integrators_fees_wei[address]
-        integrators_fees_wei[address] = 0.85 * integrators_fees_wei[address]
+    for address, value in integrators_fees_wei.items():
+        total_integrators_fee_wei += value
+        integrators_fees_wei[address] = 0.85 * value
 
     final_protocol_fee_wei = raw_protocol_fee_wei - total_integrators_fee_wei
     integrators_fee_tax_wei = 0.15 * total_integrators_fee_wei
