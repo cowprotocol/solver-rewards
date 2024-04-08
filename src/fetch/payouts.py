@@ -299,7 +299,7 @@ def prepare_transfers(
     payout_df: DataFrame,
     final_protocol_fee_wei: int,
     integrators_fee_tax_wei: int,
-    integrators_fees_wei: int,
+    integrators_fees_wei: dict[str, int],
     period: AccountingPeriod,
 ) -> PeriodPayouts:
     """
@@ -478,7 +478,7 @@ def construct_payouts(
     total_integrators_fee_wei = 0
     for address, value in integrators_fees_wei.items():
         total_integrators_fee_wei += value
-        integrators_fees_wei[address] = 0.85 * value
+        integrators_fees_wei[address] = int(0.85 * value)
 
     final_protocol_fee_wei = raw_protocol_fee_wei - total_integrators_fee_wei
     integrators_fee_tax_wei = int(0.15 * total_integrators_fee_wei)
