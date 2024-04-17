@@ -136,6 +136,13 @@ CREATE TABLE fee_policies (
   PRIMARY KEY (auction_id, order_uid, application_order)
 );
 
+CREATE TABLE app_data (
+  contract_app_data bytea NOT NULL,
+  full_app_data bytea NOT NULL
+
+  PRIMARY KEY (contract_app_data, full_app_data)
+);
+
 
 TRUNCATE settlements;
 TRUNCATE auction_participants;
@@ -146,6 +153,7 @@ TRUNCATE orders;
 TRUNCATE order_quotes;
 TRUNCATE trades;
 TRUNCATE fee_policies;
+TRUNCATE app_data;
 
 
 INSERT INTO settlements (block_number, log_index, solver, tx_hash, tx_from, tx_nonce, auction_id)
