@@ -290,7 +290,7 @@ integrator_fees_per_solver AS (
     SELECT
         solver,
         protocol_fee_recipient,
-        sum(protocol_fee * protocol_fee_token_native_price) as protocol_fee_in_eth
+        sum(protocol_fee * protocol_fee_token_native_price) as protocol_fee_eth
     FROM
         order_protocol_fee_prices
         WHERE protocol_fee_recipient is not null
@@ -300,7 +300,7 @@ aggregate_integrator_fees_per_solver AS (
     SELECT
         solver,
         array_agg(protocol_fee_recipient) as integrators_list,
-        array_agg(protocol_fee_in_eth) as integrators_payments_in_eth
+        array_agg(protocol_fee_eth) as integrators_payments_in_eth
     FROM integrator_fees_per_solver
         group by solver
 ),
