@@ -88,7 +88,8 @@ order_protocol_fee AS (
         os.observed_fee,
         os.surplus,
         os.surplus_token,
-        convert_from(os.app_data, 'UTF8')::JSONB->'metadata'->'partnerFee'->>'recipient' as protocol_fee_recipient,
+        convert_from(os.app_data, 'UTF8')::JSONB->'metadata'->'partnerFee'->>'recipient' as partner_fee_recipient,
+        fp.kind as protocol_fee_kind,
         CASE
             WHEN fp.kind = 'surplus' THEN CASE
                 WHEN os.kind = 'sell' THEN
@@ -153,6 +154,7 @@ order_protocol_fee_prices AS (
         opf.protocol_fee,
         opf.protocol_fee_token,
         opf.protocol_fee_recipient,
+        opf.protocol_fee_kind,
         CASE
             WHEN opf.sell_token != opf.protocol_fee_token THEN (opf.sell_amount - opf.observed_fee) / opf.buy_amount * opf.protocol_fee
             ELSE opf.protocol_fee
