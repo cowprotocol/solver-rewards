@@ -297,10 +297,10 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
 
 def prepare_transfers(
     payout_df: DataFrame,
+    period: AccountingPeriod,
     final_protocol_fee_wei: int,
     integrators_fee_tax_wei: int,
     integrators_fees_wei: dict[str, int],
-    period: AccountingPeriod,
 ) -> PeriodPayouts:
     """
     Manipulates the payout DataFrame to split into ETH and COW.
@@ -324,20 +324,22 @@ def prepare_transfers(
             overdrafts.append(overdraft)
         transfers += payout_datum.as_payouts()
 
-    transfers.append(
-        Transfer(
-            token=None,
-            recipient=PROTOCOL_FEE_SAFE,
-            amount_wei=final_protocol_fee_wei,
+    if final_protocol_fee_wei > 0:
+        transfers.append(
+            Transfer(
+                token=None,
+                recipient=PROTOCOL_FEE_SAFE,
+                amount_wei=final_protocol_fee_wei,
+            )
         )
-    )
-    transfers.append(
-        Transfer(
-            token=None,
-            recipient=PROTOCOL_FEE_SAFE,
-            amount_wei=integrators_fee_tax_wei,
+    if integrators_fee_tax_wei > 0:
+        transfers.append(
+            Transfer(
+                token=None,
+                recipient=PROTOCOL_FEE_SAFE,
+                amount_wei=integrators_fee_tax_wei,
+            )
         )
-    )
     for address in integrators_fees_wei:
         transfers.append(
             Transfer(
@@ -494,10 +496,10 @@ def construct_payouts(
     )
     payouts = prepare_transfers(
         complete_payout_df,
+        dune.period,
         final_protocol_fee_wei,
         integrators_fee_tax_wei,
         integrators_fees_wei,
-        dune.period,
     )
     for overdraft in payouts.overdrafts:
         dune.log_saver.print(str(overdraft), Category.OVERDRAFT)

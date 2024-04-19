@@ -153,7 +153,7 @@ order_protocol_fee_prices AS (
         opf.surplus,
         opf.protocol_fee,
         opf.protocol_fee_token,
-        opf.protocol_fee_recipient,
+        opf.partner_fee_recipient,
         opf.protocol_fee_kind,
         CASE
             WHEN opf.sell_token != opf.protocol_fee_token THEN (opf.sell_amount - opf.observed_fee) / opf.buy_amount * opf.protocol_fee
@@ -289,17 +289,17 @@ primary_rewards as (
 integrator_fees_per_solver AS (
     SELECT
         solver,
-        protocol_fee_recipient,
+        partner_fee_recipient,
         sum(protocol_fee * protocol_fee_token_native_price) as protocol_fee_eth
     FROM
         order_protocol_fee_prices
-        WHERE protocol_fee_recipient is not null
-        group by solver,protocol_fee_recipient
+        WHERE partner_fee_recipient is not null
+        group by solver,partner_fee_recipient
 ),
 aggregate_integrator_fees_per_solver AS (
     SELECT
         solver,
-        array_agg(protocol_fee_recipient) as integrators_list,
+        array_agg(parter_fee_recipient) as integrators_list,
         array_agg(protocol_fee_eth) as integrators_payments_in_eth
     FROM integrator_fees_per_solver
         group by solver

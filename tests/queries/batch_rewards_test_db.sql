@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS trades;
 DROP TABLE IF EXISTS order_execution;
 DROP TABLE IF EXISTS fee_policies;
 DROP TYPE IF EXISTS PolicyKind;
+DROP TABLE IF EXISTS app_data;
 
 CREATE TABLE IF NOT EXISTS settlements
 (
@@ -79,7 +80,8 @@ CREATE TABLE orders (
     kind OrderKind NOT NULL,
     partially_fillable boolean NOT NULL,
     full_fee_amount numeric(78,0) NOT NULL,
-    class OrderClass NOT NULL
+    class OrderClass NOT NULL,
+    app_data bytea NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS order_quotes
@@ -138,7 +140,7 @@ CREATE TABLE fee_policies (
 
 CREATE TABLE app_data (
   contract_app_data bytea NOT NULL,
-  full_app_data bytea NOT NULL
+  full_app_data bytea NOT NULL,
 
   PRIMARY KEY (contract_app_data, full_app_data)
 );
@@ -272,17 +274,17 @@ VALUES (51, '\x01', 500000000000000000000000000),
 (60, '\x01', 500000000000000000000000000),
 (60, '\x02', 500000000000000);
 
-INSERT INTO orders (uid, sell_token, buy_token, sell_amount, buy_amount, fee_amount, kind, partially_fillable, full_fee_amount, class)
-VALUES ('\x01'::bytea, '\x01'::bytea, '\x02'::bytea, 95000000, 94000000000000000000, 5000000, 'sell', 'f', 5000000, 'market'), -- sell market order
-('\x02'::bytea, '\x01'::bytea, '\x02'::bytea, 101000000, 100000000000000000000, 5000000, 'buy', 'f', 5000000, 'market'), -- buy market order
-('\x03'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't', 0, 'limit'), -- partially fillable sell limit order
-('\x04'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 100000000000000000000, 0, 'buy', 't', 0, 'limit'), -- partially fillable buy limit order
-('\x05'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit'), -- in market sell limit order
-('\x06'::bytea, '\x01'::bytea, '\x02'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 0, 'limit'), -- in market buy limit order
-('\x07'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit'), -- in market sell limit order
-('\x08'::bytea, '\x01'::bytea, '\x02'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 0, 'limit'), -- in market buy limit order
-('\x09'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit'), -- in market sell limit order
-('\x0a'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit'); -- in market sell limit order
+INSERT INTO orders (uid, sell_token, buy_token, sell_amount, buy_amount, fee_amount, kind, partially_fillable, full_fee_amount, class, app_data)
+VALUES ('\x01'::bytea, '\x01'::bytea, '\x02'::bytea, 95000000, 94000000000000000000, 5000000, 'sell', 'f', 5000000, 'market', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- sell market order
+('\x02'::bytea, '\x01'::bytea, '\x02'::bytea, 101000000, 100000000000000000000, 5000000, 'buy', 'f', 5000000, 'market', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- buy market order
+('\x03'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- partially fillable sell limit order
+('\x04'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 100000000000000000000, 0, 'buy', 't', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- partially fillable buy limit order
+('\x05'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit', '\xd3418777a6ec517d7310b05a2a22f3737524ae0302d1f88230f4e066a1768b74'::bytea), -- in market sell limit order with volume-based integrator fee of 45bps
+('\x06'::bytea, '\x01'::bytea, '\x02'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- in market buy limit order
+('\x07'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- in market sell limit order
+('\x08'::bytea, '\x01'::bytea, '\x02'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- in market buy limit order
+('\x09'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- in market sell limit order
+('\x0a'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea); -- in market sell limit order
 
 INSERT INTO order_quotes (order_uid, gas_amount, gas_price, sell_token_price, sell_amount, buy_amount, solver)
 VALUES ('\x07'::bytea, 100000, 25000000000, 500000000., 100000000, 100000000000000000000, '\x01'::bytea),
@@ -315,10 +317,13 @@ VALUES ('\x03'::bytea, 53, 0, 5931372, NULL),
 INSERT INTO fee_policies (auction_id, order_uid, application_order, kind, surplus_factor, surplus_max_volume_factor, volume_factor, price_improvement_factor, price_improvement_max_volume_factor)
 VALUES (53, '\x03'::bytea, 3, 'surplus', 0.5, 0.02, NULL, NULL, NULL),
 (54, '\x04'::bytea, 4, 'surplus', 0.75, 0.1, NULL, NULL, NULL),
-(55, '\x05'::bytea, 5, 'volume', NULL, NULL, 0.0015, NULL, NULL),
+(55, '\x05'::bytea, 5, 'volume', NULL, NULL, 0.0045, NULL, NULL),
 (56, '\x06'::bytea, 6, 'surplus', 0.9, 0.01, NULL, NULL, NULL),
 (57, '\x07'::bytea, 7, 'priceimprovement', NULL, NULL, NULL, 0.5, 0.01),
 (58, '\x08'::bytea, 8, 'priceimprovement', NULL, NULL, NULL, 0.5, 0.01),
 (59, '\x09'::bytea, 9, 'priceimprovement', NULL, NULL, NULL, 0.5, 0.01),
 (60, '\x0a'::bytea, 9, 'priceimprovement', NULL, NULL, NULL, 0.5, 0.01);
 
+INSERT INTO app_data (contract_app_data, full_app_data)
+VALUES ('\x0000000000000000000000000000000000000000000000000000000000000000'::bytea, '\x7b7d'::bytea),
+('\xd3418777a6ec517d7310b05a2a22f3737524ae0302d1f88230f4e066a1768b74'::bytea, '\x7b22617070436f6465223a2273686170657368696674222c226d65746164617461223a7b226f72646572436c617373223a7b226f72646572436c617373223a226d61726b6574227d2c22706172746e6572466565223a7b22627073223a34382c22726563697069656e74223a22307839306134386435636637333433623038646131326530363736383062346336646266653535316265227d2c2271756f7465223a7b22736c69707061676542697073223a223530227d7d2c2276657273696f6e223a22302e392e30227d'::bytea);

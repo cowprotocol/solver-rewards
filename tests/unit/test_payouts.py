@@ -321,7 +321,12 @@ class TestPayoutTransformations(unittest.TestCase):
             }
         )
         period = AccountingPeriod("1985-03-10", 1)
-        payout_transfers = prepare_transfers(full_payout_data, period)
+        protocol_fee_amount = 0
+        for x in self.protocol_fee_eth:
+            protocol_fee_amount += x
+        payout_transfers = prepare_transfers(
+            full_payout_data, period, protocol_fee_amount, 0, {}
+        )
         self.assertEqual(
             [
                 Transfer(
