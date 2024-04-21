@@ -55,7 +55,8 @@ order_surplus AS (
         CASE
             WHEN o.kind = 'sell' THEN o.buy_token
             WHEN o.kind = 'buy' THEN o.sell_token
-        END AS surplus_token
+        END AS surplus_token,
+        ad.full_app_data as app_data
     FROM
         settlements s
         JOIN settlement_scores ss -- contains block_deadline
@@ -69,6 +70,8 @@ order_surplus AS (
         AND s.auction_id = oe.auction_id
         LEFT OUTER JOIN order_quotes oq -- contains quote amounts
         ON o.uid = oq.order_uid
+        LEFT OUTER JOIN app_data ad
+        on o.app_data = ad.contract_app_data 
     WHERE
         ss.block_deadline >= {{start_block}}
         AND ss.block_deadline <= {{end_block}}
@@ -85,6 +88,8 @@ order_protocol_fee AS (
         os.observed_fee,
         os.surplus,
         os.surplus_token,
+        convert_from(os.app_data, 'UTF8')::JSONB->'metadata'->'partnerFee'->>'recipient' as partner_fee_recipient,
+        fp.kind as protocol_fee_kind,
         CASE
             WHEN fp.kind = 'surplus' THEN CASE
                 WHEN os.kind = 'sell' THEN
@@ -148,6 +153,8 @@ order_protocol_fee_prices AS (
         opf.surplus,
         opf.protocol_fee,
         opf.protocol_fee_token,
+        opf.partner_fee_recipient,
+        opf.protocol_fee_kind,
         CASE
             WHEN opf.sell_token != opf.protocol_fee_token THEN (opf.sell_amount - opf.observed_fee) / opf.buy_amount * opf.protocol_fee
             ELSE opf.protocol_fee
@@ -279,16 +286,37 @@ primary_rewards as (
     GROUP BY
         solver
 ),
+partner_fees_per_solver AS (
+    SELECT
+        solver,
+        partner_fee_recipient,
+        sum(protocol_fee * protocol_fee_token_native_price) as protocol_fee_eth
+    FROM
+        order_protocol_fee_prices
+        WHERE partner_fee_recipient is not null
+        group by solver,partner_fee_recipient
+),
+aggregate_partner_fees_per_solver AS (
+    SELECT
+        solver,
+        array_agg(partner_fee_recipient) as partner_list,
+        array_agg(protocol_fee_eth) as partner_payments_in_eth
+    FROM partner_fees_per_solver
+        group by solver
+),
 aggregate_results as (
     SELECT
         concat('0x', encode(pc.solver, 'hex')) as solver,
         coalesce(payment, 0) as primary_reward_eth,
         num_participating_batches,
         coalesce(protocol_fee, 0) as protocol_fee_eth,
-        coalesce(network_fee, 0) as network_fee_eth
+        coalesce(network_fee, 0) as network_fee_eth,
+        partner_list,
+        partner_payments_in_eth
     FROM
         participation_counts pc
         LEFT OUTER JOIN primary_rewards pr ON pr.solver = pc.solver
+        LEFT OUTER JOIN aggregate_partner_fees_per_solver aif on pr.solver = aif.solver 
 ) --
 select
     *
