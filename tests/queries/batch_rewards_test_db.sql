@@ -139,10 +139,8 @@ CREATE TABLE fee_policies (
 );
 
 CREATE TABLE app_data (
-  contract_app_data bytea NOT NULL,
-  full_app_data bytea NOT NULL,
-
-  PRIMARY KEY (contract_app_data, full_app_data)
+    contract_app_data bytea PRIMARY KEY,
+    full_app_data bytea NOT NULL
 );
 
 
