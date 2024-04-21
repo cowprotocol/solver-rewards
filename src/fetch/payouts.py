@@ -299,8 +299,8 @@ def prepare_transfers(
     payout_df: DataFrame,
     period: AccountingPeriod,
     final_protocol_fee_wei: int,
-    integrators_fee_tax_wei: int,
-    integrators_fees_wei: dict[str, int],
+    partner_fee_tax_wei: int,
+    partner_fees_wei: dict[str, int],
 ) -> PeriodPayouts:
     """
     Manipulates the payout DataFrame to split into ETH and COW.
@@ -332,20 +332,20 @@ def prepare_transfers(
                 amount_wei=final_protocol_fee_wei,
             )
         )
-    if integrators_fee_tax_wei > 0:
+    if partner_fee_tax_wei > 0:
         transfers.append(
             Transfer(
                 token=None,
                 recipient=PROTOCOL_FEE_SAFE,
-                amount_wei=integrators_fee_tax_wei,
+                amount_wei=partner_fee_tax_wei,
             )
         )
-    for address in integrators_fees_wei:
+    for address in partner_fees_wei:
         transfers.append(
             Transfer(
                 token=None,
                 recipient=Address(address),
-                amount_wei=integrators_fees_wei[address],
+                amount_wei=partner_fees_wei[address],
             )
         )
 
@@ -420,11 +420,11 @@ def construct_payouts(
 
     quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
     batch_rewards_df = orderbook.get_solver_rewards(dune.start_block, dune.end_block)
-    integrators_fees_df = batch_rewards_df[
-        ["integrators_list", "integrators_payments_in_eth"]
+    partner_fees_df = batch_rewards_df[
+        ["partner_list", "partner_payments_in_eth"]
     ]
     batch_rewards_df = batch_rewards_df.drop(
-        ["integrators_list", "integrators_payments_in_eth"], axis=1
+        ["partner_list", "partner_payments_in_eth"], axis=1
     )
     merged_df = pandas.merge(
         quote_rewards_df, batch_rewards_df, on="solver", how="outer"
@@ -452,54 +452,54 @@ def construct_payouts(
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
     raw_protocol_fee_wei = int(complete_payout_df.protocol_fee_eth.sum())
 
-    # We now decompose the raw_protocol_fee_wei amount integrator fees
-    # into actual protocol fee and integrator fees. For convenience,
-    # we use a dictionary integrators_fees_wei that contains the the
-    # destination address of an integrator as a key, and the value is the
+    # We now decompose the raw_protocol_fee_wei amount into actual
+    # protocol fee and partner fees. For convenience,
+    # we use a dictionary partner_fees_wei that contains the the
+    # destination address of an partner as a key, and the value is the
     # amount in wei to be transferred to that address, stored as an int.
 
-    integrators_fees_wei: dict[str, int] = {}
-    for _, row in integrators_fees_df.iterrows():
-        if row["integrators_list"] is None:
+    partner_fees_wei: dict[str, int] = {}
+    for _, row in partner_fees_df.iterrows():
+        if row["partner_list"] is None:
             continue
 
         # We assume the two lists used below, i.e.,
-        # integrators_list and integrators_payments_in_eth,
+        # partner_list and partner_payments_in_eth,
         # are "aligned".
 
-        for i in range(len(row["integrators_list"])):
-            address = row["integrators_list"][i]
-            if address in integrators_fees_wei:
-                integrators_fees_wei[address] += int(
-                    row["integrators_payments_in_eth"][i]
+        for i in range(len(row["partner_list"])):
+            address = row["partner_list"][i]
+            if address in partner_fees_wei:
+                partner_fees_wei[address] += int(
+                    row["partner_payments_in_eth"][i]
                 )
             else:
-                integrators_fees_wei[address] = int(
-                    row["integrators_payments_in_eth"][i]
+                partner_fees_wei[address] = int(
+                    row["partner_payments_in_eth"][i]
                 )
-    total_integrators_fee_wei = 0
-    for address, value in integrators_fees_wei.items():
-        total_integrators_fee_wei += value
-        integrators_fees_wei[address] = int(0.85 * value)
+    total_partner_fee_wei = 0
+    for address, value in partner_fees_wei.items():
+        total_partner_fee_wei += value
+        partner_fees_wei[address] = int(0.85 * value)
 
-    final_protocol_fee_wei = raw_protocol_fee_wei - total_integrators_fee_wei
-    integrators_fee_tax_wei = int(0.15 * total_integrators_fee_wei)
-    total_integrators_fee_wei = int(0.85 * total_integrators_fee_wei)
+    final_protocol_fee_wei = raw_protocol_fee_wei - total_partner_fee_wei
+    partner_fee_tax_wei = int(0.15 * total_partner_fee_wei)
+    total_partner_fee_wei = int(0.85 * total_partner_fee_wei)
     dune.log_saver.print(
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n"
         f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n"
         f"Protocol Fees: {final_protocol_fee_wei / 10 ** 18:.4f}\n"
-        f"Integrators Fees Tax: {integrators_fee_tax_wei / 10 ** 18:.4f}\n"
-        f"Integrators Fees: {total_integrators_fee_wei / 10 ** 18:.4f}\n",
+        f"Partner Fees Tax: {partner_fee_tax_wei / 10 ** 18:.4f}\n"
+        f"Partner Fees: {total_partner_fee_wei / 10 ** 18:.4f}\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(
         complete_payout_df,
         dune.period,
         final_protocol_fee_wei,
-        integrators_fee_tax_wei,
-        integrators_fees_wei,
+        partner_fee_tax_wei,
+        partner_fees_wei,
     )
     for overdraft in payouts.overdrafts:
         dune.log_saver.print(str(overdraft), Category.OVERDRAFT)

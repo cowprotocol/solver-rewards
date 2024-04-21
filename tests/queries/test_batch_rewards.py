@@ -65,7 +65,7 @@ class TestBatchRewards(unittest.TestCase):
                     0.0,
                     0.0,
                 ],
-                "integrators_list": [
+                "partner_list": [
                     ["0x90a48d5cf7343b08da12e067680b4c6dbfe551be"],
                     None,
                     None,
@@ -74,7 +74,7 @@ class TestBatchRewards(unittest.TestCase):
                     None,
                     None,
                 ],
-                "integrators_payments_in_eth": [
+                "partner_payments_in_eth": [
                     [214716223003516],
                     None,
                     None,

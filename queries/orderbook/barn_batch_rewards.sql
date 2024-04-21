@@ -286,7 +286,7 @@ primary_rewards as (
     GROUP BY
         solver
 ),
-integrator_fees_per_solver AS (
+partner_fees_per_solver AS (
     SELECT
         solver,
         partner_fee_recipient,
@@ -296,12 +296,12 @@ integrator_fees_per_solver AS (
         WHERE partner_fee_recipient is not null
         group by solver,partner_fee_recipient
 ),
-aggregate_integrator_fees_per_solver AS (
+aggregate_partner_fees_per_solver AS (
     SELECT
         solver,
-        array_agg(parter_fee_recipient) as integrators_list,
-        array_agg(protocol_fee_eth) as integrators_payments_in_eth
-    FROM integrator_fees_per_solver
+        array_agg(parter_fee_recipient) as partner_list,
+        array_agg(protocol_fee_eth) as partner_payments_in_eth
+    FROM partner_fees_per_solver
         group by solver
 ),
 aggregate_results as (
@@ -311,12 +311,12 @@ aggregate_results as (
         num_participating_batches,
         coalesce(protocol_fee, 0) as protocol_fee_eth,
         coalesce(network_fee, 0) as network_fee_eth,
-        integrators_list,
-        integrators_payments_in_eth
+        partner_list,
+        partner_payments_in_eth
     FROM
         participation_counts pc
         LEFT OUTER JOIN primary_rewards pr ON pr.solver = pc.solver
-        LEFT OUTER JOIN aggregate_integrator_fees_per_solver aif on pr.solver = aif.solver 
+        LEFT OUTER JOIN aggregate_partner_fees_per_solver aif on pr.solver = aif.solver 
 ) --
 select
     *
