@@ -299,7 +299,7 @@ partner_fees_per_solver AS (
 aggregate_partner_fees_per_solver AS (
     SELECT
         solver,
-        array_agg(parter_fee_recipient) as partner_list,
+        array_agg(partner_fee_recipient) as partner_list,
         array_agg(protocol_fee_eth) as partner_payments_in_eth
     FROM partner_fees_per_solver
         group by solver
