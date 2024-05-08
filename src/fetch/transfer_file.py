@@ -108,6 +108,7 @@ if __name__ == "__main__":
         category=Category.GENERAL,
     )
 
+    # payout_transfers_temp = construct_payouts(
     payout_transfers_temp = construct_payouts(
         args.dune,
         orderbook=MultiInstanceDBFetcher(

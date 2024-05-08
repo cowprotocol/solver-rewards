@@ -4,8 +4,10 @@ Currently, only price feed is CoinPaprika's Free tier API.
 """
 import functools
 import logging.config
+from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
+from typing import Callable
 
 from coinpaprika import client as cp
 
@@ -85,3 +87,13 @@ def usd_price(token: TokenId, day: datetime) -> float:
     price_time = datetime.strptime(item["timestamp"], "%Y-%m-%dT00:00:00Z")
     assert price_time == day
     return float(item["price"])
+
+
+@dataclass
+class TokenConversion:
+    """
+    Data Structure containing token conversion methods.
+    """
+
+    eth_to_token: Callable
+    token_to_eth: Callable
