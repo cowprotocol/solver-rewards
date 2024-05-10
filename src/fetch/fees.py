@@ -340,7 +340,7 @@ def compute_price_improvement_protocol_fee(
         sell_amount_before_fee -= protocol_fee
     else:
         raise ValueError(
-            f"Unknow order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
+            f"Unknown order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
         )
 
     return (
@@ -375,7 +375,7 @@ def compute_volume_protocol_fee(
         sell_amount_before_fee -= protocol_fee
     else:
         raise ValueError(
-            f"Unknow order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
+            f"Unknown order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
         )
     return (
         protocol_fee,

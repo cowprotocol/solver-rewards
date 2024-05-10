@@ -158,7 +158,7 @@ class TestFees(unittest.TestCase):
             price_improvement_factor,
             price_improvement_max_volume_factor,
         ):
-            """Helper function for creating trandes"""
+            """Helper function for creating trades"""
             # pylint: disable-msg=too-many-arguments
             return Series(
                 {

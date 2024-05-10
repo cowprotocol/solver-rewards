@@ -6,8 +6,8 @@ aggregate reward information per solver."""
 from pandas import DataFrame, Series
 from src.fetch.prices import TokenConversion
 
-EPSILON_UPPER = 12000000000000000
-EPSILON_LOWER = 10000000000000000
+EPSILON_UPPER = 12_000_000_000_000_000
+EPSILON_LOWER = 10_000_000_000_000_000
 PERIOD_BUDGET_COW = 250000 * 10**18
 CONSISTENCY_REWARD_CAP_ETH = 6 * 10**18
 QUOTE_REWARD_COW = 6 * 10**18
@@ -164,7 +164,7 @@ def is_market_order(row: Series) -> bool:
                 and not row["partially_fillable"]
             )
         raise ValueError(
-            f"Unknow order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
+            f"Unknown order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
         )
     except KeyError:
         return False
