@@ -137,34 +137,31 @@ def compute_quote_rewards(
 
 def is_market_order(row: Series) -> bool:
     """Check if an order was in market when created."""
-    try:
-        if row["quote_solver"] is None:
-            return False
-        if row["kind"] == "sell":
-            return (
-                int(
-                    row["quote_sell_amount"]
-                    - row["quote_gas_amount"]
-                    * row["quote_gas_price"]
-                    / row["quote_sell_token_price"]
-                )
-                * row["quote_buy_amount"]
-                >= row["limit_buy_amount"] * row["quote_sell_amount"]
-                and not row["partially_fillable"]
-            )
-        if row["kind"] == "buy":
-            return (
-                row["limit_sell_amount"]
-                >= int(
-                    row["quote_sell_amount"]
-                    + row["quote_gas_amount"]
-                    * row["quote_gas_price"]
-                    / row["quote_sell_token_price"]
-                )
-                and not row["partially_fillable"]
-            )
-        raise ValueError(
-            f"Unknown order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
-        )
-    except KeyError:
+    if row["quote_solver"] is None:
         return False
+    if row["kind"] == "sell":
+        return (
+            int(
+                row["quote_sell_amount"]
+                - row["quote_gas_amount"]
+                * row["quote_gas_price"]
+                / row["quote_sell_token_price"]
+            )
+            * row["quote_buy_amount"]
+            >= row["limit_buy_amount"] * row["quote_sell_amount"]
+            and not row["partially_fillable"]
+        )
+    if row["kind"] == "buy":
+        return (
+            row["limit_sell_amount"]
+            >= int(
+                row["quote_sell_amount"]
+                + row["quote_gas_amount"]
+                * row["quote_gas_price"]
+                / row["quote_sell_token_price"]
+            )
+            and not row["partially_fillable"]
+        )
+    raise ValueError(
+        f"Unknown order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
+    )

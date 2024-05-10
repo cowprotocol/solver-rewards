@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 from pandas import DataFrame
+from pandas._typing import DtypeArg
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
@@ -22,7 +23,7 @@ class MultiInstanceDBFetcher:
         ]
 
     @classmethod
-    def exec_query(cls, query: str, engine: Engine, dtype=None) -> DataFrame:
+    def exec_query(cls, query: str, engine: Engine, dtype: DtypeArg | None=None) -> DataFrame:
         """Executes query on DB engine"""
         return pd.read_sql(sql=query, con=engine, dtype=dtype)
 

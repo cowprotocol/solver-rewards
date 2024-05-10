@@ -452,7 +452,7 @@ def summarize_payments(
     solver_rewards_and_slippage_df: DataFrame,
     protocol_partner_fees_df: DataFrame,
     log_saver: PrintStore,
-):
+) -> None:
     """Summarize payments"""
     # pylint: disable=singleton-comparison
     performance_reward = solver_rewards_and_slippage_df.primary_reward_cow.sum()

@@ -192,10 +192,10 @@ def compute_trade_fee_datum(
         str(row["order_uid"]),
         str(row["winning_solver"]),
         network_fee,
-        protocol_fees[::-1],
-        protocol_fee_tokens[::-1],
-        protocol_fee_token_native_prices[::-1],
-        protocol_fee_kinds[::-1],
+        list(reversed(protocol_fees)),
+        list(reversed(protocol_fee_tokens)),
+        list(reversed(protocol_fee_token_native_prices)),
+        list(reversed(protocol_fee_kinds)),
         is_partner_fee,
         recipient,
     )
@@ -251,7 +251,7 @@ def compute_surplus_protocol_fee(
         sell_amount_before_fee -= protocol_fee
     else:
         raise ValueError(
-            f"Unknow order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
+            f"Unknown order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
         )
 
     return (
@@ -416,9 +416,9 @@ def parse_recipient(row: Series) -> str | None:
     the function returns `None`.
     """
     try:
-        return json.loads(binascii.unhexlify(row["app_data"][2:]).decode("utf-8"))[
+        return str(json.loads(binascii.unhexlify(row["app_data"][2:]).decode("utf-8"))[
             "metadata"
-        ]["partnerFee"]["recipient"]
+        ]["partnerFee"]["recipient"])
     except (KeyError, json.decoder.JSONDecodeError):
         return None
 
@@ -427,7 +427,7 @@ def parse_protocol_fee_kind(row: Series) -> list[str]:
     """Parse protocol fee kind
     Parses the string returned by the SQL query into a list of strings.
     """
-    return row["protocol_fee_kind"].strip("{}").split(",")
+    return str(row["protocol_fee_kind"]).strip("{}").split(",")
 
 
 def compute_protocol_partner_fees(

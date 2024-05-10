@@ -91,9 +91,6 @@ class TestRewards(unittest.TestCase):
             )
         )
 
-        # return None if information is missing
-        self.assertFalse(is_market_order({}))
-
     def test_compute_solver_rewards(self):
         pass
 
