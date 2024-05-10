@@ -23,7 +23,9 @@ class MultiInstanceDBFetcher:
         ]
 
     @classmethod
-    def exec_query(cls, query: str, engine: Engine, dtype: DtypeArg | None=None) -> DataFrame:
+    def exec_query(
+        cls, query: str, engine: Engine, dtype: DtypeArg | None = None
+    ) -> DataFrame:
         """Executes query on DB engine"""
         return pd.read_sql(sql=query, con=engine, dtype=dtype)
 

@@ -416,9 +416,11 @@ def parse_recipient(row: Series) -> str | None:
     the function returns `None`.
     """
     try:
-        return str(json.loads(binascii.unhexlify(row["app_data"][2:]).decode("utf-8"))[
-            "metadata"
-        ]["partnerFee"]["recipient"])
+        return str(
+            json.loads(binascii.unhexlify(row["app_data"][2:]).decode("utf-8"))[
+                "metadata"
+            ]["partnerFee"]["recipient"]
+        )
     except (KeyError, json.decoder.JSONDecodeError):
         return None
 
