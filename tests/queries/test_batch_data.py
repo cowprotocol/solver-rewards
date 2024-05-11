@@ -321,7 +321,7 @@ class TestBatchData(unittest.TestCase):
                     ["0x03"],
                 ],
             }
-        )
+        ).astype(object)
         self.assertIsNone(pandas.testing.assert_frame_equal(expected, batch_data))
 
 
