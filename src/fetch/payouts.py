@@ -16,6 +16,12 @@ from src.fetch.fees import (
     compute_protocol_partner_fees,
     PROTOCOL_FEE_SAFE,
 )
+from src.fetch.data_preprocessing import (
+    preprocess_batch_data,
+    preprocess_trade_data,
+    preprocess_slippage_data,
+    preprocess_reward_target,
+)
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import eth_in_token, TokenId, token_in_eth, TokenConversion
 from src.fetch.rewards import compute_solver_rewards
@@ -488,8 +494,14 @@ def construct_payouts(
     # fetch data
     batch_data_df = orderbook.get_batch_data(dune.start_block, dune.end_block)
     trade_data_df = orderbook.get_trade_data(dune.start_block, dune.end_block)
-    slippage_df = pandas.DataFrame(dune.get_period_slippage())
+    slippage_data_df = pandas.DataFrame(dune.get_period_slippage())
     reward_target_df = pandas.DataFrame(dune.get_vouches())
+
+    # pre-process data
+    batch_data_df = preprocess_batch_data(batch_data_df)
+    trade_data_df = preprocess_trade_data(trade_data_df)
+    slippage_data_df = preprocess_slippage_data(slippage_data_df)
+    reward_target_df = preprocess_reward_target(reward_target_df)
 
     # fetch prices
     price_day = dune.period.end - timedelta(days=1)
@@ -506,7 +518,7 @@ def construct_payouts(
     ) = construct_payout_dataframes(
         batch_data_df,
         trade_data_df,
-        slippage_df,
+        slippage_data_df,
         reward_target_df,
         converter,
     )
