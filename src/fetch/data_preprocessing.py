@@ -12,13 +12,15 @@ def preprocess_batch_data(batch_data_df: DataFrame) -> DataFrame:
 def preprocess_trade_data(trade_data_df: DataFrame) -> DataFrame:
     """Preprocess trade data"""
     trade_data_df.loc[
-        trade_data_df["buy_token"] == "0x365accfca291e7d3914637abf1f7635db165bb09",
+        (trade_data_df["buy_token"] == "0x365accfca291e7d3914637abf1f7635db165bb09")
+        & (trade_data_df["buy_token_native_price"] > 1e18),
         "buy_token_native_price",
-    ] = 0.03532282233117098
+    ] = 35322822331170980.0
     trade_data_df.loc[
-        trade_data_df["sell_token"] == "0x365accfca291e7d3914637abf1f7635db165bb09",
+        (trade_data_df["sell_token"] == "0x365accfca291e7d3914637abf1f7635db165bb09")
+        & (trade_data_df["sell_token_native_price"] > 1e18),
         "sell_token_native_price",
-    ] = 0.03532282233117098
+    ] = 35322822331170980.0
     return trade_data_df
 
 
