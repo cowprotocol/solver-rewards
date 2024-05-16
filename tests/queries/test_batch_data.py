@@ -251,7 +251,7 @@ class TestBatchData(unittest.TestCase):
                     5.000000e14,
                     2.500000e14,
                 ],
-                "fee": [
+                "total_fee": [
                     2.000000e14,
                     4.000000e14,
                     None,
