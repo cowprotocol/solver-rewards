@@ -141,7 +141,7 @@ def is_market_order(row: Series) -> bool:
     if row["quote_solver"] is None or row["partially_fillable"]:
         return False
     if row["kind"] == "sell":
-        return (
+        return bool(
             int(
                 row["quote_sell_amount"]
                 - row["quote_gas_amount"]
@@ -152,11 +152,14 @@ def is_market_order(row: Series) -> bool:
             >= row["limit_buy_amount"] * row["quote_sell_amount"]
         )
     if row["kind"] == "buy":
-        return row["limit_sell_amount"] >= int(
-            row["quote_sell_amount"]
-            + row["quote_gas_amount"]
-            * row["quote_gas_price"]
-            / row["quote_sell_token_price"]
+        return bool(
+            row["limit_sell_amount"]
+            >= int(
+                row["quote_sell_amount"]
+                + row["quote_gas_amount"]
+                * row["quote_gas_price"]
+                / row["quote_sell_token_price"]
+            )
         )
     raise ValueError(
         f"Unknown order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."
