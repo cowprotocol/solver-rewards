@@ -45,7 +45,7 @@ BATCH_DATA_COLUMNS = {
     "effective_gas_price",
     "gas_used",
     "surplus",
-    "fee",
+    "total_fee",
     "participating_solvers",
 }
 TRADE_DATA_COLUMNS = {

@@ -6,9 +6,9 @@ aggregate reward information per solver."""
 from pandas import DataFrame, Series
 from src.fetch.prices import TokenConversion
 
-EPSILON_UPPER = 12_000_000_000_000_000
-EPSILON_LOWER = 10_000_000_000_000_000
-PERIOD_BUDGET_COW = 250000 * 10**18
+EPSILON_UPPER = 12 * 10**15
+EPSILON_LOWER = 10**16
+PERIOD_BUDGET_COW = 250_000 * 10**18
 CONSISTENCY_REWARD_CAP_ETH = 6 * 10**18
 QUOTE_REWARD_COW = 6 * 10**18
 QUOTE_REWARD_CAP_ETH = 6 * 10**14
@@ -18,9 +18,9 @@ def compute_solver_rewards(
     batch_data_df: DataFrame, trade_data_df: DataFrame, converter: TokenConversion
 ) -> DataFrame:
     """Compute solver rewards
-    The input dataframes `batch_data_df` and `trade_data_df` containd data on batches and
+    The input dataframes `batch_data_df` and `trade_data_df` contain data on batches and
     trades, respectively. It requires TokenConversion to convert betwenn ETH and COW.
-    The function creates a new dataframe with information on primary, secondary, and quote rewards.
+    The function creates a new dataframe with information on primary (or performance), secondary (or consistency/paticipation), and quote rewards.
     """
     # primary reward
     primary_rewards_df = compute_primary_rewards(batch_data_df, converter)
@@ -137,7 +137,7 @@ def compute_quote_rewards(
 
 def is_market_order(row: Series) -> bool:
     """Check if an order was in market when created."""
-    if row["quote_solver"] is None:
+    if row["quote_solver"] is None or row["partially_fillable"]:
         return False
     if row["kind"] == "sell":
         return (
@@ -149,18 +149,13 @@ def is_market_order(row: Series) -> bool:
             )
             * row["quote_buy_amount"]
             >= row["limit_buy_amount"] * row["quote_sell_amount"]
-            and not row["partially_fillable"]
         )
     if row["kind"] == "buy":
-        return (
-            row["limit_sell_amount"]
-            >= int(
-                row["quote_sell_amount"]
-                + row["quote_gas_amount"]
-                * row["quote_gas_price"]
-                / row["quote_sell_token_price"]
-            )
-            and not row["partially_fillable"]
+        return row["limit_sell_amount"] >= int(
+            row["quote_sell_amount"]
+            + row["quote_gas_amount"]
+            * row["quote_gas_price"]
+            / row["quote_sell_token_price"]
         )
     raise ValueError(
         f"Unknown order kind \"{row['kind']}\". Only \"sell\" and \"buy\" are supported."

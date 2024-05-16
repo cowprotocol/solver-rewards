@@ -16,7 +16,7 @@ WITH batch_data_raw AS (
         so.effective_gas_price,
         so.gas_used,
         so.surplus,
-        so.fee
+        so.fee as total_fee
     FROM
         settlement_scores ss
         LEFT OUTER JOIN settlements s
