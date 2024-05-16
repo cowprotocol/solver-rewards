@@ -20,9 +20,10 @@ def compute_solver_rewards(
     """Compute solver rewards
     The input dataframes `batch_data_df` and `trade_data_df` contain data on batches and
     trades, respectively. It requires TokenConversion to convert betwenn ETH and COW.
-    The function creates a new dataframe with information on primary (or performance), secondary (or consistency/paticipation), and quote rewards.
+    The function creates a new dataframe with information on primary (or performance), secondary
+    (or consistency/paticipation), and quote rewards.
     """
-    # primary reward
+    # primary rewards
     primary_rewards_df = compute_primary_rewards(batch_data_df, converter)
 
     # secondary rewards

@@ -16,7 +16,8 @@ def preprocess_batch_data(batch_data_df: DataFrame) -> DataFrame:
 def preprocess_trade_data(trade_data_df: DataFrame) -> DataFrame:
     """Preprocess trade data
     Accounting period starting on: 2024-05-07
-    This processing corrects prices of FXN token which was off until the middle of the accounting period. The price 35322822331170980 was the last price before it became
+    This processing corrects prices of FXN token which was off until the middle of the
+    accounting period. The price 35322822331170980 was the last price before it became
     unreasonably large (due to an out of sync $0.02 TVL Uniswap pool).
     """
     trade_data_df.loc[
