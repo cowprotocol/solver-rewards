@@ -7,7 +7,7 @@ from pandas import DataFrame, Series
 from src.fetch.prices import TokenConversion
 
 EPSILON_UPPER = 12 * 10**15
-EPSILON_LOWER = 10**16
+EPSILON_LOWER = 10 * 10**15
 PERIOD_BUDGET_COW = 250_000 * 10**18
 CONSISTENCY_REWARD_CAP_ETH = 6 * 10**18
 QUOTE_REWARD_COW = 6 * 10**18
