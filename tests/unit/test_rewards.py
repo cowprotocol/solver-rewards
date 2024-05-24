@@ -91,6 +91,7 @@ class TestRewards(unittest.TestCase):
             )
         )
 
+    # TODO: Implement these tests, see issue #361
     def test_compute_solver_rewards(self):
         pass
 
@@ -139,6 +140,7 @@ class TestRewards(unittest.TestCase):
         )
         self.assertEqual(compute_primary_reward_datum(row), ("0x0001", -EPSILON_LOWER))
 
+    # TODO: Implement these tests, see issue #361
     def test_compute_secondary_rewards(self):
         pass
 

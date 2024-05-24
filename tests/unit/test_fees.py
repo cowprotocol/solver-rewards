@@ -375,6 +375,7 @@ class TestFees(unittest.TestCase):
         with self.assertRaises(ValueError):
             compute_trade_fee_datum(row)
 
+    # TODO: Implement these tests, see issue #361
     def test_compute_trade_fees(self):
         pass
 
