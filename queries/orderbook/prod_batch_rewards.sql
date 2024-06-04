@@ -161,7 +161,11 @@ order_protocol_fee_prices AS (
         END AS network_fee_correction,
         opf.sell_token as network_fee_token,
         ap_surplus.price / pow(10, 18) as surplus_token_native_price,
-        ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
+        case
+            when protocol_fee_token = '\x440e6ca1779977b4D225b266262A9E75Ce31a0b4' then 0
+        else
+            ap_protocol.price / pow(10, 18)
+        end as protocol_fee_token_native_price,
         ap_sell.price / pow(10, 18) as network_fee_token_native_price
     FROM
         order_protocol_fee opf
