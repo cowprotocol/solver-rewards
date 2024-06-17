@@ -239,48 +239,50 @@ order_protocol_fee as (
                 -- impossible anyways. This query will return a division by
                 -- zero error in that case.
                 first_protocol_fee + LEAST(
-                    fp.surplus_max_volume_factor / (1 - fp.surplus_max_volume_factor) * os.buy_amount,
+                    fp.surplus_max_volume_factor / (1 - fp.surplus_max_volume_factor) * osi.buy_amount,
                     -- at most charge a fraction of volume
-                    fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
+                    fp.surplus_factor / (1 - fp.surplus_factor) * osi.surplus -- charge a fraction of surplus
                 )
                 WHEN os.kind = 'buy' THEN first_protocol_fee + LEAST(
-                    fp.surplus_max_volume_factor / (1 + fp.surplus_max_volume_factor) * os.sell_amount,
+                    fp.surplus_max_volume_factor / (1 + fp.surplus_max_volume_factor) * osi.sell_amount,
                     -- at most charge a fraction of volume
-                    fp.surplus_factor / (1 - fp.surplus_factor) * surplus -- charge a fraction of surplus
+                    fp.surplus_factor / (1 - fp.surplus_factor) * osi.surplus -- charge a fraction of surplus
                 )
             END
             WHEN fp.kind = 'priceimprovement' THEN CASE
                 WHEN os.kind = 'sell' THEN
                 first_protocol_fee + LEAST(
                     -- at most charge a fraction of volume
-                    fp.price_improvement_max_volume_factor / (1 - fp.price_improvement_max_volume_factor) * os.buy_amount,
+                    fp.price_improvement_max_volume_factor / (1 - fp.price_improvement_max_volume_factor) * osi.buy_amount,
                     -- charge a fraction of price improvement, at most 0
                     GREATEST(
-                        fp.price_improvement_factor / (1 - fp.price_improvement_factor) * price_improvement
+                        fp.price_improvement_factor / (1 - fp.price_improvement_factor) * osi.price_improvement
                         ,
                         0
                     )
                 )
                 WHEN os.kind = 'buy' THEN first_protocol_fee + LEAST(
                     -- at most charge a fraction of volume
-                    fp.price_improvement_max_volume_factor / (1 + fp.price_improvement_max_volume_factor) * os.sell_amount,
+                    fp.price_improvement_max_volume_factor / (1 + fp.price_improvement_max_volume_factor) * osi.sell_amount,
                     -- charge a fraction of price improvement
                     GREATEST(
-                        fp.price_improvement_factor / (1 - fp.price_improvement_factor) * price_improvement,
+                        fp.price_improvement_factor / (1 - fp.price_improvement_factor) * osi.price_improvement,
                         0
                     )
                 )
             END
             WHEN fp.kind = 'volume' THEN CASE
                 WHEN os.kind = 'sell' THEN
-                    first_protocol_fee + fp.volume_factor / (1 - fp.volume_factor) * os.buy_amount
+                    first_protocol_fee + fp.volume_factor / (1 - fp.volume_factor) * osi.buy_amount
                 WHEN os.kind = 'buy' THEN
-                    first_protocol_fee + fp.volume_factor / (1 + fp.volume_factor) * os.sell_amount
+                    first_protocol_fee + fp.volume_factor / (1 + fp.volume_factor) * osi.sell_amount
             END
         END AS protocol_fee,
         os.surplus_token AS protocol_fee_token
     FROM
-        order_surplus_intermediate os
+        order_surplus os
+        JOIN order_surplus_intermediate osi
+        ON os.order_uid = osi.order_uid
         JOIN fee_policies_second fp -- contains protocol fee policy
         ON os.auction_id = fp.auction_id
         AND os.order_uid = fp.order_uid
