@@ -30,7 +30,7 @@ block_range as (
            b.block_number,
            case
                 when trader = 0x9008d19f58aabd9ed0d60971565aa8510560ab41
-                then 0x0000000000000000000000000000000000000000
+                then 0x0000000000000000000000000000000000000001
                 else trader
            end as trader_in,
            receiver                                     as trader_out,
