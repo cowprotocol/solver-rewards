@@ -17,3 +17,4 @@ SQLAlchemy<2.0.0
 sqlalchemy-stubs==0.4
 pandas==2.0.3
 pandas-stubs==2.0.2.230605
+numpy==1.26.4

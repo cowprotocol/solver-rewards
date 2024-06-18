@@ -73,7 +73,7 @@ def generic_script_init(description: str) -> ScriptArgs:
         "--min-transfer-amount-cow-atoms",
         type=int,
         help="Ignore COW transfers with amount less than this",
-        default=100000000000000000000,
+        default=20000000000000000000,
     )
     args = parser.parse_args()
     return ScriptArgs(
