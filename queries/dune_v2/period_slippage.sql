@@ -305,7 +305,7 @@ block_range as (
         on from_hex(r.order_uid) = t.order_uid and from_hex(r.tx_hash) = t.tx_hash
     where t.order_type='SELL'
 )
-,incoming_and_outgoing_with_internalized_imbalances as (
+,incoming_and_outgoing_with_internalized_imbalances_unmerged as (
     select * from (
         select * from incoming_and_outgoing_with_internalized_imbalances_temp
         union all
@@ -315,6 +315,19 @@ block_range as (
     ) as _
     order by block_time
 )
+,incoming_and_outgoing_with_internalized_imbalances as (
+    select
+        block_time,
+        tx_hash,
+        solver_address,
+        CASE
+            WHEN token = 0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee then 0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2
+            ELSE token
+        END as token,
+        amount,
+        transfer_type
+)
+
 -- These batches involve a token who do not emit standard transfer events.
 -- These batches are excluded due to inaccurate prices.
 ,excluded_batches as (
@@ -324,7 +337,6 @@ block_range as (
     select
         solver_address,
         sum(amount) token_imbalance_wei,
-        symbol,
         token,
         tx_hash,
         date_trunc('hour', block_time) as hour
@@ -332,7 +344,7 @@ block_range as (
         incoming_and_outgoing_with_internalized_imbalances
     where tx_hash not in (select tx_hash from excluded_batches)
     group by
-        symbol, token, solver_address, tx_hash, block_time
+        token, solver_address, tx_hash, block_time
     having
         sum(amount) != cast(0 as int256)
 )
