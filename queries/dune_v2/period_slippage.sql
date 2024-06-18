@@ -326,6 +326,7 @@ block_range as (
         END as token,
         amount,
         transfer_type
+    from incoming_and_outgoing_with_internalized_imbalances_unmerged
 )
 
 -- These batches involve a token who do not emit standard transfer events.
