@@ -338,6 +338,7 @@ block_range as (
     select
         solver_address,
         sum(amount) token_imbalance_wei,
+        symbol,
         token,
         tx_hash,
         date_trunc('hour', block_time) as hour
@@ -345,7 +346,7 @@ block_range as (
         incoming_and_outgoing_with_internalized_imbalances
     where tx_hash not in (select tx_hash from excluded_batches)
     group by
-        token, solver_address, tx_hash, block_time
+        symbol, token, solver_address, tx_hash, block_time
     having
         sum(amount) != cast(0 as int256)
 )
