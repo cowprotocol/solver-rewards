@@ -82,7 +82,9 @@ fee_policies_first_proxy as (
         order_uid,
         max(application_order) as application_order,
         count (*) as num_policies
-    from fee_policies group by order_uid, auction_id
+    from fee_policies
+    where auction_id in (select auction_id from order_surplus)
+    group by order_uid, auction_id
 ),
 fee_policies_first as (
     select
@@ -95,12 +97,13 @@ fee_policies_first as (
         fp.volume_factor,
         fp.price_improvement_factor,
         fp.price_improvement_max_volume_factor
-    from fee_policies fp join fee_policies_first_proxy fpmp on fp.auction_id = fpmp.auction_id and fp.order_uid = fpmp.order_uid and fp.application_order = fpmp.application_order
+    from fee_policies_first_proxy fpmp join fee_policies fp on fp.auction_id = fpmp.auction_id and fp.order_uid = fpmp.order_uid and fp.application_order = fpmp.application_order
 ),
 fee_policies_temp as (
     select
         *
     from fee_policies
+    where auction_id in (select auction_id from order_surplus)
     except (select * from fee_policies_first )
 ),
 fee_policies_second as (
@@ -122,6 +125,7 @@ fee_policies_second as (
 ),
 order_protocol_fee_first AS (
     SELECT
+        os.auction_id,
         os.order_uid,
         os.sell_amount,
         os.buy_amount,
@@ -186,6 +190,7 @@ order_protocol_fee_first AS (
 ),
 order_surplus_intermediate as (
     select
+        auction_id,
         order_uid,
         CASE
             WHEN kind = 'sell' then sell_amount
@@ -273,7 +278,7 @@ order_protocol_fee as (
     FROM
         order_surplus os
         JOIN order_surplus_intermediate osi
-        ON os.order_uid = osi.order_uid
+        ON os.order_uid = osi.order_uid AND os.auction_id = osi.auction_id
         JOIN fee_policies_second fp -- contains protocol fee policy
         ON os.auction_id = fp.auction_id
         AND os.order_uid = fp.order_uid
