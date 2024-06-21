@@ -74,7 +74,7 @@ class TestBatchRewards(unittest.TestCase):
                     None,
                     None,
                 ],
-                "partner_payments_in_eth": [
+                "partner_fee_eth": [
                     [214716223003516],
                     None,
                     None,

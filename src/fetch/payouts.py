@@ -420,9 +420,9 @@ def construct_payouts(
 
     quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
     batch_rewards_df = orderbook.get_solver_rewards(dune.start_block, dune.end_block)
-    partner_fees_df = batch_rewards_df[["partner_list", "partner_payments_in_eth"]]
+    partner_fees_df = batch_rewards_df[["partner_list", "partner_fee_eth"]]
     batch_rewards_df = batch_rewards_df.drop(
-        ["partner_list", "partner_payments_in_eth"], axis=1
+        ["partner_list", "partner_fee_eth"], axis=1
     )
     merged_df = pandas.merge(
         quote_rewards_df, batch_rewards_df, on="solver", how="outer"
@@ -462,15 +462,15 @@ def construct_payouts(
             continue
 
         # We assume the two lists used below, i.e.,
-        # partner_list and partner_payments_in_eth,
+        # partner_list and partner_fee_eth,
         # are "aligned".
 
         for i in range(len(row["partner_list"])):
             address = row["partner_list"][i]
             if address in partner_fees_wei:
-                partner_fees_wei[address] += int(row["partner_payments_in_eth"][i])
+                partner_fees_wei[address] += int(row["partner_fee_eth"][i])
             else:
-                partner_fees_wei[address] = int(row["partner_payments_in_eth"][i])
+                partner_fees_wei[address] = int(row["partner_fee_eth"][i])
     total_partner_fee_wei = 0
     for address, value in partner_fees_wei.items():
         total_partner_fee_wei += value
