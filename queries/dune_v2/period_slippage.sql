@@ -146,7 +146,7 @@ block_range as (
     from batch_meta bm
     join maker_ethereum.SavingsDai_evt_Withdraw w
     on w.evt_tx_hash= bm.tx_hash
-    where sender = 0x9008d19f58aabd9ed0d60971565aa8510560ab41
+    where owner = 0x9008d19f58aabd9ed0d60971565aa8510560ab41
     union all
     -- deposit events result in additional AMM_OUT transfer
     select
