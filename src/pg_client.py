@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import pandas as pd
 from pandas import DataFrame
+from pandas._typing import DtypeArg
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
@@ -22,9 +23,11 @@ class MultiInstanceDBFetcher:
         ]
 
     @classmethod
-    def exec_query(cls, query: str, engine: Engine) -> DataFrame:
+    def exec_query(
+        cls, query: str, engine: Engine, dtype: DtypeArg | None = None
+    ) -> DataFrame:
         """Executes query on DB engine"""
-        return pd.read_sql(sql=query, con=engine)
+        return pd.read_sql(sql=query, con=engine, dtype=dtype)
 
     def get_solver_rewards(self, start_block: str, end_block: str) -> DataFrame:
         """
@@ -69,6 +72,38 @@ class MultiInstanceDBFetcher:
             self.exec_query(query=quote_reward_query, engine=engine)
             for engine in self.connections
         ]
+
+        return pd.concat(results)
+
+    def get_batch_data(self, start_block: str, end_block: str) -> DataFrame:
+        """Return aggregated batch data for block range"""
+        results = []
+        file_names = ["orderbook/batch_data.sql", "orderbook/batch_data.sql"]
+        for engine, file_name in zip(self.connections, file_names):
+            batch_data_query = (
+                open_query(file_name)
+                .replace("{{start_block}}", start_block)
+                .replace("{{end_block}}", end_block)
+            )
+            results.append(
+                self.exec_query(query=batch_data_query, engine=engine, dtype=object)
+            )
+
+        return pd.concat(results)
+
+    def get_trade_data(self, start_block: str, end_block: str) -> DataFrame:
+        """Return aggregated trade data for block range"""
+        results = []
+        file_names = ["orderbook/trade_data.sql", "orderbook/trade_data.sql"]
+        for engine, file_name in zip(self.connections, file_names):
+            trade_data_query = (
+                open_query(file_name)
+                .replace("{{start_block}}", start_block)
+                .replace("{{end_block}}", end_block)
+            )
+            results.append(
+                self.exec_query(query=trade_data_query, engine=engine, dtype=object)
+            )
 
         return pd.concat(results)
 

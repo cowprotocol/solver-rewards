@@ -44,7 +44,7 @@ class TestDataUtils(unittest.TestCase):
             index_by(data_set, bad_field)
         self.assertEqual(
             str(err.exception),
-            f"<class 'test_data_utils.DummyDataClass'> has no field \"{bad_field}\"",
+            f"<class 'tests.unit.test_data_utils.DummyDataClass'> has no field \"{bad_field}\"",
         )
 
 
