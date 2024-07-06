@@ -186,22 +186,13 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             # = self.total_outgoing_eth()
             # >= 0 (because not self.is_overdraft())
             try:
-                if self.bonding_pool == COW_BONDING_POOL:
-                    result.append(
-                        Transfer(
-                            token=None,
-                            recipient=self.reward_target,
-                            amount_wei=reimbursement_eth + total_eth_reward,
-                        )
+                result.append(
+                    Transfer(
+                        token=None,
+                        recipient=self.reward_target if self.bonding_pool == COW_BONDING_POOL else self.solver,
+                        amount_wei=reimbursement_eth + total_eth_reward,
                     )
-                else:
-                    result.append(
-                        Transfer(
-                            token=None,
-                            recipient=self.solver,
-                            amount_wei=reimbursement_eth + total_eth_reward,
-                        )
-                    )
+                )
             except AssertionError:
                 logging.warning(
                     f"Invalid ETH Transfer {self.solver} "
@@ -231,22 +222,13 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             return result
 
         try:
-            if self.bonding_pool == COW_BONDING_POOL:
-                result.append(
-                    Transfer(
-                        token=None,
-                        recipient=self.reward_target,
-                        amount_wei=reimbursement_eth,
-                    )
+            result.append(
+                Transfer(
+                    token=None,
+                    recipient=self.reward_target if self.bonding_pool == COW_BONDING_POOL else self.solver,
+                    amount_wei=reimbursement_eth,
                 )
-            else:
-                result.append(
-                    Transfer(
-                        token=None,
-                        recipient=self.solver,
-                        amount_wei=reimbursement_eth,
-                    )
-                )
+            )
         except AssertionError:
             logging.warning(
                 f"Invalid ETH Transfer {self.solver} with amount={reimbursement_eth}"
