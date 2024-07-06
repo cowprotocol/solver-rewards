@@ -318,6 +318,12 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000007",
                     "0x0000000000000000000000000000000000000008",
                 ],
+                "pool": [
+                    "0x0000000000000000000000000000000000000025",
+                    "0x0000000000000000000000000000000000000026",
+                    "0x0000000000000000000000000000000000000026",
+                    "0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6",
+                ]
             }
         )
         period = AccountingPeriod("1985-03-10", 1)
@@ -384,6 +390,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         self.solver = Address.from_int(1)
         self.solver_name = "Solver1"
         self.reward_target = Address.from_int(2)
+        self.bonding_pool = Address.from_int(3)
         self.cow_token = Token(COW_TOKEN_ADDRESS)
         self.conversion_rate = 1000
 
@@ -399,6 +406,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             solver=self.solver,
             solver_name=self.solver_name,
             reward_target=self.reward_target,
+            bonding_pool=self.bonding_pool,
             primary_reward_eth=primary_reward,
             primary_reward_cow=primary_reward * self.conversion_rate,
             secondary_reward_eth=secondary_reward,
