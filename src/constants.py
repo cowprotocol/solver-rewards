@@ -9,6 +9,7 @@ from web3 import Web3
 
 
 COW_TOKEN_ADDRESS = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
+COW_BONDING_POOL = Address("0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6")
 
 PROJECT_ROOT = Path(__file__).parent.parent
 FILE_OUT_DIR = PROJECT_ROOT / Path("out")
