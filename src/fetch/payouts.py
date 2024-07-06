@@ -189,7 +189,9 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 result.append(
                     Transfer(
                         token=None,
-                        recipient=self.reward_target if self.bonding_pool == COW_BONDING_POOL else self.solver,
+                        recipient=self.reward_target
+                        if self.bonding_pool == COW_BONDING_POOL
+                        else self.solver,
                         amount_wei=reimbursement_eth + total_eth_reward,
                     )
                 )
@@ -225,7 +227,9 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             result.append(
                 Transfer(
                     token=None,
-                    recipient=self.reward_target if self.bonding_pool == COW_BONDING_POOL else self.solver,
+                    recipient=self.reward_target
+                    if self.bonding_pool == COW_BONDING_POOL
+                    else self.solver,
                     amount_wei=reimbursement_eth,
                 )
             )
