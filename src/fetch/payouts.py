@@ -186,7 +186,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             # = self.total_outgoing_eth()
             # >= 0 (because not self.is_overdraft())
             try:
-                if (self.bonding_pool == COW_BONDING_POOL):
+                if self.bonding_pool == COW_BONDING_POOL:
                     result.append(
                         Transfer(
                             token=None,
@@ -231,7 +231,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             return result
 
         try:
-            if (self.bonding_pool == COW_BONDING_POOL):
+            if self.bonding_pool == COW_BONDING_POOL:
                 result.append(
                     Transfer(
                         token=None,
