@@ -357,6 +357,11 @@ reward_data AS (
         end as fee,
         -- scores
         winning_score,
+        case
+            when block_number is not null
+            and block_number <= block_deadline then winning_score
+            else 0
+        end as observed_score,
         reference_score,
         -- auction_participation
         participating_solvers,
@@ -386,12 +391,12 @@ reward_per_auction as (
         surplus,
         protocol_fee, -- the protocol fee
         fee - network_fee_correction as network_fee, -- the network fee
-        surplus + protocol_fee - reference_score as uncapped_payment,
+        observed_score - reference_score as uncapped_payment,
         -- Capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
         LEAST(
             GREATEST(
                 - {{EPSILON_LOWER}},
-                surplus + protocol_fee - reference_score
+                observed_score - reference_score
             ),
             {{EPSILON_UPPER}}
         ) as capped_payment,
