@@ -13,7 +13,7 @@ import pandas
 from dune_client.types import Address
 from pandas import DataFrame, Series
 
-from src.constants import COW_TOKEN_ADDRESS
+from src.constants import COW_TOKEN_ADDRESS, COW_BONDING_POOL
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import eth_in_token, TokenId, token_in_eth
 from src.models.accounting_period import AccountingPeriod
@@ -77,6 +77,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         solver: Address,
         solver_name: str,
         reward_target: Address,
+        bonding_pool: Address,
         primary_reward_eth: int,
         secondary_reward_eth: int,
         slippage_eth: int,
@@ -91,6 +92,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         self.solver = solver
         self.solver_name = solver_name
         self.reward_target = reward_target
+        self.bonding_pool = bonding_pool
         self.slippage_eth = slippage_eth
         self.primary_reward_eth = primary_reward_eth
         self.primary_reward_cow = primary_reward_cow
@@ -108,6 +110,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         )
         solver = frame["solver"]
         reward_target = frame["reward_target"]
+        bonding_pool = frame["pool"]
         if reward_target is None:
             logging.warning(f"solver {solver} without reward_target. Using solver")
             reward_target = solver
@@ -116,6 +119,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             solver=Address(solver),
             solver_name=frame["solver_name"],
             reward_target=Address(reward_target),
+            bonding_pool=Address(bonding_pool),
             slippage_eth=slippage,
             primary_reward_eth=int(frame["primary_reward_eth"]),
             primary_reward_cow=int(frame["primary_reward_cow"]),
@@ -171,7 +175,6 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             if total_eth_reward != 0
             else 0
         )
-
         if reimbursement_eth > 0 > total_cow_reward:
             # If the total payment is positive but the total rewards are negative,
             # pay the total payment in ETH. The total payment corresponds to reimbursement,
@@ -186,7 +189,9 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 result.append(
                     Transfer(
                         token=None,
-                        recipient=self.solver,
+                        recipient=self.reward_target
+                        if self.bonding_pool == COW_BONDING_POOL
+                        else self.solver,
                         amount_wei=reimbursement_eth + total_eth_reward,
                     )
                 )
@@ -222,7 +227,9 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             result.append(
                 Transfer(
                     token=None,
-                    recipient=self.solver,
+                    recipient=self.reward_target
+                    if self.bonding_pool == COW_BONDING_POOL
+                    else self.solver,
                     amount_wei=reimbursement_eth,
                 )
             )
@@ -442,6 +449,7 @@ def construct_payouts(
         slippage_df=pandas.DataFrame(dune.get_period_slippage()),
         reward_target_df=pandas.DataFrame(dune.get_vouches()),
     )
+
     # Sort by solver before breaking this data frame into Transfer objects.
     complete_payout_df = complete_payout_df.sort_values("solver")
 
