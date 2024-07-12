@@ -329,7 +329,6 @@ block_range as (
         transfer_type
     from incoming_and_outgoing_with_internalized_imbalances_unmerged
 )
-
 -- These batches involve a token who do not emit standard transfer events.
 -- These batches are excluded due to inaccurate prices.
 ,excluded_batches as (
