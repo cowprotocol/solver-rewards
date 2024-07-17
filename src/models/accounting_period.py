@@ -8,15 +8,18 @@ from datetime import datetime, timedelta
 
 from dune_client.types import QueryParameter
 
-DATE_FORMAT = "%Y-%m-%d"
+DATE_FORMAT = "%Y-%m-%d-%H:%M:%S"
 
 
 class AccountingPeriod:
     """Class handling the date arithmetic and string conversions for date intervals"""
 
-    def __init__(self, start: str, length_days: int = 7):
+    def __init__(self, start: str, end: str = None, length_days: int = 7):
         self.start = datetime.strptime(start, DATE_FORMAT)
-        self.end = self.start + timedelta(days=length_days)
+        if end:
+            self.end = datetime.strptime(end, DATE_FORMAT)
+        else:
+            self.end = self.start + timedelta(days=length_days)
 
     def __str__(self) -> str:
         return "-to-".join(
