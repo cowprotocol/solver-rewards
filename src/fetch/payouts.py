@@ -479,21 +479,28 @@ def construct_payouts(
                 partner_fees_wei[address] += int(row["partner_fee_eth"][i])
             else:
                 partner_fees_wei[address] = int(row["partner_fee_eth"][i])
-    total_partner_fee_wei = 0
+    total_partner_fee_wei_untaxed = 0
+    total_partner_fee_wei_taxed = 0
+    partner_fee_tax_wei = 0
     for address, value in partner_fees_wei.items():
-        total_partner_fee_wei += value
-        partner_fees_wei[address] = int(0.85 * value)
+        total_partner_fee_wei_untaxed += value
+        if address == "0x63695Eee2c3141BDE314C5a6f89B98E62808d716":
+            partner_fees_wei[address] = int(0.90 * value)
+            total_partner_fee_wei_taxed += int(0.90 * value)
+        else:
+            partner_fees_wei[address] = int(0.85 * value)
+            total_partner_fee_wei_taxed += int(0.85 * value)
 
-    final_protocol_fee_wei = raw_protocol_fee_wei - total_partner_fee_wei
-    partner_fee_tax_wei = int(0.15 * total_partner_fee_wei)
-    total_partner_fee_wei = int(0.85 * total_partner_fee_wei)
+
+    final_protocol_fee_wei = raw_protocol_fee_wei - total_partner_fee_wei_untaxed
+    partner_fee_tax_wei = total_partner_fee_wei_untaxed - total_partner_fee_wei_taxed
     dune.log_saver.print(
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n"
         f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n"
         f"Protocol Fees: {final_protocol_fee_wei / 10 ** 18:.4f}\n"
         f"Partner Fees Tax: {partner_fee_tax_wei / 10 ** 18:.4f}\n"
-        f"Partner Fees: {total_partner_fee_wei / 10 ** 18:.4f}\n",
+        f"Partner Fees: {total_partner_fee_wei_taxed / 10 ** 18:.4f}\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(
