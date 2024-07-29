@@ -418,7 +418,7 @@ participation_data_intermediate as (
     SELECT
         tx_hash,
         CASE
-            WHEN block_deadline <= 20365510 THEN 1  -- final block deadline of accounting week of July 16-July 23, 2024
+            WHEN block_deadline <= 20365510 THEN 1  -- final block deadline of accounting week of July 16 - July 23, 2024
             ELSE 0
         END as count_participation,
         participant
