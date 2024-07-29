@@ -491,7 +491,6 @@ def construct_payouts(
             partner_fees_wei[address] = int(0.85 * value)
             total_partner_fee_wei_taxed += int(0.85 * value)
 
-
     final_protocol_fee_wei = raw_protocol_fee_wei - total_partner_fee_wei_untaxed
     partner_fee_tax_wei = total_partner_fee_wei_untaxed - total_partner_fee_wei_taxed
     dune.log_saver.print(
