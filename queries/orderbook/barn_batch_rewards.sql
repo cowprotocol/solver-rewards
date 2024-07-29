@@ -409,16 +409,28 @@ reward_per_auction as (
 participation_data as (
     SELECT
         tx_hash,
+        block_deadline,
         unnest(participating_solvers) as participant
     FROM
         reward_per_auction
 ),
+participation_data_intermediate as (
+    SELECT
+        tx_hash,
+        CASE
+            WHEN block_deadline <= 20365510 THEN 1  -- final block deadline of accounting week of July 16-July 23, 2024
+            ELSE 0
+        END as count_participation,
+        participant
+    FROM
+        participation_data
+),
 participation_counts as (
     SELECT
         participant as solver,
-        count(*) as num_participating_batches
+        sum(count_participation) as num_participating_batches
     FROM
-        participation_data
+        participation_data_intermediate
     GROUP BY
         participant
 ),
