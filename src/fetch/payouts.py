@@ -282,6 +282,11 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
         0,
     )
     participation_total = pdf["num_participating_batches"].sum()
+    if participation_total == 0:
+        # Due to CIP-48 we will stop counting participation. This workaround avoids
+        # division by zero as the num_participation_batches is set to zero for all
+        # solvers after CIP-48.
+        participation_total = 1
     pdf["secondary_reward_cow"] = (
         secondary_allocation * pdf["num_participating_batches"] / participation_total
     )
