@@ -11,7 +11,7 @@ coinpaprika>=0.1.0
 requests>=2.28.1
 safe-cli==0.7.0
 safe-eth-py==5.5.0
-slackclient==2.9.4
+slackclient
 web3==6.5.0
 SQLAlchemy<2.0.0
 sqlalchemy-stubs==0.4

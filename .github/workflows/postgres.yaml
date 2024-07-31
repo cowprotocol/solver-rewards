@@ -22,12 +22,12 @@ jobs:
           - ${{ github.workspace }}:/repo
     steps:
       - uses: actions/checkout@v3
-      - name: Setup Python 3.12
+      - name: Setup Python 3.11
         uses: actions/setup-python@v3
         with:
-          python-version: '3.12'
+          python-version: '3.11'
       - name: Install Requirements
-        run: pip install -r requirements.txt
+        run: pip3 install -r requirements.txt
       - name: Tests
         run: python -m pytest tests/queries
         # Environment variables used by the `pg_client.py`

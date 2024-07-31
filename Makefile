@@ -12,7 +12,7 @@ INST := $(VENV)/.install
 $(INST): requirements.txt
 	$(PYTHON) -m venv $(VENV)
 	$(ACTIVATE); pip install --upgrade pip
-	$(ACTIVATE); pip install -r requirements.txt
+	$(ACTIVATE); pip3 install -r requirements.txt
 	touch $@
 
 .PHONY: install
