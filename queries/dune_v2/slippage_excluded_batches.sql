@@ -1,4 +1,4 @@
--- https://github.com/cowprotocol/solver-rewards/pull/350
+-- https://github.com/cowprotocol/solver-rewards/pull/379
 -- Query Here: https://dune.com/queries/3490353
 select DISTINCT
   tx_hash
