@@ -1,4 +1,4 @@
--- https://github.com/cowprotocol/solver-rewards/pull/350
+-- https://github.com/cowprotocol/solver-rewards/pull/379
 -- Query Here: https://dune.com/queries/3490353
 select DISTINCT
   tx_hash
@@ -21,16 +21,15 @@ where
   or 0x7c6314cCd4e34346Ba9C9bd9900FaafB4E3711B0 in (buy_token_address, sell_token_address) -- exclude ERC404X
   or 0xe2f95ee8B72fFed59bC4D2F35b1d19b909A6e6b3 in (buy_token_address, sell_token_address) -- exclude EGGX
   or 0xd5C02bB3e40494D4674778306Da43a56138A383E in (buy_token_address, sell_token_address) -- exclude OMNI404
-  or 0x92715b8F93729c0B014213f769EF493baecEDACC in (buy_token_address, sell_token_address) -- exclude WIFU 404 
+  or 0x92715b8F93729c0B014213f769EF493baecEDACC in (buy_token_address, sell_token_address) -- exclude WIFU 404
   or 0x413530a7beB9Ff6C44e9e6C9001C93B785420C32 in (buy_token_address, sell_token_address) -- exclude PFPAsia. NEEDS TO BE REMOVED FROM THIS LIST
-  or 0xe7468080c033cE50Dd09A22ad1E58D1BDA69E436 in (buy_token_address, sell_token_address) -- exclude YUMYUM. NEEDS TO BE REMOVED FROM THIS LIST 
-  or 0x83F20F44975D03b1b09e64809B757c47f942BEeA in (buy_token_address, sell_token_address) -- exclude sDAI -- NEEDS TO BE REMOVED FROM THIS LIST ASAP
+  or 0xe7468080c033cE50Dd09A22ad1E58D1BDA69E436 in (buy_token_address, sell_token_address) -- exclude YUMYUM. NEEDS TO BE REMOVED FROM THIS LIST
   or tx_hash = 0x41418cef26e608ed47a5c4997833caaa2366a0163173286140da28a32e37b25d -- temporary solution
   or tx_hash = 0xdf415f3048d401c9ca7bf079722be96aaed3d2d2b5c0e12b7dc75d6eec30b3d4 -- temporary solution
   or tx_hash = 0x15b9906aa2039ccbc9ae9fab0f0c7517e9c88c41b74cd8a09f202803d37f6341 -- temporary solution
   or tx_hash = 0x3a71df0f6898b229c3643d4703b56d7510d455c65649cb364e5b69cadf5d1d37 -- temporary solution
   or tx_hash = 0xc9bcb4c8c68d4edcb97403131d28416a418ae537c43e9feca50f11ca744c079e -- temporary solution
-  -- the following 2 stable-to-stable trades Otex settled. Due to inaccurate accounting, and since Otex has more of those, 
+  -- the following 2 stable-to-stable trades Otex settled. Due to inaccurate accounting, and since Otex has more of those,
   -- I decided to remove 2 of those to mitigate the inaccuracies resulting from the rest
   or tx_hash = 0x60157b1891dbdbcdc88c637079c4c9e37d5fe943bf3ffff14412b33bf7125ad1
   or tx_hash = 0x414e72fa7c061a1b2c5905f21e41d8cb5500ec9043b65b317cd20362f4eff757
@@ -136,3 +135,22 @@ where
   -- for week of July 2, 2024 until July 9, 2024
   or tx_hash = 0xaf40d801d03975135c539707b1ecc998730750c0f9b185a0cd144e0d461f53cd
   or tx_hash = 0x7e65980f09bb8ec67f6dddd82e6a2f2a990501c3c6928b423903e2642dc5d73d
+  -- for week of July 9, 2024 until July 16, 2024
+  or tx_hash = 0x1d9577d7c8e856a74f664b4d1be3d7488e33b730f8c190e433278d8e3cefc2cb
+  or tx_hash = 0x69f9ab97c687a68575ced1d57ff71e69b680746b6473ac269d3ec3a21f686b33
+  or tx_hash = 0x89f921cf4d93eeba622b4b333e92c023698d32263fe29fdb93fac34656f86c06
+  or tx_hash = 0xb4f58c9e7132e49fe10ea3e0ec90c37a68f11fd0454f750387ff9dbc633a811e
+  or tx_hash = 0xc78513b3146004bc7d3e0765c92e13c4b91adb9a16002aea2601ec4a68d1eab5
+  or tx_hash = 0xd6ab356a216afca8a40e9343f4cdffe64ec5999a47a10fe7ce4427aba7b6cf96
+  or tx_hash = 0x87030eb545efebe7f59718608eee475eea95f5ba77bb1c1f46d2a46ded245b13
+  or tx_hash = 0x9e216f57d34e31ac61aa1316c3b9a5e460ae1eb7d6b8bf017fdd4af083566219
+  -- for week of July 16, 2024 until July 23, 2024
+  or tx_hash = 0x0cd1c6d5c0d01b114ab85a92cf52eabd41bc7eb48692069f8a60ca24ef284e1d
+  or tx_hash = 0xfc8af62481cf21f6c91d1e64afb4079d95a3c76f3d3ad6626206ca6c5e9c6126
+  or tx_hash = 0x18b436c1f14b491282c453d7bc67295f95108d055001719d6ffd7110fe6513cd
+  or tx_hash = 0x27c9fd96c1bbcf75c521ac774f270f9502bd4ce4816e4f2c9d75e64b90fb9778
+  or tx_hash = 0x9a0d7ac0eb92197e4122c56332f3bf6ee6d6ce6cd6a03f988db268e4f88a3c5d
+  -- for week of July 23, 2024 until July 30, 2024
+  or tx_hash = 0x6f4638194282021a3ae2a80c778ff7829d4b269af6ac1cd612744a9d3dbd86fb
+  -- for week of August 06, 2024 until August 13, 2024
+  or tx_hash = 0xbd8cf4a21ad811cc3b9e49cff5e95563c3c2651b0ea41e0f8a7987818205c984
