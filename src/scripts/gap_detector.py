@@ -18,15 +18,15 @@ from src.pg_client import MultiInstanceDBFetcher
 
 DB_COUNT_QUERY = (
     "select count(*) as batches from settlements "
-    "where block_number between {{start}} and {{end}};"
+    "where block_number >= {{start}} and block_number <= {{end}};"
 )
 DB_HASH_QUERY = (
     "select concat('0x', encode(tx_hash, 'hex')) as tx_hash from settlements "
-    "where block_number between {{start}} and {{end}};"
+    "where block_number >= {{start}} and block_number <= {{end}};"
 )
 
-DUNE_COUNT_QUERY_ID = 2481826
-DUNE_HASH_QUERY_ID = 2532671
+DUNE_COUNT_QUERY_ID = 3333411
+DUNE_HASH_QUERY_ID = 3333413
 
 JANUARY_2023 = 16308190
 MAX_QUERYABLE_HASH_SET = 500

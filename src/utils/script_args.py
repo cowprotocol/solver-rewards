@@ -19,6 +19,7 @@ class ScriptArgs:
     dry_run: bool
     consolidate_transfers: bool
     min_transfer_amount_wei: int
+    min_transfer_amount_cow_atoms: int
 
 
 def generic_script_init(description: str) -> ScriptArgs:
@@ -56,12 +57,17 @@ def generic_script_init(description: str) -> ScriptArgs:
         "Primarily intended for deployment in staging environment.",
         default=False,
     )
-    # TODO: this should be per token (like list[tuple[Token,minAmount]])
     parser.add_argument(
         "--min-transfer-amount-wei",
         type=int,
-        help="Ignore transfers with amount less than this",
+        help="Ignore ETH transfers with amount less than this",
         default=1000000000000000,
+    )
+    parser.add_argument(
+        "--min-transfer-amount-cow-atoms",
+        type=int,
+        help="Ignore COW transfers with amount less than this",
+        default=20000000000000000000,
     )
     args = parser.parse_args()
     return ScriptArgs(
@@ -73,4 +79,5 @@ def generic_script_init(description: str) -> ScriptArgs:
         dry_run=args.dry_run,
         consolidate_transfers=args.consolidate_transfers,
         min_transfer_amount_wei=args.min_transfer_amount_wei,
+        min_transfer_amount_cow_atoms=args.min_transfer_amount_cow_atoms,
     )
