@@ -9,7 +9,7 @@ from dataclasses import asdict
 
 import certifi
 from dune_client.file.interface import FileIO
-from eth_typing.ethpm import URI
+from eth_typing import URI
 from gnosis.eth.ethereum_client import EthereumClient
 from slack.web.client import WebClient
 
