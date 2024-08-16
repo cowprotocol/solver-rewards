@@ -21,7 +21,7 @@ class TestTransactionPost(unittest.TestCase):
         self.client = EthereumClient(URI("https://rpc.ankr.com/eth_goerli"))
     @pytest.mark.skip(
         reason="Need to deploy a safe owned by the pk above on sepolia"
-        "Issue https://github.com/cowprotocol/solver-rewards/issues/120"
+        "Issue https://github.com/cowprotocol/solver-rewards/issues/387"
     )
     def test_post_multisend(self):
         token_transfer = Transfer(
