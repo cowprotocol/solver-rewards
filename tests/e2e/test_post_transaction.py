@@ -19,6 +19,7 @@ class TestTransactionPost(unittest.TestCase):
         self.cow = Token("0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600", 18)
         self.receiver = Address("0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0")
         self.client = EthereumClient(URI("https://rpc.ankr.com/eth_goerli"))
+
     @pytest.mark.skip(
         reason="Need to deploy a safe owned by the pk above on sepolia"
         "Issue https://github.com/cowprotocol/solver-rewards/issues/387"
