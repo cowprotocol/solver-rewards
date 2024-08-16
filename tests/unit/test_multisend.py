@@ -58,7 +58,7 @@ class TestMultiSend(unittest.TestCase):
         hex_weth_balance = hex(weth_balance)[2:].rjust(64, "0")
         self.assertEqual(
             f"{unwrap_method_id}{hex_weth_balance}",
-            "0x" + unwrap.data.hex(),
+            unwrap.data.hex(),
         )
 
     def test_multisend_encoding(self):
