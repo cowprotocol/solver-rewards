@@ -18,9 +18,7 @@ class TestTransactionPost(unittest.TestCase):
         self.test_safe = "0xAb4178341C37e2307726361eEAE47FCA606cd458"
         self.cow = Token("0x3430d04E42a722c5Ae52C5Bffbf1F230C2677600", 18)
         self.receiver = Address("0xFFcf8FDEE72ac11b5c542428B35EEF5769C409f0")
-        self.client = EthereumClient(
-            URI(f"https://goerli.infura.io/v3/{os.environ.get('INFURA_KEY')}")
-        )
+        self.client = EthereumClient(URI("https://rpc.ankr.com/eth_goerli"))
 
     def test_token_decimals(self):
         token_transfer = Transfer(

@@ -3,10 +3,9 @@ import unittest
 from dune_client.types import Address
 from web3 import Web3
 
-from src.constants import INFURA_KEY
 from src.utils.token_details import get_token_decimals
 
-W3 = Web3(Web3.HTTPProvider(f"https://goerli.infura.io/v3/{INFURA_KEY}"))
+W3 = Web3(Web3.HTTPProvider("https://rpc.ankr.com/eth_goerli"))
 
 
 class TestTokenDecimals(unittest.TestCase):
