@@ -1,6 +1,7 @@
 """
 Common location for shared resources throughout the project.
 """
+
 from __future__ import annotations
 
 from enum import Enum

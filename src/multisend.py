@@ -2,6 +2,7 @@
 All the tools necessary to compose and encode a
 Safe Multisend transaction consisting of Transfers
 """
+
 import logging.config
 
 from eth_typing.evm import ChecksumAddress

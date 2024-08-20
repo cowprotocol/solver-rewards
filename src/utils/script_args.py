@@ -1,4 +1,5 @@
 """Common method for initializing setup for scripts"""
+
 import argparse
 import os
 from datetime import date, timedelta

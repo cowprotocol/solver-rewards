@@ -1,6 +1,7 @@
 """
 Basic Slack Post functionality. Sends a message thread to a specified channel.
 """
+
 from slack.web.client import WebClient
 from slack.web.slack_response import SlackResponse
 

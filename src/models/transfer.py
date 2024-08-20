@@ -1,6 +1,7 @@
 """
 Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Period
 """
+
 from __future__ import annotations
 
 from dataclasses import dataclass

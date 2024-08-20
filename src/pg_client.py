@@ -1,4 +1,5 @@
 """Basic client for connecting to postgres database with login credentials"""
+
 from __future__ import annotations
 
 
