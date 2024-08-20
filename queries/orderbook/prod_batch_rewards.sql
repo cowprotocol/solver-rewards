@@ -304,7 +304,10 @@ order_protocol_fee_prices AS (
         END AS network_fee_correction,
         opf.sell_token as network_fee_token,
         ap_surplus.price / pow(10, 18) as surplus_token_native_price,
-        ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
+        CASE
+            WHEN opf.order_uid = '\x942e55be89314c5e799a12b487387a1221e5671bd17222a1bc69cb2b7728a4eea53a13a80d72a855481de5211e7654fabdfe352666e32aec' then 1.9088477506249592e-5
+            ELSE ap_protocol.price / pow(10, 18)
+        END AS protocol_fee_token_native_price,
         ap_sell.price / pow(10, 18) as network_fee_token_native_price
     FROM
         order_protocol_fee as opf
