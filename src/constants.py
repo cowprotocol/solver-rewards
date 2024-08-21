@@ -1,4 +1,5 @@
 """Project Global Constants. """
+
 import os
 from pathlib import Path
 

@@ -2,6 +2,7 @@
 Gap detection script for finding missing transaction hashes of settlements.
 Uses a form of binary search to minimize/reduce API requests.
 """
+
 from __future__ import annotations
 import argparse
 import os

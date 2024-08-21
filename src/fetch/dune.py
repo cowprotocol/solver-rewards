@@ -1,4 +1,5 @@
 """All Dune related query fetching is defined here in the DuneFetcherClass"""
+
 from typing import Optional
 
 from dune_client.client import DuneClient

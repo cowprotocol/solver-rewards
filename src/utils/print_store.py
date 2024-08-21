@@ -1,6 +1,7 @@
 """
 Simple wrapper for print statements that saves all the messages chronologically in a list
 """
+
 from collections import defaultdict
 from enum import Enum
 
