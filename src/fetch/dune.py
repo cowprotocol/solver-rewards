@@ -131,7 +131,7 @@ class DuneFetcher:
         pool_values = ",\n".join(RECOGNIZED_BONDING_POOLS)
         return self._get_query_results(
             query=self._parameterized_query(
-                query_data=QUERIES["SERVICE_FEE_TRACKER"],
+                query_data=QUERIES["SERVICE_FEE_STATUS"],
                 params=[
                     QueryParameter.date_type("EndTime", self.period.end),
                     QueryParameter.text_type("BondingPoolData", pool_values),

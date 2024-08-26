@@ -510,6 +510,7 @@ def construct_payouts(
     service_fee_df = pandas.DataFrame(dune.get_service_fee_status())[
         ["solver", "service_fee"]
     ]
+    slippage_df = pandas.DataFrame(dune.get_period_slippage())
 
     complete_payout_df = construct_payout_dataframe(
         # Fetch and extend auction data from orderbook.
@@ -522,7 +523,7 @@ def construct_payouts(
             ),
         ),
         # Dune: Fetch Solver Slippage & Reward Targets
-        slippage_df=pandas.DataFrame(dune.get_period_slippage()),
+        slippage_df=slippage_df,
         reward_target_df=pandas.DataFrame(dune.get_vouches()),
         service_fee_df=service_fee_df,
     )
