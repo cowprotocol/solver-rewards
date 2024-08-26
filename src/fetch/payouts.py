@@ -167,7 +167,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         Isolating the logic of how solvers are paid out according to their
             execution costs, rewards and slippage
         """
-        quote_reward_cow = self.quote_reward_cow
+        quote_reward_cow = int(self.reward_scaling() * self.quote_reward_cow)
         result = []
         if quote_reward_cow > 0:
             result.append(
