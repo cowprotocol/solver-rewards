@@ -133,9 +133,7 @@ class DuneFetcher:
             query=self._parameterized_query(
                 query_data=QUERIES["SERVICE_FEE_STATUS"],
                 params=[
-                    QueryParameter.date_type("EndTime", self.period.end),
                     QueryParameter.text_type("BondingPoolData", pool_values),
-                    QueryParameter.enum_type("VOUCH_CTE_NAME", "valid_vouches"),
                 ],
             )
         )

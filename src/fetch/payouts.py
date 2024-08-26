@@ -507,9 +507,9 @@ def construct_payouts(
     merged_df = pandas.merge(
         quote_rewards_df, batch_rewards_df, on="solver", how="outer"
     ).fillna(0)
-    service_fee_df = pandas.DataFrame(dune.get_service_fee_status())[
-        ["solver", "service_fee"]
-    ]
+    service_fee_df = pandas.DataFrame(dune.get_service_fee_status())
+    service_fee_df["service_fee"] = service_fee_df["expiry_date"] <= dune.period.start
+    service_fee_df = service_fee_df[["solver", "service_fee"]]
     slippage_df = pandas.DataFrame(dune.get_period_slippage())
 
     complete_payout_df = construct_payout_dataframe(
