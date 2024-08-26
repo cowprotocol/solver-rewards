@@ -453,7 +453,9 @@ def construct_payout_dataframe(
     return merged_df
 
 
-def construct_partner_fee_payments(partner_fees_df) -> tuple[dict[str, int], int]:
+def construct_partner_fee_payments(
+    partner_fees_df: DataFrame,
+) -> tuple[dict[str, int], int]:
     """Compute actual partner fee payments taking partner fee tax into account
     The result is a tuple. The first entry is a dictionary that contains the destination address of
     a partner as a key, and the value is the amount in wei to be transferred to that address, stored
