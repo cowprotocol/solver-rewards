@@ -50,12 +50,17 @@ class DuneFetcher:
         return query_data.with_params(params)
 
     def _get_query_results(
-        self, query: Query, job_id: Optional[str] = None
+        self,
+        query: Query,
+        job_id: Optional[str] = None,
+        performance: str = "medium",
     ) -> list[dict[str, str]]:
         """Internally every dune query execution is routed through here."""
         log.info(f"Fetching {query.name} from query: {query}")
         if not job_id:
-            exec_result = self.dune.refresh(query, ping_frequency=15)
+            exec_result = self.dune.refresh(
+                query, performance=performance, ping_frequency=15
+            )
         else:
             exec_result = self.dune.get_result(job_id)
 
@@ -122,4 +127,5 @@ class DuneFetcher:
                 ],
             ),
             job_id,
+            performance="large",
         )
