@@ -123,3 +123,19 @@ class DuneFetcher:
             ),
             job_id,
         )
+
+    def get_service_fee_status(self) -> list[DuneRecord]:
+        """
+        Fetches & Returns Parsed Results for VouchRegistry query.
+        """
+        pool_values = ",\n".join(RECOGNIZED_BONDING_POOLS)
+        return self._get_query_results(
+            query=self._parameterized_query(
+                query_data=QUERIES["SERVICE_FEE_TRACKER"],
+                params=[
+                    QueryParameter.date_type("EndTime", self.period.end),
+                    QueryParameter.text_type("BondingPoolData", pool_values),
+                    QueryParameter.enum_type("VOUCH_CTE_NAME", "valid_vouches"),
+                ],
+            )
+        )
