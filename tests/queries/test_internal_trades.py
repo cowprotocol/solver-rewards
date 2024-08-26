@@ -7,14 +7,14 @@ from enum import Enum
 from typing import Optional
 
 from dune_client.client import DuneClient
-from dune_client.query import Query
+from dune_client.query import QueryBase
 from dune_client.types import Address, QueryParameter
 
 from src.models.accounting_period import AccountingPeriod
 from src.queries import QUERIES
 
 
-def exec_or_get(dune: DuneClient, query: Query, result_id: Optional[str] = None):
+def exec_or_get(dune: DuneClient, query: QueryBase, result_id: Optional[str] = None):
     if not result_id:
         results = dune.refresh(query)
         print(f"Execution ID: {results.execution_id}")

@@ -3,7 +3,7 @@
 from typing import Optional
 
 from dune_client.client import DuneClient
-from dune_client.query import Query
+from dune_client.query import QueryBase
 from dune_client.types import QueryParameter, DuneRecord
 
 from src.constants import RECOGNIZED_BONDING_POOLS
@@ -46,11 +46,11 @@ class DuneFetcher:
     @staticmethod
     def _parameterized_query(
         query_data: QueryData, params: list[QueryParameter]
-    ) -> Query:
+    ) -> QueryBase:
         return query_data.with_params(params)
 
     def _get_query_results(
-        self, query: Query, job_id: Optional[str] = None
+        self, query: QueryBase, job_id: Optional[str] = None
     ) -> list[dict[str, str]]:
         """Internally every dune query execution is routed through here."""
         log.info(f"Fetching {query.name} from query: {query}")

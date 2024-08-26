@@ -8,12 +8,10 @@ import logging.config
 from eth_typing.evm import ChecksumAddress
 from gnosis.eth.ethereum_client import EthereumClient
 from gnosis.eth.ethereum_network import EthereumNetwork
+from gnosis.safe.api import TransactionServiceApi
 from gnosis.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
 from gnosis.safe.safe import Safe
 
-# This dependency can be removed once this issue is resolved:
-# https://github.com/safe-global/safe-eth-py/issues/284
-from safe_cli.api.transaction_service_api import TransactionServiceApi
 
 from src.constants import LOG_CONFIG_FILE, web3
 from src.abis.load import weth9
@@ -99,10 +97,10 @@ def post_multisend(
     # There is a deep warning being raised here:
     # Details in issue: https://github.com/safe-global/safe-eth-py/issues/294
     safe_tx.sign(signing_key)
-    tx_service = TransactionServiceApi(client, network)
+    tx_service = TransactionServiceApi(network, client)
     print(
         f"Posting transaction with hash"
         f" {safe_tx.safe_tx_hash.hex()} to {safe.address}"
     )
-    tx_service.post_transaction(safe_address=safe.address, safe_tx=safe_tx)
+    tx_service.post_transaction(safe_tx=safe_tx)
     return int(safe_tx.safe_nonce)
