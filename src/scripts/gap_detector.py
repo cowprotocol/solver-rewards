@@ -11,7 +11,7 @@ from dataclasses import dataclass
 import pandas as pd
 from pandas import DataFrame
 from dune_client.client import DuneClient
-from dune_client.query import Query
+from dune_client.query import QueryBase
 from dune_client.types import QueryParameter
 from dotenv import load_dotenv
 
