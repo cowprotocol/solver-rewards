@@ -425,6 +425,44 @@ def construct_payout_dataframe(
     return merged_df
 
 
+def construct_protocol_fee_payments(
+    complete_payout_df, partner_fees_df
+) -> tuple[dict[str, int], int]:
+    # We now decompose the raw_protocol_fee_wei amount into actual
+    # protocol fee and partner fees. For convenience,
+    # we use a dictionary partner_fees_wei that contains the the
+    # destination address of an partner as a key, and the value is the
+    # amount in wei to be transferred to that address, stored as an int.
+
+    partner_fees_wei: dict[str, int] = {}
+    for _, row in partner_fees_df.iterrows():
+        if row["partner_list"] is None:
+            continue
+
+        # We assume the two lists used below, i.e.,
+        # partner_list and partner_fee_eth,
+        # are "aligned".
+
+        for i in range(len(row["partner_list"])):
+            address = row["partner_list"][i]
+            if address in partner_fees_wei:
+                partner_fees_wei[address] += int(row["partner_fee_eth"][i])
+            else:
+                partner_fees_wei[address] = int(row["partner_fee_eth"][i])
+    total_partner_fee_wei_untaxed = 0
+    total_partner_fee_wei_taxed = 0
+    for address, value in partner_fees_wei.items():
+        total_partner_fee_wei_untaxed += value
+        if address == "0x63695Eee2c3141BDE314C5a6f89B98E62808d716":
+            partner_fees_wei[address] = int(0.90 * value)
+            total_partner_fee_wei_taxed += int(0.90 * value)
+        else:
+            partner_fees_wei[address] = int(0.85 * value)
+            total_partner_fee_wei_taxed += int(0.85 * value)
+
+    return partner_fees_wei, total_partner_fee_wei_untaxed
+
+
 def construct_payouts(
     dune: DuneFetcher, orderbook: MultiInstanceDBFetcher
 ) -> list[Transfer]:
@@ -462,46 +500,19 @@ def construct_payouts(
     # Sort by solver before breaking this data frame into Transfer objects.
     complete_payout_df = complete_payout_df.sort_values("solver")
 
+    # compute partner fees
+    partner_fees_wei, total_partner_fee_wei_untaxed = construct_protocol_fee_payments(
+        complete_payout_df, partner_fees_df
+    )
+
     performance_reward = complete_payout_df["primary_reward_cow"].sum()
     participation_reward = complete_payout_df["secondary_reward_cow"].sum()
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
     raw_protocol_fee_wei = int(complete_payout_df.protocol_fee_eth.sum())
-
-    # We now decompose the raw_protocol_fee_wei amount into actual
-    # protocol fee and partner fees. For convenience,
-    # we use a dictionary partner_fees_wei that contains the the
-    # destination address of an partner as a key, and the value is the
-    # amount in wei to be transferred to that address, stored as an int.
-
-    partner_fees_wei: dict[str, int] = {}
-    for _, row in partner_fees_df.iterrows():
-        if row["partner_list"] is None:
-            continue
-
-        # We assume the two lists used below, i.e.,
-        # partner_list and partner_fee_eth,
-        # are "aligned".
-
-        for i in range(len(row["partner_list"])):
-            address = row["partner_list"][i]
-            if address in partner_fees_wei:
-                partner_fees_wei[address] += int(row["partner_fee_eth"][i])
-            else:
-                partner_fees_wei[address] = int(row["partner_fee_eth"][i])
-    total_partner_fee_wei_untaxed = 0
-    total_partner_fee_wei_taxed = 0
-    partner_fee_tax_wei = 0
-    for address, value in partner_fees_wei.items():
-        total_partner_fee_wei_untaxed += value
-        if address == "0x63695Eee2c3141BDE314C5a6f89B98E62808d716":
-            partner_fees_wei[address] = int(0.90 * value)
-            total_partner_fee_wei_taxed += int(0.90 * value)
-        else:
-            partner_fees_wei[address] = int(0.85 * value)
-            total_partner_fee_wei_taxed += int(0.85 * value)
-
     final_protocol_fee_wei = raw_protocol_fee_wei - total_partner_fee_wei_untaxed
+    total_partner_fee_wei_taxed = sum(partner_fees_wei.values())
     partner_fee_tax_wei = total_partner_fee_wei_untaxed - total_partner_fee_wei_taxed
+
     dune.log_saver.print(
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n"
