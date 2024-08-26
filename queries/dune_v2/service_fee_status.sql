@@ -116,12 +116,11 @@ named_results AS (
   SELECT
     jd.solver,
     CONCAT(environment, '-', s.name) AS solver_name,
-    -- jd.reward_target,
     jd.pool_name,
     jd.joined_on,
     date_diff('day', date(jd.joined_on), date(NOW())) AS days_in_pool,
     GREATEST(
-      DATE_ADD('month', 3, jd.joined_on),  -- Add 3 month grace period to joined_on
+      DATE_ADD('month', 6, jd.joined_on),  -- Add 6 month grace period to joined_on
       TIMESTAMP '2024-08-20 00:00:00'  -- Deadline for solvers that joined before CIP-48 was introduced
     ) AS expires
   FROM joined_on jd
@@ -134,11 +133,9 @@ named_results AS (
 SELECT
   nr.solver,
   nr.solver_name,
-  -- nr.reward_target,
   nr.pool_name,
   nr.joined_on,
   nr.days_in_pool,
-  --CONCAT(nr.years_in_pool, ' years, ', nr.months_in_pool, ' months, ', nr.days_in_pool, ' days') AS time_in_pool,
   nr.expires,
   CASE
     WHEN NOW() > nr.expires THEN TRUE
