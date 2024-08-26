@@ -90,7 +90,7 @@ class GapDetector:
         """Executes and fetches dataframe from Dune `query_id`"""
         return pd.read_csv(
             self.dune.refresh_csv(
-                Query(
+                QueryBase(
                     query_id=query_id,
                     params=[
                         QueryParameter.number_type("start", start),
@@ -177,7 +177,7 @@ if __name__ == "__main__":
         start=args.start,
         end=int(
             dune_client.refresh(
-                Query(name="Latest Dune Block", query_id=2603762)
+                QueryBase(name="Latest Dune Block", query_id=2603762)
             ).get_rows()[0]["latest_block"]
         ),
     )
