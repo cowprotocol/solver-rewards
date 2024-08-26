@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import datetime, timedelta
 from fractions import Fraction
 from typing import Callable
 
@@ -508,7 +508,10 @@ def construct_payouts(
         quote_rewards_df, batch_rewards_df, on="solver", how="outer"
     ).fillna(0)
     service_fee_df = pandas.DataFrame(dune.get_service_fee_status())
-    service_fee_df["service_fee"] = service_fee_df["expiry_date"] <= dune.period.start
+    service_fee_df["service_fee"] = [
+        datetime.strptime(time_string, "%Y-%m-%d %H:%M:%S.%f %Z") <= dune.period.start
+        for time_string in service_fee_df["expires"]
+    ]
     service_fee_df = service_fee_df[["solver", "service_fee"]]
     slippage_df = pandas.DataFrame(dune.get_period_slippage())
 
