@@ -147,3 +147,7 @@ docker run --pull=always -it --rm \
 ```
 
 and (usually after about 30 seconds) find the transfer file written to your current working directory.
+
+### Managing Dependencies
+Python libraries can be added to the `requirements.in` file. After this `pip-compile` or `python -m pip-compile` will update the `requirements.txt` for you (you may have to install the libry manually first). 
+Warning: this might take a long time for large changes or when you run pip-compile for the first time. Running the command with the `-v` flag can help keep track of what's happening.
