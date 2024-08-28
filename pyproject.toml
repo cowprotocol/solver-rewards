@@ -6,12 +6,6 @@ ignore_missing_imports = true
 allow_untyped_calls = true
 allow_any_generics = true
 
-[tool.pylint.master]
-disable = [
-    "fixme",
-    "logging-fstring-interpolation"
-]
-
 [tool.pytest.ini_options]
 filterwarnings = [
     "ignore::DeprecationWarning"
