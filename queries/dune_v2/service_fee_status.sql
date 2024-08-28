@@ -10,11 +10,10 @@ first_event_after_timestamp AS (
   WHERE time > CAST('2024-08-20 00:00:00' AS timestamp) -- CIP-48 starts bonding pool timer at midnight UTC on 20/08/24
 ),
 
--- Step 1: Determine the first vouch to set the 'joined_on' timestamp
 initial_vouches AS (
   SELECT RANK() OVER (
       PARTITION BY solver, bondingPool, sender
-      ORDER BY evt_block_number ASC, evt_index ASC  -- Rank by earliest event
+      ORDER BY evt_block_number ASC, evt_index ASC
     ) AS rk,
     evt_block_number,
     evt_index,
@@ -29,7 +28,6 @@ initial_vouches AS (
     AND sender IN (SELECT initial_funder FROM bonding_pools)
 ),
 
--- Select the first event for `joined_on`
 joined_on_data AS (
   SELECT
     iv.solver,
@@ -43,11 +41,10 @@ joined_on_data AS (
   WHERE iv.rk = 1
 ),
 
--- Step 2: Determine the latest vouch or invalidation to filter active solvers
 latest_vouches AS (
   SELECT RANK() OVER (
       PARTITION BY solver, bondingPool, sender
-      ORDER BY evt_block_number DESC, evt_index DESC  -- Rank by latest event
+      ORDER BY evt_block_number DESC, evt_index DESC
     ) AS rk,
     evt_block_number,
     evt_index,
@@ -93,10 +90,9 @@ valid_vouches AS (
     lv.cowRewardTarget AS reward_target,
     lv.bondingPool AS pool
   FROM latest_vouches lv
-  WHERE lv.rk = 1 AND lv.active = TRUE -- Only include solvers that are active
+  WHERE lv.rk = 1 AND lv.active = TRUE
 ),
 
--- Convert block number to timestamp for joined_on
 joined_on AS (
   SELECT
     jd.solver,
@@ -111,34 +107,69 @@ joined_on AS (
     ON jd.pool = bp.pool
 ),
 
--- Only keep solvers that are still active based on the latest vouch/invalidation
 named_results AS (
   SELECT
     jd.solver,
     CONCAT(environment, '-', s.name) AS solver_name,
     jd.pool_name,
+    jd.pool,
     jd.joined_on,
-    date_diff('day', date(jd.joined_on), date(NOW())) AS days_in_pool,
-    GREATEST(
-      DATE_ADD('month', 6, jd.joined_on),  -- Add 6 month grace period to joined_on
-      TIMESTAMP '2024-08-20 00:00:00'  -- Deadline for solvers that joined before CIP-48 was introduced
-    ) AS expires
+    date_diff('day', date(jd.joined_on), date(NOW())) AS days_in_pool
   FROM joined_on jd
   JOIN cow_protocol_ethereum.solvers s
     ON s.address = jd.solver
   JOIN valid_vouches vv
     ON vv.solver = jd.solver AND vv.pool = jd.pool
+),
+
+ranked_named_results AS (
+  SELECT
+    nr.solver,
+    nr.solver_name,
+    nr.pool_name,
+    nr.pool,
+    nr.joined_on,
+    nr.days_in_pool,
+    ROW_NUMBER() OVER (PARTITION BY nr.solver_name ORDER BY nr.joined_on DESC) AS rn,
+    COUNT(*) OVER (PARTITION BY nr.solver_name) AS solver_name_count
+  FROM named_results nr
+),
+
+filtered_named_results AS (
+  SELECT
+    rnr.solver,
+    rnr.solver_name,
+    CASE
+      WHEN rnr.solver_name_count > 1 THEN 'Colocation'
+      ELSE rnr.pool_name
+    END AS pool_name,
+    rnr.pool,
+    rnr.joined_on,
+    rnr.days_in_pool,
+    CASE
+      WHEN rnr.solver_name_count > 1 THEN DATE_ADD('month', 3, rnr.joined_on)  -- Add 3 month grace period for colocated solvers
+      ELSE GREATEST(
+              DATE_ADD('month', 6, rnr.joined_on),  -- Add 6 month grace period to joined_on for non colocated solvers
+              TIMESTAMP '2024-08-20 00:00:00'  -- Introduction of CIP-48
+      )
+    END AS expires
+  FROM ranked_named_results rnr
+  WHERE rnr.rn = 1
 )
 
 SELECT
-  nr.solver,
-  nr.solver_name,
-  nr.pool_name,
-  nr.joined_on,
-  nr.days_in_pool,
-  nr.expires,
+  fnr.solver,
+  fnr.solver_name,
+  fnr.pool_name,
+  fnr.pool,
+  fnr.joined_on,
+  fnr.days_in_pool,
   CASE
-    WHEN NOW() > nr.expires THEN TRUE
+    WHEN fnr.pool_name = 'Gnosis' THEN TIMESTAMP '2028-10-08 00:00:00'
+    ELSE fnr.expires
+  END AS expires,
+  CASE
+    WHEN NOW() > fnr.expires AND fnr.pool_name != 'Gnosis' THEN TRUE
     ELSE FALSE
   END AS service_fee
-FROM named_results nr;
+FROM filtered_named_results fnr;
