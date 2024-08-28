@@ -17,8 +17,3 @@ filterwarnings = [
     "ignore::DeprecationWarning"
 ]
 
-[tool.pylint.master]
-disable = [
-    "fixme",
-    "logging-fstring-interpolation"
-]
