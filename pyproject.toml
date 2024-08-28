@@ -1,0 +1,24 @@
+[tool.mypy]
+python_version = "3.12"
+ignore_missing_imports = true
+
+[tool.mypy-src.*]
+allow_untyped_calls = true
+allow_any_generics = true
+
+[tool.pylint.master]
+disable = [
+    "fixme",
+    "logging-fstring-interpolation"
+]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+    "ignore::DeprecationWarning"
+]
+
+[tool.pylint.master]
+disable = [
+    "fixme",
+    "logging-fstring-interpolation"
+]
