@@ -357,7 +357,7 @@ class TestPayoutTransformations(unittest.TestCase):
                     False,
                     False,
                     False,
-                    False,
+                    True,
                 ],
             }
         )
@@ -391,12 +391,12 @@ class TestPayoutTransformations(unittest.TestCase):
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[3]),
-                    amount_wei=180000000000000000000,
+                    amount_wei=int(180000000000000000000 * (1 - SERVICE_FEE_FACTOR)),
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[3]),
-                    amount_wei=54545454545454544,
+                    amount_wei=int(54545454545454544 * (1 - SERVICE_FEE_FACTOR)),
                 ),
                 Transfer(
                     token=None,
