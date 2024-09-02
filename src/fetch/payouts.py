@@ -550,6 +550,7 @@ def construct_payouts(
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
 
     dune.log_saver.print(
+        "Payment breakdown (ignoring service fees):\n"
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n"
         f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n"
