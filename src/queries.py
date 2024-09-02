@@ -41,6 +41,11 @@ QUERIES = {
         filepath="vouch_registry.sql",
         q_id=1541516,
     ),
+    "SERVICE_FEE_STATUS": QueryData(
+        name="CIP-48 Service fee status",
+        filepath="service_fee_status.sql",
+        q_id=4017925,
+    ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
         filepath="period_slippage.sql",

@@ -15,6 +15,7 @@ from src.fetch.payouts import (
     RewardAndPenaltyDatum,
     QUOTE_REWARD_COW,
     PROTOCOL_FEE_SAFE,
+    SERVICE_FEE_FACTOR,
 )
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
@@ -49,6 +50,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 ],
             )
         )
+        self.service_fee = [False, False, False, True]
 
         self.primary_reward_eth = [
             600000000000000.00000,
@@ -162,25 +164,37 @@ class TestPayoutTransformations(unittest.TestCase):
             {"solver": [], "solver_name": [], "eth_slippage_wei": []}
         )
         legit_reward_targets = DataFrame({"solver": [], "reward_target": []})
+        legit_service_fees = DataFrame({"solver": [], "service_fee": []})
+
         failing_df = DataFrame({})
 
         with self.assertRaises(AssertionError):
             validate_df_columns(
                 payment_df=legit_payments,
                 slippage_df=legit_reward_targets,
+                reward_target_df=legit_reward_targets,
+                service_fee_df=failing_df,
+            )
+        with self.assertRaises(AssertionError):
+            validate_df_columns(
+                payment_df=legit_payments,
+                slippage_df=legit_reward_targets,
                 reward_target_df=failing_df,
+                service_fee_df=legit_service_fees,
             )
         with self.assertRaises(AssertionError):
             validate_df_columns(
                 payment_df=legit_payments,
                 slippage_df=failing_df,
                 reward_target_df=legit_reward_targets,
+                service_fee_df=legit_service_fees,
             )
         with self.assertRaises(AssertionError):
             validate_df_columns(
                 payment_df=failing_df,
                 slippage_df=legit_slippages,
                 reward_target_df=legit_reward_targets,
+                service_fee_df=legit_service_fees,
             )
 
         self.assertIsNone(
@@ -188,6 +202,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 payment_df=legit_payments,
                 slippage_df=legit_slippages,
                 reward_target_df=legit_reward_targets,
+                service_fee_df=legit_service_fees,
             )
         )
 
@@ -219,8 +234,16 @@ class TestPayoutTransformations(unittest.TestCase):
         reward_targets = DataFrame(
             {"solver": self.solvers, "reward_target": self.reward_targets}
         )
+
+        service_fee_df = DataFrame(
+            {"solver": self.solvers, "service_fee": self.service_fee}
+        )
+
         result = construct_payout_dataframe(
-            payment_df=payments, slippage_df=slippages, reward_target_df=reward_targets
+            payment_df=payments,
+            slippage_df=slippages,
+            reward_target_df=reward_targets,
+            service_fee_df=service_fee_df,
         )
         expected = DataFrame(
             {
@@ -271,6 +294,12 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000006",
                     "0x0000000000000000000000000000000000000007",
                     "0x0000000000000000000000000000000000000008",
+                ],
+                "service_fee": [
+                    False,
+                    False,
+                    False,
+                    True,
                 ],
             }
         )
@@ -324,6 +353,12 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000026",
                     "0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6",
                 ],
+                "service_fee": [
+                    False,
+                    False,
+                    False,
+                    True,
+                ],
             }
         )
         period = AccountingPeriod("1985-03-10", 1)
@@ -356,12 +391,12 @@ class TestPayoutTransformations(unittest.TestCase):
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[3]),
-                    amount_wei=180000000000000000000,
+                    amount_wei=int(180000000000000000000 * (1 - SERVICE_FEE_FACTOR)),
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[3]),
-                    amount_wei=54545454545454544,
+                    amount_wei=int(54545454545454544 * (1 - SERVICE_FEE_FACTOR)),
                 ),
                 Transfer(
                     token=None,
@@ -400,6 +435,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         secondary_reward: int,
         slippage: int,
         num_quotes: int,
+        service_fee: bool = False,
     ):
         """Assumes a conversion rate of ETH:COW <> 1:self.conversion_rate"""
         return RewardAndPenaltyDatum(
@@ -413,6 +449,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             secondary_reward_cow=secondary_reward * self.conversion_rate,
             slippage_eth=slippage,
             quote_reward_cow=QUOTE_REWARD_COW * num_quotes,
+            service_fee=service_fee,
         )
 
     def test_invalid_input(self):
@@ -551,6 +588,53 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                     token=None,
                     recipient=self.solver,
                     amount_wei=test_datum.total_outgoing_eth(),
+                ),
+            ],
+        )
+
+    def test_performance_reward_service_fee(self):
+        """Sevice fee reduces COW reward."""
+        primary_reward, num_quotes, service_fee = 100, 0, True
+        test_datum = self.sample_record(
+            primary_reward=primary_reward,
+            secondary_reward=0,
+            slippage=0,
+            num_quotes=num_quotes,
+            service_fee=service_fee,
+        )
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [
+                Transfer(
+                    token=self.cow_token,
+                    recipient=self.reward_target,
+                    amount_wei=int(primary_reward * (1 - SERVICE_FEE_FACTOR))
+                    * self.conversion_rate,
+                ),
+            ],
+        )
+
+    def test_quote_reward_service_fee(self):
+        """Sevice fee reduces COW reward."""
+        primary_reward, num_quotes, service_fee = 0, 100, True
+        test_datum = self.sample_record(
+            primary_reward=primary_reward,
+            secondary_reward=0,
+            slippage=0,
+            num_quotes=num_quotes,
+            service_fee=service_fee,
+        )
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [
+                Transfer(
+                    token=self.cow_token,
+                    recipient=self.reward_target,
+                    amount_wei=int(
+                        6000000000000000000 * num_quotes * (1 - SERVICE_FEE_FACTOR)
+                    ),
                 ),
             ],
         )
