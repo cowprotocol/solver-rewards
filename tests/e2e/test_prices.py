@@ -15,15 +15,15 @@ DELTA = 0.00001
 
 class TestPrices(unittest.TestCase):
     def setUp(self) -> None:
-        self.some_date = datetime.strptime("2023-02-01", "%Y-%m-%d")
+        self.some_date = datetime.strptime("2024-09-01", "%Y-%m-%d")
         self.cow_price = usd_price(TokenId.COW, self.some_date)
         self.eth_price = usd_price(TokenId.ETH, self.some_date)
         self.usdc_price = usd_price(TokenId.USDC, self.some_date)
 
     def test_usd_price(self):
-        self.assertEqual(self.usdc_price, 1.000519)
-        self.assertEqual(self.eth_price, 1590.48)
-        self.assertEqual(self.cow_price, 0.098138)
+        self.assertEqual(self.usdc_price, 1.001622)
+        self.assertEqual(self.eth_price, 2481.89)
+        self.assertEqual(self.cow_price, 0.194899)
 
     def test_token_in_usd(self):
         with self.assertRaises(AssertionError):
@@ -65,7 +65,7 @@ class TestPrices(unittest.TestCase):
 
     def test_price_cache(self):
         # First call logs
-        day = datetime.strptime("2022-03-10", "%Y-%m-%d")  # A date we used yet!
+        day = datetime.strptime("2024-08-01", "%Y-%m-%d")  # A date we used yet!
         token = TokenId.USDC
         with self.assertLogs("src.fetch.prices", level="INFO") as cm:
             usd_price(token, day)
