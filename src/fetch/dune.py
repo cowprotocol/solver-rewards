@@ -113,9 +113,7 @@ class DuneFetcher:
             self._parameterized_query(
                 QUERIES["PERIOD_SLIPPAGE"],
                 params=self._period_params()
-                + [
-                    QueryParameter.text_type("tx_hash", "0x")
-                ],
+                + [QueryParameter.text_type("tx_hash", "0x")],
             ),
             job_id,
         )
