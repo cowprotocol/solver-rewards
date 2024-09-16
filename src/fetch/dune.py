@@ -6,7 +6,6 @@ from dune_client.client import DuneClient
 from dune_client.query import QueryBase
 from dune_client.types import QueryParameter, DuneRecord
 
-from src.constants import RECOGNIZED_BONDING_POOLS
 from src.logger import set_log
 from src.models.accounting_period import AccountingPeriod
 from src.queries import QUERIES, QueryData
