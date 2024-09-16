@@ -346,11 +346,6 @@ class TestPayoutTransformations(unittest.TestCase):
                     amount_wei=int(180000000000000000000 * (1 - SERVICE_FEE_FACTOR)),
                 ),
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
-                    recipient=Address(self.reward_targets[3]),
-                    amount_wei=int(54545454545454544 * (1 - SERVICE_FEE_FACTOR)),
-                ),
-                Transfer(
                     token=None,
                     recipient=PROTOCOL_FEE_SAFE,
                     amount_wei=3000000000000000,
@@ -365,7 +360,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 Overdraft(
                     period,
                     account=Address(self.solvers[2]),
-                    wei=9936363636363638,
+                    wei=10000000000000001,
                     name="S_3",
                 )
             ],
