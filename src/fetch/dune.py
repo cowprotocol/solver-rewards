@@ -84,14 +84,12 @@ class DuneFetcher:
         """
         Fetches & Returns Parsed Results for VouchRegistry query.
         """
-        pool_values = ",\n".join(RECOGNIZED_BONDING_POOLS)
         return self._get_query_results(
             query=self._parameterized_query(
                 query_data=QUERIES["VOUCH_REGISTRY"],
                 params=[
-                    QueryParameter.date_type("EndTime", self.period.end),
-                    QueryParameter.text_type("BondingPoolData", pool_values),
-                    QueryParameter.enum_type("VOUCH_CTE_NAME", "valid_vouches"),
+                    QueryParameter.date_type("end_time", self.period.end),
+                    QueryParameter.enum_type("vouch_cte_name", "valid_vouches"),
                 ],
             )
         )
@@ -101,9 +99,7 @@ class DuneFetcher:
         Executes & Fetches results of slippage query per solver for specified accounting period.
         Returns a class representation of the results as two lists (positive & negative).
         """
-        params = self._period_params() + [
-            QueryParameter.text_type("tx_hash", "0x"),
-        ]
+        params = self._period_params()
         # trigger dashboard update
         self.dune.execute(
             self._parameterized_query(QUERIES["DASHBOARD_SLIPPAGE"], params=params)
@@ -113,7 +109,6 @@ class DuneFetcher:
             self._parameterized_query(
                 QUERIES["PERIOD_SLIPPAGE"],
                 params=self._period_params()
-                + [QueryParameter.text_type("tx_hash", "0x")],
             ),
             job_id,
         )

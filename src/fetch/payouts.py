@@ -114,7 +114,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         )
         solver = frame["solver"]
         reward_target = frame["reward_target"]
-        bonding_pool = frame["pool"]
+        bonding_pool = frame["pool_address"]
         if reward_target is None:
             logging.warning(f"solver {solver} without reward_target. Using solver")
             reward_target = solver
@@ -547,6 +547,8 @@ def construct_payouts(
     performance_reward = complete_payout_df["primary_reward_cow"].sum()
     participation_reward = complete_payout_df["secondary_reward_cow"].sum()
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
+
+
 
     dune.log_saver.print(
         "Payment breakdown (ignoring service fees):\n"
