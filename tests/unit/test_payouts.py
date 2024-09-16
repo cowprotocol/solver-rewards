@@ -328,12 +328,12 @@ class TestPayoutTransformations(unittest.TestCase):
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[0]),
-                    amount_wei=663636363636363640,
+                    amount_wei=600000000000000000,
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[1]),
-                    amount_wei=12018181818181818180,
+                    amount_wei=12000000000000000000,
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
