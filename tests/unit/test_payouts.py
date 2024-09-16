@@ -58,12 +58,7 @@ class TestPayoutTransformations(unittest.TestCase):
             -10000000000000000.00000,
             0.00000,
         ]
-        self.batch_participation = [
-            7,
-            2,
-            7,
-            6,
-        ]
+
         self.protocol_fee_eth = [
             1000000000000000.0,
             2000000000000000.0,
@@ -86,7 +81,6 @@ class TestPayoutTransformations(unittest.TestCase):
             "solver": self.solvers,
             "num_quotes": self.num_quotes,
             "primary_reward_eth": self.primary_reward_eth,
-            "num_participating_batches": self.batch_participation,
             "protocol_fee_eth": self.protocol_fee_eth,
             "network_fee_eth": self.network_fee_eth,
         }
@@ -101,7 +95,6 @@ class TestPayoutTransformations(unittest.TestCase):
                 -10000000000000000.00000,
                 0.00000,
             ],
-            "num_participating_batches": self.batch_participation,
             "protocol_fee_eth": self.protocol_fee_eth,
             "network_fee_eth": self.network_fee_eth,
             "primary_reward_cow": [
@@ -138,7 +131,6 @@ class TestPayoutTransformations(unittest.TestCase):
             {
                 "solver": [],
                 "payment_eth": [],
-                "num_participating_batches": [],
                 "protocol_fee_eth": [],
                 "network_fee_eth": [],
                 "primary_reward_eth": [],
@@ -199,7 +191,6 @@ class TestPayoutTransformations(unittest.TestCase):
                     "solver": self.solvers,
                     "num_quotes": self.num_quotes,
                     "primary_reward_eth": self.primary_reward_eth,
-                    "num_participating_batches": self.batch_participation,
                     "protocol_fee_eth": self.protocol_fee_eth,
                     "network_fee_eth": self.network_fee_eth,
                 }
@@ -236,7 +227,6 @@ class TestPayoutTransformations(unittest.TestCase):
                 "solver": self.solvers,
                 "num_quotes": self.num_quotes,
                 "primary_reward_eth": [600000000000000.0, 1.2e16, -1e16, 0.0],
-                "num_participating_batches": [7, 2, 7, 6],
                 "protocol_fee_eth": [
                     1000000000000000.0,
                     2000000000000000.0,
@@ -309,7 +299,7 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000007",
                     "0x0000000000000000000000000000000000000008",
                 ],
-                "pool": [
+                "pool_address": [
                     "0x0000000000000000000000000000000000000025",
                     "0x0000000000000000000000000000000000000026",
                     "0x0000000000000000000000000000000000000026",
@@ -521,8 +511,8 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
 
     def test_reward_datum_slippage_exceeds_reward(self):
         """Negative slippage leads to overtraft."""
-        primary_reward, participation, slippage = 1, 2, -4
-        test_datum = self.sample_record(primary_reward, participation, slippage, 0)
+        primary_reward, slippage = 1, -4
+        test_datum = self.sample_record(primary_reward, slippage, 0)
         self.assertTrue(test_datum.is_overdraft())
         self.assertEqual(test_datum.as_payouts(), [])
 
