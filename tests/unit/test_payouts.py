@@ -58,12 +58,7 @@ class TestPayoutTransformations(unittest.TestCase):
             -10000000000000000.00000,
             0.00000,
         ]
-        self.batch_participation = [
-            7,
-            2,
-            7,
-            6,
-        ]
+
         self.protocol_fee_eth = [
             1000000000000000.0,
             2000000000000000.0,
@@ -86,7 +81,6 @@ class TestPayoutTransformations(unittest.TestCase):
             "solver": self.solvers,
             "num_quotes": self.num_quotes,
             "primary_reward_eth": self.primary_reward_eth,
-            "num_participating_batches": self.batch_participation,
             "protocol_fee_eth": self.protocol_fee_eth,
             "network_fee_eth": self.network_fee_eth,
         }
@@ -101,7 +95,6 @@ class TestPayoutTransformations(unittest.TestCase):
                 -10000000000000000.00000,
                 0.00000,
             ],
-            "num_participating_batches": self.batch_participation,
             "protocol_fee_eth": self.protocol_fee_eth,
             "network_fee_eth": self.network_fee_eth,
             "primary_reward_cow": [
@@ -109,18 +102,6 @@ class TestPayoutTransformations(unittest.TestCase):
                 12000000000000000000.0,
                 -10000000000000000000.0,
                 0.0,
-            ],
-            "secondary_reward_cow": [
-                1909090909090909000000.00000,
-                545454545454545440000.00000,
-                1909090909090909000000.00000,
-                1636363636363636200000.00000,
-            ],
-            "secondary_reward_eth": [
-                1909090909090909000.00000,
-                545454545454545440.00000,
-                1909090909090909000.00000,
-                1636363636363636200.00000,
             ],
             "quote_reward_cow": [
                 0.00000,
@@ -150,13 +131,10 @@ class TestPayoutTransformations(unittest.TestCase):
             {
                 "solver": [],
                 "payment_eth": [],
-                "num_participating_batches": [],
                 "protocol_fee_eth": [],
                 "network_fee_eth": [],
                 "primary_reward_eth": [],
                 "primary_reward_cow": [],
-                "secondary_reward_cow": [],
-                "secondary_reward_eth": [],
                 "quote_reward_cow": [],
             }
         )
@@ -213,7 +191,6 @@ class TestPayoutTransformations(unittest.TestCase):
                     "solver": self.solvers,
                     "num_quotes": self.num_quotes,
                     "primary_reward_eth": self.primary_reward_eth,
-                    "num_participating_batches": self.batch_participation,
                     "protocol_fee_eth": self.protocol_fee_eth,
                     "network_fee_eth": self.network_fee_eth,
                 }
@@ -250,7 +227,6 @@ class TestPayoutTransformations(unittest.TestCase):
                 "solver": self.solvers,
                 "num_quotes": self.num_quotes,
                 "primary_reward_eth": [600000000000000.0, 1.2e16, -1e16, 0.0],
-                "num_participating_batches": [7, 2, 7, 6],
                 "protocol_fee_eth": [
                     1000000000000000.0,
                     2000000000000000.0,
@@ -268,18 +244,6 @@ class TestPayoutTransformations(unittest.TestCase):
                     12000000000000000000.0,
                     -10000000000000000000.0,
                     0.0,
-                ],
-                "secondary_reward_cow": [
-                    1909090909090909000000.00000,
-                    545454545454545440000.00000,
-                    1909090909090909000000.00000,
-                    1636363636363636200000.00000,
-                ],
-                "secondary_reward_eth": [
-                    1909090909090909000.00000,
-                    545454545454545440.00000,
-                    1909090909090909000.00000,
-                    1636363636363636200.00000,
                 ],
                 "quote_reward_cow": [
                     0.00000,
@@ -321,18 +285,6 @@ class TestPayoutTransformations(unittest.TestCase):
                     -10000000000000000000.0,
                     0.0,
                 ],
-                "secondary_reward_cow": [
-                    6.363636363636364e16,
-                    1.818181818181818e16,
-                    6.363636363636364e16,
-                    5.454545454545454e16,
-                ],
-                "secondary_reward_eth": [
-                    63636363636363.0,
-                    18181818181818.0,
-                    63636363636363.0,
-                    54545454545454.0,
-                ],
                 "quote_reward_cow": [
                     0.00000,
                     0.00000,
@@ -347,7 +299,7 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000007",
                     "0x0000000000000000000000000000000000000008",
                 ],
-                "pool": [
+                "pool_address": [
                     "0x0000000000000000000000000000000000000025",
                     "0x0000000000000000000000000000000000000026",
                     "0x0000000000000000000000000000000000000026",
@@ -376,12 +328,12 @@ class TestPayoutTransformations(unittest.TestCase):
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[0]),
-                    amount_wei=663636363636363640,
+                    amount_wei=600000000000000000,
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[1]),
-                    amount_wei=12018181818181818180,
+                    amount_wei=12000000000000000000,
                 ),
                 Transfer(
                     token=Token(COW_TOKEN_ADDRESS),
@@ -392,11 +344,6 @@ class TestPayoutTransformations(unittest.TestCase):
                     token=Token(COW_TOKEN_ADDRESS),
                     recipient=Address(self.reward_targets[3]),
                     amount_wei=int(180000000000000000000 * (1 - SERVICE_FEE_FACTOR)),
-                ),
-                Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
-                    recipient=Address(self.reward_targets[3]),
-                    amount_wei=int(54545454545454544 * (1 - SERVICE_FEE_FACTOR)),
                 ),
                 Transfer(
                     token=None,
@@ -413,7 +360,7 @@ class TestPayoutTransformations(unittest.TestCase):
                 Overdraft(
                     period,
                     account=Address(self.solvers[2]),
-                    wei=9936363636363638,
+                    wei=10000000000000001,
                     name="S_3",
                 )
             ],
@@ -432,7 +379,6 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
     def sample_record(
         self,
         primary_reward: int,
-        secondary_reward: int,
         slippage: int,
         num_quotes: int,
         service_fee: bool = False,
@@ -445,36 +391,30 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             bonding_pool=self.bonding_pool,
             primary_reward_eth=primary_reward,
             primary_reward_cow=primary_reward * self.conversion_rate,
-            secondary_reward_eth=secondary_reward,
-            secondary_reward_cow=secondary_reward * self.conversion_rate,
             slippage_eth=slippage,
             quote_reward_cow=QUOTE_REWARD_COW * num_quotes,
             service_fee=service_fee,
         )
 
     def test_invalid_input(self):
-        """Test that negative and secondary and quote rewards throw an error."""
-
-        # invalid secondary reward
-        with self.assertRaises(AssertionError):
-            self.sample_record(0, -1, 0, 0)
+        """Test that negative and quote rewards throw an error."""
 
         # invalid quote reward
         with self.assertRaises(AssertionError):
-            self.sample_record(0, 0, 0, -1)
+            self.sample_record(0, 0, -1)
 
-    def test_reward_datum_0_0_0_0(self):
+    def test_reward_datum_0_0_0(self):
         """Without data there is no payout and no overdraft."""
-        test_datum = self.sample_record(0, 0, 0, 0)
+        test_datum = self.sample_record(0, 0, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(test_datum.as_payouts(), [])
 
-    def test_reward_datum_pm1_0_0_0(self):
+    def test_reward_datum_pm1_0_0(self):
         """Primary reward only."""
 
         # positive reward is paid in COW
         primary_reward = 1
-        test_datum = self.sample_record(primary_reward, 0, 0, 0)
+        test_datum = self.sample_record(primary_reward, 0, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -489,16 +429,16 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
 
         # negative reward gives overdraft
         primary_reward = -1
-        test_datum = self.sample_record(primary_reward, 0, 0, 0)
+        test_datum = self.sample_record(primary_reward, 0, 0)
         self.assertTrue(test_datum.is_overdraft())
         self.assertEqual(test_datum.as_payouts(), [])
 
-    def test_reward_datum_0_0_pm1_0(self):
+    def test_reward_datum_0_pm1_0(self):
         """Slippag only."""
 
         # positive slippage is paid in ETH
         slippage = 1
-        test_datum = self.sample_record(0, 0, slippage, 0)
+        test_datum = self.sample_record(0, slippage, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -507,14 +447,14 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
 
         # negative slippage gives overdraft
         slippage = -1
-        test_datum = self.sample_record(0, 0, slippage, 0)
+        test_datum = self.sample_record(0, slippage, 0)
         self.assertTrue(test_datum.is_overdraft())
         self.assertEqual(test_datum.as_payouts(), [])
 
-    def test_reward_datum_0_0_0_1(self):
+    def test_reward_datum_0_0_1(self):
         """Quote rewards only."""
         num_quotes = 1
-        test_datum = self.sample_record(0, 0, 0, num_quotes)
+        test_datum = self.sample_record(0, 0, num_quotes)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -527,10 +467,10 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             ],
         )
 
-    def test_reward_datum_4_2_1_0(self):
+    def test_reward_datum_4_1_0(self):
         """COW payment for rewards, ETH payment for slippage."""
-        primary_reward, secondary_reward, slippage, num_quotes = 4, 2, 1, 0
-        test_datum = self.sample_record(primary_reward, secondary_reward, slippage, 0)
+        primary_reward, slippage, num_quotes = 4, 1, 0
+        test_datum = self.sample_record(primary_reward, slippage, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -543,16 +483,15 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                 Transfer(
                     token=self.cow_token,
                     recipient=self.reward_target,
-                    amount_wei=(primary_reward + secondary_reward)
-                    * self.conversion_rate,
+                    amount_wei=(primary_reward) * self.conversion_rate,
                 ),
             ],
         )
 
     def test_reward_datum_slippage_reduces_reward(self):
         """Negative slippage reduces COW reward."""
-        primary_reward, secondary_reward, slippage, num_quotes = 4, 2, -1, 0
-        test_datum = self.sample_record(primary_reward, secondary_reward, slippage, 0)
+        primary_reward, slippage, num_quotes = 4, -1, 0
+        test_datum = self.sample_record(primary_reward, slippage, 0)
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -560,26 +499,25 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                 Transfer(
                     token=self.cow_token,
                     recipient=self.reward_target,
-                    amount_wei=(primary_reward + secondary_reward + slippage)
-                    * self.conversion_rate,
+                    amount_wei=(primary_reward + slippage) * self.conversion_rate,
                 ),
             ],
         )
 
     def test_reward_datum_slippage_exceeds_reward(self):
         """Negative slippage leads to overtraft."""
-        primary_reward, participation, slippage = 1, 2, -4
-        test_datum = self.sample_record(primary_reward, participation, slippage, 0)
+        primary_reward, slippage = 1, -4
+        test_datum = self.sample_record(primary_reward, slippage, 0)
         self.assertTrue(test_datum.is_overdraft())
         self.assertEqual(test_datum.as_payouts(), [])
 
     def test_reward_datum_reward_reduces_slippage(self):
         """Negative reward  reduces ETH slippage payment."""
-        primary_reward, secondary_reward, slippage = -2, 1, 3
-        test_datum = self.sample_record(primary_reward, secondary_reward, slippage, 0)
+        primary_reward, slippage = -2, 3
+        test_datum = self.sample_record(primary_reward, slippage, 0)
         self.assertEqual(
             test_datum.total_outgoing_eth(),
-            primary_reward + secondary_reward + slippage,
+            primary_reward + slippage,
         )
         self.assertEqual(
             test_datum.as_payouts(),
@@ -597,7 +535,6 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         primary_reward, num_quotes, service_fee = 100, 0, True
         test_datum = self.sample_record(
             primary_reward=primary_reward,
-            secondary_reward=0,
             slippage=0,
             num_quotes=num_quotes,
             service_fee=service_fee,
@@ -620,7 +557,6 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         primary_reward, num_quotes, service_fee = 0, 100, True
         test_datum = self.sample_record(
             primary_reward=primary_reward,
-            secondary_reward=0,
             slippage=0,
             num_quotes=num_quotes,
             service_fee=service_fee,

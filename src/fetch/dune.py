@@ -6,8 +6,6 @@ from dune_client.client import DuneClient
 from dune_client.query import QueryBase
 from dune_client.types import QueryParameter, DuneRecord
 
-from src.constants import RECOGNIZED_BONDING_POOLS
-from src.fetch.token_list import get_trusted_tokens
 from src.logger import set_log
 from src.models.accounting_period import AccountingPeriod
 from src.queries import QUERIES, QueryData
@@ -85,14 +83,12 @@ class DuneFetcher:
         """
         Fetches & Returns Parsed Results for VouchRegistry query.
         """
-        pool_values = ",\n".join(RECOGNIZED_BONDING_POOLS)
         return self._get_query_results(
             query=self._parameterized_query(
                 query_data=QUERIES["VOUCH_REGISTRY"],
                 params=[
-                    QueryParameter.date_type("EndTime", self.period.end),
-                    QueryParameter.text_type("BondingPoolData", pool_values),
-                    QueryParameter.enum_type("VOUCH_CTE_NAME", "valid_vouches"),
+                    QueryParameter.date_type("end_time", self.period.end),
+                    QueryParameter.enum_type("vouch_cte_name", "valid_vouches"),
                 ],
             )
         )
@@ -102,11 +98,7 @@ class DuneFetcher:
         Executes & Fetches results of slippage query per solver for specified accounting period.
         Returns a class representation of the results as two lists (positive & negative).
         """
-        token_list = get_trusted_tokens()
-        params = self._period_params() + [
-            QueryParameter.text_type("TxHash", "0x"),
-            QueryParameter.text_type("TokenList", ",".join(token_list)),
-        ]
+        params = self._period_params()
         # trigger dashboard update
         self.dune.execute(
             self._parameterized_query(QUERIES["DASHBOARD_SLIPPAGE"], params=params)
@@ -114,12 +106,7 @@ class DuneFetcher:
 
         return self._get_query_results(
             self._parameterized_query(
-                QUERIES["PERIOD_SLIPPAGE"],
-                params=self._period_params()
-                + [
-                    QueryParameter.text_type("TxHash", "0x"),
-                    QueryParameter.text_type("TokenList", ",".join(token_list)),
-                ],
+                QUERIES["PERIOD_SLIPPAGE"], params=self._period_params()
             ),
             job_id,
         )
@@ -128,12 +115,9 @@ class DuneFetcher:
         """
         Fetches & Returns Parsed Results for VouchRegistry query.
         """
-        pool_values = ",\n".join(RECOGNIZED_BONDING_POOLS)
         return self._get_query_results(
             query=self._parameterized_query(
                 query_data=QUERIES["SERVICE_FEE_STATUS"],
-                params=[
-                    QueryParameter.text_type("BondingPoolData", pool_values),
-                ],
+                params=[],
             )
         )

@@ -23,8 +23,6 @@ from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 from src.utils.print_store import Category
 
-PERIOD_BUDGET_COW = 250000 * 10**18
-CONSISTENCY_REWARD_CAP_ETH = 6 * 10**18
 QUOTE_REWARD_COW = 6 * 10**18
 QUOTE_REWARD_CAP_ETH = 6 * 10**14
 SERVICE_FEE_FACTOR = Fraction(15, 100)
@@ -35,8 +33,6 @@ PAYMENT_COLUMNS = {
     "solver",
     "primary_reward_eth",
     "primary_reward_cow",
-    "secondary_reward_eth",
-    "secondary_reward_cow",
     "quote_reward_cow",
     "protocol_fee_eth",
     "network_fee_eth",
@@ -53,8 +49,6 @@ COMPLETE_COLUMNS = PAYMENT_COLUMNS.union(SLIPPAGE_COLUMNS).union(REWARD_TARGET_C
 NUMERICAL_COLUMNS = [
     "primary_reward_eth",
     "primary_reward_cow",
-    "secondary_reward_cow",
-    "secondary_reward_eth",
     "quote_reward_cow",
     "protocol_fee_eth",
 ]
@@ -81,15 +75,12 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         reward_target: Address,
         bonding_pool: Address,
         primary_reward_eth: int,
-        secondary_reward_eth: int,
         slippage_eth: int,
         primary_reward_cow: int,
-        secondary_reward_cow: int,
         quote_reward_cow: int,
         service_fee: bool,
     ):
-        assert secondary_reward_eth >= 0, "invalid secondary_reward_eth"
-        assert secondary_reward_cow >= 0, "invalid secondary_reward_cow"
+
         assert quote_reward_cow >= 0, "invalid quote_reward_cow"
 
         self.solver = solver
@@ -99,8 +90,6 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         self.slippage_eth = slippage_eth
         self.primary_reward_eth = primary_reward_eth
         self.primary_reward_cow = primary_reward_cow
-        self.secondary_reward_eth = secondary_reward_eth
-        self.secondary_reward_cow = secondary_reward_cow
         self.quote_reward_cow = quote_reward_cow
         self.service_fee = service_fee
 
@@ -114,7 +103,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         )
         solver = frame["solver"]
         reward_target = frame["reward_target"]
-        bonding_pool = frame["pool"]
+        bonding_pool = frame["pool_address"]
         if reward_target is None:
             logging.warning(f"solver {solver} without reward_target. Using solver")
             reward_target = solver
@@ -127,8 +116,6 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             slippage_eth=slippage,
             primary_reward_eth=int(frame["primary_reward_eth"]),
             primary_reward_cow=int(frame["primary_reward_cow"]),
-            secondary_reward_eth=int(frame["secondary_reward_eth"]),
-            secondary_reward_cow=int(frame["secondary_reward_cow"]),
             quote_reward_cow=int(frame["quote_reward_cow"]),
             service_fee=bool(frame["service_fee"]),
         )
@@ -139,17 +126,11 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
 
     def total_cow_reward(self) -> int:
         """Total outgoing COW token reward"""
-        return int(
-            self.reward_scaling()
-            * (self.primary_reward_cow + self.secondary_reward_cow)
-        )
+        return int(self.reward_scaling() * self.primary_reward_cow)
 
     def total_eth_reward(self) -> int:
         """Total outgoing ETH reward"""
-        return int(
-            self.reward_scaling()
-            * (self.primary_reward_eth + self.secondary_reward_eth)
-        )
+        return int(self.reward_scaling() * self.primary_reward_eth)
 
     def reward_scaling(self) -> Fraction:
         """Scaling factor for service fee
@@ -198,7 +179,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             # Note that;
             # reimbursement_eth + reward_eth
             # = self.total_eth_reward() + self.exec_cost + self.slippage_eth
-            # = self.payment_eth + self.secondary_reward_eth + self.slippage_eth
+            # = self.payment_eth + self.slippage_eth
             # = self.total_outgoing_eth()
             # >= 0 (because not self.is_overdraft())
             try:
@@ -288,31 +269,9 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     Extending the basic columns returned by SQL Query with some after-math:
     - reward_eth as difference of payment and execution_cost
     - reward_cow as conversion from ETH to cow.
-    - secondary_reward (as the remaining reward after all has been distributed)
-        This is evaluated in both ETH and COW (for different use cases).
     """
     # Note that this can be negative!
     pdf["primary_reward_cow"] = pdf["primary_reward_eth"].apply(converter.eth_to_token)
-
-    secondary_allocation = max(
-        min(
-            PERIOD_BUDGET_COW - pdf["primary_reward_cow"].sum(),
-            converter.eth_to_token(CONSISTENCY_REWARD_CAP_ETH),
-        ),
-        0,
-    )
-    participation_total = pdf["num_participating_batches"].sum()
-    if participation_total == 0:
-        # Due to CIP-48 we will stop counting participation. This workaround avoids
-        # division by zero as the num_participation_batches is set to zero for all
-        # solvers after CIP-48.
-        participation_total = 1
-    pdf["secondary_reward_cow"] = (
-        secondary_allocation * pdf["num_participating_batches"] / participation_total
-    )
-    pdf["secondary_reward_eth"] = pdf["secondary_reward_cow"].apply(
-        converter.token_to_eth
-    )
 
     # Pandas has poor support for large integers, must cast the constant to float here,
     # otherwise the dtype would be inferred as int64 (which overflows).
@@ -545,13 +504,11 @@ def construct_payouts(
     partner_fee_tax_wei = total_partner_fee_wei_untaxed - total_partner_fee_wei_taxed
 
     performance_reward = complete_payout_df["primary_reward_cow"].sum()
-    participation_reward = complete_payout_df["secondary_reward_cow"].sum()
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
 
     dune.log_saver.print(
         "Payment breakdown (ignoring service fees):\n"
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
-        f"Participation Reward: {participation_reward / 10 ** 18:.4f}\n"
         f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n"
         f"Protocol Fees: {final_protocol_fee_wei / 10 ** 18:.4f}\n"
         f"Partner Fees Tax: {partner_fee_tax_wei / 10 ** 18:.4f}\n"
