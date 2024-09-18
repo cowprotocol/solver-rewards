@@ -18,9 +18,8 @@ class QueryData:
     name: str
     query: QueryBase
 
-    def __init__(self, name: str, q_id: int, filepath: str) -> None:
+    def __init__(self, name: str, q_id: int) -> None:
         self.name = name
-        self.filepath = filepath
         self.query = QueryBase(q_id, name)
 
     def with_params(self, params: list[QueryParameter]) -> QueryBase:
@@ -33,27 +32,22 @@ class QueryData:
 QUERIES = {
     "PERIOD_BLOCK_INTERVAL": QueryData(
         name="Block Interval for Accounting Period",
-        filepath="period_block_interval.sql",
         q_id=3333356,
     ),
     "VOUCH_REGISTRY": QueryData(
         name="Vouch Registry",
-        filepath="vouch_registry.sql",
         q_id=1541516,
     ),
     "SERVICE_FEE_STATUS": QueryData(
         name="CIP-48 Service fee status",
-        filepath="service_fee_status.sql",
         q_id=4017925,
     ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
-        filepath="period_slippage.sql",
         q_id=3427730,
     ),
     "DASHBOARD_SLIPPAGE": QueryData(
         name="Period Solver Rewards",
-        filepath="not currently stored in project",
         q_id=2510345,
     ),
 }
