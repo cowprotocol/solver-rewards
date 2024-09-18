@@ -1,12 +1,13 @@
 """
 Localized account of all Queries related to this project's main functionality
 """
+
 from __future__ import annotations
 
 from copy import copy
 from dataclasses import dataclass
 
-from dune_client.query import Query
+from dune_client.query import QueryBase
 from dune_client.types import QueryParameter
 
 
@@ -15,14 +16,14 @@ class QueryData:
     """Stores name and a version of the query for each query."""
 
     name: str
-    query: Query
+    query: QueryBase
 
     def __init__(self, name: str, q_id: int, filepath: str) -> None:
         self.name = name
         self.filepath = filepath
-        self.query = Query(q_id, name)
+        self.query = QueryBase(q_id, name)
 
-    def with_params(self, params: list[QueryParameter]) -> Query:
+    def with_params(self, params: list[QueryParameter]) -> QueryBase:
         """Copies the query, adds parameters, returning the copy."""
         query_copy = copy(self.query)
         query_copy.params = params
@@ -33,17 +34,22 @@ QUERIES = {
     "PERIOD_BLOCK_INTERVAL": QueryData(
         name="Block Interval for Accounting Period",
         filepath="period_block_interval.sql",
-        q_id=1541504,
+        q_id=3333356,
     ),
     "VOUCH_REGISTRY": QueryData(
         name="Vouch Registry",
         filepath="vouch_registry.sql",
         q_id=1541516,
     ),
+    "SERVICE_FEE_STATUS": QueryData(
+        name="CIP-48 Service fee status",
+        filepath="service_fee_status.sql",
+        q_id=4017925,
+    ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
         filepath="period_slippage.sql",
-        q_id=2421375,
+        q_id=3427730,
     ),
     "DASHBOARD_SLIPPAGE": QueryData(
         name="Period Solver Rewards",

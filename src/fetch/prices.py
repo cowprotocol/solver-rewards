@@ -2,6 +2,7 @@
 An interface for fetching prices.
 Currently, only price feed is CoinPaprika's Free tier API.
 """
+
 import functools
 import logging.config
 from datetime import datetime

@@ -6,7 +6,7 @@ from gnosis.eth import EthereumClient
 from web3 import Web3
 
 from src.abis.load import weth9
-from src.constants import COW_TOKEN_ADDRESS, INFURA_KEY
+from src.constants import COW_TOKEN_ADDRESS
 from src.fetch.transfer_file import Transfer
 from src.models.token import Token
 from src.multisend import build_encoded_multisend, prepend_unwrap_if_necessary
@@ -14,7 +14,7 @@ from src.multisend import build_encoded_multisend, prepend_unwrap_if_necessary
 
 class TestMultiSend(unittest.TestCase):
     def setUp(self) -> None:
-        node_url = f"https://mainnet.infura.io/v3/{INFURA_KEY}"
+        node_url = "https://rpc.ankr.com/eth"
         self.client = EthereumClient(URI(node_url))
 
     def test_prepend_unwrap(self):

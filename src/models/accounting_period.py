@@ -1,6 +1,7 @@
 """
 Common location for shared resources throughout the project.
 """
+
 from __future__ import annotations
 
 import urllib.parse
@@ -32,8 +33,8 @@ class AccountingPeriod:
     def as_query_params(self) -> list[QueryParameter]:
         """Returns commonly used (StartTime, EndTime) query parameters"""
         return [
-            QueryParameter.date_type("StartTime", self.start),
-            QueryParameter.date_type("EndTime", self.end),
+            QueryParameter.date_type("start_time", self.start),
+            QueryParameter.date_type("end_time", self.end),
         ]
 
     def dashboard_url(self) -> str:

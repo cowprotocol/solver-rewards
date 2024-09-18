@@ -2,6 +2,7 @@
 Standalone script for fetching the trusted token
 list and pushing the data to a dune user generated view.
 """
+
 from __future__ import annotations
 
 import json

@@ -1,4 +1,5 @@
 """Project Global Constants. """
+
 import os
 from pathlib import Path
 
@@ -9,6 +10,7 @@ from web3 import Web3
 
 
 COW_TOKEN_ADDRESS = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
+COW_BONDING_POOL = Address("0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6")
 
 PROJECT_ROOT = Path(__file__).parent.parent
 FILE_OUT_DIR = PROJECT_ROOT / Path("out")
@@ -52,10 +54,3 @@ SAFE_URL = f"{SAFE_URL}/{SHORT_NAME}:{SAFE_ADDRESS}/transactions/queue"
 
 # Real Web3 Instance
 web3 = Web3(Web3.HTTPProvider(NODE_URL))
-
-RECOGNIZED_BONDING_POOLS = [
-    "('0x8353713b6D2F728Ed763a04B886B16aAD2b16eBD', 'Gnosis', "
-    "'0x6c642cafcbd9d8383250bb25f67ae409147f78b2')",
-    "('0x5d4020b9261F01B6f8a45db929704b0Ad6F5e9E6', 'CoW Services', "
-    "'0x423cec87f19f0778f549846e0801ee267a917935')",
-]

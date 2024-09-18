@@ -2,6 +2,7 @@
 Gap detection script for finding missing transaction hashes of settlements.
 Uses a form of binary search to minimize/reduce API requests.
 """
+
 from __future__ import annotations
 import argparse
 import os
@@ -10,7 +11,7 @@ from dataclasses import dataclass
 import pandas as pd
 from pandas import DataFrame
 from dune_client.client import DuneClient
-from dune_client.query import Query
+from dune_client.query import QueryBase
 from dune_client.types import QueryParameter
 from dotenv import load_dotenv
 
@@ -18,15 +19,15 @@ from src.pg_client import MultiInstanceDBFetcher
 
 DB_COUNT_QUERY = (
     "select count(*) as batches from settlements "
-    "where block_number between {{start}} and {{end}};"
+    "where block_number >= {{start}} and block_number <= {{end}};"
 )
 DB_HASH_QUERY = (
     "select concat('0x', encode(tx_hash, 'hex')) as tx_hash from settlements "
-    "where block_number between {{start}} and {{end}};"
+    "where block_number >= {{start}} and block_number <= {{end}};"
 )
 
-DUNE_COUNT_QUERY_ID = 2481826
-DUNE_HASH_QUERY_ID = 2532671
+DUNE_COUNT_QUERY_ID = 3333411
+DUNE_HASH_QUERY_ID = 3333413
 
 JANUARY_2023 = 16308190
 MAX_QUERYABLE_HASH_SET = 500
@@ -89,7 +90,7 @@ class GapDetector:
         """Executes and fetches dataframe from Dune `query_id`"""
         return pd.read_csv(
             self.dune.refresh_csv(
-                Query(
+                QueryBase(
                     query_id=query_id,
                     params=[
                         QueryParameter.number_type("start", start),
@@ -176,7 +177,7 @@ if __name__ == "__main__":
         start=args.start,
         end=int(
             dune_client.refresh(
-                Query(name="Latest Dune Block", query_id=2603762)
+                QueryBase(name="Latest Dune Block", query_id=2603762)
             ).get_rows()[0]["latest_block"]
         ),
     )

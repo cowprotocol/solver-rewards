@@ -1,6 +1,7 @@
 """
 Very basic Token Info Fetcher that gets token decimals
 """
+
 import functools
 import logging.config
 

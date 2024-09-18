@@ -75,7 +75,7 @@ looking at the script help menu can help provide a list of options!
 $  python -m src.fetch.transfer_file --help 
 
 usage: Fetch Complete Reimbursement [-h] [--start START] [--post-tx POST_TX] [--consolidate-transfers CONSOLIDATE_TRANSFERS] [--dry-run DRY_RUN]
-                                    [--min-transfer-amount-wei MIN_TRANSFER_AMOUNT_WEI]
+                                    [--min-transfer-amount-wei MIN_TRANSFER_AMOUNT_WEI] [--min-transfer-amount-cow-atoms MIN_TRANSFER_AMOUNT_COW_ATOMS] 
 
 options:
   -h, --help            show this help message and exit
@@ -86,8 +86,9 @@ options:
   --dry-run DRY_RUN     Flag indicating whether script should not post alerts or transactions. Only relevant in combination with --post-tx TruePrimarily intended for
                         deployment in staging environment.
   --min-transfer-amount-wei MIN_TRANSFER_AMOUNT_WEI
-                        Ignore transfers with amount less than this
-
+                        Ignore ETH transfers with amount less than this
+  --min-transfer-amount-cow-atoms MIN_TRANSFER_AMOUNT_COW_ATOMS
+                        Ignore COW transfers with amount less than this
 ```
 
 The solver reimbursements are executed each Tuesday with the accounting period of the last 7 days.
@@ -146,3 +147,7 @@ docker run --pull=always -it --rm \
 ```
 
 and (usually after about 30 seconds) find the transfer file written to your current working directory.
+
+### Managing Dependencies
+Python libraries can be added to the `requirements.in` file. After this `pip-compile` or `python -m pip-compile` will update the `requirements.txt` for you (you may have to install the libry manually first). 
+Warning: this might take a long time for large changes or when you run pip-compile for the first time. Running the command with the `-v` flag can help keep track of what's happening.
