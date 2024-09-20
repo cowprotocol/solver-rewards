@@ -454,7 +454,7 @@ def construct_partner_fee_payments(
 
 
 def construct_payouts(
-    dune: DuneFetcher, orderbook: MultiInstanceDBFetcher
+    dune: DuneFetcher, ignore_slippage_flag: bool, orderbook: MultiInstanceDBFetcher
 ) -> list[Transfer]:
     """Workflow of solver reward payout logic post-CIP27"""
     # pylint: disable-msg=too-many-locals
@@ -477,6 +477,16 @@ def construct_payouts(
         for time_string in service_fee_df["expires"]
     ]
     service_fee_df = service_fee_df[["solver", "service_fee"]]
+    reward_target_df = pandas.DataFrame(dune.get_vouches())
+    # construct slippage df
+    if ignore_slippage_flag:
+        slippage_df_one = merged_df[["solver"]]
+        slippage_df_two = reward_target_df[["solver", "solver_name"]]
+        slippage_df_three = pandas.merge(slippage_df_one, slippage_df_two, on="solver", how="inner")
+        num_rows = slippage_df_three.shape[0]
+        slippage_df = slippage_df_three.assign(eth_slippage_wei=[0] * num_rows)
+    else:
+        slippage_df = pandas.DataFrame(dune.get_period_slippage())
 
     complete_payout_df = construct_payout_dataframe(
         # Fetch and extend auction data from orderbook.
@@ -489,11 +499,10 @@ def construct_payouts(
             ),
         ),
         # Dune: Fetch Solver Slippage & Reward Targets
-        slippage_df=pandas.DataFrame(dune.get_period_slippage()),
-        reward_target_df=pandas.DataFrame(dune.get_vouches()),
+        slippage_df=slippage_df,
+        reward_target_df=reward_target_df,
         service_fee_df=service_fee_df,
     )
-
     # Sort by solver before breaking this data frame into Transfer objects.
     complete_payout_df = complete_payout_df.sort_values("solver")
 
