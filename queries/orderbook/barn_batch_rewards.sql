@@ -7,7 +7,6 @@ WITH observed_settlements AS (
         -- settlement_observations
         effective_gas_price * gas_used AS execution_cost,
         surplus,
-        fee,
         s.auction_id
     FROM
         settlement_observations so
@@ -31,30 +30,52 @@ auction_participation as (
     GROUP BY
         ss.auction_id
 ),
--- protocol fees:
+-- order data
+order_data AS (
+    SELECT
+        uid,
+        sell_token,
+        buy_token,
+        sell_amount,
+        buy_amount,
+        kind,
+        app_data
+    FROM orders
+    UNION ALL
+    SELECT
+        uid,
+        sell_token,
+        buy_token,
+        sell_amount,
+        buy_amount,
+        kind,
+        app_data
+    FROM jit_orders
+),
+-- additional trade data
 order_surplus AS (
     SELECT
         ss.winner as solver,
         s.auction_id,
         s.tx_hash,
         t.order_uid,
-        o.sell_token,
-        o.buy_token,
+        od.sell_token,
+        od.buy_token,
         t.sell_amount, -- the total amount the user sends
         t.buy_amount, -- the total amount the user receives
         oe.surplus_fee as observed_fee, -- the total discrepancy between what the user sends and what they would have send if they traded at clearing price
-        o.kind,
+        od.kind,
         CASE
-            WHEN o.kind = 'sell' THEN t.buy_amount - t.sell_amount * o.buy_amount / (o.sell_amount + o.fee_amount)
-            WHEN o.kind = 'buy' THEN t.buy_amount * (o.sell_amount + o.fee_amount) / o.buy_amount - t.sell_amount
+            WHEN od.kind = 'sell' THEN t.buy_amount - t.sell_amount * od.buy_amount / od.sell_amount
+            WHEN od.kind = 'buy' THEN t.buy_amount * od.sell_amount / od.buy_amount - t.sell_amount
         END AS surplus,
         CASE
-            WHEN o.kind = 'sell' THEN t.buy_amount - t.sell_amount * (oq.buy_amount - oq.buy_amount / oq.sell_amount * oq.gas_amount * oq.gas_price / oq.sell_token_price) / oq.sell_amount
-            WHEN o.kind = 'buy' THEN t.buy_amount * (oq.sell_amount + oq.gas_amount * oq.gas_price / oq.sell_token_price) / oq.buy_amount - t.sell_amount
+            WHEN od.kind = 'sell' THEN t.buy_amount - t.sell_amount * (oq.buy_amount - oq.buy_amount / oq.sell_amount * oq.gas_amount * oq.gas_price / oq.sell_token_price) / oq.sell_amount
+            WHEN od.kind = 'buy' THEN t.buy_amount * (oq.sell_amount + oq.gas_amount * oq.gas_price / oq.sell_token_price) / oq.buy_amount - t.sell_amount
         END AS price_improvement,
         CASE
-            WHEN o.kind = 'sell' THEN o.buy_token
-            WHEN o.kind = 'buy' THEN o.sell_token
+            WHEN od.kind = 'sell' THEN od.buy_token
+            WHEN od.kind = 'buy' THEN od.sell_token
         END AS surplus_token,
         ad.full_app_data as app_data
     FROM
@@ -63,19 +84,22 @@ order_surplus AS (
         ON s.auction_id = ss.auction_id
         JOIN trades t -- contains traded amounts
         ON s.block_number = t.block_number -- log_index cannot be checked, does not work correctly with multiple auctions on the same block
-        JOIN orders o -- contains tokens and limit amounts
-        ON t.order_uid = o.uid
+        JOIN order_data od -- contains tokens and limit amounts
+        ON t.order_uid = od.uid
         JOIN order_execution oe -- contains surplus fee
         ON t.order_uid = oe.order_uid
         AND s.auction_id = oe.auction_id
         LEFT OUTER JOIN order_quotes oq -- contains quote amounts
-        ON o.uid = oq.order_uid
+        ON od.uid = oq.order_uid
         LEFT OUTER JOIN app_data ad -- contains full app data
-        on o.app_data = ad.contract_app_data
+        on od.app_data = ad.contract_app_data
     WHERE
-        ss.block_deadline >= {{start_block}}
-        AND ss.block_deadline <= {{end_block}}
+        ss.block_deadline >= 20759465
+        AND ss.block_deadline <= 20766617
+--         ss.block_deadline >= 20766618
+--         AND ss.block_deadline <= 20780916
 ),
+-- protocol fees:
 fee_policies_first_proxy as (
     select
         auction_id,
@@ -207,7 +231,7 @@ order_surplus_intermediate as (
         partner_fee_recipient
     from order_protocol_fee_first
 ),
-order_protocol_fee as (
+order_protocol_fee as materialized (
     SELECT
         os.auction_id,
         os.solver,
@@ -283,13 +307,33 @@ order_protocol_fee as (
         ON os.auction_id = fp.auction_id
         AND os.order_uid = fp.order_uid
 ),
-order_protocol_fee_prices AS (
+price_data AS (
     SELECT
-        opf.auction_id,
-        opf.solver,
-        opf.tx_hash,
-        opf.order_uid,
-        opf.surplus,
+        os.auction_id,
+        os.order_uid,
+        ap_surplus.price / pow(10, 18) as surplus_token_native_price,
+        ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
+        ap_sell.price / pow(10, 18) as network_fee_token_native_price
+    FROM
+        order_surplus AS os
+        LEFT OUTER JOIN auction_prices ap_sell -- contains price: sell token
+        ON os.auction_id = ap_sell.auction_id
+        AND os.sell_token = ap_sell.token
+        LEFT OUTER JOIN auction_prices ap_surplus -- contains price: surplus token
+        ON os.auction_id = ap_surplus.auction_id
+        AND os.surplus_token = ap_surplus.token
+        LEFT OUTER JOIN auction_prices ap_protocol -- contains price: protocol fee token
+        ON os.auction_id = ap_protocol.auction_id
+        AND os.surplus_token = ap_protocol.token
+),
+combined_order_data AS (
+    SELECT
+        os.auction_id,
+        os.solver,
+        os.tx_hash,
+        os.order_uid,
+        os.surplus,
+        os.surplus_token,
         opf.protocol_fee,
         opf.protocol_fee_token,
         CASE
@@ -299,33 +343,40 @@ order_protocol_fee_prices AS (
         opf.partner_fee,
         opf.partner_fee_recipient,
         CASE
-            WHEN opf.sell_token != opf.protocol_fee_token THEN (opf.sell_amount - opf.observed_fee) / opf.buy_amount * opf.protocol_fee
-            ELSE opf.protocol_fee
-        END AS network_fee_correction,
-        opf.sell_token as network_fee_token,
-        ap_surplus.price / pow(10, 18) as surplus_token_native_price,
-        ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
-        ap_sell.price / pow(10, 18) as network_fee_token_native_price
+            WHEN os.sell_token != os.surplus_token THEN os.observed_fee - (os.sell_amount - os.observed_fee) / os.buy_amount * coalesce(opf.protocol_fee, 0)
+            ELSE os.observed_fee - coalesce(opf.protocol_fee, 0)
+        END AS network_fee,
+        os.sell_token as network_fee_token,
+        surplus_token_native_price,
+        protocol_fee_token_native_price,
+        network_fee_token_native_price
     FROM
-        order_protocol_fee as opf
-        JOIN auction_prices ap_sell -- contains price: sell token
-        ON opf.auction_id = ap_sell.auction_id
-        AND opf.sell_token = ap_sell.token
-        JOIN auction_prices ap_surplus -- contains price: surplus token
-        ON opf.auction_id = ap_surplus.auction_id
-        AND opf.surplus_token = ap_surplus.token
-        JOIN auction_prices ap_protocol -- contains price: protocol fee token
-        ON opf.auction_id = ap_protocol.auction_id
-        AND opf.protocol_fee_token = ap_protocol.token
+        order_surplus AS os
+        LEFT OUTER JOIN order_protocol_fee as opf
+        ON os.auction_id = opf.auction_id
+        AND os.order_uid = opf.order_uid
+        JOIN price_data pd
+        ON os.auction_id = pd.auction_id
+        AND os.order_uid = pd.order_uid
 ),
 batch_protocol_fees AS (
     SELECT
         solver,
         tx_hash,
-        sum(protocol_fee * protocol_fee_token_native_price) as protocol_fee,
-        sum(network_fee_correction * network_fee_token_native_price) as network_fee_correction
+        sum(protocol_fee * protocol_fee_token_native_price) as protocol_fee
     FROM
-        order_protocol_fee_prices
+        combined_order_data
+    group by
+        solver,
+        tx_hash
+),
+batch_network_fees AS (
+    SELECT
+        solver,
+        tx_hash,
+        sum(network_fee * network_fee_token_native_price) as network_fee
+    FROM
+        combined_order_data
     group by
         solver,
         tx_hash
@@ -342,7 +393,6 @@ reward_data AS (
         block_deadline,
         coalesce(execution_cost, 0) as execution_cost,
         coalesce(surplus, 0) as surplus,
-        coalesce(fee, 0) as fee,
         -- scores
         winning_score,
         case
@@ -356,9 +406,9 @@ reward_data AS (
         -- protocol_fees
         coalesce(cast(protocol_fee as numeric(78, 0)), 0) as protocol_fee,
         coalesce(
-            cast(network_fee_correction as numeric(78, 0)),
+            cast(network_fee as numeric(78, 0)),
             0
-        ) as network_fee_correction
+        ) as network_fee
     FROM
         settlement_scores ss
         -- If there are reported scores,
@@ -367,6 +417,7 @@ reward_data AS (
         -- outer joins made in order to capture non-existent settlements.
         LEFT OUTER JOIN observed_settlements os ON os.auction_id = ss.auction_id
         LEFT OUTER JOIN batch_protocol_fees bpf ON bpf.tx_hash = os.tx_hash
+        LEFT OUTER JOIN batch_network_fees bnf ON bnf.tx_hash = os.tx_hash
 ),
 reward_per_auction as (
     SELECT
@@ -378,7 +429,7 @@ reward_per_auction as (
         execution_cost,
         surplus,
         protocol_fee, -- the protocol fee
-        fee - network_fee_correction as network_fee, -- the network fee
+        network_fee, -- the network fee
         observed_score - reference_score as uncapped_payment,
         -- Capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
         LEAST(
@@ -439,7 +490,7 @@ partner_fees_per_solver AS (
         partner_fee_recipient,
         sum(partner_fee * protocol_fee_token_native_price) as partner_fee
     FROM
-        order_protocol_fee_prices
+        combined_order_data
         WHERE partner_fee_recipient is not null
         group by solver,partner_fee_recipient
 ),
@@ -463,7 +514,7 @@ aggregate_results as (
     FROM
         participation_counts pc
         LEFT OUTER JOIN primary_rewards pr ON pr.solver = pc.solver
-        LEFT OUTER JOIN aggregate_partner_fees_per_solver aif on pr.solver = aif.solver 
+        LEFT OUTER JOIN aggregate_partner_fees_per_solver aif on pr.solver = aif.solver
 ) --
 select
     *
