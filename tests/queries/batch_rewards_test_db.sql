@@ -4,6 +4,7 @@ DROP TABLE IF EXISTS settlement_scores;
 DROP TABLE IF EXISTS settlement_observations;
 DROP TABLE IF EXISTS auction_prices;
 DROP TABLE IF EXISTS orders;
+DROP TABLE IF EXISTS jit_orders;
 DROP TYPE IF EXISTS OrderKind;
 DROP TYPE IF EXISTS OrderClass;
 DROP TABLE IF EXISTS order_quotes;
@@ -84,6 +85,18 @@ CREATE TABLE orders (
     app_data bytea NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS jit_orders (
+    uid bytea PRIMARY KEY,
+    sell_token bytea NOT NULL,
+    buy_token bytea NOT NULL,
+    sell_amount numeric(78,0) NOT NULL,
+    buy_amount numeric(78,0) NOT NULL,
+    fee_amount numeric(78,0) NOT NULL,
+    kind OrderKind NOT NULL,
+    partially_fillable boolean NOT NULL,
+    app_data bytea NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS order_quotes
 (
   order_uid bytea PRIMARY KEY,
@@ -150,6 +163,7 @@ TRUNCATE settlement_scores;
 TRUNCATE settlement_observations;
 TRUNCATE auction_prices;
 TRUNCATE orders;
+TRUNCATE jit_orders;
 TRUNCATE order_quotes;
 TRUNCATE trades;
 TRUNCATE fee_policies;
@@ -303,7 +317,7 @@ VALUES (51, 0, '\x01'::bytea, 100000000, 95000000000000000000, 5000000),
 (60, 0, '\x0a'::bytea, 100000000, 94500000000000000000, 0);
 
 INSERT INTO order_execution (order_uid, auction_id, reward, surplus_fee, solver_fee)
-VALUES ('\x03'::bytea, 53, 0, 5931372, NULL),
+VALUES ('\x03'::bytea, 53, 0, 6000000, NULL),
 ('\x04'::bytea, 54, 0, 6000000, NULL),
 ('\x05'::bytea, 55, 0, 6000000, NULL),
 ('\x06'::bytea, 56, 0, 6000000, NULL),
