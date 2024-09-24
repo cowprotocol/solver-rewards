@@ -94,10 +94,8 @@ order_surplus AS (
         LEFT OUTER JOIN app_data ad -- contains full app data
         on od.app_data = ad.contract_app_data
     WHERE
-        ss.block_deadline >= 20759465
-        AND ss.block_deadline <= 20766617
---         ss.block_deadline >= 20766618
---         AND ss.block_deadline <= 20780916
+        ss.block_deadline >= {{start_block}}
+        AND ss.block_deadline <= {{end_block}}
 ),
 -- protocol fees:
 fee_policies_first_proxy as (
