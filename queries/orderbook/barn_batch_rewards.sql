@@ -69,7 +69,7 @@ order_surplus AS (
             WHEN od.kind = 'sell' THEN od.buy_token
             WHEN od.kind = 'buy' THEN od.sell_token
         END AS surplus_token,
-        convert_from(ad.full_app_data, 'UTF8')::JSONB->'metadata'->'partnerFee'->>'recipient' as partner_fee_recipient
+        convert_from(ad.full_app_data, 'UTF8')::JSONB->'metadata'->'partnerFee'->>'recipient' as partner_fee_recipient,
         coalesce(oe.protocol_fee_amounts[1], 0) as first_protocol_fee_amount,
         coalesce(oe.protocol_fee_amounts[2], 0) as second_protocol_fee_amount
     FROM
@@ -92,7 +92,7 @@ order_surplus AS (
         AND ss.block_deadline <= {{end_block}}
 ),
 -- protocol fees:
-order_protocol_fee (
+order_protocol_fee AS (
     SELECT
         auction_id,
         solver,
@@ -104,7 +104,7 @@ order_protocol_fee (
         observed_fee,
         surplus_token,
         second_protocol_fee_amount,
-        first_protocol_fee_amount + second_protocol_fee_amount as protocol_fee
+        first_protocol_fee_amount + second_protocol_fee_amount as protocol_fee,
         partner_fee_recipient,
         CASE
             WHEN partner_fee_recipient IS NOT NULL THEN second_protocol_fee_amount
@@ -148,7 +148,7 @@ combined_order_data AS (
             WHEN opf.sell_token != opf.surplus_token THEN opf.observed_fee - (opf.sell_amount - opf.observed_fee) / opf.buy_amount * coalesce(opf.protocol_fee, 0)
             ELSE opf.observed_fee - coalesce(opf.protocol_fee, 0)
         END AS network_fee,
-        os.sell_token as network_fee_token,
+        opf.sell_token as network_fee_token,
         surplus_token_native_price,
         protocol_fee_token_native_price,
         network_fee_token_native_price
