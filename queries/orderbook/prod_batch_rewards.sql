@@ -77,7 +77,7 @@ order_surplus AS (
         JOIN settlement_scores ss -- contains block_deadline
         ON s.auction_id = ss.auction_id
         JOIN trades t -- contains traded amounts
-        ON s.block_number = t.block_number -- log_index cannot be checked, does not work correctly with multiple auctions on the same block
+        ON s.block_number = t.block_number -- given the join that follows with the order execution table, this works even when multiple txs appear in the same block
         JOIN order_data od -- contains tokens and limit amounts
         ON t.order_uid = od.uid
         JOIN order_execution oe -- contains surplus fee
