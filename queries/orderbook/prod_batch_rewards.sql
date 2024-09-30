@@ -55,7 +55,7 @@ order_data AS (
 -- unprocessed trade data
 trade_data_unprocessed AS (
     SELECT
-        ss.winner as solver,
+        ss.winner AS solver,
         s.auction_id,
         s.tx_hash,
         t.order_uid,
@@ -70,8 +70,8 @@ trade_data_unprocessed AS (
             WHEN od.kind = 'buy' THEN od.sell_token
         END AS surplus_token,
         convert_from(ad.full_app_data, 'UTF8')::JSONB->'metadata'->'partnerFee'->>'recipient' AS partner_fee_recipient,
-        coalesce(oe.protocol_fee_amounts[1], 0) AS first_protocol_fee_amount,
-        coalesce(oe.protocol_fee_amounts[2], 0) AS second_protocol_fee_amount
+        COALESCE(oe.protocol_fee_amounts[1], 0) AS first_protocol_fee_amount,
+        COALESCE(oe.protocol_fee_amounts[2], 0) AS second_protocol_fee_amount
     FROM
         settlements s
         JOIN settlement_scores ss -- contains block_deadline
@@ -143,8 +143,8 @@ trade_data_processed_with_prices AS (
         tdp.partner_fee,
         tdp.partner_fee_recipient,
         CASE
-            WHEN tdp.sell_token != tdp.surplus_token THEN tdp.observed_fee - (tdp.sell_amount - tdp.observed_fee) / tdp.buy_amount * coalesce(tdp.protocol_fee, 0)
-            ELSE tdp.observed_fee - coalesce(tdp.protocol_fee, 0)
+            WHEN tdp.sell_token != tdp.surplus_token THEN tdp.observed_fee - (tdp.sell_amount - tdp.observed_fee) / tdp.buy_amount * COALESCE(tdp.protocol_fee, 0)
+            ELSE tdp.observed_fee - COALESCE(tdp.protocol_fee, 0)
         END AS network_fee,
         tdp.sell_token AS network_fee_token,
         surplus_token_native_price,
@@ -185,11 +185,11 @@ reward_data AS (
         ss.auction_id,
         -- TODO - Assuming that `solver == winner` when both not null
         --  We will need to monitor that `solver == winner`!
-        coalesce(os.solver, winner) AS solver,
+        COALESCE(os.solver, winner) AS solver,
         block_number AS settlement_block,
         block_deadline,
-        coalesce(execution_cost, 0) AS execution_cost,
-        coalesce(surplus, 0) AS surplus,
+        COALESCE(execution_cost, 0) AS execution_cost,
+        COALESCE(surplus, 0) AS surplus,
         -- scores
         winning_score,
         CASE
@@ -201,9 +201,9 @@ reward_data AS (
         -- auction_participation
         participating_solvers,
         -- protocol_fees
-        coalesce(cast(protocol_fee AS NUMERIC(78, 0)), 0) AS protocol_fee,
-        coalesce(
-            cast(network_fee AS NUMERIC(78, 0)),
+        COALESCE(CAST(protocol_fee AS NUMERIC(78, 0)), 0) AS protocol_fee,
+        COALESCE(
+            CAST(network_fee AS NUMERIC(78, 0)),
             0
         ) AS network_fee
     FROM
@@ -287,7 +287,7 @@ partner_fees_per_solver AS (
         partner_fee_recipient,
         sum(partner_fee * protocol_fee_token_native_price) AS partner_fee
     FROM
-        combined_order_data
+        trade_data_processed_with_prices
         WHERE partner_fee_recipient IS NOT NULL
         GROUP BY solver,partner_fee_recipient
 ),
@@ -301,11 +301,11 @@ aggregate_partner_fees_per_solver AS (
 ),
 aggregate_results AS (
     SELECT
-        concat('0x', encode(pc.solver, 'hex')) AS solver,
-        coalesce(payment, 0) AS primary_reward_eth,
+        CONCAT('0x', encode(pc.solver, 'hex')) AS solver,
+        COALESCE(payment, 0) AS primary_reward_eth,
         num_participating_batches,
-        coalesce(protocol_fee, 0) AS protocol_fee_eth,
-        coalesce(network_fee, 0) AS network_fee_eth,
+        COALESCE(protocol_fee, 0) AS protocol_fee_eth,
+        COALESCE(network_fee, 0) AS network_fee_eth,
         partner_list,
         partner_fee AS partner_fee_eth
     FROM
