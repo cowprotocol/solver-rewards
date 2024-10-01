@@ -46,6 +46,6 @@ class AccountingPeriod:
 
     def unusual_slippage_url(self) -> str:
         """Returns a link to unusual slippage query for period"""
-        base = "https://dune.com/queries/1688044"
+        base = "https://dune.com/queries/2332678"
         query = f"?start_time={self.start}&end_time={self.end}"
         return base + urllib.parse.quote_plus(query, safe="=&?")
