@@ -31,7 +31,7 @@ class AccountingPeriod:
         )
 
     def as_query_params(self) -> list[QueryParameter]:
-        """Returns commonly used (StartTime, EndTime) query parameters"""
+        """Returns commonly used (start_time, end_time) query parameters"""
         return [
             QueryParameter.date_type("start_time", self.start),
             QueryParameter.date_type("end_time", self.end),
@@ -41,11 +41,11 @@ class AccountingPeriod:
         """Constructs Solver Accounting Dashboard URL for Period"""
         base = "https://dune.com/cowprotocol/"
         slug = "cow-solver-rewards"
-        query = f"?StartTime={self.start}&EndTime={self.end}"
+        query = f"?start_time={self.start}&end_time={self.end}"
         return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
     def unusual_slippage_url(self) -> str:
         """Returns a link to unusual slippage query for period"""
         base = "https://dune.com/queries/1688044"
-        query = f"?StartTime={self.start}&EndTime={self.end}"
+        query = f"?start_time={self.start}&end_time={self.end}"
         return base + urllib.parse.quote_plus(query, safe="=&?")
