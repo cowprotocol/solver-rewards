@@ -15,8 +15,8 @@ class TestDataUtils(unittest.TestCase):
     def test_dashboard_url(self):
         expected = (
             "https://dune.com/cowprotocol/cow-solver-rewards?"
-            "StartTime=2022-05-31+00%3A00%3A00&"
-            "EndTime=2022-06-07+00%3A00%3A00"
+            "start_time=2022-05-31+00%3A00%3A00&"
+            "end_time=2022-06-07+00%3A00%3A00"
         )
         result = AccountingPeriod("2022-05-31").dashboard_url()
         self.assertEqual(
