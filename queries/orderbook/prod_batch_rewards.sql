@@ -17,19 +17,6 @@ WITH observed_settlements AS (
         ss.block_deadline >= {{start_block}}
         AND ss.block_deadline <= {{end_block}}
 ),
-auction_participation AS (
-    SELECT
-        ss.auction_id,
-        array_agg(participant) AS participating_solvers
-    FROM
-        auction_participants
-        JOIN settlement_scores ss ON auction_participants.auction_id = ss.auction_id
-    WHERE
-        block_deadline >= {{start_block}}
-        AND block_deadline <= {{end_block}}
-    GROUP BY
-        ss.auction_id
-),
 -- order data
 order_data AS (
     SELECT
@@ -185,7 +172,7 @@ reward_data AS (
         ss.auction_id,
         -- TODO - Assuming that `solver == winner` when both not null
         --  We will need to monitor that `solver == winner`!
-        COALESCE(os.solver, winner) AS solver,
+        ss.winner AS solver,
         block_number AS settlement_block,
         block_deadline,
         COALESCE(execution_cost, 0) AS execution_cost,
@@ -198,8 +185,6 @@ reward_data AS (
             ELSE 0
         END AS observed_score,
         reference_score,
-        -- auction_participation
-        participating_solvers,
         -- protocol_fees
         COALESCE(CAST(protocol_fee AS NUMERIC(78, 0)), 0) AS protocol_fee,
         COALESCE(
@@ -208,13 +193,13 @@ reward_data AS (
         ) AS network_fee
     FROM
         settlement_scores ss
-        -- If there are reported scores,
-        -- there will always be a record of auction participants
-        JOIN auction_participation ap ON ss.auction_id = ap.auction_id
         -- outer joins made in order to capture non-existent settlements.
         LEFT OUTER JOIN observed_settlements os ON os.auction_id = ss.auction_id
         LEFT OUTER JOIN batch_protocol_fees bpf ON bpf.tx_hash = os.tx_hash
         LEFT OUTER JOIN batch_network_fees bnf ON bnf.tx_hash = os.tx_hash
+        WHERE
+            ss.block_deadline >= {{start_block}}
+            AND ss.block_deadline <= {{end_block}}
 ),
 reward_per_auction AS (
     SELECT
@@ -237,38 +222,9 @@ reward_per_auction AS (
             {{EPSILON_UPPER}}
         ) AS capped_payment,
         winning_score,
-        reference_score,
-        participating_solvers AS participating_solvers
+        reference_score
     FROM
         reward_data
-),
-participation_data AS (
-    SELECT
-        tx_hash,
-        block_deadline,
-        unnest(participating_solvers) AS participant
-    FROM
-        reward_per_auction
-),
-participation_data_intermediate AS (
-    SELECT
-        tx_hash,
-        CASE
-            WHEN block_deadline <= 20365510 THEN 1  -- final block deadline of accounting week of July 16 - July 23, 2024
-            ELSE 0
-        END AS count_participation,
-        participant
-    FROM
-        participation_data
-),
-participation_counts AS (
-    SELECT
-        participant AS solver,
-        sum(count_participation) AS num_participating_batches
-    FROM
-        participation_data_intermediate
-    GROUP BY
-        participant
 ),
 primary_rewards AS (
     SELECT
@@ -301,16 +257,13 @@ aggregate_partner_fees_per_solver AS (
 ),
 aggregate_results AS (
     SELECT
-        CONCAT('0x', encode(pc.solver, 'hex')) AS solver,
+        CONCAT('0x', encode(pr.solver, 'hex')) AS solver,
         COALESCE(payment, 0) AS primary_reward_eth,
-        num_participating_batches,
         COALESCE(protocol_fee, 0) AS protocol_fee_eth,
         COALESCE(network_fee, 0) AS network_fee_eth,
         partner_list,
         partner_fee AS partner_fee_eth
-    FROM
-        participation_counts pc
-        LEFT OUTER JOIN primary_rewards pr ON pr.solver = pc.solver
+    FROM primary_rewards pr
         LEFT OUTER JOIN aggregate_partner_fees_per_solver aif ON pr.solver = aif.solver
 ) --
 SELECT
