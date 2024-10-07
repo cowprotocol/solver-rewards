@@ -135,7 +135,10 @@ trade_data_processed_with_prices AS (
         END AS network_fee,
         tdp.sell_token AS network_fee_token,
         surplus_token_native_price,
-        protocol_fee_token_native_price,
+        CASE
+            WHEN tdp.order_uid = '\xd6dda5a9dc263af80b6b4155d61f3cd172432fb0e3564fefa537f90603aea78bffff8298631efa764238485543fcff82b878ce1e66fcdfc0' THEN 2.2093961173361646e-7
+            ELSE protocol_fee_token_native_price
+        END AS protocol_fee_token_native_price,
         network_fee_token_native_price
     FROM
         trade_data_processed AS tdp
