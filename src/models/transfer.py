@@ -52,7 +52,7 @@ class Transfer:
     amount_wei: int
 
     def __init__(self, token: Optional[Token], recipient: Address, amount_wei: int):
-        assert amount_wei > 0, f"Can't construct negative transfer of {amount_wei}"
+        assert amount_wei > 0, f"Can't construct non-positive transfer of {amount_wei}"
 
         self.token = token
         self._recipient = recipient

@@ -332,13 +332,16 @@ def prepare_transfers(
             )
         )
     for address in partner_fees_wei:
-        transfers.append(
-            Transfer(
-                token=None,
-                recipient=Address(address),
-                amount_wei=partner_fees_wei[address],
+        amount_wei = partner_fees_wei[address]
+        assert amount_wei >= 0, f"Can't construct negative transfer of {amount_wei}"
+        if amount_wei > 0:
+            transfers.append(
+                Transfer(
+                    token=None,
+                    recipient=Address(address),
+                    amount_wei=amount_wei,
+                )
             )
-        )
 
     return PeriodPayouts(overdrafts, transfers)
 
