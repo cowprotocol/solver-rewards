@@ -339,7 +339,7 @@ def prepare_transfers(
                 Transfer(
                     token=None,
                     recipient=Address(address),
-                    amount_wei=partner_fees_wei[address],
+                    amount_wei=amount_wei,
                 )
             )
 
