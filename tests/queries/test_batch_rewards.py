@@ -27,7 +27,6 @@ class TestBatchRewards(unittest.TestCase):
                     "0x5111111111111111111111111111111111111111",
                     "0x5222222222222222222222222222222222222222",
                     "0x5333333333333333333333333333333333333333",
-                    "0x5444444444444444444444444444444444444444",
                 ],
                 "primary_reward_eth": [
                     2000000000000000.0,
@@ -36,22 +35,11 @@ class TestBatchRewards(unittest.TestCase):
                     28000000000000000.0,
                     12000000000000000.0,
                     -10000000000000000.0,
-                    0.0,
-                ],
-                "num_participating_batches": [
-                    3,
-                    3,
-                    4,
-                    7,
-                    2,
-                    7,
-                    6,
                 ],
                 "protocol_fee_eth": [
                     1250000000000000.0,  # 0.5 / (1 - 0.5) * 1e18 * 5e14 / 1e18 + 0.0045 / (1 - 0.0045) * 95e18 * 5e14 / 1e18
                     1000000000000000.0,  # 0.75 / (1 - 0.75) * 1e6 * 5e26 / 1e18 + 0.01 / (1 + 0.01) * 105e6 * 5e26 / 1e18
                     2000000000000000.0,  # 0.5 / (1 - 0.5) * 0.5e18 * 5e14 / 1e18 + 0.5 / (1 - 0.5) * 1e6 * 5e26 / 1e18 + 0.01 / (1 - 0.01) * 95e18 * 5e14 / 1e18
-                    0.0,
                     0.0,
                     0.0,
                     0.0,
@@ -63,7 +51,6 @@ class TestBatchRewards(unittest.TestCase):
                     0.0,  # zero due to missing surplus fee data
                     0.0,
                     0.0,
-                    0.0,
                 ],
                 "partner_list": [
                     ["0x90a48d5cf7343b08da12e067680b4c6dbfe551be"],
@@ -72,11 +59,9 @@ class TestBatchRewards(unittest.TestCase):
                     None,
                     None,
                     None,
-                    None,
                 ],
                 "partner_fee_eth": [
                     [250000000000000.0],
-                    None,
                     None,
                     None,
                     None,
