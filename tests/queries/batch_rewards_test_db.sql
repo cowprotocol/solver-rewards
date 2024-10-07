@@ -1,5 +1,4 @@
 DROP TABLE IF EXISTS settlements;
-DROP TABLE IF EXISTS auction_participants;
 DROP TABLE IF EXISTS settlement_scores;
 DROP TABLE IF EXISTS settlement_observations;
 DROP TABLE IF EXISTS auction_prices;
@@ -26,12 +25,6 @@ CREATE TABLE IF NOT EXISTS settlements
 );
 
 CREATE INDEX settlements_tx_from_tx_nonce ON settlements (tx_from, tx_nonce);
-
-CREATE TABLE IF NOT EXISTS auction_participants
-(
-  auction_id  bigint,
-  participant bytea
-);
 
 CREATE TABLE IF NOT EXISTS settlement_scores
 (
@@ -136,7 +129,6 @@ CREATE TABLE app_data (
 
 
 TRUNCATE settlements;
-TRUNCATE auction_participants;
 TRUNCATE settlement_scores;
 TRUNCATE settlement_observations;
 TRUNCATE auction_prices;
@@ -166,39 +158,6 @@ VALUES (1, 10, '\x5111111111111111111111111111111111111111'::bytea, '\x7111'::by
        (59, 10, '\x03'::bytea, '\x09'::bytea, '\x03'::bytea, 2, 59),
        (60, 10, '\x03'::bytea, '\x0a'::bytea, '\x03'::bytea, 3, 60);
 
-INSERT INTO auction_participants (auction_id, participant)
-VALUES (1, '\x5222222222222222222222222222222222222222'::bytea),
-       (1, '\x5333333333333333333333333333333333333333'::bytea),
-       (1, '\x5111111111111111111111111111111111111111'::bytea),
-       (2, '\x5444444444444444444444444444444444444444'::bytea),
-       (2, '\x5333333333333333333333333333333333333333'::bytea),
-       (2, '\x5222222222222222222222222222222222222222'::bytea),
-       (3, '\x5444444444444444444444444444444444444444'::bytea),
-       (3, '\x5333333333333333333333333333333333333333'::bytea),
-       (3, '\x5111111111111111111111111111111111111111'::bytea),
-       (5, '\x5444444444444444444444444444444444444444'::bytea),
-       (5, '\x5333333333333333333333333333333333333333'::bytea),
-       (5, '\x5111111111111111111111111111111111111111'::bytea),
-       (6, '\x5444444444444444444444444444444444444444'::bytea),
-       (6, '\x5333333333333333333333333333333333333333'::bytea),
-       (6, '\x5111111111111111111111111111111111111111'::bytea),
-       (7, '\x5111111111111111111111111111111111111111'::bytea),
-       (8, '\x5111111111111111111111111111111111111111'::bytea),
-       (9, '\x5444444444444444444444444444444444444444'::bytea),
-       (9, '\x5333333333333333333333333333333333333333'::bytea),
-       (9, '\x5111111111111111111111111111111111111111'::bytea),
-       (10, '\x5444444444444444444444444444444444444444'::bytea),
-       (10, '\x5333333333333333333333333333333333333333'::bytea),
-       (51, '\x01'::bytea),
-       (52, '\x02'::bytea),
-       (53, '\x01'::bytea),
-       (54, '\x02'::bytea),
-       (55, '\x01'::bytea),
-       (56, '\x02'::bytea),
-       (57, '\x03'::bytea),
-       (58, '\x03'::bytea),
-       (59, '\x03'::bytea),
-       (60, '\x03'::bytea);
 
 INSERT INTO settlement_scores (auction_id, winning_score, reference_score, winner, block_deadline, simulation_block)
 VALUES (1, 6000000000000000000, 4000000000000000000, '\x5111111111111111111111111111111111111111'::bytea, 10, 0),
