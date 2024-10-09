@@ -89,6 +89,8 @@ options:
                         Ignore ETH transfers with amount less than this
   --min-transfer-amount-cow-atoms MIN_TRANSFER_AMOUNT_COW_ATOMS
                         Ignore COW transfers with amount less than this
+  --ignore-slippage IGNORE_SLIPPAGE
+                        Ignore slippage computations
 ```
 
 The solver reimbursements are executed each Tuesday with the accounting period of the last 7 days.

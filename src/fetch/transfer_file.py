@@ -111,6 +111,7 @@ if __name__ == "__main__":
 
     payout_transfers_temp = construct_payouts(
         args.dune,
+        args.ignore_slippage,
         orderbook=MultiInstanceDBFetcher(
             [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
         ),
