@@ -400,7 +400,9 @@ def construct_payout_dataframe(
 
     # 3. Merge the three dataframes (joining on solver)
 
-    reward_target_reduced_df = reward_target_df[['pool_address', 'pool_name', 'reward_target', 'solver']]
+    reward_target_reduced_df = reward_target_df[
+        ["pool_address", "pool_name", "reward_target", "solver"]
+    ]
     service_fee_reduced_df = service_fee_df[["solver", "service_fee"]]
     merged_df = (
         payment_df.merge(slippage_df, on=join_column, how="left")
