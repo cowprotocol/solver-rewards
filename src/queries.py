@@ -44,7 +44,6 @@ QUERIES = {
     ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
-        filepath="period_slippage.sql",
         q_id=4070065 #3427730,
     ),
     "DASHBOARD_SLIPPAGE": QueryData(
