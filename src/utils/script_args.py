@@ -4,7 +4,7 @@ import argparse
 import os
 from datetime import date, timedelta
 from dataclasses import dataclass
-
+from dotenv import load_dotenv
 from dune_client.client import DuneClient
 
 from src.fetch.dune import DuneFetcher
@@ -29,6 +29,7 @@ def generic_script_init(description: str) -> ScriptArgs:
     2. establishes dune connection
     and returns this info
     """
+    load_dotenv()
     parser = argparse.ArgumentParser(description)
     parser.add_argument(
         "--start",
