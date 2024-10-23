@@ -60,7 +60,7 @@ CREATE TABLE IF NOT EXISTS auction_prices
 
 -- orders table
 CREATE TYPE OrderKind AS ENUM ('buy', 'sell');
-CREATE TYPE OrderClass AS ENUM ('market', 'limit');
+CREATE TYPE OrderClass AS ENUM ('limit');
 
 CREATE TABLE orders (
     uid bytea PRIMARY KEY,
@@ -223,9 +223,7 @@ VALUES (51, '\x01', 500000000000000000000000000),
 (60, '\x02', 500000000000000);
 
 INSERT INTO orders (uid, sell_token, buy_token, sell_amount, buy_amount, fee_amount, kind, partially_fillable, full_fee_amount, class, app_data)
-VALUES ('\x01'::bytea, '\x01'::bytea, '\x02'::bytea, 95000000, 94000000000000000000, 5000000, 'sell', 'f', 5000000, 'market', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- sell market order
-('\x02'::bytea, '\x01'::bytea, '\x02'::bytea, 101000000, 100000000000000000000, 5000000, 'buy', 'f', 5000000, 'market', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- buy market order
-('\x03'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- partially fillable sell limit order
+VALUES ('\x03'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- partially fillable sell limit order
 ('\x04'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 100000000000000000000, 0, 'buy', 't', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- partially fillable buy limit order
 ('\x05'::bytea, '\x01'::bytea, '\x02'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 0, 'limit', '\xd3418777a6ec517d7310b05a2a22f3737524ae0302d1f88230f4e066a1768b74'::bytea), -- in market sell limit order with volume-based partner fee of 45bps. An example of a real order with same appdata can be found here: https://explorer.cow.fi/orders/0x398510f3b0b35c0712d3caef470f036a4fead3d21b5a37280698484a197a5da45543dc0694384bd9a7c585027d436c4daacc95c7661c7213?tab=overview
 ('\x06'::bytea, '\x01'::bytea, '\x02'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 0, 'limit', '\x0000000000000000000000000000000000000000000000000000000000000000'::bytea), -- in market buy limit order

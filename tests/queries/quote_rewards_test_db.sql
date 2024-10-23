@@ -8,7 +8,7 @@ DROP TABLE IF EXISTS trades;
 
 -- orders table
 CREATE TYPE OrderKind AS ENUM ('buy', 'sell');
-CREATE TYPE OrderClass AS ENUM ('market', 'limit');
+CREATE TYPE OrderClass AS ENUM ('limit');
 
 CREATE TABLE IF NOT EXISTS orders
 (
@@ -50,9 +50,7 @@ TRUNCATE trades;
 
 
 INSERT INTO orders (uid, sell_amount, buy_amount, fee_amount, kind, partially_fillable, class)
-VALUES ('\x01'::bytea, 95000000, 94000000000000000000, 5000000, 'sell', 'f', 'market'), -- normal sell market order
-('\x02'::bytea, 101000000, 100000000000000000000, 5000000, 'buy', 'f', 'market'), -- normal buy market order
-('\x03'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't', 'limit'), -- partially fillable sell limit order
+VALUES ('\x03'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't', 'limit'), -- partially fillable sell limit order
 ('\x04'::bytea, 100000000, 100000000000000000000, 0, 'buy', 't', 'limit'), -- partially fillable buy limit order
 ('\x05'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 'limit'), -- in market sell limit order
 ('\x06'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 'limit'); -- in market buy limit order
