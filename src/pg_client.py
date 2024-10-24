@@ -56,8 +56,16 @@ class MultiInstanceDBFetcher:
             results.append(
                 self.exec_query(query=batch_reward_query_barn, engine=engine)
             )
-
-        return pd.concat(results)
+        result = pd.concat(results)
+        # check for duplicate solver entries and raise an error if there are any duplicates
+        solvers = []
+        for _, row in result.iterrows():
+            solver = row["solver"]
+            assert (
+                solver not in solvers
+            ), "Solver for batch rewards appears in both prod and barn " + str(solver)
+            solvers.append(solver)
+        return result
 
     def get_quote_rewards(self, start_block: str, end_block: str) -> DataFrame:
         """Returns aggregated solver quote rewards for block range"""
@@ -70,8 +78,16 @@ class MultiInstanceDBFetcher:
             self.exec_query(query=quote_reward_query, engine=engine)
             for engine in self.connections
         ]
-
-        return pd.concat(results)
+        result = pd.concat(results)
+        # check for duplicate solver entries and raise an error if there are any duplicates
+        solvers = []
+        for _, row in result.iterrows():
+            solver = row["solver"]
+            assert (
+                solver not in solvers
+            ), "Solver for quote rewards appears in both prod and barn " + str(solver)
+            solvers.append(solver)
+        return result
 
 
 def pg_hex2bytea(hex_address: str) -> str:

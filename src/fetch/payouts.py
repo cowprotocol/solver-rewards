@@ -478,6 +478,16 @@ def construct_payouts(
     ]
     service_fee_df = service_fee_df[["solver", "service_fee"]]
 
+    # check if all solvers receiving rewards have an associated service fee status
+    service_fee_df_solvers = []
+    for _, row in service_fee_df.iterrows():
+        service_fee_df_solvers.append(row["solver"])
+    for _, row in merged_df.iterrows():
+        solver = row["solver"]
+        assert (
+            solver in service_fee_df_solvers
+        ), "Solver service fee status undefinded " + str(solver)
+
     complete_payout_df = construct_payout_dataframe(
         # Fetch and extend auction data from orderbook.
         payment_df=extend_payment_df(
