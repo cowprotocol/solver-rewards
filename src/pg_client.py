@@ -4,7 +4,7 @@ from __future__ import annotations
 
 
 import pandas as pd
-from pandas import DataFrame
+from pandas import DataFrame, Series
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
@@ -69,7 +69,7 @@ class MultiInstanceDBFetcher:
                 f"Solvers found in both environments:\n {duplicated_entries}.\n Merging results."
             )
 
-            def merge_lists(series):
+            def merge_lists(series: Series) -> list | None:
                 merged = []
                 for lst in series:
                     if lst is not None:
