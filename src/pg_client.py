@@ -65,9 +65,18 @@ class MultiInstanceDBFetcher:
         # warn and merge in case of solvers in both environments
         if not results_df["solver"].is_unique:
             duplicated_entries = results_df[results_df["solver"].duplicated(keep=False)]
-            log.warning(
-                f"Solvers found in both environments:\n {duplicated_entries}.\n Merging results."
-            )
+            with pd.option_context(
+                "display.max_columns",
+                None,
+                "display.width",
+                None,
+                "display.max_colwidth",
+                None,
+            ):
+                log.warning(
+                    f"Solvers found in both environments:\n {duplicated_entries}.\n"
+                    "Merging results."
+                )
 
             def merge_lists(series: Series) -> list | None:
                 merged = []
@@ -109,9 +118,18 @@ class MultiInstanceDBFetcher:
         # warn and merge in case of solvers in both environments
         if not results_df["solver"].is_unique:
             duplicated_entries = results_df[results_df["solver"].duplicated(keep=False)]
-            log.warning(
-                f"Solvers found in both environments:\n {duplicated_entries}.\n Merging results."
-            )
+            with pd.option_context(
+                "display.max_columns",
+                None,
+                "display.width",
+                None,
+                "display.max_colwidth",
+                None,
+            ):
+                log.warning(
+                    f"Solvers found in both environments:\n {duplicated_entries}.\n"
+                    "Merging results."
+                )
             results_df = (
                 results_df.groupby("solver").agg({"num_quotes": "sum"}).reset_index()
             )
