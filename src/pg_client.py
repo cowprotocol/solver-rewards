@@ -64,19 +64,7 @@ class MultiInstanceDBFetcher:
 
         # warn and merge in case of solvers in both environments
         if not results_df["solver"].is_unique:
-            duplicated_entries = results_df[results_df["solver"].duplicated(keep=False)]
-            with pd.option_context(
-                "display.max_columns",
-                None,
-                "display.width",
-                None,
-                "display.max_colwidth",
-                None,
-            ):
-                log.warning(
-                    f"Solvers found in both environments:\n {duplicated_entries}.\n"
-                    "Merging results."
-                )
+            log_duplicate_rows(results_df)
 
             def merge_lists(series: Series) -> list | None:
                 merged = []
@@ -117,19 +105,8 @@ class MultiInstanceDBFetcher:
 
         # warn and merge in case of solvers in both environments
         if not results_df["solver"].is_unique:
-            duplicated_entries = results_df[results_df["solver"].duplicated(keep=False)]
-            with pd.option_context(
-                "display.max_columns",
-                None,
-                "display.width",
-                None,
-                "display.max_colwidth",
-                None,
-            ):
-                log.warning(
-                    f"Solvers found in both environments:\n {duplicated_entries}.\n"
-                    "Merging results."
-                )
+            log_duplicate_rows(results_df)
+
             results_df = (
                 results_df.groupby("solver").agg({"num_quotes": "sum"}).reset_index()
             )
@@ -143,3 +120,19 @@ def pg_hex2bytea(hex_address: str) -> str:
     compatible bytea by replacing `0x` with `\\x`.
     """
     return hex_address.replace("0x", "\\x")
+
+
+def log_duplicate_rows(df: DataFrame) -> None:
+    duplicated_entries = df[df["solver"].duplicated(keep=False)]
+    with pd.option_context(
+        "display.max_columns",
+        None,
+        "display.width",
+        None,
+        "display.max_colwidth",
+        None,
+    ):
+        log.warning(
+            f"Solvers found in both environments:\n {duplicated_entries}.\n"
+            "Merging results."
+        )
