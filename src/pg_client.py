@@ -66,13 +66,6 @@ class MultiInstanceDBFetcher:
         if not results_df["solver"].is_unique:
             log_duplicate_rows(results_df)
 
-            def merge_lists(series: Series) -> list | None:
-                merged = []
-                for lst in series:
-                    if lst is not None:
-                        merged.extend(lst)
-                return merged if merged else None
-
             results_df = (
                 results_df.groupby("solver")
                 .agg(
@@ -136,3 +129,11 @@ def log_duplicate_rows(df: DataFrame) -> None:
             f"Solvers found in both environments:\n {duplicated_entries}.\n"
             "Merging results."
         )
+
+
+def merge_lists(series: Series) -> list | None:
+    merged = []
+    for lst in series:
+        if lst is not None:
+            merged.extend(lst)
+    return merged if merged else None
