@@ -388,8 +388,6 @@ def construct_payout_dataframe(
     Namely, reward targets and slippage (coming from Dune)
     with reward and execution data coming from orderbook.
     """
-    # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
-    slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
     # 1. Assert existence of required columns.
     validate_df_columns(payment_df, slippage_df, reward_target_df, service_fee_df)
 
@@ -401,10 +399,19 @@ def construct_payout_dataframe(
     normalize_address_field(service_fee_df, join_column)
 
     # 3. Merge the three dataframes (joining on solver)
+
+    reward_target_reduced_df_columns = [
+        x for x in list(reward_target_df.columns) if x != "solver_name"
+    ]
+    reward_target_reduced_df = reward_target_df[reward_target_reduced_df_columns]
+    service_fee_reduced_df_columns = [
+        x for x in list(service_fee_df.columns) if x != "solver_name"
+    ]
+    service_fee_reduced_df = service_fee_df[service_fee_reduced_df_columns]
     merged_df = (
         payment_df.merge(slippage_df, on=join_column, how="left")
-        .merge(reward_target_df, on=join_column, how="left")
-        .merge(service_fee_df, on=join_column, how="left")
+        .merge(reward_target_reduced_df, on=join_column, how="left")
+        .merge(service_fee_reduced_df, on=join_column, how="left")
     )
 
     # 4. Add slippage from fees to slippage
@@ -454,7 +461,7 @@ def construct_partner_fee_payments(
 
 
 def construct_payouts(
-    dune: DuneFetcher, orderbook: MultiInstanceDBFetcher
+    dune: DuneFetcher, ignore_slippage_flag: bool, orderbook: MultiInstanceDBFetcher
 ) -> list[Transfer]:
     """Workflow of solver reward payout logic post-CIP27"""
     # pylint: disable-msg=too-many-locals
@@ -480,7 +487,22 @@ def construct_payouts(
         datetime.strptime(time_string, "%Y-%m-%d %H:%M:%S.%f %Z") <= dune.period.start
         for time_string in service_fee_df["expires"]
     ]
-    service_fee_df = service_fee_df[["solver", "service_fee"]]
+    reward_target_df = pandas.DataFrame(dune.get_vouches())
+    # construct slippage df
+    if ignore_slippage_flag:
+        slippage_df_temp = pandas.merge(
+            merged_df[["solver"]],
+            reward_target_df[["solver", "solver_name"]],
+            on="solver",
+            how="inner",
+        )
+        slippage_df = slippage_df_temp.assign(
+            eth_slippage_wei=[0] * slippage_df_temp.shape[0]
+        )
+    else:
+        slippage_df = pandas.DataFrame(dune.get_period_slippage())
+        # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
+        slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
 
     complete_payout_df = construct_payout_dataframe(
         # Fetch and extend auction data from orderbook.
@@ -493,11 +515,10 @@ def construct_payouts(
             ),
         ),
         # Dune: Fetch Solver Slippage & Reward Targets
-        slippage_df=pandas.DataFrame(dune.get_period_slippage()),
-        reward_target_df=pandas.DataFrame(dune.get_vouches()),
+        slippage_df=slippage_df,
+        reward_target_df=reward_target_df,
         service_fee_df=service_fee_df,
     )
-
     # Sort by solver before breaking this data frame into Transfer objects.
     complete_payout_df = complete_payout_df.sort_values("solver")
 
