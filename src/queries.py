@@ -44,7 +44,7 @@ QUERIES = {
     ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",
-        q_id=4070065,
+        q_id=3427730,
     ),
     "DASHBOARD_SLIPPAGE": QueryData(
         name="Period Solver Rewards",
