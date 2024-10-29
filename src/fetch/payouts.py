@@ -475,9 +475,13 @@ def construct_payouts(
     batch_rewards_df = batch_rewards_df.drop(
         ["partner_list", "partner_fee_eth"], axis=1
     )
+
+    assert batch_rewards_df["solver"].is_unique, "solver not unique in batch rewards"
+    assert quote_rewards_df["solver"].is_unique, "solver not unique in quote rewards"
     merged_df = pandas.merge(
         quote_rewards_df, batch_rewards_df, on="solver", how="outer"
     ).fillna(0)
+
     service_fee_df = pandas.DataFrame(dune.get_service_fee_status())
     service_fee_df["service_fee"] = [
         datetime.strptime(time_string, "%Y-%m-%d %H:%M:%S.%f %Z") <= dune.period.start
