@@ -50,6 +50,17 @@ class TestPayoutTransformations(unittest.TestCase):
                 ],
             )
         )
+        self.pool_addresses = list(
+            map(
+                str,
+                [
+                    Address.from_int(9),
+                    Address.from_int(10),
+                    Address.from_int(11),
+                    Address.from_int(12),
+                ],
+            )
+        )
         self.service_fee = [False, False, False, True]
 
         self.primary_reward_eth = [
@@ -141,7 +152,9 @@ class TestPayoutTransformations(unittest.TestCase):
         legit_slippages = DataFrame(
             {"solver": [], "solver_name": [], "eth_slippage_wei": []}
         )
-        legit_reward_targets = DataFrame({"solver": [], "reward_target": []})
+        legit_reward_targets = DataFrame(
+            {"solver": [], "reward_target": [], "pool_address": []}
+        )
         legit_service_fees = DataFrame({"solver": [], "service_fee": []})
 
         failing_df = DataFrame({})
@@ -209,7 +222,11 @@ class TestPayoutTransformations(unittest.TestCase):
         )
 
         reward_targets = DataFrame(
-            {"solver": self.solvers, "reward_target": self.reward_targets}
+            {
+                "solver": self.solvers,
+                "reward_target": self.reward_targets,
+                "pool_address": self.pool_addresses,
+            }
         )
 
         service_fee_df = DataFrame(
@@ -258,6 +275,12 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000006",
                     "0x0000000000000000000000000000000000000007",
                     "0x0000000000000000000000000000000000000008",
+                ],
+                "pool_address": [
+                    "0x0000000000000000000000000000000000000009",
+                    "0x0000000000000000000000000000000000000010",
+                    "0x0000000000000000000000000000000000000011",
+                    "0x0000000000000000000000000000000000000012",
                 ],
                 "service_fee": [
                     False,
