@@ -125,21 +125,35 @@ def get_accounting_config(network: str) -> AccountingConfig:
 
     docs_url = "https://www.notion.so/cownation/Solver-Payouts-3dfee64eb3d449ed8157a652cc817a8c"
 
-    payment_safe_address = Web3.to_checksum_address(
-        os.environ.get("SAFE_ADDRESS", "0xA03be496e67Ec29bC62F01a428683D7F9c204930")
-    )
+    # Secrets
+
     # Found this exposed infura key on https://rpc.info/
     infura_key = os.environ.get("INFURA_KEY", "9aa3d95b3bc440fa88ea12eaa4456161")
 
+    dune_api_key = os.environ.get("DUNE_API_KEY", "")
+
+    prod_db_url = os.environ.get("PROD_DB_URL", "")
+    barn_db_url = os.environ.get("BARN_DB_URL", "")
+
+    signing_key = os.getenv("PROPOSER_PK")
+    if signing_key == "":
+        signing_key = None
+
+    slack_channel = os.getenv("SLACK_CHANNEL", None)
+    slack_token = os.getenv("SLACK_TOKEN", None)
+
     node_url = f"https://{network}.infura.io/v3/{infura_key}"
 
+    #
+    payment_safe_address = Web3.to_checksum_address(
+        os.environ.get("SAFE_ADDRESS", "0xA03be496e67Ec29bC62F01a428683D7F9c204930")
+    )
     short_name = {
         "mainnet": "eth",
         "rinkeby": "rin",
         "gnosis": "gno",
         "goerli": "gor",
     }[network]
-
     csv_app_hash = "Qme49gESuwpSvwANmEqo34yfCkzyQehooJ5yL7aHmKJnpZ"
     safe_url = f"https://app.safe.global/{short_name}:{payment_safe_address}"
     airdrop_url = (
@@ -147,10 +161,6 @@ def get_accounting_config(network: str) -> AccountingConfig:
     )
     safe_queue_url = f"{safe_url}/transactions/queue"
 
-    dune_api_key = os.environ.get("DUNE_API_KEY", "")
-    signing_key = os.getenv("PROPOSER_PK")
-    if signing_key == "":
-        signing_key = None
     result = AccountingConfig(
         payment_config=PaymentConfig(
             network=EthereumNetwork.MAINNET,
@@ -167,8 +177,8 @@ def get_accounting_config(network: str) -> AccountingConfig:
             ),
         ),
         orderbook_config=OrderbookConfig(
-            prod_db_url=os.environ["PROD_DB_URL"],
-            barn_db_url=os.environ["BARN_DB_URL"],
+            prod_db_url=prod_db_url,
+            barn_db_url=barn_db_url,
         ),
         dune_config=DuneConfig(dune_api_key=dune_api_key, dune_blockchain="ethereum"),
         node_config=NodeConfig(node_url=node_url),
@@ -194,8 +204,8 @@ def get_accounting_config(network: str) -> AccountingConfig:
             query_dir=query_dir,
             csv_output_dir=file_out_dir,
             dashboard_dir=dashboard_dir,
-            slack_channel=os.getenv("SLACK_CHANNEL", None),
-            slack_token=os.getenv("SLACK_TOKEN", None),
+            slack_channel=slack_channel,
+            slack_token=slack_token,
         ),
     )
 
