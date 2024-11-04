@@ -11,34 +11,10 @@ from src.constants import COW_TOKEN_ADDRESS
 from src.fetch.transfer_file import Transfer
 from src.models.accounting_period import AccountingPeriod
 from src.models.token import Token
-from src.utils.print_store import PrintStore
 
-from tests.queries.test_internal_trades import TransferType
 from tests.unit.util_methods import redirected_transfer
 
 ONE_ETH = 10**18
-
-
-class TestTransferType(unittest.TestCase):
-    def setUp(self) -> None:
-        self.in_user_upper = "IN_USER"
-        self.in_amm_lower = "in_amm"
-        self.out_user_mixed = "Out_User"
-        self.invalid_type = "invalid"
-
-    def test_valid(self):
-        self.assertEqual(
-            TransferType.from_str(self.in_user_upper), TransferType.IN_USER
-        )
-        self.assertEqual(TransferType.from_str(self.in_amm_lower), TransferType.IN_AMM)
-        self.assertEqual(
-            TransferType.from_str(self.out_user_mixed), TransferType.OUT_USER
-        )
-
-    def test_invalid(self):
-        with self.assertRaises(ValueError) as err:
-            TransferType.from_str(self.invalid_type)
-        self.assertEqual(str(err.exception), f"No TransferType {self.invalid_type}!")
 
 
 class TestTransfer(unittest.TestCase):
