@@ -147,7 +147,7 @@ def get_accounting_config(network: str) -> AccountingConfig:
     )
     safe_queue_url = f"{safe_url}/transactions/queue"
 
-    dune_api_key = os.environ["DUNE_API_KEY"]
+    dune_api_key = os.environ.get("DUNE_API_KEY", "")
     signing_key = os.getenv("PROPOSER_PK")
     if signing_key == "":
         signing_key = None
