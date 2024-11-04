@@ -10,11 +10,11 @@ from enum import Enum
 
 from coinpaprika import client as cp
 
-from src.constants import LOG_CONFIG_FILE
+from src.config import config
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(
-    fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
+    fname=config.io_config.log_config_file.absolute(), disable_existing_loggers=False
 )
 
 client = cp.Client()

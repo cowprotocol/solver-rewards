@@ -10,11 +10,11 @@ import logging.config
 
 import requests
 
-from src.constants import LOG_CONFIG_FILE
+from src.config import config
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(
-    fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
+    fname=config.io_config.log_config_file.absolute(), disable_existing_loggers=False
 )
 
 ALLOWED_TOKEN_LIST_URL = "https://files.cow.fi/token_list.json"

@@ -4,7 +4,6 @@ Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Pe
 
 from __future__ import annotations
 
-import os
 import ssl
 from dataclasses import asdict
 
@@ -14,15 +13,7 @@ from eth_typing import URI
 from gnosis.eth.ethereum_client import EthereumClient
 from slack.web.client import WebClient
 
-from src.constants import (
-    SAFE_ADDRESS,
-    NETWORK,
-    NODE_URL,
-    AIRDROP_URL,
-    SAFE_URL,
-    FILE_OUT_DIR,
-    DOCS_URL,
-)
+from src.config import config
 from src.fetch.payouts import construct_payouts
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
@@ -43,13 +34,15 @@ def manual_propose(transfers: list[Transfer], period: AccountingPeriod) -> None:
         f"{period.unusual_slippage_url()}"
     )
     csv_transfers = [asdict(CSVTransfer.from_transfer(t)) for t in transfers]
-    FileIO(FILE_OUT_DIR).write_csv(csv_transfers, f"transfers-{period}.csv")
+    FileIO(config.io_config.csv_output_dir).write_csv(
+        csv_transfers, f"transfers-{period}.csv"
+    )
 
     print(Transfer.summarize(transfers))
     print(
         f"Please cross check these results with the dashboard linked above.\n "
         f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
-        f"{AIRDROP_URL}"
+        f"{config.payment_config.csv_airdrop_url}"
     )
 
 
@@ -66,35 +59,42 @@ def auto_propose(
     """
     # Check for required env vars early
     # so not to wait for query execution to realize it's not available.
-    signing_key = os.environ["PROPOSER_PK"]
-    client = EthereumClient(URI(NODE_URL))
+    signing_key = config.payment_config.signing_key
+    assert signing_key is not None
+    client = EthereumClient(URI(config.node_config.node_url))
 
     log_saver.print(Transfer.summarize(transfers), category=Category.TOTALS)
     transactions = prepend_unwrap_if_necessary(
-        client, SAFE_ADDRESS, transactions=[t.as_multisend_tx() for t in transfers]
+        client,
+        config.payment_config.payment_safe_address,
+        transactions=[t.as_multisend_tx() for t in transfers],
     )
     if len(transactions) > len(transfers):
         log_saver.print("Prepended WETH unwrap", Category.GENERAL)
 
     log_saver.print(
-        f"Instructions for verifying the payout transaction can be found at\n{DOCS_URL}",
+        "Instructions for verifying the payout transaction can be found at\n"
+        f"{config.payment_config.verification_docs_url}",
         category=Category.GENERAL,
     )
 
     if not dry_run:
+        slack_channel = config.io_config.slack_channel
+        assert slack_channel is not None
+
         nonce = post_multisend(
-            safe_address=SAFE_ADDRESS,
+            safe_address=config.payment_config.payment_safe_address,
             transactions=transactions,
-            network=NETWORK,
+            network=config.payment_config.network,
             signing_key=signing_key,
             client=client,
         )
         post_to_slack(
             slack_client,
-            channel=os.environ["SLACK_CHANNEL"],
+            channel=slack_channel,
             message=(
                 f"Solver Rewards transaction with nonce {nonce} pending signatures.\n"
-                f"To sign and execute, visit:\n{SAFE_URL}\n"
+                f"To sign and execute, visit:\n{config.payment_config.safe_queue_url}\n"
                 f"More details in thread"
             ),
             sub_messages=log_saver.get_values(),
@@ -112,7 +112,7 @@ if __name__ == "__main__":
     payout_transfers_temp = construct_payouts(
         args.dune,
         orderbook=MultiInstanceDBFetcher(
-            [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
+            [config.orderbook_config.prod_db_url, config.orderbook_config.barn_db_url]
         ),
     )
     payout_transfers = []
@@ -134,7 +134,7 @@ if __name__ == "__main__":
             transfers=payout_transfers,
             log_saver=dune.log_saver,
             slack_client=WebClient(
-                token=os.environ["SLACK_TOKEN"],
+                token=config.io_config.slack_token,
                 # https://stackoverflow.com/questions/59808346/python-3-slack-client-ssl-sslcertverificationerror
                 ssl=ssl_context,
             ),

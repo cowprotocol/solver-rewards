@@ -13,7 +13,7 @@ import pandas
 from dune_client.types import Address
 from pandas import DataFrame, Series
 
-from src.constants import COW_TOKEN_ADDRESS, COW_BONDING_POOL
+from src.config import config
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import eth_in_token, TokenId, token_in_eth
 from src.models.accounting_period import AccountingPeriod
@@ -23,11 +23,6 @@ from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 from src.utils.print_store import Category
 
-QUOTE_REWARD_COW = 6 * 10**18
-QUOTE_REWARD_CAP_ETH = 6 * 10**14
-SERVICE_FEE_FACTOR = Fraction(15, 100)
-
-PROTOCOL_FEE_SAFE = Address("0xB64963f95215FDe6510657e719bd832BB8bb941B")
 
 PAYMENT_COLUMNS = {
     "solver",
@@ -135,7 +130,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
     def reward_scaling(self) -> Fraction:
         """Scaling factor for service fee
         The reward is multiplied by this factor"""
-        return 1 - SERVICE_FEE_FACTOR * self.service_fee
+        return 1 - config.reward_config.service_fee_factor * self.service_fee
 
     def is_overdraft(self) -> bool:
         """
@@ -153,7 +148,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         if quote_reward_cow > 0:
             result.append(
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.reward_config.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=quote_reward_cow,
                 )
@@ -188,7 +183,8 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                         token=None,
                         recipient=(
                             self.reward_target
-                            if self.bonding_pool == COW_BONDING_POOL
+                            if self.bonding_pool
+                            == config.reward_config.cow_bonding_pool
                             else self.solver
                         ),
                         amount_wei=reimbursement_eth + total_eth_reward,
@@ -209,7 +205,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             try:
                 result.append(
                     Transfer(
-                        token=Token(COW_TOKEN_ADDRESS),
+                        token=Token(config.reward_config.reward_token_address),
                         recipient=self.reward_target,
                         amount_wei=reimbursement_cow + total_cow_reward,
                     )
@@ -228,7 +224,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                     token=None,
                     recipient=(
                         self.reward_target
-                        if self.bonding_pool == COW_BONDING_POOL
+                        if self.bonding_pool == config.reward_config.cow_bonding_pool
                         else self.solver
                     ),
                     amount_wei=reimbursement_eth,
@@ -241,7 +237,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         try:
             result.append(
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.reward_config.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=total_cow_reward,
                 )
@@ -276,7 +272,12 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     # Pandas has poor support for large integers, must cast the constant to float here,
     # otherwise the dtype would be inferred as int64 (which overflows).
     pdf["quote_reward_cow"] = (
-        float(min(QUOTE_REWARD_COW, converter.eth_to_token(QUOTE_REWARD_CAP_ETH)))
+        float(
+            min(
+                config.reward_config.quote_reward_cow,
+                converter.eth_to_token(config.reward_config.quote_reward_cap_native),
+            )
+        )
         * pdf["num_quotes"]
     )
 
@@ -319,7 +320,7 @@ def prepare_transfers(
         transfers.append(
             Transfer(
                 token=None,
-                recipient=PROTOCOL_FEE_SAFE,
+                recipient=config.protocol_fee_config.protocol_fee_safe,
                 amount_wei=final_protocol_fee_wei,
             )
         )
@@ -327,7 +328,7 @@ def prepare_transfers(
         transfers.append(
             Transfer(
                 token=None,
-                recipient=PROTOCOL_FEE_SAFE,
+                recipient=config.protocol_fee_config.protocol_fee_safe,
                 amount_wei=partner_fee_tax_wei,
             )
         )
@@ -443,12 +444,14 @@ def construct_partner_fee_payments(
     total_partner_fee_wei_taxed = 0
     for address, value in partner_fees_wei.items():
         total_partner_fee_wei_untaxed += value
-        if address == "0x63695Eee2c3141BDE314C5a6f89B98E62808d716":
-            partner_fees_wei[address] = int(0.90 * value)
-            total_partner_fee_wei_taxed += int(0.90 * value)
+        if address == config.protocol_fee_config.reduced_cut_address:
+            reduction_factor = 1 - config.protocol_fee_config.partner_fee_reduced_cut
+            partner_fees_wei[address] = int(reduction_factor * value)
+            total_partner_fee_wei_taxed += int(reduction_factor * value)
         else:
-            partner_fees_wei[address] = int(0.85 * value)
-            total_partner_fee_wei_taxed += int(0.85 * value)
+            reduction_factor = 1 - config.protocol_fee_config.partner_fee_cut
+            partner_fees_wei[address] = int(reduction_factor * value)
+            total_partner_fee_wei_taxed += int(reduction_factor * value)
 
     return partner_fees_wei, total_partner_fee_wei_untaxed
 

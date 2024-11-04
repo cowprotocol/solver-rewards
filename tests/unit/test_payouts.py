@@ -4,7 +4,7 @@ import pandas
 from dune_client.types import Address
 from pandas import DataFrame
 
-from src.constants import COW_TOKEN_ADDRESS
+from src.config import config
 from src.fetch.payouts import (
     extend_payment_df,
     normalize_address_field,
@@ -326,22 +326,22 @@ class TestPayoutTransformations(unittest.TestCase):
                     amount_wei=1,
                 ),
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.payment_config.cow_token_address),
                     recipient=Address(self.reward_targets[0]),
                     amount_wei=600000000000000000,
                 ),
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.payment_config.cow_token_address),
                     recipient=Address(self.reward_targets[1]),
                     amount_wei=12000000000000000000,
                 ),
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.payment_config.cow_token_address),
                     recipient=Address(self.reward_targets[2]),
                     amount_wei=90000000000000000000,
                 ),
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.payment_config.cow_token_address),
                     recipient=Address(self.reward_targets[3]),
                     amount_wei=int(180000000000000000000 * (1 - SERVICE_FEE_FACTOR)),
                 ),
@@ -373,7 +373,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         self.solver_name = "Solver1"
         self.reward_target = Address.from_int(2)
         self.bonding_pool = Address.from_int(3)
-        self.cow_token = Token(COW_TOKEN_ADDRESS)
+        self.cow_token = Token(config.payment_config.cow_token_address)
         self.conversion_rate = 1000
 
     def sample_record(

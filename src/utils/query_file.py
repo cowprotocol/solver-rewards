@@ -6,7 +6,7 @@ These utilities eliminate the need to use relative paths.
 
 import os
 
-from src.constants import QUERY_PATH, DASHBOARD_PATH
+from src.config import config
 
 
 def open_query(filename: str) -> str:
@@ -23,9 +23,9 @@ def open_dashboard_query(filename: str) -> str:
 
 def query_file(filename: str) -> str:
     """Returns proper path for filename in QUERY_PATH"""
-    return os.path.join(QUERY_PATH, filename)
+    return os.path.join(config.io_config.query_dir, filename)
 
 
 def dashboard_file(filename: str) -> str:
     """Returns proper path for filename in DASHBOARD_PATH"""
-    return os.path.join(DASHBOARD_PATH, filename)
+    return os.path.join(config.io_config.dashboard_dir, filename)
