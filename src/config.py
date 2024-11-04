@@ -202,6 +202,6 @@ def get_accounting_config(network: str) -> AccountingConfig:
     return result
 
 
-config = get_accounting_config(os.environ["NETWORK"])
+config = get_accounting_config(os.environ.get("NETWORK", "mainnet"))
 
 web3 = Web3(Web3.HTTPProvider(config.node_config.node_url))
