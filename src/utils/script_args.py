@@ -21,6 +21,7 @@ class ScriptArgs:
     consolidate_transfers: bool
     min_transfer_amount_wei: int
     min_transfer_amount_cow_atoms: int
+    ignore_slippage: bool
 
 
 def generic_script_init(description: str) -> ScriptArgs:
@@ -70,6 +71,12 @@ def generic_script_init(description: str) -> ScriptArgs:
         help="Ignore COW transfers with amount less than this",
         default=20000000000000000000,
     )
+    parser.add_argument(
+        "--ignore-slippage",
+        type=bool,
+        help="Flag for ignoring slippage computations",
+        default=False,
+    )
     args = parser.parse_args()
     return ScriptArgs(
         dune=DuneFetcher(
@@ -81,4 +88,5 @@ def generic_script_init(description: str) -> ScriptArgs:
         consolidate_transfers=args.consolidate_transfers,
         min_transfer_amount_wei=args.min_transfer_amount_wei,
         min_transfer_amount_cow_atoms=args.min_transfer_amount_cow_atoms,
+        ignore_slippage=args.ignore_slippage,
     )

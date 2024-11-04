@@ -88,7 +88,7 @@ class DuneFetcher:
                 query_data=QUERIES["VOUCH_REGISTRY"],
                 params=[
                     QueryParameter.date_type("end_time", self.period.end),
-                    QueryParameter.enum_type("vouch_cte_name", "valid_vouches"),
+                    QueryParameter.enum_type("vouch_cte_name", "named_results"),
                 ],
             )
         )
