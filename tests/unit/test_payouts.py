@@ -13,9 +13,6 @@ from src.fetch.payouts import (
     TokenConversion,
     prepare_transfers,
     RewardAndPenaltyDatum,
-    QUOTE_REWARD_COW,
-    PROTOCOL_FEE_SAFE,
-    SERVICE_FEE_FACTOR,
 )
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
@@ -343,11 +340,14 @@ class TestPayoutTransformations(unittest.TestCase):
                 Transfer(
                     token=Token(config.payment_config.cow_token_address),
                     recipient=Address(self.reward_targets[3]),
-                    amount_wei=int(180000000000000000000 * (1 - SERVICE_FEE_FACTOR)),
+                    amount_wei=int(
+                        180000000000000000000
+                        * (1 - config.reward_config.service_fee_factor)
+                    ),
                 ),
                 Transfer(
                     token=None,
-                    recipient=PROTOCOL_FEE_SAFE,
+                    recipient=config.protocol_fee_config.protocol_fee_safe,
                     amount_wei=3000000000000000,
                 ),
             ],
@@ -392,7 +392,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             primary_reward_eth=primary_reward,
             primary_reward_cow=primary_reward * self.conversion_rate,
             slippage_eth=slippage,
-            quote_reward_cow=QUOTE_REWARD_COW * num_quotes,
+            quote_reward_cow=config.reward_config.quote_reward_cow * num_quotes,
             service_fee=service_fee,
         )
 
@@ -546,7 +546,9 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                 Transfer(
                     token=self.cow_token,
                     recipient=self.reward_target,
-                    amount_wei=int(primary_reward * (1 - SERVICE_FEE_FACTOR))
+                    amount_wei=int(
+                        primary_reward * (1 - config.reward_config.service_fee_factor)
+                    )
                     * self.conversion_rate,
                 ),
             ],
@@ -569,7 +571,9 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                     token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=int(
-                        6000000000000000000 * num_quotes * (1 - SERVICE_FEE_FACTOR)
+                        6000000000000000000
+                        * num_quotes
+                        * (1 - config.reward_config.service_fee_factor)
                     ),
                 ),
             ],
