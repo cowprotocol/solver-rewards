@@ -110,6 +110,10 @@ if __name__ == "__main__":
         dune=DuneClient(os.environ["DUNE_API_KEY"]),
         period=AccountingPeriod(args.start),
     )
+    orderbook = MultiInstanceDBFetcher(
+        [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
+    )
+
     dune.log_saver.print(
         f"The data aggregated can be visualized at\n{dune.period.dashboard_url()}",
         category=Category.GENERAL,
@@ -118,9 +122,7 @@ if __name__ == "__main__":
     payout_transfers_temp = construct_payouts(
         dune,
         args.ignore_slippage,
-        orderbook=MultiInstanceDBFetcher(
-            [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
-        ),
+        orderbook=orderbook,
     )
     payout_transfers = []
     for tr in payout_transfers_temp:
