@@ -42,7 +42,7 @@ SLIPPAGE_COLUMNS = {
     "solver_name",
     "eth_slippage_wei",
 }
-REWARD_TARGET_COLUMNS = {"solver", "reward_target"}
+REWARD_TARGET_COLUMNS = {"solver", "reward_target", "pool_address"}
 SERVICE_FEE_COLUMNS = {"solver", "service_fee"}
 
 COMPLETE_COLUMNS = PAYMENT_COLUMNS.union(SLIPPAGE_COLUMNS).union(REWARD_TARGET_COLUMNS)
