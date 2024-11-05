@@ -1,10 +1,11 @@
 import unittest
+from fractions import Fraction
 
 import pandas
 from dune_client.types import Address
 from pandas import DataFrame
 
-from src.constants import COW_TOKEN_ADDRESS
+from src.constants import COW_BONDING_POOL, COW_TOKEN_ADDRESS
 from src.fetch.payouts import (
     extend_payment_df,
     normalize_address_field,
@@ -54,14 +55,19 @@ class TestPayoutTransformations(unittest.TestCase):
             map(
                 str,
                 [
-                    Address.from_int(9),
+                    COW_BONDING_POOL,
                     Address.from_int(10),
                     Address.from_int(11),
                     Address.from_int(12),
                 ],
             )
         )
-        self.service_fee = [False, False, False, True]
+        self.service_fee = [
+            Fraction(0, 100),
+            Fraction(0, 100),
+            Fraction(0, 100),
+            Fraction(15, 100),
+        ]
 
         self.primary_reward_eth = [
             600000000000000.00000,
@@ -275,16 +281,28 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000008",
                 ],
                 "pool_address": [
-                    "0x0000000000000000000000000000000000000009",
+                    str(COW_BONDING_POOL),
                     "0x0000000000000000000000000000000000000010",
                     "0x0000000000000000000000000000000000000011",
                     "0x0000000000000000000000000000000000000012",
                 ],
                 "service_fee": [
-                    False,
-                    False,
-                    False,
-                    True,
+                    Fraction(0, 100),
+                    Fraction(0, 100),
+                    Fraction(0, 100),
+                    Fraction(15, 100),
+                ],
+                "buffer_accounting_target": [
+                    str(self.solvers[0]),
+                    "0x0000000000000000000000000000000000000006",
+                    "0x0000000000000000000000000000000000000007",
+                    "0x0000000000000000000000000000000000000008",
+                ],
+                "reward_token_address": [
+                    str(COW_TOKEN_ADDRESS),
+                    str(COW_TOKEN_ADDRESS),
+                    str(COW_TOKEN_ADDRESS),
+                    str(COW_TOKEN_ADDRESS),
                 ],
             }
         )
@@ -321,16 +339,28 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000008",
                 ],
                 "pool_address": [
-                    "0x0000000000000000000000000000000000000025",
-                    "0x0000000000000000000000000000000000000026",
-                    "0x0000000000000000000000000000000000000026",
                     "0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6",
+                    "0x0000000000000000000000000000000000000026",
+                    "0x0000000000000000000000000000000000000027",
+                    "0x0000000000000000000000000000000000000028",
                 ],
                 "service_fee": [
-                    False,
-                    False,
-                    False,
-                    True,
+                    Fraction(0, 100),
+                    Fraction(0, 100),
+                    Fraction(0, 100),
+                    Fraction(15, 100),
+                ],
+                "buffer_accounting_target": [
+                    self.solvers[0],
+                    "0x0000000000000000000000000000000000000006",
+                    "0x0000000000000000000000000000000000000007",
+                    "0x0000000000000000000000000000000000000008",
+                ],
+                "reward_token_address": [
+                    str(COW_TOKEN_ADDRESS),
+                    str(COW_TOKEN_ADDRESS),
+                    str(COW_TOKEN_ADDRESS),
+                    str(COW_TOKEN_ADDRESS),
                 ],
             }
         )
@@ -393,8 +423,8 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         self.solver = Address.from_int(1)
         self.solver_name = "Solver1"
         self.reward_target = Address.from_int(2)
-        self.bonding_pool = Address.from_int(3)
-        self.cow_token = Token(COW_TOKEN_ADDRESS)
+        self.buffer_accounting_target = Address.from_int(3)
+        self.reward_token_address = COW_TOKEN_ADDRESS
         self.conversion_rate = 1000
 
     def sample_record(
@@ -402,19 +432,20 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         primary_reward: int,
         slippage: int,
         num_quotes: int,
-        service_fee: bool = False,
+        service_fee: Fraction = Fraction(0, 1),
     ):
         """Assumes a conversion rate of ETH:COW <> 1:self.conversion_rate"""
         return RewardAndPenaltyDatum(
             solver=self.solver,
             solver_name=self.solver_name,
             reward_target=self.reward_target,
-            bonding_pool=self.bonding_pool,
+            buffer_accounting_target=self.buffer_accounting_target,
             primary_reward_eth=primary_reward,
             primary_reward_cow=primary_reward * self.conversion_rate,
             slippage_eth=slippage,
             quote_reward_cow=QUOTE_REWARD_COW * num_quotes,
             service_fee=service_fee,
+            reward_token_address=self.reward_token_address,
         )
 
     def test_invalid_input(self):
@@ -441,7 +472,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=self.cow_token,
+                    token=Token(self.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=primary_reward * self.conversion_rate,
                 )
@@ -463,7 +494,13 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
-            [Transfer(token=None, recipient=self.solver, amount_wei=slippage)],
+            [
+                Transfer(
+                    token=None,
+                    recipient=self.buffer_accounting_target,
+                    amount_wei=slippage,
+                )
+            ],
         )
 
         # negative slippage gives overdraft
@@ -481,7 +518,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=self.cow_token,
+                    token=Token(self.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=6000000000000000000 * num_quotes,
                 )
@@ -498,11 +535,11 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             [
                 Transfer(
                     token=None,
-                    recipient=self.solver,
+                    recipient=self.buffer_accounting_target,
                     amount_wei=slippage,
                 ),
                 Transfer(
-                    token=self.cow_token,
+                    token=Token(self.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=(primary_reward) * self.conversion_rate,
                 ),
@@ -518,7 +555,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=self.cow_token,
+                    token=Token(self.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=(primary_reward + slippage) * self.conversion_rate,
                 ),
@@ -545,7 +582,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             [
                 Transfer(
                     token=None,
-                    recipient=self.solver,
+                    recipient=self.buffer_accounting_target,
                     amount_wei=test_datum.total_outgoing_eth(),
                 ),
             ],
@@ -553,7 +590,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
 
     def test_performance_reward_service_fee(self):
         """Sevice fee reduces COW reward."""
-        primary_reward, num_quotes, service_fee = 100, 0, True
+        primary_reward, num_quotes, service_fee = 100, 0, Fraction(15, 100)
         test_datum = self.sample_record(
             primary_reward=primary_reward,
             slippage=0,
@@ -565,7 +602,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=self.cow_token,
+                    token=Token(self.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=int(primary_reward * (1 - SERVICE_FEE_FACTOR))
                     * self.conversion_rate,
@@ -575,7 +612,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
 
     def test_quote_reward_service_fee(self):
         """Sevice fee reduces COW reward."""
-        primary_reward, num_quotes, service_fee = 0, 100, True
+        primary_reward, num_quotes, service_fee = 0, 100, Fraction(15, 100)
         test_datum = self.sample_record(
             primary_reward=primary_reward,
             slippage=0,
@@ -587,7 +624,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=self.cow_token,
+                    token=Token(self.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=int(
                         6000000000000000000 * num_quotes * (1 - SERVICE_FEE_FACTOR)
