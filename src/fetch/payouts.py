@@ -492,7 +492,7 @@ def construct_payouts(
     ]
     reward_target_df = pandas.DataFrame(dune.get_vouches())
     # construct slippage df
-    if ignore_slippage_flag:
+    if ignore_slippage_flag or (not config.buffer_accounting_config.include_slippage):
         slippage_df_temp = pandas.merge(
             merged_df[["solver"]],
             reward_target_df[["solver", "solver_name"]],
