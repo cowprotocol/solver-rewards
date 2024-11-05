@@ -106,12 +106,12 @@ def auto_propose(
 if __name__ == "__main__":
     args = generic_script_init(description="Fetch Complete Reimbursement")
 
+    orderbook = MultiInstanceDBFetcher(
+        [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
+    )
     dune = DuneFetcher(
         dune=DuneClient(os.environ["DUNE_API_KEY"]),
         period=AccountingPeriod(args.start),
-    )
-    orderbook = MultiInstanceDBFetcher(
-        [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
     )
 
     dune.log_saver.print(
@@ -120,10 +120,11 @@ if __name__ == "__main__":
     )
 
     payout_transfers_temp = construct_payouts(
-        dune,
-        args.ignore_slippage,
         orderbook=orderbook,
+        dune=dune,
+        ignore_slippage_flag=args.ignore_slippage,
     )
+
     payout_transfers = []
     for tr in payout_transfers_temp:
         if tr.token is None:
