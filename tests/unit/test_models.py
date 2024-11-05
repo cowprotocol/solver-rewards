@@ -22,64 +22,6 @@ class TestTransfer(unittest.TestCase):
         self.token_1 = Token(Address.from_int(1), 18)
         self.token_2 = Token(Address.from_int(2), 18)
 
-    def test_from_dict(self):
-        receiver = Address.from_int(1)
-        self.assertEqual(
-            Transfer.from_dict(
-                {
-                    "token_address": None,
-                    "receiver": receiver.address,
-                    "amount": "1234000000000000000",
-                }
-            ),
-            Transfer(
-                token=None,
-                recipient=receiver,
-                amount_wei=1234 * 10**15,
-            ),
-        )
-
-        self.assertEqual(
-            Transfer.from_dict(
-                {
-                    "token_address": COW_TOKEN_ADDRESS.address,
-                    "receiver": Address.from_int(1).address,
-                    "amount": "1234000000000000000",
-                }
-            ),
-            Transfer(
-                token=Token(COW_TOKEN_ADDRESS),
-                recipient=Address.from_int(1),
-                amount_wei=1234 * 10**15,
-            ),
-        )
-
-    def test_from_dataframe(self):
-        receiver = Address.from_int(1)
-        token_address = COW_TOKEN_ADDRESS.address
-        transfer_df = pd.DataFrame(
-            {
-                "token_address": [None, token_address],
-                "receiver": [str(receiver.address), str(receiver.address)],
-                "amount": ["12345", "678910"],
-                "other_useless_column": [True, False],
-            }
-        )
-        expected = [
-            Transfer(
-                token=None,
-                recipient=receiver,
-                amount_wei=12345,
-            ),
-            Transfer(
-                token=Token(COW_TOKEN_ADDRESS),
-                recipient=receiver,
-                amount_wei=678910,
-            ),
-        ]
-
-        self.assertEqual(expected, Transfer.from_dataframe(transfer_df))
-
     def test_basic_as_multisend_tx(self):
         receiver = Web3.to_checksum_address(
             "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1"

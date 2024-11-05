@@ -7,8 +7,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-import pandas as pd
-
 from dune_client.types import Address
 from eth_typing.encoding import HexStr
 from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
@@ -57,28 +55,6 @@ class Transfer:
         self.token = token
         self._recipient = recipient
         self.amount_wei = amount_wei
-
-    @classmethod
-    def from_dict(cls, obj: dict[str, str]) -> Transfer:
-        """Converts Dune data dict to object with types"""
-        token_address = obj.get("token_address", None)
-        return cls(
-            token=Token(token_address) if token_address else None,
-            recipient=Address(obj["receiver"]),
-            amount_wei=int(obj["amount"]),
-        )
-
-    @classmethod
-    def from_dataframe(cls, pdf: pd.DataFrame) -> list[Transfer]:
-        """Converts Pandas Dataframe into list of Transfers"""
-        return [
-            cls(
-                token=Token(row["token_address"]) if row["token_address"] else None,
-                recipient=Address(row["receiver"]),
-                amount_wei=int(row["amount"]),
-            )
-            for _, row in pdf.iterrows()
-        ]
 
     @staticmethod
     def summarize(transfers: list[Transfer]) -> str:
