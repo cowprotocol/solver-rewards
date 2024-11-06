@@ -7,8 +7,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-import pandas as pd
-
 from dune_client.types import Address
 from eth_typing.encoding import HexStr
 from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
@@ -58,28 +56,6 @@ class Transfer:
         self._recipient = recipient
         self.amount_wei = amount_wei
 
-    @classmethod
-    def from_dict(cls, obj: dict[str, str]) -> Transfer:
-        """Converts Dune data dict to object with types"""
-        token_address = obj.get("token_address", None)
-        return cls(
-            token=Token(token_address) if token_address else None,
-            recipient=Address(obj["receiver"]),
-            amount_wei=int(obj["amount"]),
-        )
-
-    @classmethod
-    def from_dataframe(cls, pdf: pd.DataFrame) -> list[Transfer]:
-        """Converts Pandas Dataframe into list of Transfers"""
-        return [
-            cls(
-                token=Token(row["token_address"]) if row["token_address"] else None,
-                recipient=Address(row["receiver"]),
-                amount_wei=int(row["amount"]),
-            )
-            for _, row in pdf.iterrows()
-        ]
-
     @staticmethod
     def summarize(transfers: list[Transfer]) -> str:
         """Summarizes transfers with totals"""
@@ -99,26 +75,6 @@ class Transfer:
         """Read access to the recipient of a transfer"""
         return self._recipient
 
-    @staticmethod
-    def consolidate(transfer_list: list[Transfer]) -> list[Transfer]:
-        """
-        Removes redundancy of a transfer list by consolidating _duplicate transfers_.
-        Duplicates defined as transferring the same token to one recipient multiple times.
-        This optimizes gas cost of multiple transfers.
-        """
-
-        transfer_dict: dict[tuple, Transfer] = {}
-        for transfer in transfer_list:
-            key = (transfer.recipient, transfer.token)
-            if key in transfer_dict:
-                transfer_dict[key] = transfer_dict[key].merge(transfer)
-            else:
-                transfer_dict[key] = transfer
-        return sorted(
-            transfer_dict.values(),
-            key=lambda t: (-t.amount, t.recipient, t.token),
-        )
-
     @property
     def token_type(self) -> TokenType:
         """Returns the type of transfer (Native or ERC20)"""
@@ -134,29 +90,6 @@ class Transfer:
         # This case was handled above.
         assert self.token is not None
         return self.amount_wei / int(10**self.token.decimals)
-
-    def merge(self, other: Transfer) -> Transfer:
-        """
-        Merge two transfers (acts like addition) if all fields except amount are equal,
-        returns a transfer who amount is the sum.
-        Merges incur information loss (particularly in the category of redirects).
-        Note that two transfers of the same token with different receivers,
-        but redirected to the same address, will get merged and original receivers will be forgotten
-        """
-        merge_requirements = [
-            self.recipient == other.recipient,
-            self.token == other.token,
-        ]
-        if all(merge_requirements):
-            return Transfer(
-                token=self.token,
-                recipient=self.recipient,
-                amount_wei=self.amount_wei + other.amount_wei,
-            )
-        raise ValueError(
-            f"Can't merge transfers {self}, {other}. "
-            f"Requirements met {merge_requirements}"
-        )
 
     def as_multisend_tx(self) -> MultiSendTx:
         """Converts Transfer into encoded MultiSendTx bytes"""
