@@ -125,9 +125,6 @@ if __name__ == "__main__":
             if tr.amount_wei >= args.min_transfer_amount_cow_atoms:
                 payout_transfers.append(tr)
 
-    if args.consolidate_transfers:
-        payout_transfers = Transfer.consolidate(payout_transfers)
-
     if args.post_tx:
         ssl_context = ssl.create_default_context(cafile=certifi.where())
         ssl_context.verify_mode = ssl.CERT_REQUIRED

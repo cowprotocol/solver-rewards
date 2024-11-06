@@ -18,7 +18,6 @@ class ScriptArgs:
     dune: DuneFetcher
     post_tx: bool
     dry_run: bool
-    consolidate_transfers: bool
     min_transfer_amount_wei: int
     min_transfer_amount_cow_atoms: int
     ignore_slippage: bool
@@ -42,13 +41,6 @@ def generic_script_init(description: str) -> ScriptArgs:
         type=bool,
         help="Flag indicating whether multisend should be posted to safe "
         "(requires valid env var `PROPOSER_PK`)",
-        default=False,
-    )
-    parser.add_argument(
-        "--consolidate-transfers",
-        type=bool,
-        help="Flag to indicate whether payout transfer file should be optimized "
-        "(i.e. squash transfers having same receiver-token pair) ",
         default=False,
     )
     parser.add_argument(
@@ -85,7 +77,6 @@ def generic_script_init(description: str) -> ScriptArgs:
         ),
         post_tx=args.post_tx,
         dry_run=args.dry_run,
-        consolidate_transfers=args.consolidate_transfers,
         min_transfer_amount_wei=args.min_transfer_amount_wei,
         min_transfer_amount_cow_atoms=args.min_transfer_amount_cow_atoms,
         ignore_slippage=args.ignore_slippage,
