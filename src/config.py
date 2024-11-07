@@ -18,6 +18,8 @@ load_dotenv()
 
 
 class Network(Enum):
+    """Network class for networks supported by the accounting."""
+
     MAINNET = "mainnet"
     GNOSIS = "gnosis"
     ARBITRUM_ONE = "arbitrum"
@@ -38,6 +40,7 @@ class RewardConfig:
 
     @staticmethod
     def from_network(network: Network) -> RewardConfig:
+        """Initialize reward config for a given network."""
         match network:
             case Network.MAINNET:
                 return RewardConfig(
@@ -68,6 +71,7 @@ class ProtocolFeeConfig:
 
     @staticmethod
     def from_network(network: Network) -> ProtocolFeeConfig:
+        """Initialize protocol fee config for a given network."""
         match network:
             case Network.MAINNET:
                 return ProtocolFeeConfig(
@@ -92,6 +96,7 @@ class BufferAccountingConfig:
 
     @staticmethod
     def from_network(network: Network) -> BufferAccountingConfig:
+        """Initialize buffer accounting config for a given network."""
         match network:
             case Network.MAINNET:
                 return BufferAccountingConfig(include_slippage=True)
@@ -110,6 +115,7 @@ class OrderbookConfig:
 
     @staticmethod
     def from_env() -> OrderbookConfig:
+        """Initialize orderbook config from environment variables."""
         prod_db_url = os.environ.get("PROD_DB_URL", "")
         barn_db_url = os.environ.get("BARN_DB_URL", "")
 
@@ -125,6 +131,7 @@ class DuneConfig:
 
     @staticmethod
     def from_network(network: Network) -> DuneConfig:
+        """Initialize dune config for a given network."""
         dune_api_key = os.environ.get("DUNE_API_KEY", "")
         match network:
             case Network.MAINNET:
@@ -141,6 +148,7 @@ class NodeConfig:
 
     @staticmethod
     def from_network(network: Network) -> NodeConfig:
+        """Initialize node config for a given network."""
         # Found this exposed infura key on https://rpc.info/
         infura_key = os.environ.get("INFURA_KEY", "9aa3d95b3bc440fa88ea12eaa4456161")
         node_url = f"https://{network}.infura.io/v3/{infura_key}"
@@ -165,6 +173,7 @@ class PaymentConfig:
 
     @staticmethod
     def from_network(network: Network) -> PaymentConfig:
+        """Initialize payment config for a given network."""
         signing_key = os.getenv("PROPOSER_PK")
         if signing_key == "":
             signing_key = None
@@ -188,7 +197,10 @@ class PaymentConfig:
                 safe_url = (
                     f"https://app.safe.global/{short_name}:{payment_safe_address}"
                 )
-                airdrop_url = f"{safe_url}/apps?appUrl=https://cloudflare-ipfs.com/ipfs/{csv_app_hash}/"
+                airdrop_url = (
+                    f"{safe_url}/apps?appUrl=https://cloudflare-ipfs.com/ipfs/"
+                    f"{csv_app_hash}/"
+                )
                 safe_queue_url = f"{safe_url}/transactions/queue"
 
                 return PaymentConfig(
@@ -224,7 +236,8 @@ class IOConfig:
     slack_token: str | None
 
     @staticmethod
-    def from_env():
+    def from_env() -> IOConfig:
+        """Initialize io config from environment variables."""
         slack_channel = os.getenv("SLACK_CHANNEL", None)
         slack_token = os.getenv("SLACK_TOKEN", None)
 
@@ -262,7 +275,7 @@ class AccountingConfig:
 
     @staticmethod
     def from_network(network: Network) -> AccountingConfig:
-        """Get config for specified network."""
+        """Initialize accounting config for a given network."""
 
         return AccountingConfig(
             payment_config=PaymentConfig.from_network(network),
