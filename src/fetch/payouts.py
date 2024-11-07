@@ -262,7 +262,6 @@ class TokenConversion:
     """
 
     eth_to_token: Callable
-    token_to_eth: Callable
 
 
 def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
@@ -507,10 +506,6 @@ def construct_payouts(
     price_day = dune.period.end - timedelta(days=1)
     converter = TokenConversion(
         eth_to_token=lambda t: exchange_rate_atoms(
-            native_token, reward_token, price_day
-        )
-        * t,
-        token_to_eth=lambda t: exchange_rate_atoms(
             native_token, reward_token, price_day
         )
         * t,
