@@ -7,8 +7,10 @@ import functools
 import logging.config
 from datetime import datetime
 from enum import Enum
+from fractions import Fraction
 
 from coinpaprika import client as cp
+from dune_client.types import Address
 
 from src.constants import LOG_CONFIG_FILE
 
@@ -41,32 +43,25 @@ class TokenId(Enum):
         return 18
 
 
-def eth_in_token(quote_token: TokenId, amount: int, day: datetime) -> int:
-    """
-    Compute how much of `token` is equivalent to `amount` ETH on `day`.
-    Use current price if day not specified.
-    """
-    eth_amount_usd = token_in_usd(TokenId.ETH, amount, day)
-    quote_price_usd = token_in_usd(quote_token, 10 ** quote_token.decimals(), day)
-    return int(eth_amount_usd / quote_price_usd * 10 ** quote_token.decimals())
+TOKEN_ADDRESS_TO_ID = {
+    Address("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"): TokenId.ETH,
+    Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
+    Address("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"): TokenId.USDC,
+}
 
 
-def token_in_eth(token: TokenId, amount: int, day: datetime) -> int:
+def exchange_rate_atoms(
+    token_1_address: Address, token_2_address: Address, day: datetime
+) -> Fraction:
+    """Exchange rate for converting tokens on a given day.
+    The convention for the exchange rate r is as follows:
+    x atoms of token 1 have the same value as x * r atoms of token 2.
     """
-    The inverse of eth_in_token;
-    how much ETH is equivalent to `amount` of `token` on `day`
-    """
-    token_amount_usd = token_in_usd(token, amount, day)
-    eth_price_usd = token_in_usd(TokenId.ETH, 10 ** TokenId.ETH.decimals(), day)
-
-    return int(token_amount_usd / eth_price_usd * 10 ** TokenId.ETH.decimals())
-
-
-def token_in_usd(token: TokenId, amount_wei: int, day: datetime) -> float:
-    """
-    Converts token amount [wei] to usd amount on given day.
-    """
-    return float(amount_wei) * usd_price(token, day) / 10.0 ** token.decimals()
+    token_1 = TOKEN_ADDRESS_TO_ID[token_1_address]
+    token_2 = TOKEN_ADDRESS_TO_ID[token_2_address]
+    price_1 = Fraction(usd_price(token_1, day)) / 10 ** token_1.decimals()
+    price_2 = Fraction(usd_price(token_2, day)) / 10 ** token_2.decimals()
+    return price_1 / price_2
 
 
 @functools.cache
