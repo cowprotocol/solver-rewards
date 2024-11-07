@@ -59,8 +59,8 @@ def exchange_rate_atoms(
     """
     token_1 = TOKEN_ADDRESS_TO_ID[token_1_address]
     token_2 = TOKEN_ADDRESS_TO_ID[token_2_address]
-    price_1 = Fraction(usd_price(token_1, day)) / 10 ** token_1.decimals()
-    price_2 = Fraction(usd_price(token_2, day)) / 10 ** token_2.decimals()
+    price_1 = Fraction(usd_price(token_1, day)) / Fraction(10 ** token_1.decimals())
+    price_2 = Fraction(usd_price(token_2, day)) / Fraction(10 ** token_2.decimals())
     return price_1 / price_2
 
 
