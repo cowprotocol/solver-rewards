@@ -137,6 +137,15 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         The reward is multiplied by this factor"""
         return 1 - SERVICE_FEE_FACTOR * self.service_fee
 
+    def total_service_fee(self) -> Fraction:
+        """Scaling factor for service fee
+        The reward is multiplied by this factor"""
+        return (
+            SERVICE_FEE_FACTOR
+            * self.service_fee
+            * (self.primary_reward_cow + self.quote_reward_cow)
+        )
+
     def is_overdraft(self) -> bool:
         """
         True if the solver's complete combined data results in a net negative
@@ -534,13 +543,19 @@ def construct_payouts(
     performance_reward = complete_payout_df["primary_reward_cow"].sum()
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
 
+    service_fee = sum(
+        RewardAndPenaltyDatum.from_series(payment).total_service_fee()
+        for _, payment in complete_payout_df.iterrows()
+    )
+
     dune.log_saver.print(
         "Payment breakdown (ignoring service fees):\n"
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n"
         f"Protocol Fees: {final_protocol_fee_wei / 10 ** 18:.4f}\n"
         f"Partner Fees Tax: {partner_fee_tax_wei / 10 ** 18:.4f}\n"
-        f"Partner Fees: {total_partner_fee_wei_taxed / 10 ** 18:.4f}\n",
+        f"Partner Fees: {total_partner_fee_wei_taxed / 10 ** 18:.4f}\n"
+        f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(
