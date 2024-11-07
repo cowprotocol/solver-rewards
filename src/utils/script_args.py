@@ -32,18 +32,16 @@ def generic_script_init(description: str) -> ScriptArgs:
     )
     parser.add_argument(
         "--post-tx",
-        type=bool,
+        action="store_true",
         help="Flag indicating whether multisend should be posted to safe "
         "(requires valid env var `PROPOSER_PK`)",
-        default=False,
     )
     parser.add_argument(
         "--dry-run",
-        type=bool,
+        action="store_true",
         help="Flag indicating whether script should not post alerts or transactions. "
         "Only relevant in combination with --post-tx True"
         "Primarily intended for deployment in staging environment.",
-        default=False,
     )
     parser.add_argument(
         "--min-transfer-amount-wei",
@@ -59,9 +57,8 @@ def generic_script_init(description: str) -> ScriptArgs:
     )
     parser.add_argument(
         "--ignore-slippage",
-        type=bool,
+        action="store_true",
         help="Flag for ignoring slippage computations",
-        default=False,
     )
     args = parser.parse_args()
     return ScriptArgs(
