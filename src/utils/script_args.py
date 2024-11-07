@@ -1,21 +1,15 @@
 """Common method for initializing setup for scripts"""
 
 import argparse
-import os
 from datetime import date, timedelta
 from dataclasses import dataclass
-
-from dune_client.client import DuneClient
-
-from src.fetch.dune import DuneFetcher
-from src.models.accounting_period import AccountingPeriod
 
 
 @dataclass
 class ScriptArgs:
     """A collection of common script arguments relevant to this project"""
 
-    dune: DuneFetcher
+    start: str
     post_tx: bool
     dry_run: bool
     min_transfer_amount_wei: int
@@ -71,10 +65,7 @@ def generic_script_init(description: str) -> ScriptArgs:
     )
     args = parser.parse_args()
     return ScriptArgs(
-        dune=DuneFetcher(
-            dune=DuneClient(os.environ["DUNE_API_KEY"]),
-            period=AccountingPeriod(args.start),
-        ),
+        start=args.start,
         post_tx=args.post_tx,
         dry_run=args.dry_run,
         min_transfer_amount_wei=args.min_transfer_amount_wei,
