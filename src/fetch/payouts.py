@@ -126,11 +126,19 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
 
     def total_cow_reward(self) -> int:
         """Total outgoing COW token reward"""
-        return int(self.reward_scaling() * self.primary_reward_cow)
+        return (
+            int(self.reward_scaling() * self.primary_reward_cow)
+            if self.primary_reward_cow > 0
+            else self.primary_reward_cow
+        )
 
     def total_eth_reward(self) -> int:
         """Total outgoing ETH reward"""
-        return int(self.reward_scaling() * self.primary_reward_eth)
+        return (
+            int(self.reward_scaling() * self.primary_reward_eth)
+            if self.primary_reward_eth > 0
+            else self.primary_reward_eth
+        )
 
     def reward_scaling(self) -> Fraction:
         """Scaling factor for service fee
@@ -143,7 +151,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         return (
             SERVICE_FEE_FACTOR
             * self.service_fee
-            * (self.primary_reward_cow + self.quote_reward_cow)
+            * (max(self.primary_reward_cow, 0) + self.quote_reward_cow)
         )
 
     def is_overdraft(self) -> bool:
