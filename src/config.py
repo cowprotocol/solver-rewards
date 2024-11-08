@@ -41,6 +41,8 @@ class RewardConfig:
     @staticmethod
     def from_network(network: Network) -> RewardConfig:
         """Initialize reward config for a given network."""
+        cow_bonding_pool = Address("0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6")
+        service_fee_factor = Fraction(15, 100)
         match network:
             case Network.MAINNET:
                 return RewardConfig(
@@ -51,10 +53,32 @@ class RewardConfig:
                     batch_reward_cap_lower=10 * 10**15,
                     quote_reward_cow=6 * 10**18,
                     quote_reward_cap_native=6 * 10**14,
-                    service_fee_factor=Fraction(15, 100),
-                    cow_bonding_pool=Address(
-                        "0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6"
+                    service_fee_factor=service_fee_factor,
+                    cow_bonding_pool=cow_bonding_pool,
+                )
+            case Network.GNOSIS:
+                return RewardConfig(
+                    reward_token_address=Address(
+                        "0x177127622c4a00f3d409b75571e12cb3c8973d3c"
                     ),
+                    batch_reward_cap_upper=20 * 10**18,
+                    batch_reward_cap_lower=5 * 10**18,
+                    quote_reward_cow=6 * 10**18,
+                    quote_reward_cap_native=1 * 10**18,
+                    service_fee_factor=service_fee_factor,
+                    cow_bonding_pool=cow_bonding_pool,
+                )
+            case Network.ARBITRUM_ONE:
+                return RewardConfig(
+                    reward_token_address=Address(
+                        "0xcb8b5cd20bdcaea9a010ac1f8d835824f5c87a04"
+                    ),
+                    batch_reward_cap_upper=12 * 10**15,
+                    batch_reward_cap_lower=10 * 10**15,
+                    quote_reward_cow=6 * 10**18,
+                    quote_reward_cap_native=6 * 10**14,
+                    service_fee_factor=service_fee_factor,
+                    cow_bonding_pool=cow_bonding_pool,
                 )
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
@@ -80,7 +104,7 @@ class ProtocolFeeConfig:
     def from_network(network: Network) -> ProtocolFeeConfig:
         """Initialize protocol fee config for a given network."""
         match network:
-            case Network.MAINNET:
+            case Network.MAINNET | Network.GNOSIS | Network.ARBITRUM_ONE:
                 return ProtocolFeeConfig(
                     protocol_fee_safe=Address(
                         "0xB64963f95215FDe6510657e719bd832BB8bb941B"
@@ -106,11 +130,15 @@ class BufferAccountingConfig:
         """Initialize buffer accounting config for a given network."""
         match network:
             case Network.MAINNET:
-                return BufferAccountingConfig(include_slippage=True)
+                include_slippage = True
+            case Network.GNOSIS | Network.ARBITRUM_ONE:
+                include_slippage = False
             case _:
                 raise ValueError(
                     f"No buffer accounting config set up for network {network}."
                 )
+
+        return BufferAccountingConfig(include_slippage=include_slippage)
 
 
 @dataclass(frozen=True)
@@ -121,10 +149,20 @@ class OrderbookConfig:
     barn_db_url: str
 
     @staticmethod
-    def from_env() -> OrderbookConfig:
+    def from_network(network: Network) -> OrderbookConfig:
         """Initialize orderbook config from environment variables."""
-        prod_db_url = os.environ.get("PROD_DB_URL", "")
-        barn_db_url = os.environ.get("BARN_DB_URL", "")
+        match network:
+            case Network.MAINNET:
+                prod_db_url = os.environ.get("PROD_DB_URL_MAINNET", "")
+                barn_db_url = os.environ.get("BARN_DB_URL_MAINNET", "")
+            case Network.GNOSIS:
+                prod_db_url = os.environ.get("PROD_DB_URL_GNOSIS", "")
+                barn_db_url = os.environ.get("BARN_DB_URL_GNOSIS", "")
+            case Network.ARBITRUM_ONE:
+                prod_db_url = os.environ.get("PROD_DB_URL_ARBITRUM", "")
+                barn_db_url = os.environ.get("BARN_DB_URL_ARBITRUM", "")
+            case _:
+                raise ValueError(f"No orderbook config set up for network {network}.")
 
         return OrderbookConfig(prod_db_url=prod_db_url, barn_db_url=barn_db_url)
 
@@ -142,9 +180,15 @@ class DuneConfig:
         dune_api_key = os.environ.get("DUNE_API_KEY", "")
         match network:
             case Network.MAINNET:
-                return DuneConfig(dune_api_key=dune_api_key, dune_blockchain="ethereum")
+                dune_blockchain = "ethereum"
+            case Network.GNOSIS:
+                dune_blockchain = "gnosis"
+            case Network.ARBITRUM_ONE:
+                dune_blockchain = "arbitrum"
             case _:
                 raise ValueError(f"No dune config set up for network {network}.")
+
+        return DuneConfig(dune_api_key=dune_api_key, dune_blockchain=dune_blockchain)
 
 
 @dataclass(frozen=True)
@@ -158,7 +202,11 @@ class NodeConfig:
         """Initialize node config for a given network."""
         match network:
             case Network.MAINNET:
-                node_url = os.environ.get("NODE_URL", "")
+                node_url = os.environ.get("NODE_URL_MAINNET", "")
+            case Network.GNOSIS:
+                node_url = os.environ.get("NODE_URL_GNOSIS", "")
+            case Network.ARBITRUM_ONE:
+                node_url = os.environ.get("NODE_URL_ARBITRUM", "")
             case _:
                 raise ValueError(f"No node config set up for network {network}.")
 
@@ -177,7 +225,7 @@ class PaymentConfig:
     signing_key: str | None
     safe_queue_url: str
     verification_docs_url: str
-    weth_address: ChecksumAddress
+    wrapped_native_token_address: ChecksumAddress
 
     @staticmethod
     def from_network(network: Network) -> PaymentConfig:
@@ -188,41 +236,65 @@ class PaymentConfig:
 
         docs_url = "https://www.notion.so/cownation/Solver-Payouts-3dfee64eb3d449ed8157a652cc817a8c"
 
-        network_short_name = {
-            Network.MAINNET: "eth",
-            Network.GNOSIS: "gno",
-        }
-
         match network:
             case Network.MAINNET:
+                payment_network = EthereumNetwork.MAINNET
                 payment_safe_address = Web3.to_checksum_address(
                     os.environ.get(
-                        "SAFE_ADDRESS", "0xA03be496e67Ec29bC62F01a428683D7F9c204930"
+                        "SAFE_ADDRESS_MAINNET",
+                        "0xA03be496e67Ec29bC62F01a428683D7F9c204930",
                     )
                 )
-                short_name = network_short_name[network]
-                safe_url = (
-                    f"https://app.safe.global/{short_name}:{payment_safe_address}"
-                )
-                safe_queue_url = f"{safe_url}/transactions/queue"
+                short_name = "eth"
 
-                return PaymentConfig(
-                    network=EthereumNetwork.MAINNET,
-                    cow_token_address=Address(
-                        "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
-                    ),
-                    payment_safe_address=Web3.to_checksum_address(
-                        "0xA03be496e67Ec29bC62F01a428683D7F9c204930"
-                    ),
-                    signing_key=signing_key,
-                    safe_queue_url=safe_queue_url,
-                    verification_docs_url=docs_url,
-                    weth_address=Web3.to_checksum_address(
-                        "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-                    ),
+                cow_token_address = Address(
+                    "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
+                )
+                wrapped_native_token_address = Web3.to_checksum_address(
+                    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+                )
+
+            case Network.GNOSIS:
+                payment_network = EthereumNetwork.GNOSIS
+                payment_safe_address = Web3.to_checksum_address(
+                    os.environ.get("SAFE_ADDRESS_GNOSIS", "")
+                )
+                short_name = "gno"
+
+                cow_token_address = Address(
+                    "0x177127622c4a00f3d409b75571e12cb3c8973d3c"
+                )
+                wrapped_native_token_address = Web3.to_checksum_address(
+                    "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d"
+                )
+            case Network.ARBITRUM_ONE:
+                payment_network = EthereumNetwork.GNOSIS
+                payment_safe_address = Web3.to_checksum_address(
+                    os.environ.get("SAFE_ADDRESS_ARBITRUM", "")
+                )
+                short_name = "arb1"
+
+                cow_token_address = Address(
+                    "0xcb8b5cd20bdcaea9a010ac1f8d835824f5c87a04"
+                )
+                wrapped_native_token_address = Web3.to_checksum_address(
+                    "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
                 )
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
+
+        safe_url = f"https://app.safe.global/{short_name}:{payment_safe_address}"
+        safe_queue_url = f"{safe_url}/transactions/queue"
+
+        return PaymentConfig(
+            network=payment_network,
+            cow_token_address=cow_token_address,
+            payment_safe_address=payment_safe_address,
+            signing_key=signing_key,
+            safe_queue_url=safe_queue_url,
+            verification_docs_url=docs_url,
+            wrapped_native_token_address=wrapped_native_token_address,
+        )
 
 
 @dataclass(frozen=True)
@@ -281,7 +353,7 @@ class AccountingConfig:
 
         return AccountingConfig(
             payment_config=PaymentConfig.from_network(network),
-            orderbook_config=OrderbookConfig.from_env(),
+            orderbook_config=OrderbookConfig.from_network(network),
             dune_config=DuneConfig.from_network(network),
             node_config=NodeConfig.from_network(network),
             reward_config=RewardConfig.from_network(network),
