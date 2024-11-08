@@ -464,7 +464,7 @@ def construct_partner_fee_payments(
 
 
 def construct_payouts(
-    dune: DuneFetcher, ignore_slippage_flag: bool, orderbook: MultiInstanceDBFetcher
+    orderbook: MultiInstanceDBFetcher, dune: DuneFetcher, ignore_slippage_flag: bool
 ) -> list[Transfer]:
     """Workflow of solver reward payout logic post-CIP27"""
     # pylint: disable-msg=too-many-locals
