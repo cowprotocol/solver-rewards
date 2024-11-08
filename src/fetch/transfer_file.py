@@ -9,6 +9,7 @@ import ssl
 from dataclasses import asdict
 
 import certifi
+from dune_client.client import DuneClient
 from dune_client.file.interface import FileIO
 from eth_typing import URI
 from gnosis.eth.ethereum_client import EthereumClient
@@ -23,6 +24,7 @@ from src.constants import (
     FILE_OUT_DIR,
     DOCS_URL,
 )
+from src.fetch.dune import DuneFetcher
 from src.fetch.payouts import construct_payouts
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
@@ -103,19 +105,26 @@ def auto_propose(
 
 if __name__ == "__main__":
     args = generic_script_init(description="Fetch Complete Reimbursement")
-    dune = args.dune
+
+    orderbook = MultiInstanceDBFetcher(
+        [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
+    )
+    dune = DuneFetcher(
+        dune=DuneClient(os.environ["DUNE_API_KEY"]),
+        period=AccountingPeriod(args.start),
+    )
+
     dune.log_saver.print(
         f"The data aggregated can be visualized at\n{dune.period.dashboard_url()}",
         category=Category.GENERAL,
     )
 
     payout_transfers_temp = construct_payouts(
-        args.dune,
-        args.ignore_slippage,
-        orderbook=MultiInstanceDBFetcher(
-            [os.environ["PROD_DB_URL"], os.environ["BARN_DB_URL"]]
-        ),
+        orderbook=orderbook,
+        dune=dune,
+        ignore_slippage_flag=args.ignore_slippage,
     )
+
     payout_transfers = []
     for tr in payout_transfers_temp:
         if tr.token is None:
@@ -124,9 +133,6 @@ if __name__ == "__main__":
         else:
             if tr.amount_wei >= args.min_transfer_amount_cow_atoms:
                 payout_transfers.append(tr)
-
-    if args.consolidate_transfers:
-        payout_transfers = Transfer.consolidate(payout_transfers)
 
     if args.post_tx:
         ssl_context = ssl.create_default_context(cafile=certifi.where())
