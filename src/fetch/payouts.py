@@ -138,8 +138,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         return 1 - SERVICE_FEE_FACTOR * self.service_fee
 
     def total_service_fee(self) -> Fraction:
-        """Scaling factor for service fee
-        The reward is multiplied by this factor"""
+        """Total service fee charged from rewards"""
         return (
             SERVICE_FEE_FACTOR
             * self.service_fee
