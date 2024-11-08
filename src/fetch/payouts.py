@@ -399,19 +399,10 @@ def construct_payout_dataframe(
     normalize_address_field(service_fee_df, join_column)
 
     # 3. Merge the three dataframes (joining on solver)
-
-    reward_target_reduced_df_columns = [
-        x for x in list(reward_target_df.columns) if x != "solver_name"
-    ]
-    reward_target_reduced_df = reward_target_df[reward_target_reduced_df_columns]
-    service_fee_reduced_df_columns = [
-        x for x in list(service_fee_df.columns) if x != "solver_name"
-    ]
-    service_fee_reduced_df = service_fee_df[service_fee_reduced_df_columns]
     merged_df = (
         payment_df.merge(slippage_df, on=join_column, how="left")
-        .merge(reward_target_reduced_df, on=join_column, how="left")
-        .merge(service_fee_reduced_df, on=join_column, how="left")
+        .merge(reward_target_df, on=join_column, how="left")
+        .merge(service_fee_df, on=join_column, how="left")
     )
 
     # 4. Add slippage from fees to slippage
@@ -461,7 +452,7 @@ def construct_partner_fee_payments(
 
 
 def construct_payouts(
-    dune: DuneFetcher, ignore_slippage_flag: bool, orderbook: MultiInstanceDBFetcher
+    orderbook: MultiInstanceDBFetcher, dune: DuneFetcher, ignore_slippage_flag: bool
 ) -> list[Transfer]:
     """Workflow of solver reward payout logic post-CIP27"""
     # pylint: disable-msg=too-many-locals
