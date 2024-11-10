@@ -13,9 +13,10 @@ import pandas
 from dune_client.types import Address
 from pandas import DataFrame, Series
 
+from src.abis.load import WETH9_ADDRESS
 from src.constants import COW_TOKEN_ADDRESS, COW_BONDING_POOL
 from src.fetch.dune import DuneFetcher
-from src.fetch.prices import eth_in_token, TokenId, token_in_eth
+from src.fetch.prices import exchange_rate_atoms
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
 from src.models.token import Token
@@ -269,7 +270,6 @@ class TokenConversion:
     """
 
     eth_to_token: Callable
-    token_to_eth: Callable
 
 
 def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
@@ -407,19 +407,10 @@ def construct_payout_dataframe(
     normalize_address_field(service_fee_df, join_column)
 
     # 3. Merge the three dataframes (joining on solver)
-
-    reward_target_reduced_df_columns = [
-        x for x in list(reward_target_df.columns) if x != "solver_name"
-    ]
-    reward_target_reduced_df = reward_target_df[reward_target_reduced_df_columns]
-    service_fee_reduced_df_columns = [
-        x for x in list(service_fee_df.columns) if x != "solver_name"
-    ]
-    service_fee_reduced_df = service_fee_df[service_fee_reduced_df_columns]
     merged_df = (
         payment_df.merge(slippage_df, on=join_column, how="left")
-        .merge(reward_target_reduced_df, on=join_column, how="left")
-        .merge(service_fee_reduced_df, on=join_column, how="left")
+        .merge(reward_target_df, on=join_column, how="left")
+        .merge(service_fee_df, on=join_column, how="left")
     )
 
     # 4. Add slippage from fees to slippage
@@ -474,9 +465,6 @@ def construct_payouts(
     """Workflow of solver reward payout logic post-CIP27"""
     # pylint: disable-msg=too-many-locals
 
-    price_day = dune.period.end - timedelta(days=1)
-    reward_token = TokenId.COW
-
     quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
     batch_rewards_df = orderbook.get_solver_rewards(dune.start_block, dune.end_block)
     partner_fees_df = batch_rewards_df[["partner_list", "partner_fee_eth"]]
@@ -512,15 +500,22 @@ def construct_payouts(
         # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
         slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
 
+    reward_token = COW_TOKEN_ADDRESS
+    native_token = Address(WETH9_ADDRESS)
+    price_day = dune.period.end - timedelta(days=1)
+    converter = TokenConversion(
+        eth_to_token=lambda t: exchange_rate_atoms(
+            native_token, reward_token, price_day
+        )
+        * t,
+    )
+
     complete_payout_df = construct_payout_dataframe(
         # Fetch and extend auction data from orderbook.
         payment_df=extend_payment_df(
             pdf=merged_df,
             # provide token conversion functions (ETH <--> COW)
-            converter=TokenConversion(
-                eth_to_token=lambda t: eth_in_token(reward_token, t, price_day),
-                token_to_eth=lambda t: token_in_eth(reward_token, t, price_day),
-            ),
+            converter=converter,
         ),
         # Dune: Fetch Solver Slippage & Reward Targets
         slippage_df=slippage_df,
