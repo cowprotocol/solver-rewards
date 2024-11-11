@@ -436,6 +436,12 @@ def construct_payout_dataframe(
     merged_df["reward_token_address"] = COW_TOKEN_ADDRESS.address
 
     # 7. Missing service fee is treated as new solver
+    if any(merged_df["service_fee"].isna()):
+        missing_solvers = merged_df["solver"].loc[merged_df["service_fee"].isna()]
+        logging.warning(
+            f"Solvers {missing_solvers} without service fee info. Using 0%. "
+            f"Check service fee query."
+        )
     merged_df["service_fee"] = merged_df["service_fee"].fillna(Fraction(0, 1))  # type: ignore
 
     return merged_df
