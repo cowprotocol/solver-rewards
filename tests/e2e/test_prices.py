@@ -1,11 +1,14 @@
 import unittest
 from datetime import datetime, timedelta
 
+from dune_client.types import Address
+
+from src.abis.load import WETH9_ADDRESS
+from src.constants import COW_TOKEN_ADDRESS
 from src.fetch.prices import (
-    eth_in_token,
+    TOKEN_ADDRESS_TO_ID,
     TokenId,
-    token_in_eth,
-    token_in_usd,
+    exchange_rate_atoms,
     usd_price,
 )
 
@@ -19,48 +22,41 @@ class TestPrices(unittest.TestCase):
         self.cow_price = usd_price(TokenId.COW, self.some_date)
         self.eth_price = usd_price(TokenId.ETH, self.some_date)
         self.usdc_price = usd_price(TokenId.USDC, self.some_date)
+        self.cow_address = COW_TOKEN_ADDRESS
+        self.weth_address = Address(WETH9_ADDRESS)
+        self.usdc_address = Address("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
 
     def test_usd_price(self):
         self.assertEqual(self.usdc_price, 1.001622)
         self.assertEqual(self.eth_price, 2481.89)
         self.assertEqual(self.cow_price, 0.194899)
 
-    def test_token_in_usd(self):
+    def test_exchange_rate_atoms(self):
         with self.assertRaises(AssertionError):
-            token_in_usd(TokenId.COW, ONE_ETH, datetime.today())
+            exchange_rate_atoms(self.cow_address, self.weth_address, datetime.today())
 
         self.assertEqual(
-            token_in_usd(TokenId.ETH, ONE_ETH, self.some_date), self.eth_price
+            exchange_rate_atoms(self.cow_address, self.cow_address, self.some_date), 1
         )
         self.assertEqual(
-            token_in_usd(TokenId.COW, ONE_ETH, self.some_date), self.cow_price
+            exchange_rate_atoms(self.cow_address, self.weth_address, self.some_date),
+            1
+            / exchange_rate_atoms(self.weth_address, self.cow_address, self.some_date),
         )
+
         self.assertEqual(
-            token_in_usd(TokenId.USDC, 10**6, self.some_date), self.usdc_price
+            float(
+                exchange_rate_atoms(self.cow_address, self.weth_address, self.some_date)
+            ),
+            self.cow_price / self.eth_price,
         )
 
-    def test_eth_in_token(self):
-        self.assertAlmostEqual(
-            eth_in_token(TokenId.COW, ONE_ETH, self.some_date) / 10**18,
-            self.eth_price / self.cow_price,
-            delta=DELTA,
-        )
-        self.assertAlmostEqual(
-            eth_in_token(TokenId.USDC, ONE_ETH, self.some_date) / 10**6,
-            self.eth_price / self.usdc_price,
-            delta=DELTA,
-        )
-
-    def test_token_in_eth(self):
-        self.assertAlmostEqual(
-            token_in_eth(TokenId.COW, ONE_ETH, self.some_date),
-            10**18 * self.cow_price // self.eth_price,
-            delta=DELTA,
-        )
-        self.assertAlmostEqual(
-            token_in_eth(TokenId.USDC, 10**6, self.some_date),
-            10**18 * self.usdc_price // self.eth_price,
-            delta=DELTA,
+        self.assertEqual(
+            float(
+                exchange_rate_atoms(self.cow_address, self.usdc_address, self.some_date)
+            )
+            * 10**18,
+            self.cow_price / self.usdc_price * 10**6,
         )
 
     def test_price_cache(self):
