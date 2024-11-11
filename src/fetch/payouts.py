@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 from fractions import Fraction
 from typing import Callable
 
+import numpy as np
 import pandas
 from dune_client.types import Address
 from pandas import DataFrame, Series
@@ -39,8 +40,13 @@ SLIPPAGE_COLUMNS = {
 }
 REWARD_TARGET_COLUMNS = {"solver", "reward_target", "pool_address"}
 SERVICE_FEE_COLUMNS = {"solver", "service_fee"}
+ADDITIONAL_PAYMENT_COLUMNS = {"buffer_accounting_target", "reward_token_address"}
 
-COMPLETE_COLUMNS = PAYMENT_COLUMNS.union(SLIPPAGE_COLUMNS).union(REWARD_TARGET_COLUMNS)
+COMPLETE_COLUMNS = (
+    PAYMENT_COLUMNS.union(SLIPPAGE_COLUMNS)
+    .union(REWARD_TARGET_COLUMNS)
+    .union(ADDITIONAL_PAYMENT_COLUMNS)
+)
 NUMERICAL_COLUMNS = [
     "primary_reward_eth",
     "primary_reward_cow",
@@ -67,13 +73,14 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         self,
         solver: Address,
         solver_name: str,
-        reward_target: Address,
-        bonding_pool: Address,
+        reward_target: Address,  # recipient address of rewards
+        buffer_accounting_target: Address,  # recipient address of net buffer changes
         primary_reward_eth: int,
         slippage_eth: int,
         primary_reward_cow: int,
         quote_reward_cow: int,
-        service_fee: bool,
+        service_fee: Fraction,
+        reward_token_address: Address,
     ):
 
         assert quote_reward_cow >= 0, "invalid quote_reward_cow"
@@ -81,12 +88,13 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         self.solver = solver
         self.solver_name = solver_name
         self.reward_target = reward_target
-        self.bonding_pool = bonding_pool
+        self.buffer_accounting_target = buffer_accounting_target
         self.slippage_eth = slippage_eth
         self.primary_reward_eth = primary_reward_eth
         self.primary_reward_cow = primary_reward_cow
         self.quote_reward_cow = quote_reward_cow
         self.service_fee = service_fee
+        self.reward_token_address = reward_token_address
 
     @classmethod
     def from_series(cls, frame: Series) -> RewardAndPenaltyDatum:
@@ -98,21 +106,28 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         )
         solver = frame["solver"]
         reward_target = frame["reward_target"]
-        bonding_pool = frame["pool_address"]
         if reward_target is None:
-            logging.warning(f"solver {solver} without reward_target. Using solver")
+            logging.warning(f"Solver {solver} without reward_target. Using solver")
             reward_target = solver
+
+        buffer_accounting_target = frame["buffer_accounting_target"]
+        if buffer_accounting_target is None:
+            logging.warning(
+                f"Solver {solver} without buffer_accounting_target. Using solver"
+            )
+            buffer_accounting_target = solver
 
         return cls(
             solver=Address(solver),
             solver_name=frame["solver_name"],
             reward_target=Address(reward_target),
-            bonding_pool=Address(bonding_pool),
+            buffer_accounting_target=Address(buffer_accounting_target),
             slippage_eth=slippage,
             primary_reward_eth=int(frame["primary_reward_eth"]),
             primary_reward_cow=int(frame["primary_reward_cow"]),
             quote_reward_cow=int(frame["quote_reward_cow"]),
-            service_fee=bool(frame["service_fee"]),
+            service_fee=Fraction(frame["service_fee"]),
+            reward_token_address=Address(frame["reward_token_address"]),
         )
 
     def total_outgoing_eth(self) -> int:
@@ -130,15 +145,11 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
     def reward_scaling(self) -> Fraction:
         """Scaling factor for service fee
         The reward is multiplied by this factor"""
-        return 1 - config.reward_config.service_fee_factor * self.service_fee
+        return 1 - self.service_fee
 
     def total_service_fee(self) -> Fraction:
         """Total service fee charged from rewards"""
-        return (
-            config.reward_config.service_fee_factor
-            * self.service_fee
-            * (self.primary_reward_cow + self.quote_reward_cow)
-        )
+        return self.service_fee * (self.primary_reward_cow + self.quote_reward_cow)
 
     def is_overdraft(self) -> bool:
         """
@@ -156,7 +167,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         if quote_reward_cow > 0:
             result.append(
                 Transfer(
-                    token=Token(config.reward_config.reward_token_address),
+                    token=Token(self.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=quote_reward_cow,
                 )
@@ -189,12 +200,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 result.append(
                     Transfer(
                         token=None,
-                        recipient=(
-                            self.reward_target
-                            if self.bonding_pool
-                            == config.reward_config.cow_bonding_pool
-                            else self.solver
-                        ),
+                        recipient=self.buffer_accounting_target,
                         amount_wei=reimbursement_eth + total_eth_reward,
                     )
                 )
@@ -213,7 +219,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             try:
                 result.append(
                     Transfer(
-                        token=Token(config.reward_config.reward_token_address),
+                        token=Token(self.reward_token_address),
                         recipient=self.reward_target,
                         amount_wei=reimbursement_cow + total_cow_reward,
                     )
@@ -230,11 +236,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             result.append(
                 Transfer(
                     token=None,
-                    recipient=(
-                        self.reward_target
-                        if self.bonding_pool == config.reward_config.cow_bonding_pool
-                        else self.solver
-                    ),
+                    recipient=self.buffer_accounting_target,
                     amount_wei=reimbursement_eth,
                 )
             )
@@ -245,7 +247,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         try:
             result.append(
                 Transfer(
-                    token=Token(config.reward_config.reward_token_address),
+                    token=Token(self.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=total_cow_reward,
                 )
@@ -418,6 +420,27 @@ def construct_payout_dataframe(
         merged_df["eth_slippage_wei"].fillna(0) + merged_df["network_fee_eth"]
     )
 
+    # 5. Compute buffer accounting target
+    merged_df["buffer_accounting_target"] = np.where(
+        merged_df["pool_address"] != config.reward_config.cow_bonding_pool.address,
+        merged_df["solver"],
+        merged_df["reward_target"],
+    )
+
+    # 6. Add reward token address
+    merged_df["reward_token_address"] = (
+        config.reward_config.reward_token_address.address
+    )
+
+    # 7. Missing service fee is treated as new solver
+    if any(merged_df["service_fee"].isna()):
+        missing_solvers = merged_df["solver"].loc[merged_df["service_fee"].isna()]
+        logging.warning(
+            f"Solvers {missing_solvers} without service fee info. Using 0%. "
+            f"Check service fee query."
+        )
+    merged_df["service_fee"] = merged_df["service_fee"].fillna(Fraction(0, 1))  # type: ignore
+
     return merged_df
 
 
@@ -482,7 +505,8 @@ def construct_payouts(
 
     service_fee_df = pandas.DataFrame(dune.get_service_fee_status())
     service_fee_df["service_fee"] = [
-        datetime.strptime(time_string, "%Y-%m-%d %H:%M:%S.%f %Z") <= dune.period.start
+        (datetime.strptime(time_string, "%Y-%m-%d %H:%M:%S.%f %Z") <= dune.period.start)
+        * config.reward_config.service_fee_factor
         for time_string in service_fee_df["expires"]
     ]
     reward_target_df = pandas.DataFrame(dune.get_vouches())
