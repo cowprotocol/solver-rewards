@@ -435,6 +435,9 @@ def construct_payout_dataframe(
     # 6. Add reward token address
     merged_df["reward_token_address"] = COW_TOKEN_ADDRESS.address
 
+    # 7. Missing service fee is treated as new solver
+    merged_df["service_fee"] = merged_df["service_fee"].fillna(Fraction(0, 1))  # type: ignore
+
     return merged_df
 
 
