@@ -15,7 +15,7 @@ from pandas import DataFrame, Series
 
 from src.config import config
 from src.fetch.dune import DuneFetcher
-from src.fetch.prices import eth_in_token, TokenId, token_in_eth
+from src.fetch.prices import exchange_rate_atoms
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
 from src.models.token import Token
@@ -131,6 +131,14 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         """Scaling factor for service fee
         The reward is multiplied by this factor"""
         return 1 - config.reward_config.service_fee_factor * self.service_fee
+
+    def total_service_fee(self) -> Fraction:
+        """Total service fee charged from rewards"""
+        return (
+            config.reward_config.service_fee_factor
+            * self.service_fee
+            * (self.primary_reward_cow + self.quote_reward_cow)
+        )
 
     def is_overdraft(self) -> bool:
         """
@@ -257,7 +265,6 @@ class TokenConversion:
     """
 
     eth_to_token: Callable
-    token_to_eth: Callable
 
 
 def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
@@ -460,9 +467,6 @@ def construct_payouts(
     """Workflow of solver reward payout logic post-CIP27"""
     # pylint: disable-msg=too-many-locals
 
-    price_day = dune.period.end - timedelta(days=1)
-    reward_token = TokenId.COW
-
     quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
     batch_rewards_df = orderbook.get_solver_rewards(dune.start_block, dune.end_block)
     partner_fees_df = batch_rewards_df[["partner_list", "partner_fee_eth"]]
@@ -498,15 +502,22 @@ def construct_payouts(
         # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
         slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
 
+    reward_token = config.reward_config.reward_token_address
+    native_token = Address(config.payment_config.weth_address)
+    price_day = dune.period.end - timedelta(days=1)
+    converter = TokenConversion(
+        eth_to_token=lambda t: exchange_rate_atoms(
+            native_token, reward_token, price_day
+        )
+        * t,
+    )
+
     complete_payout_df = construct_payout_dataframe(
         # Fetch and extend auction data from orderbook.
         payment_df=extend_payment_df(
             pdf=merged_df,
             # provide token conversion functions (ETH <--> COW)
-            converter=TokenConversion(
-                eth_to_token=lambda t: eth_in_token(reward_token, t, price_day),
-                token_to_eth=lambda t: token_in_eth(reward_token, t, price_day),
-            ),
+            converter=converter,
         ),
         # Dune: Fetch Solver Slippage & Reward Targets
         slippage_df=slippage_df,
@@ -528,13 +539,19 @@ def construct_payouts(
     performance_reward = complete_payout_df["primary_reward_cow"].sum()
     quote_reward = complete_payout_df["quote_reward_cow"].sum()
 
+    service_fee = sum(
+        RewardAndPenaltyDatum.from_series(payment).total_service_fee()
+        for _, payment in complete_payout_df.iterrows()
+    )
+
     dune.log_saver.print(
         "Payment breakdown (ignoring service fees):\n"
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n"
         f"Protocol Fees: {final_protocol_fee_wei / 10 ** 18:.4f}\n"
         f"Partner Fees Tax: {partner_fee_tax_wei / 10 ** 18:.4f}\n"
-        f"Partner Fees: {total_partner_fee_wei_taxed / 10 ** 18:.4f}\n",
+        f"Partner Fees: {total_partner_fee_wei_taxed / 10 ** 18:.4f}\n"
+        f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(

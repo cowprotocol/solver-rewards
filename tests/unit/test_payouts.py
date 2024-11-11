@@ -80,9 +80,7 @@ class TestPayoutTransformations(unittest.TestCase):
             0.0,
         ]
         # Mocking TokenConversion!
-        self.mock_converter = TokenConversion(
-            eth_to_token=lambda t: int(t * 1000), token_to_eth=lambda t: t // 1000
-        )
+        self.mock_converter = TokenConversion(eth_to_token=lambda t: int(t * 1000))
 
     def test_extend_payment_df(self):
         base_data_dict = {
