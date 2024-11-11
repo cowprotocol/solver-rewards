@@ -293,10 +293,10 @@ class TestPayoutTransformations(unittest.TestCase):
                     Fraction(15, 100),
                 ],
                 "buffer_accounting_target": [
-                    str(self.solvers[0]),
-                    "0x0000000000000000000000000000000000000006",
-                    "0x0000000000000000000000000000000000000007",
-                    "0x0000000000000000000000000000000000000008",
+                    "0x0000000000000000000000000000000000000005",
+                    str(self.solvers[1]),
+                    str(self.solvers[2]),
+                    str(self.solvers[3]),
                 ],
                 "reward_token_address": [
                     str(COW_TOKEN_ADDRESS),

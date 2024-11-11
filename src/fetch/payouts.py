@@ -79,8 +79,8 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         self,
         solver: Address,
         solver_name: str,
-        reward_target: Address,
-        buffer_accounting_target: Address,
+        reward_target: Address,  # recipient address of rewards
+        buffer_accounting_target: Address,  # recipient address of net buffer changes
         primary_reward_eth: int,
         slippage_eth: int,
         primary_reward_cow: int,
@@ -117,7 +117,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             reward_target = solver
 
         buffer_accounting_target = frame["buffer_accounting_target"]
-        if reward_target is None:
+        if buffer_accounting_target is None:
             logging.warning(
                 f"Solver {solver} without buffer_accounting_target. Using solver"
             )
@@ -427,7 +427,7 @@ def construct_payout_dataframe(
 
     # 5. Compute buffer accounting target
     merged_df["buffer_accounting_target"] = np.where(
-        merged_df["pool_address"] == COW_BONDING_POOL.address,
+        merged_df["pool_address"] != COW_BONDING_POOL.address,
         merged_df["solver"],
         merged_df["reward_target"],
     )
