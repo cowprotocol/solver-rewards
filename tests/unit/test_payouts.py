@@ -604,9 +604,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                 Transfer(
                     token=self.cow_token,
                     recipient=self.reward_target,
-                    amount_wei=int(
-                        primary_reward * (1 - service_fee)
-                    )
+                    amount_wei=int(primary_reward * (1 - service_fee))
                     * self.conversion_rate,
                 ),
             ],
@@ -629,9 +627,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                     token=Token(self.reward_token_address),
                     recipient=self.reward_target,
                     amount_wei=int(
-                        6000000000000000000
-                        * num_quotes
-                        * (1 - service_fee))
+                        6000000000000000000 * num_quotes * (1 - service_fee)
                     ),
                 ),
             ],
