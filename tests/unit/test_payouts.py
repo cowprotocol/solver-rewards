@@ -424,7 +424,8 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         self.solver_name = "Solver1"
         self.reward_target = Address.from_int(2)
         self.buffer_accounting_target = Address.from_int(3)
-        self.cow_token = Token(config.payment_config.cow_token_address)
+        self.cow_token_address = config.payment_config.cow_token_address
+        self.cow_token = Token(self.cow_token_address)
         self.conversion_rate = 1000
 
     def sample_record(
@@ -445,7 +446,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             slippage_eth=slippage,
             quote_reward_cow=config.reward_config.quote_reward_cow * num_quotes,
             service_fee=service_fee,
-            reward_token_address=self.reward_token_address,
+            reward_token_address=self.cow_token_address,
         )
 
     def test_invalid_input(self):
@@ -472,7 +473,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=primary_reward * self.conversion_rate,
                 )
@@ -518,7 +519,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=6000000000000000000 * num_quotes,
                 )
@@ -539,7 +540,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                     amount_wei=slippage,
                 ),
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=(primary_reward) * self.conversion_rate,
                 ),
@@ -555,7 +556,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=(primary_reward + slippage) * self.conversion_rate,
                 ),
@@ -624,7 +625,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=int(
                         6000000000000000000 * num_quotes * (1 - service_fee)
