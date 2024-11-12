@@ -155,11 +155,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
 
     def total_service_fee(self) -> Fraction:
         """Total service fee charged from rewards"""
-        return (
-            SERVICE_FEE_FACTOR
-            * self.service_fee
-            * (self.primary_reward_cow + self.quote_reward_cow)
-        )
+        return self.service_fee * (self.primary_reward_cow + self.quote_reward_cow)
 
     def is_overdraft(self) -> bool:
         """
