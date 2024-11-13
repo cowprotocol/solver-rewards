@@ -103,7 +103,9 @@ def auto_propose(
         )
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Generate transfers for an accounting period"""
+
     args = generic_script_init(description="Fetch Complete Reimbursement")
 
     orderbook = MultiInstanceDBFetcher(
@@ -149,3 +151,7 @@ if __name__ == "__main__":
         )
     else:
         manual_propose(transfers=payout_transfers, period=dune.period)
+
+
+if __name__ == "__main__":
+    main()
