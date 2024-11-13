@@ -4,6 +4,7 @@ import logging.config
 from logging import Logger
 
 from src.config import IOConfig
+from src.utils.print_store import PrintStore
 
 io_config = IOConfig.from_env()
 
@@ -18,3 +19,6 @@ def set_log(name: str) -> Logger:
         disable_existing_loggers=False,
     )
     return log
+
+
+log_saver = PrintStore()

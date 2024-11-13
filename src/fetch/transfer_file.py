@@ -18,6 +18,7 @@ from slack.web.client import WebClient
 from src.config import AccountingConfig, Network
 from src.fetch.dune import DuneFetcher
 from src.fetch.payouts import construct_payouts
+from src.logger import log_saver
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
@@ -122,7 +123,7 @@ def main() -> None:
         period=AccountingPeriod(args.start),
     )
 
-    dune.log_saver.print(
+    log_saver.print(
         f"The data aggregated can be visualized at\n{dune.period.dashboard_url()}",
         category=Category.GENERAL,
     )
@@ -153,7 +154,7 @@ def main() -> None:
         )
         auto_propose(
             transfers=payout_transfers,
-            log_saver=dune.log_saver,
+            log_saver=log_saver,
             slack_client=slack_client,
             dry_run=args.dry_run,
             config=config,
