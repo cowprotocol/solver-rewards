@@ -30,7 +30,7 @@ SAFE_ADDRESS = Web3.to_checksum_address(
 )
 
 NETWORK_STRING = ENV.get("NETWORK", "mainnet")
-NODE_URL = os.getenv("NODE_URL")
+NODE_URL = ENV.get("NODE_URL")
 NETWORK = {
     "mainnet": EthereumNetwork.MAINNET,
     "gnosis": EthereumNetwork.GNOSIS,
