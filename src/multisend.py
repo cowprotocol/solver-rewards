@@ -3,8 +3,6 @@ All the tools necessary to compose and encode a
 Safe Multisend transaction consisting of Transfers
 """
 
-import logging.config
-
 from eth_typing.evm import ChecksumAddress
 from gnosis.eth.ethereum_client import EthereumClient
 from gnosis.eth.ethereum_network import EthereumNetwork
@@ -12,13 +10,12 @@ from gnosis.safe.api import TransactionServiceApi
 from gnosis.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
 from gnosis.safe.safe import Safe
 
-from src.config import web3, IOConfig
-from src.abis.load import weth9
 
-log = logging.getLogger(__name__)
-logging.config.fileConfig(
-    fname=IOConfig.from_env().log_config_file.absolute(), disable_existing_loggers=False
-)
+from src.constants import web3
+from src.abis.load import weth9
+from src.logger import set_log
+
+log = set_log(__name__)
 
 # This contract address can be removed once this issue is resolved:
 # https://github.com/safe-global/safe-eth-py/issues/283

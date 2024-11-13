@@ -8,7 +8,6 @@ from src.config import IOConfig
 io_config = IOConfig.from_env()
 
 
-# TODO - use this in every file that logs (and prints).
 def set_log(name: str) -> Logger:
     """Removes redundancy when setting log in each file"""
 
