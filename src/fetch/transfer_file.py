@@ -63,6 +63,7 @@ def auto_propose(
     # so not to wait for query execution to realize it's not available.
     signing_key = config.payment_config.signing_key
     assert signing_key is not None
+
     client = EthereumClient(URI(config.node_config.node_url))
 
     log_saver.print(Transfer.summarize(transfers), category=Category.TOTALS)

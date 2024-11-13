@@ -149,9 +149,11 @@ class NodeConfig:
     @staticmethod
     def from_network(network: Network) -> NodeConfig:
         """Initialize node config for a given network."""
-        # Found this exposed infura key on https://rpc.info/
-        infura_key = os.environ.get("INFURA_KEY", "9aa3d95b3bc440fa88ea12eaa4456161")
-        node_url = f"https://{network}.infura.io/v3/{infura_key}"
+        match network:
+            case Network.MAINNET:
+                node_url = os.environ["NODE_URL"]
+            case _:
+                raise ValueError(f"No node config set up for network {network}.")
 
         return NodeConfig(node_url=node_url)
 
