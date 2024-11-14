@@ -69,6 +69,8 @@ def auto_propose(
     # Check for required env vars early
     # so not to wait for query execution to realize it's not available.
     signing_key = os.environ["PROPOSER_PK"]
+
+    assert NODE_URL is not None, "NODE_URL env variable not set!"
     client = EthereumClient(URI(NODE_URL))
 
     log_saver.print(Transfer.summarize(transfers), category=Category.TOTALS)

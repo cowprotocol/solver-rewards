@@ -26,6 +26,3 @@ jobs:
       - name: Unit Tests
         run:
           python -m pytest tests/unit
-        env:
-          # We make a rinkeby request in one unit test
-          INFURA_KEY: ${{ secrets.INFURA_KEY }}
