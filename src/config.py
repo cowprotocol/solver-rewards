@@ -151,7 +151,7 @@ class NodeConfig:
         """Initialize node config for a given network."""
         match network:
             case Network.MAINNET:
-                node_url = os.environ["NODE_URL"]
+                node_url = os.environ.get("NODE_URL", "")
             case _:
                 raise ValueError(f"No node config set up for network {network}.")
 
