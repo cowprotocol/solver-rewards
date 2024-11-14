@@ -28,20 +28,16 @@ ENV = os.environ
 SAFE_ADDRESS = Web3.to_checksum_address(
     ENV.get("SAFE_ADDRESS", "0xA03be496e67Ec29bC62F01a428683D7F9c204930")
 )
-# Found this exposed infura key on https://rpc.info/
-INFURA_KEY = ENV.get("INFURA_KEY", "9aa3d95b3bc440fa88ea12eaa4456161")
+
 NETWORK_STRING = ENV.get("NETWORK", "mainnet")
-NODE_URL = f"https://{NETWORK_STRING}.infura.io/v3/{INFURA_KEY}"
+NODE_URL = ENV.get("NODE_URL")
 NETWORK = {
     "mainnet": EthereumNetwork.MAINNET,
     "gnosis": EthereumNetwork.GNOSIS,
-    "goerli": EthereumNetwork.GOERLI,
 }[NETWORK_STRING]
 SHORT_NAME = {
     "mainnet": "eth",
-    "rinkeby": "rin",
     "gnosis": "gno",
-    "goerli": "gor",
 }[NETWORK_STRING]
 
 CSV_APP_HASH = "Qme49gESuwpSvwANmEqo34yfCkzyQehooJ5yL7aHmKJnpZ"

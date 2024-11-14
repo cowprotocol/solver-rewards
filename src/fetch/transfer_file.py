@@ -69,6 +69,8 @@ def auto_propose(
     # Check for required env vars early
     # so not to wait for query execution to realize it's not available.
     signing_key = os.environ["PROPOSER_PK"]
+
+    assert NODE_URL is not None, "NODE_URL env variable not set!"
     client = EthereumClient(URI(NODE_URL))
 
     log_saver.print(Transfer.summarize(transfers), category=Category.TOTALS)
@@ -103,7 +105,9 @@ def auto_propose(
         )
 
 
-if __name__ == "__main__":
+def main() -> None:
+    """Generate transfers for an accounting period"""
+
     args = generic_script_init(description="Fetch Complete Reimbursement")
 
     orderbook = MultiInstanceDBFetcher(
@@ -149,3 +153,7 @@ if __name__ == "__main__":
         )
     else:
         manual_propose(transfers=payout_transfers, period=dune.period)
+
+
+if __name__ == "__main__":
+    main()
