@@ -41,11 +41,7 @@ def manual_propose(transfers: list[Transfer], period: AccountingPeriod) -> None:
     )
 
     print(Transfer.summarize(transfers))
-    print(
-        f"Please cross check these results with the dashboard linked above.\n "
-        f"For solver payouts, paste the transfer file CSV Airdrop at:\n"
-        f"{config.payment_config.csv_airdrop_url}"
-    )
+    print("Please cross check these results with the dashboard linked above.\n")
 
 
 def auto_propose(

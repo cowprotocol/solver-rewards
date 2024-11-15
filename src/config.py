@@ -176,7 +176,6 @@ class PaymentConfig:
     payment_safe_address: ChecksumAddress
     signing_key: str | None
     safe_queue_url: str
-    csv_airdrop_url: str
     verification_docs_url: str
     weth_address: ChecksumAddress
 
@@ -202,13 +201,8 @@ class PaymentConfig:
                     )
                 )
                 short_name = network_short_name[network]
-                csv_app_hash = "Qme49gESuwpSvwANmEqo34yfCkzyQehooJ5yL7aHmKJnpZ"
                 safe_url = (
                     f"https://app.safe.global/{short_name}:{payment_safe_address}"
-                )
-                airdrop_url = (
-                    f"{safe_url}/apps?appUrl=https://cloudflare-ipfs.com/ipfs/"
-                    f"{csv_app_hash}/"
                 )
                 safe_queue_url = f"{safe_url}/transactions/queue"
 
@@ -222,7 +216,6 @@ class PaymentConfig:
                     ),
                     signing_key=signing_key,
                     safe_queue_url=safe_queue_url,
-                    csv_airdrop_url=airdrop_url,
                     verification_docs_url=docs_url,
                     weth_address=Web3.to_checksum_address(
                         "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
