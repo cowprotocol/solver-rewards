@@ -291,6 +291,8 @@ class AccountingConfig:
         )
 
 
-config = AccountingConfig.from_network(Network(os.environ.get("NETWORK", "mainnet")))
-
-web3 = Web3(Web3.HTTPProvider(config.node_config.node_url))
+web3 = Web3(
+    Web3.HTTPProvider(
+        NodeConfig.from_network(Network(os.environ.get("NETWORK", "mainnet"))).node_url
+    )
+)

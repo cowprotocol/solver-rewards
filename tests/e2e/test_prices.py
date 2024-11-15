@@ -3,7 +3,7 @@ from datetime import datetime
 
 from dune_client.types import Address
 
-from src.config import config
+from src.config import AccountingConfig, Network
 from src.fetch.prices import (
     TokenId,
     exchange_rate_atoms,
@@ -16,12 +16,13 @@ DELTA = 0.00001
 
 class TestPrices(unittest.TestCase):
     def setUp(self) -> None:
+        self.config = AccountingConfig.from_network(Network.MAINNET)
         self.some_date = datetime.strptime("2024-09-01", "%Y-%m-%d")
         self.cow_price = usd_price(TokenId.COW, self.some_date)
         self.eth_price = usd_price(TokenId.ETH, self.some_date)
         self.usdc_price = usd_price(TokenId.USDC, self.some_date)
-        self.cow_address = config.reward_config.reward_token_address
-        self.weth_address = Address(config.payment_config.weth_address)
+        self.cow_address = self.config.reward_config.reward_token_address
+        self.weth_address = Address(self.config.payment_config.weth_address)
         self.usdc_address = Address("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
 
     def test_usd_price(self):

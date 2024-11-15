@@ -12,12 +12,12 @@ from gnosis.safe.api import TransactionServiceApi
 from gnosis.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
 from gnosis.safe.safe import Safe
 
-from src.config import config, web3
+from src.config import web3, IOConfig
 from src.abis.load import weth9
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(
-    fname=config.io_config.log_config_file.absolute(), disable_existing_loggers=False
+    fname=IOConfig.from_env().log_config_file.absolute(), disable_existing_loggers=False
 )
 
 # This contract address can be removed once this issue is resolved:
@@ -42,6 +42,7 @@ def prepend_unwrap_if_necessary(
     client: EthereumClient,
     safe_address: ChecksumAddress,
     transactions: list[MultiSendTx],
+    wrapped_native_token: ChecksumAddress,
     skip_validation: bool = False,
 ) -> list[MultiSendTx]:
     """
@@ -53,7 +54,7 @@ def prepend_unwrap_if_necessary(
     # Amount of outgoing ETH from transfer
     eth_needed = sum(t.value for t in transactions)
     if eth_balance < eth_needed:
-        weth = weth9(client.w3)
+        weth = weth9(client.w3, wrapped_native_token)
         weth_balance = weth.functions.balanceOf(safe_address).call()
         if weth_balance + eth_balance < eth_needed:
             message = (

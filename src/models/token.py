@@ -9,7 +9,7 @@ from typing import Optional
 
 from dune_client.types import Address
 
-from src.config import config, web3
+from src.config import web3
 from src.utils.token_details import get_token_decimals
 
 
@@ -47,10 +47,6 @@ class Token:
         if isinstance(address, str):
             address = Address(address)
         self.address = address
-
-        if address == config.payment_config.cow_token_address:
-            # Avoid Web3 Calls for main branch of program.
-            decimals = 18
 
         self.decimals = (
             decimals if decimals is not None else get_token_decimals(web3, address)
