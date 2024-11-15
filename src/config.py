@@ -62,7 +62,14 @@ class RewardConfig:
 
 @dataclass(frozen=True)
 class ProtocolFeeConfig:
-    """Configuration for protocol and partner fees."""
+    """Configuration for protocol and partner fees.
+
+    Attributes:
+    protocol_fee_safe -- address to forward protocol fees to
+    partner_fee_cut -- fraction of partner fees withheld from integration partners
+    partner_fee_reduced_cut -- reduced amount withheld from partner specified as reduced_cut_address
+    reduced_cut_address -- partner fee recipient who pays the reduced cut partner_fee_reduced_cut
+    """
 
     protocol_fee_safe: Address
     partner_fee_cut: float
