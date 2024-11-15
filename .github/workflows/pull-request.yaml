@@ -26,3 +26,5 @@ jobs:
       - name: Unit Tests
         run:
           python -m pytest tests/unit
+        env:
+          NODE_URL: ${{ secrets.NODE_URL }}
