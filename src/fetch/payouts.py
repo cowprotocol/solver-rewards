@@ -7,6 +7,7 @@ import math
 from dataclasses import dataclass
 from datetime import timedelta
 from fractions import Fraction
+from functools import reduce
 from typing import Callable
 
 import numpy as np
@@ -17,6 +18,11 @@ from pandas import DataFrame, Series
 from src.config import AccountingConfig
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import exchange_rate_atoms
+from src.fetch.solver_info import compute_solver_info
+from src.fetch.rewards import compute_rewards
+from src.fetch.protocol_fees import compute_protocol_fees
+from src.fetch.partner_fees import compute_partner_fees
+from src.fetch.buffer_accounting import compute_buffer_accounting
 from src.logger import log_saver
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
@@ -442,6 +448,45 @@ def construct_payout_dataframe(
     return merged_df
 
 
+def construct_solver_payouts_dataframe(
+    solver_info: DataFrame,
+    rewards: DataFrame,
+    protocol_fees: DataFrame,
+    buffer_accounting: DataFrame,
+) -> DataFrame:
+    # 1. Validate data
+
+    # 2. Normalize Join Column (and Ethereum Address Field)
+    join_column = "solver"
+    normalize_address_field(solver_info, join_column)
+    normalize_address_field(rewards, join_column)
+    normalize_address_field(protocol_fees, join_column)
+    normalize_address_field(buffer_accounting, join_column)
+
+    # 3. Merge data
+    solver_payouts = reduce(
+        lambda left, right: left.merge(
+            right,
+            how="outer",
+            on="solver",
+            validate="one_to_one",
+            sort=True,
+        ),
+        [rewards, protocol_fees, buffer_accounting],
+    ).merge(solver_info, how="left", on="solver")
+
+    # 4. Set default values
+    solver_payouts["primary_reward_eth"] = solver_payouts["primary_reward_eth"].fillna(
+        0
+    )
+    solver_payouts["slippage_eth"] = solver_payouts["slippage_eth"].fillna(0)
+    solver_payouts["protocol_fee_eth"] = solver_payouts["protocol_fee_eth"].fillna(0)
+    solver_payouts["network_fee_eth"] = solver_payouts["network_fee_eth"].fillna(0)
+    solver_payouts["service_fee"] = solver_payouts["service_fee"].fillna(Fraction(0, 1))  # type: ignore
+
+    return solver_payouts
+
+
 def construct_partner_fee_payments(
     partner_fees_df: DataFrame, config: AccountingConfig
 ) -> tuple[dict[str, int], int]:
@@ -492,16 +537,16 @@ def construct_payouts(
     # pylint: disable-msg=too-many-locals
 
     quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
-    batch_rewards_df = orderbook.get_solver_rewards(
+    batch_data = orderbook.get_solver_rewards(
         dune.start_block,
         dune.end_block,
         config.reward_config.batch_reward_cap_upper,
         config.reward_config.batch_reward_cap_lower,
     )
-    partner_fees_df = batch_rewards_df[["partner_list", "partner_fee_eth"]]
-    batch_rewards_df = batch_rewards_df.drop(
-        ["partner_list", "partner_fee_eth"], axis=1
-    )
+    batch_rewards_df = batch_data[
+        ["solver", "primary_reward_eth", "protocol_fee_eth", "network_fee_eth"]
+    ]
+    partner_fees_df = batch_data[["partner_list", "partner_fee_eth"]]
 
     assert batch_rewards_df["solver"].is_unique, "solver not unique in batch rewards"
     assert quote_rewards_df["solver"].is_unique, "solver not unique in quote rewards"
@@ -535,12 +580,35 @@ def construct_payouts(
     reward_token = config.reward_config.reward_token_address
     native_token = Address(config.payment_config.weth_address)
     price_day = dune.period.end - timedelta(days=1)
-    converter = TokenConversion(
-        eth_to_token=lambda t: exchange_rate_atoms(
-            native_token, reward_token, price_day
-        )
-        * t,
+    exchange_rate_native_to_cow = exchange_rate_atoms(
+        native_token, reward_token, price_day
     )
+    converter = TokenConversion(
+        eth_to_token=lambda t: exchange_rate_native_to_cow * t,
+    )
+
+    solver_info = compute_solver_info(
+        dune.period.start,
+        reward_target_df,
+        service_fee_df,
+        config,
+    )
+    rewards = compute_rewards(
+        batch_rewards_df,
+        quote_rewards_df,
+        exchange_rate_native_to_cow,
+        config.reward_config,
+    )
+    protocol_fees = compute_protocol_fees(
+        batch_data,
+    )
+    buffer_accounting = compute_buffer_accounting(batch_data, slippage_df)
+
+    solver_payouts = construct_solver_payouts_dataframe(
+        solver_info, rewards, protocol_fees, buffer_accounting
+    )
+
+    partner_payouts = compute_partner_fees(batch_data, config.protocol_fee_config)
 
     complete_payout_df = construct_payout_dataframe(
         # Fetch and extend auction data from orderbook.
