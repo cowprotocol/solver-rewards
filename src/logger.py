@@ -3,7 +3,7 @@
 import logging.config
 from logging import Logger
 
-from src.constants import LOG_CONFIG_FILE
+from src.config import config
 
 
 # TODO - use this in every file that logs (and prints).
@@ -13,6 +13,7 @@ def set_log(name: str) -> Logger:
     log = logging.getLogger(name)
 
     logging.config.fileConfig(
-        fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
+        fname=config.io_config.log_config_file.absolute(),
+        disable_existing_loggers=False,
     )
     return log

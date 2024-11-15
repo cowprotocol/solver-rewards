@@ -8,6 +8,7 @@ from pandas import DataFrame, Series
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
+from src.config import config
 from src.logger import set_log
 from src.utils.query_file import open_query
 
@@ -38,15 +39,23 @@ class MultiInstanceDBFetcher:
             open_query("orderbook/prod_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
-            .replace("{{EPSILON_LOWER}}", "10000000000000000")
-            .replace("{{EPSILON_UPPER}}", "12000000000000000")
+            .replace(
+                "{{EPSILON_LOWER}}", str(config.reward_config.batch_reward_cap_lower)
+            )
+            .replace(
+                "{{EPSILON_UPPER}}", str(config.reward_config.batch_reward_cap_upper)
+            )
         )
         batch_reward_query_barn = (
             open_query("orderbook/barn_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
-            .replace("{{EPSILON_LOWER}}", "10000000000000000")
-            .replace("{{EPSILON_UPPER}}", "12000000000000000")
+            .replace(
+                "{{EPSILON_LOWER}}", str(config.reward_config.batch_reward_cap_lower)
+            )
+            .replace(
+                "{{EPSILON_UPPER}}", str(config.reward_config.batch_reward_cap_upper)
+            )
         )
         results = []
 

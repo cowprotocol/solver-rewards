@@ -12,13 +12,12 @@ from gnosis.safe.api import TransactionServiceApi
 from gnosis.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
 from gnosis.safe.safe import Safe
 
-
-from src.constants import LOG_CONFIG_FILE, web3
+from src.config import config, web3
 from src.abis.load import weth9
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(
-    fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
+    fname=config.io_config.log_config_file.absolute(), disable_existing_loggers=False
 )
 
 # This contract address can be removed once this issue is resolved:

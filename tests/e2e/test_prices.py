@@ -1,12 +1,10 @@
 import unittest
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from dune_client.types import Address
 
-from src.abis.load import WETH9_ADDRESS
-from src.constants import COW_TOKEN_ADDRESS
+from src.config import config
 from src.fetch.prices import (
-    TOKEN_ADDRESS_TO_ID,
     TokenId,
     exchange_rate_atoms,
     usd_price,
@@ -22,8 +20,8 @@ class TestPrices(unittest.TestCase):
         self.cow_price = usd_price(TokenId.COW, self.some_date)
         self.eth_price = usd_price(TokenId.ETH, self.some_date)
         self.usdc_price = usd_price(TokenId.USDC, self.some_date)
-        self.cow_address = COW_TOKEN_ADDRESS
-        self.weth_address = Address(WETH9_ADDRESS)
+        self.cow_address = config.reward_config.reward_token_address
+        self.weth_address = Address(config.payment_config.weth_address)
         self.usdc_address = Address("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
 
     def test_usd_price(self):

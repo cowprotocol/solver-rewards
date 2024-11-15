@@ -7,7 +7,7 @@ from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
 from web3 import Web3
 
 from src.abis.load import erc20
-from src.constants import COW_TOKEN_ADDRESS
+from src.config import config
 from src.fetch.transfer_file import Transfer
 from src.models.accounting_period import AccountingPeriod
 from src.models.token import Token
@@ -39,7 +39,7 @@ class TestTransfer(unittest.TestCase):
             ),
         )
         erc20_transfer = Transfer(
-            token=Token(COW_TOKEN_ADDRESS),
+            token=Token(config.payment_config.cow_token_address),
             recipient=Address(receiver),
             amount_wei=15,
         )
@@ -47,7 +47,7 @@ class TestTransfer(unittest.TestCase):
             erc20_transfer.as_multisend_tx(),
             MultiSendTx(
                 operation=MultiSendOperation.CALL,
-                to=COW_TOKEN_ADDRESS.address,
+                to=config.payment_config.cow_token_address.address,
                 value=0,
                 data=erc20().encodeABI(fn_name="transfer", args=[receiver, 15]),
             ),
@@ -94,7 +94,7 @@ class TestTransfer(unittest.TestCase):
             [
                 Transfer(token=None, recipient=receiver, amount_wei=eth_amount),
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.payment_config.cow_token_address),
                     recipient=receiver,
                     amount_wei=cow_amount,
                 ),

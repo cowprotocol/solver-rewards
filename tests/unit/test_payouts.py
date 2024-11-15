@@ -5,7 +5,7 @@ import pandas
 from dune_client.types import Address
 from pandas import DataFrame
 
-from src.constants import COW_BONDING_POOL, COW_TOKEN_ADDRESS
+from src.config import config
 from src.fetch.payouts import (
     extend_payment_df,
     normalize_address_field,
@@ -14,9 +14,6 @@ from src.fetch.payouts import (
     TokenConversion,
     prepare_transfers,
     RewardAndPenaltyDatum,
-    QUOTE_REWARD_COW,
-    PROTOCOL_FEE_SAFE,
-    SERVICE_FEE_FACTOR,
 )
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
@@ -55,7 +52,7 @@ class TestPayoutTransformations(unittest.TestCase):
             map(
                 str,
                 [
-                    COW_BONDING_POOL,
+                    config.reward_config.cow_bonding_pool,
                     Address.from_int(10),
                     Address.from_int(11),
                     Address.from_int(12),
@@ -281,7 +278,7 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000008",
                 ],
                 "pool_address": [
-                    str(COW_BONDING_POOL),
+                    str(config.reward_config.cow_bonding_pool),
                     "0x0000000000000000000000000000000000000010",
                     "0x0000000000000000000000000000000000000011",
                     "0x0000000000000000000000000000000000000012",
@@ -299,10 +296,10 @@ class TestPayoutTransformations(unittest.TestCase):
                     str(self.solvers[3]),
                 ],
                 "reward_token_address": [
-                    str(COW_TOKEN_ADDRESS),
-                    str(COW_TOKEN_ADDRESS),
-                    str(COW_TOKEN_ADDRESS),
-                    str(COW_TOKEN_ADDRESS),
+                    str(config.reward_config.reward_token_address),
+                    str(config.reward_config.reward_token_address),
+                    str(config.reward_config.reward_token_address),
+                    str(config.reward_config.reward_token_address),
                 ],
             }
         )
@@ -357,10 +354,10 @@ class TestPayoutTransformations(unittest.TestCase):
                     "0x0000000000000000000000000000000000000008",
                 ],
                 "reward_token_address": [
-                    str(COW_TOKEN_ADDRESS),
-                    str(COW_TOKEN_ADDRESS),
-                    str(COW_TOKEN_ADDRESS),
-                    str(COW_TOKEN_ADDRESS),
+                    str(config.reward_config.reward_token_address),
+                    str(config.reward_config.reward_token_address),
+                    str(config.reward_config.reward_token_address),
+                    str(config.reward_config.reward_token_address),
                 ],
             }
         )
@@ -377,28 +374,31 @@ class TestPayoutTransformations(unittest.TestCase):
                     amount_wei=1,
                 ),
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.payment_config.cow_token_address),
                     recipient=Address(self.reward_targets[0]),
                     amount_wei=600000000000000000,
                 ),
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.payment_config.cow_token_address),
                     recipient=Address(self.reward_targets[1]),
                     amount_wei=12000000000000000000,
                 ),
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.payment_config.cow_token_address),
                     recipient=Address(self.reward_targets[2]),
                     amount_wei=90000000000000000000,
                 ),
                 Transfer(
-                    token=Token(COW_TOKEN_ADDRESS),
+                    token=Token(config.payment_config.cow_token_address),
                     recipient=Address(self.reward_targets[3]),
-                    amount_wei=int(180000000000000000000 * (1 - SERVICE_FEE_FACTOR)),
+                    amount_wei=int(
+                        180000000000000000000
+                        * (1 - config.reward_config.service_fee_factor)
+                    ),
                 ),
                 Transfer(
                     token=None,
-                    recipient=PROTOCOL_FEE_SAFE,
+                    recipient=config.protocol_fee_config.protocol_fee_safe,
                     amount_wei=3000000000000000,
                 ),
             ],
@@ -424,7 +424,8 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
         self.solver_name = "Solver1"
         self.reward_target = Address.from_int(2)
         self.buffer_accounting_target = Address.from_int(3)
-        self.reward_token_address = COW_TOKEN_ADDRESS
+        self.cow_token_address = config.payment_config.cow_token_address
+        self.cow_token = Token(self.cow_token_address)
         self.conversion_rate = 1000
 
     def sample_record(
@@ -443,9 +444,9 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             primary_reward_eth=primary_reward,
             primary_reward_cow=primary_reward * self.conversion_rate,
             slippage_eth=slippage,
-            quote_reward_cow=QUOTE_REWARD_COW * num_quotes,
+            quote_reward_cow=config.reward_config.quote_reward_cow * num_quotes,
             service_fee=service_fee,
-            reward_token_address=self.reward_token_address,
+            reward_token_address=self.cow_token_address,
         )
 
     def test_invalid_input(self):
@@ -472,7 +473,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=primary_reward * self.conversion_rate,
                 )
@@ -518,7 +519,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=6000000000000000000 * num_quotes,
                 )
@@ -539,7 +540,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                     amount_wei=slippage,
                 ),
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=(primary_reward) * self.conversion_rate,
                 ),
@@ -555,7 +556,7 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=(primary_reward + slippage) * self.conversion_rate,
                 ),
@@ -602,9 +603,9 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
-                    amount_wei=int(primary_reward * (1 - SERVICE_FEE_FACTOR))
+                    amount_wei=int(primary_reward * (1 - service_fee))
                     * self.conversion_rate,
                 ),
             ],
@@ -624,10 +625,10 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             test_datum.as_payouts(),
             [
                 Transfer(
-                    token=Token(self.reward_token_address),
+                    token=self.cow_token,
                     recipient=self.reward_target,
                     amount_wei=int(
-                        6000000000000000000 * num_quotes * (1 - SERVICE_FEE_FACTOR)
+                        6000000000000000000 * num_quotes * (1 - service_fee)
                     ),
                 ),
             ],

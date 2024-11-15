@@ -6,7 +6,7 @@ from gnosis.eth import EthereumClient
 from web3 import Web3
 
 from src.abis.load import weth9
-from src.constants import COW_TOKEN_ADDRESS
+from src.config import config
 from src.fetch.transfer_file import Transfer
 from src.models.token import Token
 from src.multisend import build_encoded_multisend, prepend_unwrap_if_necessary
@@ -63,7 +63,7 @@ class TestMultiSend(unittest.TestCase):
 
     def test_multisend_encoding(self):
         receiver = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
-        cow_token = Token(COW_TOKEN_ADDRESS)
+        cow_token = Token(config.payment_config.cow_token_address)
         self.assertEqual(
             build_encoded_multisend([], client=self.client),
             "0x8d80ff0a"  # MethodID
