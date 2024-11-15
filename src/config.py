@@ -62,7 +62,7 @@ class RewardConfig:
 
 @dataclass(frozen=True)
 class ProtocolFeeConfig:
-    """Configuration for protocol and parner fees."""
+    """Configuration for protocol and partner fees."""
 
     protocol_fee_safe: Address
     partner_fee_cut: float
