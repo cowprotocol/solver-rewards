@@ -6,7 +6,7 @@ from gnosis.eth import EthereumClient
 from web3 import Web3
 
 from src.abis.load import weth9
-from src.config import config
+from src.config import Network, PaymentConfig
 from src.fetch.transfer_file import Transfer
 from src.models.token import Token
 from src.multisend import build_encoded_multisend, prepend_unwrap_if_necessary
@@ -16,12 +16,11 @@ class TestMultiSend(unittest.TestCase):
     def setUp(self) -> None:
         node_url = "https://rpc.ankr.com/eth"
         self.client = EthereumClient(URI(node_url))
+        self.payment_config = PaymentConfig.from_network(Network.MAINNET)
 
     def test_prepend_unwrap(self):
         many_eth = 99999999 * 10**18
-        safe_address = Web3().to_checksum_address(
-            "0xA03be496e67Ec29bC62F01a428683D7F9c204930"
-        )
+        safe_address = self.payment_config.payment_safe_address
         big_native_transfer = Transfer(
             token=None, recipient=Address.zero(), amount_wei=many_eth
         ).as_multisend_tx()
@@ -32,10 +31,11 @@ class TestMultiSend(unittest.TestCase):
                 client=self.client,
                 safe_address=safe_address,
                 transactions=[big_native_transfer],
+                wrapped_native_token=self.payment_config.weth_address,
             )
 
         eth_balance = self.client.get_balance(safe_address)
-        weth = weth9(self.client.w3)
+        weth = weth9(self.client.w3, self.payment_config.weth_address)
         weth_balance = weth.functions.balanceOf(safe_address).call()
 
         transactions = [
@@ -46,7 +46,11 @@ class TestMultiSend(unittest.TestCase):
             ).as_multisend_tx()
         ]
         transactions = prepend_unwrap_if_necessary(
-            self.client, safe_address, transactions, skip_validation=True
+            self.client,
+            safe_address,
+            transactions,
+            self.payment_config.weth_address,
+            skip_validation=True,
         )
 
         self.assertEqual(2, len(transactions))
@@ -63,7 +67,7 @@ class TestMultiSend(unittest.TestCase):
 
     def test_multisend_encoding(self):
         receiver = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
-        cow_token = Token(config.payment_config.cow_token_address)
+        cow_token = Token(self.payment_config.cow_token_address)
         self.assertEqual(
             build_encoded_multisend([], client=self.client),
             "0x8d80ff0a"  # MethodID

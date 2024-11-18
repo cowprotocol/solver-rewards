@@ -4,6 +4,7 @@ Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Pe
 
 from __future__ import annotations
 
+import os
 import ssl
 from dataclasses import asdict
 
@@ -14,7 +15,7 @@ from eth_typing import URI
 from gnosis.eth.ethereum_client import EthereumClient
 from slack.web.client import WebClient
 
-from src.config import config
+from src.config import AccountingConfig, Network
 from src.fetch.dune import DuneFetcher
 from src.fetch.payouts import construct_payouts
 from src.models.accounting_period import AccountingPeriod
@@ -26,7 +27,11 @@ from src.utils.print_store import Category, PrintStore
 from src.utils.script_args import generic_script_init
 
 
-def manual_propose(transfers: list[Transfer], period: AccountingPeriod) -> None:
+def manual_propose(
+    transfers: list[Transfer],
+    period: AccountingPeriod,
+    config: AccountingConfig,
+) -> None:
     """
     Entry point to manual creation of rewards payout transaction.
     This function generates the CSV transfer file to be pasted into the COW Safe app
@@ -49,6 +54,7 @@ def auto_propose(
     log_saver: PrintStore,
     slack_client: WebClient,
     dry_run: bool,
+    config: AccountingConfig,
 ) -> None:
     """
     Entry point auto creation of rewards payout transaction.
@@ -66,6 +72,7 @@ def auto_propose(
     transactions = prepend_unwrap_if_necessary(
         client,
         config.payment_config.payment_safe_address,
+        wrapped_native_token=config.payment_config.weth_address,
         transactions=[t.as_multisend_tx() for t in transfers],
     )
     if len(transactions) > len(transfers):
@@ -105,6 +112,8 @@ def main() -> None:
 
     args = generic_script_init(description="Fetch Complete Reimbursement")
 
+    config = AccountingConfig.from_network(Network(os.environ["NETWORK"]))
+
     orderbook = MultiInstanceDBFetcher(
         [config.orderbook_config.prod_db_url, config.orderbook_config.barn_db_url]
     )
@@ -122,6 +131,7 @@ def main() -> None:
         orderbook=orderbook,
         dune=dune,
         ignore_slippage_flag=args.ignore_slippage,
+        config=config,
     )
 
     payout_transfers = []
@@ -136,18 +146,20 @@ def main() -> None:
     if args.post_tx:
         ssl_context = ssl.create_default_context(cafile=certifi.where())
         ssl_context.verify_mode = ssl.CERT_REQUIRED
+        slack_client = WebClient(
+            token=config.io_config.slack_token,
+            # https://stackoverflow.com/questions/59808346/python-3-slack-client-ssl-sslcertverificationerror
+            ssl=ssl_context,
+        )
         auto_propose(
             transfers=payout_transfers,
             log_saver=dune.log_saver,
-            slack_client=WebClient(
-                token=config.io_config.slack_token,
-                # https://stackoverflow.com/questions/59808346/python-3-slack-client-ssl-sslcertverificationerror
-                ssl=ssl_context,
-            ),
+            slack_client=slack_client,
             dry_run=args.dry_run,
+            config=config,
         )
     else:
-        manual_propose(transfers=payout_transfers, period=dune.period)
+        manual_propose(transfers=payout_transfers, period=dune.period, config=config)
 
 
 if __name__ == "__main__":

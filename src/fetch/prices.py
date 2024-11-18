@@ -12,11 +12,11 @@ from fractions import Fraction
 from coinpaprika import client as cp
 from dune_client.types import Address
 
-from src.config import config
+from src.config import IOConfig
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(
-    fname=config.io_config.log_config_file.absolute(), disable_existing_loggers=False
+    fname=IOConfig.from_env().log_config_file.absolute(), disable_existing_loggers=False
 )
 
 client = cp.Client()

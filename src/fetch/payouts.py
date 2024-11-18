@@ -14,7 +14,7 @@ import pandas
 from dune_client.types import Address
 from pandas import DataFrame, Series
 
-from src.config import config
+from src.config import AccountingConfig
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import exchange_rate_atoms
 from src.models.accounting_period import AccountingPeriod
@@ -269,7 +269,9 @@ class TokenConversion:
     eth_to_token: Callable
 
 
-def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
+def extend_payment_df(
+    pdf: DataFrame, converter: TokenConversion, config: AccountingConfig
+) -> DataFrame:
     """
     Extending the basic columns returned by SQL Query with some after-math:
     - reward_eth as difference of payment and execution_cost
@@ -296,12 +298,13 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     return pdf
 
 
-def prepare_transfers(
+def prepare_transfers(  # pylint: disable=too-many-arguments
     payout_df: DataFrame,
     period: AccountingPeriod,
     final_protocol_fee_wei: int,
     partner_fee_tax_wei: int,
     partner_fees_wei: dict[str, int],
+    config: AccountingConfig,
 ) -> PeriodPayouts:
     """
     Manipulates the payout DataFrame to split into ETH and COW.
@@ -392,6 +395,7 @@ def construct_payout_dataframe(
     slippage_df: DataFrame,
     reward_target_df: DataFrame,
     service_fee_df: DataFrame,
+    config: AccountingConfig,
 ) -> DataFrame:
     """
     Method responsible for joining datasets related to payouts.
@@ -445,7 +449,7 @@ def construct_payout_dataframe(
 
 
 def construct_partner_fee_payments(
-    partner_fees_df: DataFrame,
+    partner_fees_df: DataFrame, config: AccountingConfig
 ) -> tuple[dict[str, int], int]:
     """Compute actual partner fee payments taking partner fee tax into account
     The result is a tuple. The first entry is a dictionary that contains the destination address of
@@ -485,13 +489,21 @@ def construct_partner_fee_payments(
 
 
 def construct_payouts(
-    orderbook: MultiInstanceDBFetcher, dune: DuneFetcher, ignore_slippage_flag: bool
+    orderbook: MultiInstanceDBFetcher,
+    dune: DuneFetcher,
+    ignore_slippage_flag: bool,
+    config: AccountingConfig,
 ) -> list[Transfer]:
     """Workflow of solver reward payout logic post-CIP27"""
     # pylint: disable-msg=too-many-locals
 
     quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
-    batch_rewards_df = orderbook.get_solver_rewards(dune.start_block, dune.end_block)
+    batch_rewards_df = orderbook.get_solver_rewards(
+        dune.start_block,
+        dune.end_block,
+        config.reward_config.batch_reward_cap_upper,
+        config.reward_config.batch_reward_cap_lower,
+    )
     partner_fees_df = batch_rewards_df[["partner_list", "partner_fee_eth"]]
     batch_rewards_df = batch_rewards_df.drop(
         ["partner_list", "partner_fee_eth"], axis=1
@@ -542,18 +554,20 @@ def construct_payouts(
             pdf=merged_df,
             # provide token conversion functions (ETH <--> COW)
             converter=converter,
+            config=config,
         ),
         # Dune: Fetch Solver Slippage & Reward Targets
         slippage_df=slippage_df,
         reward_target_df=reward_target_df,
         service_fee_df=service_fee_df,
+        config=config,
     )
     # Sort by solver before breaking this data frame into Transfer objects.
     complete_payout_df = complete_payout_df.sort_values("solver")
 
     # compute partner fees
     partner_fees_wei, total_partner_fee_wei_untaxed = construct_partner_fee_payments(
-        partner_fees_df
+        partner_fees_df, config
     )
     raw_protocol_fee_wei = int(complete_payout_df.protocol_fee_eth.sum())
     final_protocol_fee_wei = raw_protocol_fee_wei - total_partner_fee_wei_untaxed
@@ -584,6 +598,7 @@ def construct_payouts(
         final_protocol_fee_wei,
         partner_fee_tax_wei,
         partner_fees_wei,
+        config,
     )
     for overdraft in payouts.overdrafts:
         dune.log_saver.print(str(overdraft), Category.OVERDRAFT)

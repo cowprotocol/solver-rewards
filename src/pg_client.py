@@ -8,7 +8,6 @@ from pandas import DataFrame, Series
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
-from src.config import config
 from src.logger import set_log
 from src.utils.query_file import open_query
 
@@ -31,7 +30,13 @@ class MultiInstanceDBFetcher:
         """Executes query on DB engine"""
         return pd.read_sql(sql=query, con=engine)
 
-    def get_solver_rewards(self, start_block: str, end_block: str) -> DataFrame:
+    def get_solver_rewards(
+        self,
+        start_block: str,
+        end_block: str,
+        reward_cap_upper: int,
+        reward_cap_lower: int,
+    ) -> DataFrame:
         """
         Returns aggregated solver rewards for accounting period defined by block range
         """
@@ -39,23 +44,15 @@ class MultiInstanceDBFetcher:
             open_query("orderbook/prod_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
-            .replace(
-                "{{EPSILON_LOWER}}", str(config.reward_config.batch_reward_cap_lower)
-            )
-            .replace(
-                "{{EPSILON_UPPER}}", str(config.reward_config.batch_reward_cap_upper)
-            )
+            .replace("{{EPSILON_LOWER}}", str(reward_cap_lower))
+            .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
         )
         batch_reward_query_barn = (
             open_query("orderbook/barn_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
-            .replace(
-                "{{EPSILON_LOWER}}", str(config.reward_config.batch_reward_cap_lower)
-            )
-            .replace(
-                "{{EPSILON_UPPER}}", str(config.reward_config.batch_reward_cap_upper)
-            )
+            .replace("{{EPSILON_LOWER}}", str(reward_cap_lower))
+            .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
         )
         results = []
 
