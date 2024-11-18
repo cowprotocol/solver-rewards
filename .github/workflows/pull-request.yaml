@@ -27,4 +27,4 @@ jobs:
         run:
           python -m pytest tests/unit
         env:
-          NODE_URL: https://rpc.ankr.com/eth
+          NODE_URL_MAINNET: https://rpc.ankr.com/eth
