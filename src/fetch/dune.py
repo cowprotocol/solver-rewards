@@ -118,6 +118,8 @@ class DuneFetcher:
         return self._get_query_results(
             query=self._parameterized_query(
                 query_data=QUERIES["SERVICE_FEE_STATUS"],
-                params=[],
+                params=[
+                    QueryParameter.date_type("time", self.period.end),
+                ],
             )
         )
