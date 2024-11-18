@@ -516,9 +516,10 @@ def construct_payouts(
     ).fillna(0)
 
     service_fee_df = pandas.DataFrame(dune.get_service_fee_status())
-    service_fee_df["service_fee"] = (
-        service_fee_df["service_fee"] * config.reward_config.service_fee_factor
-    )
+    service_fee_df["service_fee"] = [
+        service_fee_flag * config.reward_config.service_fee_factor
+        for service_fee_flag in service_fee_df["service_fee"]
+    ]
 
     reward_target_df = pandas.DataFrame(dune.get_vouches())
     # construct slippage df
