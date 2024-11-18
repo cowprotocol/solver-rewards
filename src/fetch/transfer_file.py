@@ -75,7 +75,7 @@ def auto_propose(
     transactions = prepend_unwrap_if_necessary(
         client,
         config.payment_config.payment_safe_address,
-        wrapped_native_token=config.payment_config.weth_address,
+        wrapped_native_token=config.payment_config.wrapped_native_token_address,
         transactions=[t.as_multisend_tx() for t in transfers],
     )
     if len(transactions) > len(transfers):

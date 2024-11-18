@@ -31,11 +31,11 @@ class TestMultiSend(unittest.TestCase):
                 client=self.client,
                 safe_address=safe_address,
                 transactions=[big_native_transfer],
-                wrapped_native_token=self.payment_config.weth_address,
+                wrapped_native_token=self.payment_config.wrapped_native_token_address,
             )
 
         eth_balance = self.client.get_balance(safe_address)
-        weth = weth9(self.client.w3, self.payment_config.weth_address)
+        weth = weth9(self.client.w3, self.payment_config.wrapped_native_token_address)
         weth_balance = weth.functions.balanceOf(safe_address).call()
 
         transactions = [
@@ -49,7 +49,7 @@ class TestMultiSend(unittest.TestCase):
             self.client,
             safe_address,
             transactions,
-            self.payment_config.weth_address,
+            self.payment_config.wrapped_native_token_address,
             skip_validation=True,
         )
 

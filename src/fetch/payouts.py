@@ -534,7 +534,7 @@ def construct_payouts(
         slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
 
     reward_token = config.reward_config.reward_token_address
-    native_token = Address(config.payment_config.weth_address)
+    native_token = Address(config.payment_config.wrapped_native_token_address)
     price_day = dune.period.end - timedelta(days=1)
     exchange_rate_native_to_cow = exchange_rate_atoms(
         native_token, reward_token, price_day
