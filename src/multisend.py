@@ -11,7 +11,7 @@ from gnosis.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
 from gnosis.safe.safe import Safe
 
 
-from src.constants import web3
+from src.config import web3
 from src.abis.load import weth9
 from src.logger import set_log
 
