@@ -636,6 +636,32 @@ def construct_partner_fee_payments(
     return partner_fees_wei, total_partner_fee_wei_untaxed
 
 
+def summarize_payments(solver_payouts: DataFrame, partner_payouts: DataFrame):
+    performance_reward = solver_payouts["primary_reward_cow"].sum()
+    quote_reward = solver_payouts["quote_reward_cow"].sum()
+    protocol_fee = solver_payouts["protocol_fee_eth"].sum()
+    service_fee = sum(
+        solver_payouts["service_fee"]
+        * (solver_payouts["primary_reward_cow"] + solver_payouts["quote_reward_cow"])
+    )
+    partner_fee = partner_payouts["partner_fee_eth"].sum()
+    partner_fee_taxed = sum(
+        row["partner_fee_eth"] * (1 - row["partner_fee_tax"])
+        for _, row in partner_payouts.iterrows()
+    )
+    partner_fee_tax = partner_fee - partner_fee_taxed
+
+    print(
+        "Payment breakdown:\n"
+        f"Performance Reward (before fee): {performance_reward / 10 ** 18:.4f}\n"
+        f"Quote Reward (before fee): {quote_reward / 10 ** 18:.4f}\n"
+        f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n",
+        f"Protocol Fees (before partner fees): {protocol_fee / 10 ** 18:.4f}\n"
+        f"Partner Fees (before tax): {partner_fee / 10 ** 18:.4f}\n"
+        f"Partner Fees Tax: {partner_fee_tax / 10 ** 18:.4f}\n",
+    )
+
+
 def construct_payouts(
     orderbook: MultiInstanceDBFetcher,
     dune: DuneFetcher,
@@ -718,6 +744,11 @@ def construct_payouts(
     )
 
     partner_payouts = compute_partner_fees(batch_data, config.protocol_fee_config)
+
+    summarize_payments(solver_payouts, partner_payouts)
+    payouts_new = prepare_transfers_new(
+        solver_payouts, partner_payouts, dune.period, config
+    )
 
     complete_payout_df = construct_payout_dataframe(
         # Fetch and extend auction data from orderbook.
