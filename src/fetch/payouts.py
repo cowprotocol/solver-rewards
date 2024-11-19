@@ -61,6 +61,17 @@ NUMERICAL_COLUMNS = [
     "protocol_fee_eth",
 ]
 
+SOLVER_PAYOUTS_COLUMNS = [
+    "solver",
+    "primary_reward_eth",
+    "primary_reward_cow",
+    "quote_reward_cow",
+    "protocol_fee_eth",
+    "network_fee_eth",
+    "slippage_eth",
+]
+PARTNER_PAYOUTS_COLUMNS = ["partner", "partner_fee_eth", "partner_fee_tax"]
+
 
 @dataclass
 class PeriodPayouts:
@@ -111,6 +122,36 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             if not math.isnan(frame["eth_slippage_wei"])
             else 0
         )
+        solver = frame["solver"]
+        reward_target = frame["reward_target"]
+        if reward_target is None:
+            logging.warning(f"Solver {solver} without reward_target. Using solver")
+            reward_target = solver
+
+        buffer_accounting_target = frame["buffer_accounting_target"]
+        if buffer_accounting_target is None:
+            logging.warning(
+                f"Solver {solver} without buffer_accounting_target. Using solver"
+            )
+            buffer_accounting_target = solver
+
+        return cls(
+            solver=Address(solver),
+            solver_name=frame["solver_name"],
+            reward_target=Address(reward_target),
+            buffer_accounting_target=Address(buffer_accounting_target),
+            slippage_eth=slippage,
+            primary_reward_eth=int(frame["primary_reward_eth"]),
+            primary_reward_cow=int(frame["primary_reward_cow"]),
+            quote_reward_cow=int(frame["quote_reward_cow"]),
+            service_fee=Fraction(frame["service_fee"]),
+            reward_token_address=Address(frame["reward_token_address"]),
+        )
+
+    @classmethod
+    def from_series_new(cls, frame: Series) -> RewardAndPenaltyDatum:
+        """Constructor from row in Dataframe"""
+        slippage = int(frame["slippage_eth"]) + int(frame["network_fee_eth"])
         solver = frame["solver"]
         reward_target = frame["reward_target"]
         if reward_target is None:
@@ -303,6 +344,74 @@ def extend_payment_df(
         pdf[number_col] = pandas.to_numeric(pdf[number_col])
 
     return pdf
+
+
+def prepare_transfers_new(
+    solver_payouts: DataFrame,
+    partner_payouts: DataFrame,
+    period: AccountingPeriod,
+    config: AccountingConfig,
+) -> PeriodPayouts:
+    """Create transfers from payout data."""
+
+    assert set(SOLVER_PAYOUTS_COLUMNS).issubset(set(solver_payouts.columns))
+    assert set(PARTNER_PAYOUTS_COLUMNS).issubset(set(partner_payouts.columns))
+
+    overdrafts: list[Overdraft] = []
+    transfers: list[Transfer] = []
+    for _, payment in solver_payouts.iterrows():
+        payout_datum = RewardAndPenaltyDatum.from_series_new(payment)
+        if payout_datum.is_overdraft():
+            overdraft = Overdraft(
+                period=period,
+                account=payout_datum.solver,
+                name=payout_datum.solver_name,
+                wei=-int(payout_datum.total_outgoing_eth()),
+            )
+            print(f"Solver Overdraft! {overdraft}")
+            overdrafts.append(overdraft)
+        transfers += payout_datum.as_payouts()
+
+    total_protocol_fee = int(solver_payouts["protocol_fee_eth"].sum())
+    total_partner_fee = int(partner_payouts["partner_fee_eth"].sum())
+    total_partner_fee_taxed = sum(
+        int(row["partner_fee_eth"] * (1 - row["partner_fee_tax"]))
+        for _, row in partner_payouts.iterrows()
+    )
+    total_partner_fee_tax = total_partner_fee - total_partner_fee_taxed
+
+    net_protocol_fee = total_protocol_fee - total_partner_fee
+
+    if net_protocol_fee > 0:
+        transfers.append(
+            Transfer(
+                token=None,
+                recipient=config.protocol_fee_config.protocol_fee_safe,
+                amount_wei=net_protocol_fee,
+            )
+        )
+    if total_partner_fee_tax > 0:
+        transfers.append(
+            Transfer(
+                token=None,
+                recipient=config.protocol_fee_config.protocol_fee_safe,
+                amount_wei=total_partner_fee_tax,
+            )
+        )
+    for _, row in partner_payouts.iterrows():
+        partner = row["partner"]
+        partner_fee = int(row["partner_fee_eth"] * (1 - row["partner_fee_tax"]))
+        assert partner_fee >= 0, f"Can't construct negative transfer of {partner_fee}"
+        if partner_fee > 0:
+            transfers.append(
+                Transfer(
+                    token=None,
+                    recipient=Address(partner),
+                    amount_wei=partner_fee,
+                )
+            )
+
+    return PeriodPayouts(overdrafts, transfers)
 
 
 def prepare_transfers(  # pylint: disable=too-many-arguments
