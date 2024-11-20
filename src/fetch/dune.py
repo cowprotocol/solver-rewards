@@ -6,10 +6,10 @@ from dune_client.client import DuneClient
 from dune_client.query import QueryBase
 from dune_client.types import QueryParameter, DuneRecord
 
-from src.logger import set_log
+from src.logger import set_log, log_saver
 from src.models.accounting_period import AccountingPeriod
 from src.queries import QUERIES, QueryData
-from src.utils.print_store import PrintStore, Category
+from src.utils.print_store import Category
 
 log = set_log(__name__)
 
@@ -22,7 +22,6 @@ class DuneFetcher:
 
     dune: DuneClient
     period: AccountingPeriod
-    log_saver: PrintStore
 
     def __init__(
         self,
@@ -31,7 +30,6 @@ class DuneFetcher:
     ):
         self.dune = dune
         self.period = period
-        self.log_saver = PrintStore()
         # Already have period set, so we might as well store this upon construction.
         # This may become an issue when we make the fetchers async;
         # since python does not allow async constructors
@@ -58,7 +56,7 @@ class DuneFetcher:
             exec_result = self.dune.get_result(job_id)
 
         log.info(f"Fetch completed for execution {exec_result.execution_id}")
-        self.log_saver.print(
+        log_saver.print(
             f"{query.name} execution ID: {exec_result.execution_id}", Category.EXECUTION
         )
         # TODO - use a real logger:

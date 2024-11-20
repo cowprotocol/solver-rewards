@@ -18,6 +18,7 @@ from slack.web.client import WebClient
 from src.config import AccountingConfig, Network
 from src.fetch.dune import DuneFetcher
 from src.fetch.payouts import construct_payouts
+from src.logger import log_saver
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
@@ -51,7 +52,7 @@ def manual_propose(
 
 def auto_propose(
     transfers: list[Transfer],
-    log_saver: PrintStore,
+    log_saver_obj: PrintStore,
     slack_client: WebClient,
     dry_run: bool,
     config: AccountingConfig,
@@ -68,7 +69,7 @@ def auto_propose(
 
     client = EthereumClient(URI(config.node_config.node_url))
 
-    log_saver.print(Transfer.summarize(transfers), category=Category.TOTALS)
+    log_saver_obj.print(Transfer.summarize(transfers), category=Category.TOTALS)
     transactions = prepend_unwrap_if_necessary(
         client,
         config.payment_config.payment_safe_address,
@@ -76,9 +77,9 @@ def auto_propose(
         transactions=[t.as_multisend_tx() for t in transfers],
     )
     if len(transactions) > len(transfers):
-        log_saver.print("Prepended WETH unwrap", Category.GENERAL)
+        log_saver_obj.print("Prepended WETH unwrap", Category.GENERAL)
 
-    log_saver.print(
+    log_saver_obj.print(
         "Instructions for verifying the payout transaction can be found at\n"
         f"{config.payment_config.verification_docs_url}",
         category=Category.GENERAL,
@@ -103,7 +104,7 @@ def auto_propose(
                 f"To sign and execute, visit:\n{config.payment_config.safe_queue_url}\n"
                 f"More details in thread"
             ),
-            sub_messages=log_saver.get_values(),
+            sub_messages=log_saver_obj.get_values(),
         )
 
 
@@ -122,7 +123,7 @@ def main() -> None:
         period=AccountingPeriod(args.start),
     )
 
-    dune.log_saver.print(
+    log_saver.print(
         f"The data aggregated can be visualized at\n{dune.period.dashboard_url()}",
         category=Category.GENERAL,
     )
@@ -153,7 +154,7 @@ def main() -> None:
         )
         auto_propose(
             transfers=payout_transfers,
-            log_saver=dune.log_saver,
+            log_saver_obj=log_saver,
             slack_client=slack_client,
             dry_run=args.dry_run,
             config=config,
