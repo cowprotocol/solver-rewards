@@ -746,7 +746,7 @@ def construct_payouts(
     partner_payouts = compute_partner_fees(batch_data, config.protocol_fee_config)
 
     summarize_payments(solver_payouts, partner_payouts)
-    payouts_new = prepare_transfers_new(
+    payouts = prepare_transfers_new(
         solver_payouts, partner_payouts, dune.period, config
     )
 
@@ -794,7 +794,7 @@ def construct_payouts(
         f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n",
         category=Category.TOTALS,
     )
-    payouts = prepare_transfers(
+    payouts_old = prepare_transfers(
         complete_payout_df,
         dune.period,
         final_protocol_fee_wei,
