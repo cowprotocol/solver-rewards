@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from fractions import Fraction
 from typing import Callable
 
@@ -437,13 +437,6 @@ def construct_payout_dataframe(
         config.reward_config.reward_token_address.address
     )
 
-    # 7. Missing service fee is treated as new solver
-    if any(merged_df["service_fee"].isna()):
-        missing_solvers = merged_df["solver"].loc[merged_df["service_fee"].isna()]
-        logging.warning(
-            f"Solvers {missing_solvers} without service fee info. Using 0%. "
-            f"Check service fee query."
-        )
     merged_df["service_fee"] = merged_df["service_fee"].fillna(Fraction(0, 1))  # type: ignore
 
     return merged_df
@@ -518,10 +511,10 @@ def construct_payouts(
 
     service_fee_df = pandas.DataFrame(dune.get_service_fee_status())
     service_fee_df["service_fee"] = [
-        (datetime.strptime(time_string, "%Y-%m-%d %H:%M:%S.%f %Z") <= dune.period.start)
-        * config.reward_config.service_fee_factor
-        for time_string in service_fee_df["expires"]
+        service_fee_flag * config.reward_config.service_fee_factor
+        for service_fee_flag in service_fee_df["service_fee"]
     ]
+
     reward_target_df = pandas.DataFrame(dune.get_vouches())
     # construct slippage df
     if ignore_slippage_flag or (not config.buffer_accounting_config.include_slippage):
