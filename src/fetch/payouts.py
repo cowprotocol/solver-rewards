@@ -15,11 +15,14 @@ from pandas import DataFrame, Series
 from src.config import AccountingConfig
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import exchange_rate_atoms
-from src.fetch.solver_info import compute_solver_info
-from src.fetch.rewards import compute_rewards
-from src.fetch.protocol_fees import compute_protocol_fees
+from src.fetch.solver_info import SOLVER_INFO_COLUMNS, compute_solver_info
+from src.fetch.rewards import REWARDS_COLUMNS, compute_rewards
+from src.fetch.protocol_fees import PROTOCOL_FEES_COLUMNS, compute_protocol_fees
 from src.fetch.partner_fees import compute_partner_fees
-from src.fetch.buffer_accounting import compute_buffer_accounting
+from src.fetch.buffer_accounting import (
+    BUFFER_ACCOUNTING_COLUMNS,
+    compute_buffer_accounting,
+)
 from src.logger import log_saver
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
@@ -348,29 +351,27 @@ def fetch_exchange_rate(period_end: datetime, config: AccountingConfig) -> Fract
 
 
 def validate_df_columns(
-    payment_df: DataFrame,
-    slippage_df: DataFrame,
-    reward_target_df: DataFrame,
-    service_fee_df: DataFrame,
+    solver_info: DataFrame,
+    rewards: DataFrame,
+    protocol_fees: DataFrame,
+    buffer_accounting: DataFrame,
 ) -> None:
-    """
+    """Validate data frame columns.
     Since we are working with dataframes rather than concrete objects,
     we validate that the expected columns/fields are available within our datasets.
-    While it is ok for the input data to contain more columns,
-    this method merely validates that the expected ones are there.
     """
-    assert PAYMENT_COLUMNS.issubset(
-        set(payment_df.columns)
-    ), f"Payment validation failed with columns: {set(payment_df.columns)}"
-    assert SLIPPAGE_COLUMNS.issubset(
-        set(slippage_df.columns)
-    ), f"Slippage validation Failed with columns: {set(slippage_df.columns)}"
-    assert REWARD_TARGET_COLUMNS.issubset(
-        set(reward_target_df.columns)
-    ), f"Reward Target validation Failed with columns: {set(reward_target_df.columns)}"
-    assert SERVICE_FEE_COLUMNS.issubset(
-        set(service_fee_df.columns)
-    ), f"Service Fee validation Failed with columns: {set(service_fee_df.columns)}"
+    assert set(solver_info.columns) == set(
+        SOLVER_INFO_COLUMNS
+    ), f"Solver info validation failed with columns: {set(solver_info.columns)}"
+    assert set(rewards.columns) == set(
+        REWARDS_COLUMNS
+    ), f"Rewards validation failed with columns: {set(rewards.columns)}"
+    assert set(protocol_fees.columns) == set(
+        PROTOCOL_FEES_COLUMNS
+    ), f"Protocol fee validation failed with columns: {set(protocol_fees.columns)}"
+    assert set(buffer_accounting.columns) == set(
+        BUFFER_ACCOUNTING_COLUMNS
+    ), f"Buffer accounting validation failed with columns: {set(buffer_accounting.columns)}"
 
 
 def normalize_address_field(frame: DataFrame, column_name: str) -> None:
@@ -386,6 +387,7 @@ def compute_solver_payouts(
 ) -> DataFrame:
     """Combines solver accounting data into one payment dataframe."""
     # 1. Validate data
+    validate_df_columns(solver_info, rewards, protocol_fees, buffer_accounting)
 
     # 2. Normalize Join Column (and Ethereum Address Field)
     join_column = "solver"
