@@ -4,11 +4,11 @@ import logging.config
 from logging import Logger
 
 from src.config import IOConfig
+from src.utils.print_store import PrintStore
 
 io_config = IOConfig.from_env()
 
 
-# TODO - use this in every file that logs (and prints).
 def set_log(name: str) -> Logger:
     """Removes redundancy when setting log in each file"""
 
@@ -19,3 +19,6 @@ def set_log(name: str) -> Logger:
         disable_existing_loggers=False,
     )
     return log
+
+
+log_saver = PrintStore()

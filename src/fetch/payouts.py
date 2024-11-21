@@ -17,6 +17,7 @@ from pandas import DataFrame, Series
 from src.config import AccountingConfig
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import exchange_rate_atoms
+from src.logger import log_saver
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
 from src.models.token import Token
@@ -575,7 +576,7 @@ def construct_payouts(
         for _, payment in complete_payout_df.iterrows()
     )
 
-    dune.log_saver.print(
+    log_saver.print(
         "Payment breakdown (ignoring service fees):\n"
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n"
@@ -594,5 +595,5 @@ def construct_payouts(
         config,
     )
     for overdraft in payouts.overdrafts:
-        dune.log_saver.print(str(overdraft), Category.OVERDRAFT)
+        log_saver.print(str(overdraft), Category.OVERDRAFT)
     return payouts.transfers
