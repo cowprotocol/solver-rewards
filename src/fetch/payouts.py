@@ -32,35 +32,6 @@ from src.pg_client import MultiInstanceDBFetcher
 from src.utils.print_store import Category
 
 
-PAYMENT_COLUMNS = {
-    "solver",
-    "primary_reward_eth",
-    "primary_reward_cow",
-    "quote_reward_cow",
-    "protocol_fee_eth",
-    "network_fee_eth",
-}
-SLIPPAGE_COLUMNS = {
-    "solver",
-    "solver_name",
-    "eth_slippage_wei",
-}
-REWARD_TARGET_COLUMNS = {"solver", "reward_target", "pool_address"}
-SERVICE_FEE_COLUMNS = {"solver", "service_fee"}
-ADDITIONAL_PAYMENT_COLUMNS = {"buffer_accounting_target", "reward_token_address"}
-
-COMPLETE_COLUMNS = (
-    PAYMENT_COLUMNS.union(SLIPPAGE_COLUMNS)
-    .union(REWARD_TARGET_COLUMNS)
-    .union(ADDITIONAL_PAYMENT_COLUMNS)
-)
-NUMERICAL_COLUMNS = [
-    "primary_reward_eth",
-    "primary_reward_cow",
-    "quote_reward_cow",
-    "protocol_fee_eth",
-]
-
 SOLVER_PAYOUTS_COLUMNS = [
     "solver",
     "primary_reward_eth",
