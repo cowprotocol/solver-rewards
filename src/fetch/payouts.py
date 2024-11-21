@@ -274,7 +274,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         return result
 
 
-def prepare_transfers(
+def prepare_transfers(  # pylint: disable=too-many-locals
     solver_payouts: DataFrame,
     partner_payouts: DataFrame,
     period: AccountingPeriod,
@@ -415,12 +415,15 @@ def compute_solver_payouts(
     solver_payouts["slippage_eth"] = solver_payouts["slippage_eth"].fillna(0)
     solver_payouts["protocol_fee_eth"] = solver_payouts["protocol_fee_eth"].fillna(0)
     solver_payouts["network_fee_eth"] = solver_payouts["network_fee_eth"].fillna(0)
-    solver_payouts["service_fee"] = solver_payouts["service_fee"].fillna(Fraction(0, 1))  # type: ignore
+    solver_payouts["service_fee"] = solver_payouts["service_fee"].fillna(
+        Fraction(0, 1)  # type: ignore
+    )
 
     return solver_payouts
 
 
-def summarize_payments(solver_payouts: DataFrame, partner_payouts: DataFrame):
+def summarize_payments(solver_payouts: DataFrame, partner_payouts: DataFrame) -> None:
+    """Summarize payments."""
     performance_reward = solver_payouts["primary_reward_cow"].sum()
     quote_reward = solver_payouts["quote_reward_cow"].sum()
     protocol_fee = solver_payouts["protocol_fee_eth"].sum()
