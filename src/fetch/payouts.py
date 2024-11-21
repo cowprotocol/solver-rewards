@@ -492,7 +492,7 @@ def construct_payouts(
         config,
     )
     rewards = compute_rewards(
-        batch_rewards_df,
+        batch_data,
         quote_rewards_df,
         exchange_rate_native_to_cow,
         config.reward_config,
