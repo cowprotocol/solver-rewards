@@ -488,7 +488,6 @@ def construct_payouts(
 
     # compute individual components of payments
     solver_info = compute_solver_info(
-        dune.period.start,
         reward_target_df,
         service_fee_df,
         config,
