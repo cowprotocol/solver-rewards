@@ -3,12 +3,16 @@ import unittest
 import pandas.testing
 from pandas import DataFrame
 
+from src.config import RewardConfig, Network
 from src.pg_client import MultiInstanceDBFetcher
 
 
 class TestBatchRewards(unittest.TestCase):
     def setUp(self) -> None:
         db_url = "postgres:postgres@localhost:5432/postgres"
+        reward_config = RewardConfig.from_network(Network.MAINNET)
+        self.batch_reward_cap_upper = reward_config.batch_reward_cap_upper
+        self.batch_reward_cap_lower = reward_config.batch_reward_cap_lower
         self.fetcher = MultiInstanceDBFetcher([db_url])
         with open(
             "./tests/queries/batch_rewards_test_db.sql", "r", encoding="utf-8"
@@ -17,7 +21,12 @@ class TestBatchRewards(unittest.TestCase):
 
     def test_get_batch_rewards(self):
         start_block, end_block = "0", "100"
-        batch_rewards = self.fetcher.get_solver_rewards(start_block, end_block)
+        batch_rewards = self.fetcher.get_solver_rewards(
+            start_block,
+            end_block,
+            self.batch_reward_cap_upper,
+            self.batch_reward_cap_lower,
+        )
         expected = DataFrame(
             {
                 "solver": [

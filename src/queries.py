@@ -40,7 +40,7 @@ QUERIES = {
     ),
     "SERVICE_FEE_STATUS": QueryData(
         name="CIP-48 Service fee status",
-        q_id=4017925,
+        q_id=4298142,
     ),
     "PERIOD_SLIPPAGE": QueryData(
         name="Solver Slippage for Period",

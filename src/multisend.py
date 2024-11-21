@@ -3,8 +3,6 @@ All the tools necessary to compose and encode a
 Safe Multisend transaction consisting of Transfers
 """
 
-import logging.config
-
 from eth_typing.evm import ChecksumAddress
 from gnosis.eth.ethereum_client import EthereumClient
 from gnosis.eth.ethereum_network import EthereumNetwork
@@ -13,13 +11,11 @@ from gnosis.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
 from gnosis.safe.safe import Safe
 
 
-from src.constants import LOG_CONFIG_FILE, web3
+from src.config import web3
 from src.abis.load import weth9
+from src.logger import set_log
 
-log = logging.getLogger(__name__)
-logging.config.fileConfig(
-    fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
-)
+log = set_log(__name__)
 
 # This contract address can be removed once this issue is resolved:
 # https://github.com/safe-global/safe-eth-py/issues/283
@@ -43,6 +39,7 @@ def prepend_unwrap_if_necessary(
     client: EthereumClient,
     safe_address: ChecksumAddress,
     transactions: list[MultiSendTx],
+    wrapped_native_token: ChecksumAddress,
     skip_validation: bool = False,
 ) -> list[MultiSendTx]:
     """
@@ -54,7 +51,7 @@ def prepend_unwrap_if_necessary(
     # Amount of outgoing ETH from transfer
     eth_needed = sum(t.value for t in transactions)
     if eth_balance < eth_needed:
-        weth = weth9(client.w3)
+        weth = weth9(client.w3, wrapped_native_token)
         weth_balance = weth.functions.balanceOf(safe_address).call()
         if weth_balance + eth_balance < eth_needed:
             message = (

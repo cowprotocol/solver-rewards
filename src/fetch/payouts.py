@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import math
 from dataclasses import dataclass
-from datetime import datetime, timedelta
+from datetime import timedelta
 from fractions import Fraction
 from typing import Callable
 
@@ -14,10 +14,10 @@ import pandas
 from dune_client.types import Address
 from pandas import DataFrame, Series
 
-from src.abis.load import WETH9_ADDRESS
-from src.constants import COW_TOKEN_ADDRESS, COW_BONDING_POOL
+from src.config import AccountingConfig
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import exchange_rate_atoms
+from src.logger import log_saver
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
 from src.models.token import Token
@@ -25,11 +25,6 @@ from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 from src.utils.print_store import Category
 
-QUOTE_REWARD_COW = 6 * 10**18
-QUOTE_REWARD_CAP_ETH = 6 * 10**14
-SERVICE_FEE_FACTOR = Fraction(15, 100)
-
-PROTOCOL_FEE_SAFE = Address("0xB64963f95215FDe6510657e719bd832BB8bb941B")
 
 PAYMENT_COLUMNS = {
     "solver",
@@ -223,7 +218,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 result.append(
                     Transfer(
                         token=None,
-                        recipient=(self.buffer_accounting_target),
+                        recipient=self.buffer_accounting_target,
                         amount_wei=reimbursement_eth + total_eth_reward,
                     )
                 )
@@ -259,7 +254,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             result.append(
                 Transfer(
                     token=None,
-                    recipient=(self.buffer_accounting_target),
+                    recipient=self.buffer_accounting_target,
                     amount_wei=reimbursement_eth,
                 )
             )
@@ -292,7 +287,9 @@ class TokenConversion:
     eth_to_token: Callable
 
 
-def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
+def extend_payment_df(
+    pdf: DataFrame, converter: TokenConversion, config: AccountingConfig
+) -> DataFrame:
     """
     Extending the basic columns returned by SQL Query with some after-math:
     - reward_eth as difference of payment and execution_cost
@@ -304,7 +301,12 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     # Pandas has poor support for large integers, must cast the constant to float here,
     # otherwise the dtype would be inferred as int64 (which overflows).
     pdf["quote_reward_cow"] = (
-        float(min(QUOTE_REWARD_COW, converter.eth_to_token(QUOTE_REWARD_CAP_ETH)))
+        float(
+            min(
+                config.reward_config.quote_reward_cow,
+                converter.eth_to_token(config.reward_config.quote_reward_cap_native),
+            )
+        )
         * pdf["num_quotes"]
     )
 
@@ -314,12 +316,13 @@ def extend_payment_df(pdf: DataFrame, converter: TokenConversion) -> DataFrame:
     return pdf
 
 
-def prepare_transfers(
+def prepare_transfers(  # pylint: disable=too-many-arguments
     payout_df: DataFrame,
     period: AccountingPeriod,
     final_protocol_fee_wei: int,
     partner_fee_tax_wei: int,
     partner_fees_wei: dict[str, int],
+    config: AccountingConfig,
 ) -> PeriodPayouts:
     """
     Manipulates the payout DataFrame to split into ETH and COW.
@@ -347,7 +350,7 @@ def prepare_transfers(
         transfers.append(
             Transfer(
                 token=None,
-                recipient=PROTOCOL_FEE_SAFE,
+                recipient=config.protocol_fee_config.protocol_fee_safe,
                 amount_wei=final_protocol_fee_wei,
             )
         )
@@ -355,7 +358,7 @@ def prepare_transfers(
         transfers.append(
             Transfer(
                 token=None,
-                recipient=PROTOCOL_FEE_SAFE,
+                recipient=config.protocol_fee_config.protocol_fee_safe,
                 amount_wei=partner_fee_tax_wei,
             )
         )
@@ -410,6 +413,7 @@ def construct_payout_dataframe(
     slippage_df: DataFrame,
     reward_target_df: DataFrame,
     service_fee_df: DataFrame,
+    config: AccountingConfig,
 ) -> DataFrame:
     """
     Method responsible for joining datasets related to payouts.
@@ -440,28 +444,23 @@ def construct_payout_dataframe(
 
     # 5. Compute buffer accounting target
     merged_df["buffer_accounting_target"] = np.where(
-        merged_df["pool_address"] != COW_BONDING_POOL.address,
+        merged_df["pool_address"] != config.reward_config.cow_bonding_pool.address,
         merged_df["solver"],
         merged_df["reward_target"],
     )
 
     # 6. Add reward token address
-    merged_df["reward_token_address"] = COW_TOKEN_ADDRESS.address
+    merged_df["reward_token_address"] = (
+        config.reward_config.reward_token_address.address
+    )
 
-    # 7. Missing service fee is treated as new solver
-    if any(merged_df["service_fee"].isna()):
-        missing_solvers = merged_df["solver"].loc[merged_df["service_fee"].isna()]
-        logging.warning(
-            f"Solvers {missing_solvers} without service fee info. Using 0%. "
-            f"Check service fee query."
-        )
     merged_df["service_fee"] = merged_df["service_fee"].fillna(Fraction(0, 1))  # type: ignore
 
     return merged_df
 
 
 def construct_partner_fee_payments(
-    partner_fees_df: DataFrame,
+    partner_fees_df: DataFrame, config: AccountingConfig
 ) -> tuple[dict[str, int], int]:
     """Compute actual partner fee payments taking partner fee tax into account
     The result is a tuple. The first entry is a dictionary that contains the destination address of
@@ -488,24 +487,34 @@ def construct_partner_fee_payments(
     total_partner_fee_wei_taxed = 0
     for address, value in partner_fees_wei.items():
         total_partner_fee_wei_untaxed += value
-        if address == "0x63695Eee2c3141BDE314C5a6f89B98E62808d716":
-            partner_fees_wei[address] = int(0.90 * value)
-            total_partner_fee_wei_taxed += int(0.90 * value)
+        if address == config.protocol_fee_config.reduced_cut_address:
+            reduction_factor = 1 - config.protocol_fee_config.partner_fee_reduced_cut
+            partner_fees_wei[address] = int(reduction_factor * value)
+            total_partner_fee_wei_taxed += int(reduction_factor * value)
         else:
-            partner_fees_wei[address] = int(0.85 * value)
-            total_partner_fee_wei_taxed += int(0.85 * value)
+            reduction_factor = 1 - config.protocol_fee_config.partner_fee_cut
+            partner_fees_wei[address] = int(reduction_factor * value)
+            total_partner_fee_wei_taxed += int(reduction_factor * value)
 
     return partner_fees_wei, total_partner_fee_wei_untaxed
 
 
 def construct_payouts(
-    orderbook: MultiInstanceDBFetcher, dune: DuneFetcher, ignore_slippage_flag: bool
+    orderbook: MultiInstanceDBFetcher,
+    dune: DuneFetcher,
+    ignore_slippage_flag: bool,
+    config: AccountingConfig,
 ) -> list[Transfer]:
     """Workflow of solver reward payout logic post-CIP27"""
     # pylint: disable-msg=too-many-locals
 
     quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
-    batch_rewards_df = orderbook.get_solver_rewards(dune.start_block, dune.end_block)
+    batch_rewards_df = orderbook.get_solver_rewards(
+        dune.start_block,
+        dune.end_block,
+        config.reward_config.batch_reward_cap_upper,
+        config.reward_config.batch_reward_cap_lower,
+    )
     partner_fees_df = batch_rewards_df[["partner_list", "partner_fee_eth"]]
     batch_rewards_df = batch_rewards_df.drop(
         ["partner_list", "partner_fee_eth"], axis=1
@@ -519,13 +528,13 @@ def construct_payouts(
 
     service_fee_df = pandas.DataFrame(dune.get_service_fee_status())
     service_fee_df["service_fee"] = [
-        (datetime.strptime(time_string, "%Y-%m-%d %H:%M:%S.%f %Z") <= dune.period.start)
-        * SERVICE_FEE_FACTOR
-        for time_string in service_fee_df["expires"]
+        service_fee_flag * config.reward_config.service_fee_factor
+        for service_fee_flag in service_fee_df["service_fee"]
     ]
+
     reward_target_df = pandas.DataFrame(dune.get_vouches())
     # construct slippage df
-    if ignore_slippage_flag:
+    if ignore_slippage_flag or (not config.buffer_accounting_config.include_slippage):
         slippage_df_temp = pandas.merge(
             merged_df[["solver"]],
             reward_target_df[["solver", "solver_name"]],
@@ -540,8 +549,8 @@ def construct_payouts(
         # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
         slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
 
-    reward_token = COW_TOKEN_ADDRESS
-    native_token = Address(WETH9_ADDRESS)
+    reward_token = config.reward_config.reward_token_address
+    native_token = Address(config.payment_config.weth_address)
     price_day = dune.period.end - timedelta(days=1)
     converter = TokenConversion(
         eth_to_token=lambda t: exchange_rate_atoms(
@@ -556,18 +565,20 @@ def construct_payouts(
             pdf=merged_df,
             # provide token conversion functions (ETH <--> COW)
             converter=converter,
+            config=config,
         ),
         # Dune: Fetch Solver Slippage & Reward Targets
         slippage_df=slippage_df,
         reward_target_df=reward_target_df,
         service_fee_df=service_fee_df,
+        config=config,
     )
     # Sort by solver before breaking this data frame into Transfer objects.
     complete_payout_df = complete_payout_df.sort_values("solver")
 
     # compute partner fees
     partner_fees_wei, total_partner_fee_wei_untaxed = construct_partner_fee_payments(
-        partner_fees_df
+        partner_fees_df, config
     )
     raw_protocol_fee_wei = int(complete_payout_df.protocol_fee_eth.sum())
     final_protocol_fee_wei = raw_protocol_fee_wei - total_partner_fee_wei_untaxed
@@ -582,7 +593,7 @@ def construct_payouts(
         for _, payment in complete_payout_df.iterrows()
     )
 
-    dune.log_saver.print(
+    log_saver.print(
         "Payment breakdown (ignoring service fees):\n"
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
         f"Quote Reward: {quote_reward / 10 ** 18:.4f}\n"
@@ -598,7 +609,8 @@ def construct_payouts(
         final_protocol_fee_wei,
         partner_fee_tax_wei,
         partner_fees_wei,
+        config,
     )
     for overdraft in payouts.overdrafts:
-        dune.log_saver.print(str(overdraft), Category.OVERDRAFT)
+        log_saver.print(str(overdraft), Category.OVERDRAFT)
     return payouts.transfers

@@ -13,13 +13,10 @@ from web3 import Web3
 # TODO - following this issue: https://github.com/ethereum/web3.py/issues/3017
 from web3.contract import Contract  # type: ignore
 
-from src.constants import PROJECT_ROOT
+from src.config import IOConfig
 from src.logger import set_log
 
-ABI_PATH = PROJECT_ROOT / Path("src/abis")
-
-WETH9_ADDRESS = Web3().to_checksum_address("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2")
-
+ABI_PATH = IOConfig.from_env().project_root_dir / Path("src/abis")
 
 log = set_log(__name__)
 
@@ -63,9 +60,11 @@ class IndexedContract(Enum):
 # don't have to import a bunch of stuff to get the contract then want
 
 
-def weth9(web3: Optional[Web3] = None) -> Contract | Type[Contract]:
+def weth9(
+    web3: Optional[Web3] = None, address: ChecksumAddress | None = None
+) -> Contract | Type[Contract]:
     """Returns an instance of WETH9 Contract"""
-    return IndexedContract.WETH9.get_contract(web3, WETH9_ADDRESS)
+    return IndexedContract.WETH9.get_contract(web3, address)
 
 
 def erc20(

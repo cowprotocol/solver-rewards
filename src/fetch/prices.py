@@ -4,7 +4,6 @@ Currently, only price feed is CoinPaprika's Free tier API.
 """
 
 import functools
-import logging.config
 from datetime import datetime
 from enum import Enum
 from fractions import Fraction
@@ -12,12 +11,9 @@ from fractions import Fraction
 from coinpaprika import client as cp
 from dune_client.types import Address
 
-from src.constants import LOG_CONFIG_FILE
+from src.logger import set_log
 
-log = logging.getLogger(__name__)
-logging.config.fileConfig(
-    fname=LOG_CONFIG_FILE.absolute(), disable_existing_loggers=False
-)
+log = set_log(__name__)
 
 client = cp.Client()
 
