@@ -61,7 +61,7 @@ class RewardConfig:
                     reward_token_address=Address(
                         "0x177127622c4a00f3d409b75571e12cb3c8973d3c"
                     ),
-                    batch_reward_cap_upper=20 * 10**18,
+                    batch_reward_cap_upper=30 * 10**18,
                     batch_reward_cap_lower=5 * 10**18,
                     quote_reward_cow=6 * 10**18,
                     quote_reward_cap_native=1 * 10**18,
