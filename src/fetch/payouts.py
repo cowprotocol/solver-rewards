@@ -283,15 +283,16 @@ def extend_payment_df(
 
     # Pandas has poor support for large integers, must cast the constant to float here,
     # otherwise the dtype would be inferred as int64 (which overflows).
-    pdf["quote_reward_cow"] = (
-        float(
-            min(
-                config.reward_config.quote_reward_cow,
-                converter.eth_to_token(config.reward_config.quote_reward_cap_native),
-            )
+
+    reward_per_quote = float(
+        min(
+            config.reward_config.quote_reward_cow,
+            converter.eth_to_token(config.reward_config.quote_reward_cap_native),
         )
-        * pdf["num_quotes"]
     )
+
+    log.info(f"A reward of {reward_per_quote / 10**18:.4f} COW per quote is used.")
+    pdf["quote_reward_cow"] = reward_per_quote * pdf["num_quotes"]
 
     for number_col in NUMERICAL_COLUMNS:
         pdf[number_col] = pandas.to_numeric(pdf[number_col])
@@ -535,11 +536,14 @@ def construct_payouts(
     reward_token = config.reward_config.reward_token_address
     native_token = Address(config.payment_config.weth_address)
     price_day = dune.period.end - timedelta(days=1)
+    exchange_rate_native_to_cow = exchange_rate_atoms(
+        native_token, reward_token, price_day
+    )
+    log.info(
+        f"An exchange rate of {exchange_rate_native_to_cow:.4f} COW/native token is used."
+    )
     converter = TokenConversion(
-        eth_to_token=lambda t: exchange_rate_atoms(
-            native_token, reward_token, price_day
-        )
-        * t,
+        eth_to_token=lambda t: exchange_rate_native_to_cow * t,
     )
 
     complete_payout_df = construct_payout_dataframe(
