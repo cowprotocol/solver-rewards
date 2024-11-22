@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 import math
 from dataclasses import dataclass
 from datetime import timedelta
@@ -17,7 +16,7 @@ from pandas import DataFrame, Series
 from src.config import AccountingConfig
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import exchange_rate_atoms
-from src.logger import log_saver
+from src.logger import log_saver, set_log
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
 from src.models.token import Token
@@ -25,6 +24,7 @@ from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 from src.utils.print_store import Category
 
+log = set_log(__name__)
 
 PAYMENT_COLUMNS = {
     "solver",
@@ -108,12 +108,12 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         solver = frame["solver"]
         reward_target = frame["reward_target"]
         if reward_target is None:
-            logging.warning(f"Solver {solver} without reward_target. Using solver")
+            log.warning(f"Solver {solver} without reward_target. Using solver")
             reward_target = solver
 
         buffer_accounting_target = frame["buffer_accounting_target"]
         if buffer_accounting_target is None:
-            logging.warning(
+            log.warning(
                 f"Solver {solver} without buffer_accounting_target. Using solver"
             )
             buffer_accounting_target = solver
@@ -206,7 +206,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                     )
                 )
             except AssertionError:
-                logging.warning(
+                log.warning(
                     f"Invalid ETH Transfer {self.solver} "
                     f"with amount={reimbursement_eth + total_eth_reward}"
                 )
@@ -226,7 +226,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                     )
                 )
             except AssertionError:
-                logging.warning(
+                log.warning(
                     f"Invalid COW Transfer {self.solver} "
                     f"with amount={reimbursement_cow + total_cow_reward}"
                 )
@@ -242,7 +242,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 )
             )
         except AssertionError:
-            logging.warning(
+            log.warning(
                 f"Invalid ETH Transfer {self.solver} with amount={reimbursement_eth}"
             )
         try:
@@ -254,7 +254,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 )
             )
         except AssertionError:
-            logging.warning(
+            log.warning(
                 f"Invalid COW Transfer {self.solver} with amount={total_cow_reward}"
             )
 
