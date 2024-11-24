@@ -1,8 +1,8 @@
 import os
 from setuptools import setup, find_packages
 
-subpackages = find_packages("src")
-packages = ["src"] + ["src." + p for p in subpackages]
+subpackages = find_packages("solver_rewards")
+packages = ["solver_rewards"] + ["solver_rewards." + p for p in subpackages]
 
 
 def read_requirements(filename):
@@ -15,20 +15,19 @@ def get_sql_files(directory):
     for root, _, files in os.walk(directory):
         for file in files:
             if file.endswith(".sql"):
-                # Add 'src/' prefix to the path
                 sql_files.append(
                     os.path.join(
-                        "src", os.path.relpath(os.path.join(root, file), start="src")
+                        "solver_rewards", os.path.relpath(os.path.join(root, file), start="solver_rewards")
                     )
                 )
     return sql_files
 
 
 setup(
-    name="solver-rewards",
+    name="solver_rewards",
     version="1.6.4",
     packages=packages,
-    package_dir={"": "src"},
+    package_dir={"solver_rewards": "solver_rewards"},
     include_package_data=True,
     data_files=[
         (
@@ -45,8 +44,8 @@ setup(
                 "solver_rewards",
                 "sql",
             ),
-            get_sql_files("queries"),
+            get_sql_files("solver_rewards/sql"),
         ),
     ],
-    install_requires=read_requirements("requirements/prod.txt"),
+    install_requires=read_requirements("requirements.txt"),
 )
