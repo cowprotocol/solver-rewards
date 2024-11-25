@@ -12,8 +12,8 @@ from gnosis.safe.api import TransactionServiceApi
 from gnosis.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
 from gnosis.safe.safe import Safe
 
-from src.config import web3, IOConfig
-from src.abis.load import weth9
+from solver_rewards.config import web3, IOConfig
+from solver_rewards.abis.load import weth9
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(

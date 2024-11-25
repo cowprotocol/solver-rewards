@@ -10,17 +10,17 @@ def read_requirements(filename):
         return [line.strip() for line in f.readlines() if line.strip()]
 
 
-def get_sql_files(directory):
-    sql_files = []
+def get_files(directory: str, extension: str):
+    found_files = []
     for root, _, files in os.walk(directory):
         for file in files:
-            if file.endswith(".sql"):
-                sql_files.append(
+            if file.endswith(extension):
+                found_files.append(
                     os.path.join(
                         "solver_rewards", os.path.relpath(os.path.join(root, file), start="solver_rewards")
                     )
                 )
-    return sql_files
+    return found_files
 
 
 setup(
@@ -44,7 +44,17 @@ setup(
                 "solver_rewards",
                 "sql",
             ),
-            get_sql_files("solver_rewards/sql"),
+            get_files("solver_rewards/sql", ".sql"),
+        ),
+        (
+            os.path.join(
+                "lib",
+                "python{0}.{1}".format(*os.sys.version_info[:2]),
+                "site-packages",
+                "solver_rewards",
+                "abis",
+            ),
+            get_files("solver_rewards/abis", ".json"),
         ),
     ],
     install_requires=read_requirements("requirements.txt"),

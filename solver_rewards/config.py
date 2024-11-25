@@ -267,7 +267,7 @@ class IOConfig:
         if local_query_dir.exists():
             return local_query_dir
         else:
-            return Path(os.getenv("PYTHON_PACKAGE_DIR", "src/queries"))
+            return Path(os.getenv("PYTHON_PACKAGE_DIR", "solver_rewards/queries"))
 
 
 @dataclass(frozen=True)

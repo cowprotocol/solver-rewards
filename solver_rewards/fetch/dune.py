@@ -6,10 +6,10 @@ from dune_client.client import DuneClient
 from dune_client.query import QueryBase
 from dune_client.types import QueryParameter, DuneRecord
 
-from src.logger import set_log
-from src.models.accounting_period import AccountingPeriod
-from src.queries import QUERIES, QueryData
-from src.utils.print_store import PrintStore, Category
+from solver_rewards.logger import set_log
+from solver_rewards.models.accounting_period import AccountingPeriod
+from solver_rewards.queries import QUERIES, QueryData
+from solver_rewards.utils.print_store import PrintStore, Category
 
 log = set_log(__name__)
 

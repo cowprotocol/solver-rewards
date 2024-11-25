@@ -8,8 +8,8 @@ from pandas import DataFrame, Series
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
-from src.logger import set_log
-from src.utils.query_file import open_query
+from solver_rewards.logger import set_log
+from solver_rewards.utils.query_file import open_query
 
 log = set_log(__name__)
 

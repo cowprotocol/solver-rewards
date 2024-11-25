@@ -9,8 +9,8 @@ from typing import Optional
 
 from dune_client.types import Address
 
-from src.config import web3
-from src.utils.token_details import get_token_decimals
+from solver_rewards.config import web3
+from solver_rewards.utils.token_details import get_token_decimals
 
 
 class TokenType(Enum):

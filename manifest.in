@@ -1,3 +1,4 @@
 include logging.conf
-include requirements/prod.txt
-include src/sql/**/*.sql
+include requirements.txt
+include solver_rewards/sql/**/*.sql
+include solver_rewards/abis/**/*.json

@@ -8,8 +8,8 @@ import logging.config
 from dune_client.types import Address
 from web3 import Web3
 
-from src.abis.load import erc20
-from src.config import IOConfig
+from solver_rewards.abis.load import erc20
+from solver_rewards.config import IOConfig
 
 log = logging.getLogger(__name__)
 

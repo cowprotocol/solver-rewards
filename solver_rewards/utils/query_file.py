@@ -6,7 +6,7 @@ These utilities eliminate the need to use relative paths.
 
 import os
 
-from src.config import IOConfig
+from solver_rewards.config import IOConfig
 
 io_config = IOConfig.from_env()
 

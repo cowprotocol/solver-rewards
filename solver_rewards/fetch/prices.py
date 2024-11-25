@@ -12,7 +12,7 @@ from fractions import Fraction
 from coinpaprika import client as cp
 from dune_client.types import Address
 
-from src.config import IOConfig
+from solver_rewards.config import IOConfig
 
 log = logging.getLogger(__name__)
 logging.config.fileConfig(

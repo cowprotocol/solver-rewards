@@ -3,7 +3,7 @@
 import logging.config
 from logging import Logger
 
-from src.config import IOConfig
+from solver_rewards.config import IOConfig
 
 io_config = IOConfig.from_env()
 
