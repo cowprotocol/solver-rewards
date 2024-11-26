@@ -18,7 +18,7 @@ from slack.web.client import WebClient
 from src.config import AccountingConfig, Network
 from src.fetch.dune import DuneFetcher
 from src.fetch.payouts import construct_payouts
-from src.logger import log_saver
+from src.logger import log_saver, set_log
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
@@ -26,6 +26,8 @@ from src.pg_client import MultiInstanceDBFetcher
 from src.slack_utils import post_to_slack
 from src.utils.print_store import Category, PrintStore
 from src.utils.script_args import generic_script_init
+
+log = set_log(__name__)
 
 
 def manual_propose(
@@ -115,16 +117,23 @@ def main() -> None:
 
     config = AccountingConfig.from_network(Network(os.environ["NETWORK"]))
 
+    accounting_period = AccountingPeriod(args.start, length_days=1)
+
     orderbook = MultiInstanceDBFetcher(
         [config.orderbook_config.prod_db_url, config.orderbook_config.barn_db_url]
     )
     dune = DuneFetcher(
         dune=DuneClient(config.dune_config.dune_api_key),
-        period=AccountingPeriod(args.start),
+        period=accounting_period,
+    )
+
+    log.info(
+        f"Blockrange for accounting period {accounting_period} is from {dune.start_block} to "
+        f"{dune.end_block}."
     )
 
     log_saver.print(
-        f"The data aggregated can be visualized at\n{dune.period.dashboard_url()}",
+        f"The data aggregated can be visualized at\n{accounting_period.dashboard_url()}",
         category=Category.GENERAL,
     )
 
