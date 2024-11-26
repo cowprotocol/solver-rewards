@@ -44,12 +44,6 @@ class AccountingPeriod:
         query = f"?start_time={self.start}&end_time={self.end}"
         return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
-    def protocol_fee_url(self) -> str:
-        """Constructs protocol and partner fee dashboard URL for period"""
-        base = "https://dune.com/queries/3410462"
-        query = f"?start_time={self.start}&end_time={self.end}"
-        return base + urllib.parse.quote_plus(query, safe="=&?")
-
     def unusual_slippage_url(self) -> str:
         """Returns a link to unusual slippage query for period"""
         base = "https://dune.com/queries/2332678"

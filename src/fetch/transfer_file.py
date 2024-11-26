@@ -136,10 +136,6 @@ def main() -> None:
         f"The data aggregated can be visualized at\n{accounting_period.dashboard_url()}",
         category=Category.GENERAL,
     )
-    log_saver.print(
-        f"Protocol data is visualized at \n{accounting_period.protocol_fee_url()}",
-        category=Category.GENERAL,
-    )
 
     payout_transfers_temp = construct_payouts(
         orderbook=orderbook,
