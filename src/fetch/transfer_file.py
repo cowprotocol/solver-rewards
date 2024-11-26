@@ -124,6 +124,7 @@ def main() -> None:
     )
     dune = DuneFetcher(
         dune=DuneClient(config.dune_config.dune_api_key),
+        blockchain=config.dune_config.dune_blockchain,
         period=accounting_period,
     )
 
