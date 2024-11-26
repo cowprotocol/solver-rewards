@@ -107,12 +107,12 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         )
         solver = frame["solver"]
         reward_target = frame["reward_target"]
-        if reward_target is None:
+        if pandas.isna(reward_target):
             log.warning(f"Solver {solver} without reward_target. Using solver")
             reward_target = solver
 
         buffer_accounting_target = frame["buffer_accounting_target"]
-        if buffer_accounting_target is None:
+        if pandas.isna(buffer_accounting_target):
             log.warning(
                 f"Solver {solver} without buffer_accounting_target. Using solver"
             )
