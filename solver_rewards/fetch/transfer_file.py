@@ -15,17 +15,17 @@ from eth_typing import URI
 from gnosis.eth.ethereum_client import EthereumClient
 from slack.web.client import WebClient
 
-from src.config import AccountingConfig, Network
-from src.fetch.dune import DuneFetcher
-from src.fetch.payouts import construct_payouts
-from src.logger import log_saver, set_log
-from src.models.accounting_period import AccountingPeriod
-from src.models.transfer import Transfer, CSVTransfer
-from src.multisend import post_multisend, prepend_unwrap_if_necessary
-from src.pg_client import MultiInstanceDBFetcher
-from src.slack_utils import post_to_slack
-from src.utils.print_store import Category, PrintStore
-from src.utils.script_args import generic_script_init
+from solver_rewards.config import AccountingConfig, Network
+from solver_rewards.fetch.dune import DuneFetcher
+from solver_rewards.fetch.payouts import construct_payouts
+from solver_rewards.logger import log_saver, set_log
+from solver_rewards.models.accounting_period import AccountingPeriod
+from solver_rewards.models.transfer import Transfer, CSVTransfer
+from solver_rewards.multisend import post_multisend, prepend_unwrap_if_necessary
+from solver_rewards.pg_client import MultiInstanceDBFetcher
+from solver_rewards.slack_utils import post_to_slack
+from solver_rewards.utils.print_store import Category, PrintStore
+from solver_rewards.utils.script_args import generic_script_init
 
 log = set_log(__name__)
 
@@ -34,7 +34,7 @@ def manual_propose(
     transfers: list[Transfer],
     period: AccountingPeriod,
     config: AccountingConfig,
-) -> None:
+) -> str:
     """
     Entry point to manual creation of rewards payout transaction.
     This function generates the CSV transfer file to be pasted into the COW Safe app
@@ -48,8 +48,10 @@ def manual_propose(
         csv_transfers, f"transfers-{period}.csv"
     )
 
-    print(Transfer.summarize(transfers))
+    summary = Transfer.summarize(transfers)
+    print(summary)
     print("Please cross check these results with the dashboard linked above.\n")
+    return summary
 
 
 def auto_propose(
@@ -110,7 +112,7 @@ def auto_propose(
         )
 
 
-def main() -> None:
+def main() -> None | str:
     """Generate transfers for an accounting period"""
 
     args = generic_script_init(description="Fetch Complete Reimbursement")
@@ -169,7 +171,8 @@ def main() -> None:
             config=config,
         )
     else:
-        manual_propose(transfers=payout_transfers, period=dune.period, config=config)
+        summary = manual_propose(transfers=payout_transfers, period=dune.period, config=config)
+        return summary
 
 
 if __name__ == "__main__":

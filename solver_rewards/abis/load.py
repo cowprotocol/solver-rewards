@@ -13,10 +13,10 @@ from web3 import Web3
 # TODO - following this issue: https://github.com/ethereum/web3.py/issues/3017
 from web3.contract import Contract  # type: ignore
 
-from src.config import IOConfig
-from src.logger import set_log
+from solver_rewards.config import IOConfig
+from solver_rewards.logger import set_log
 
-ABI_PATH = IOConfig.from_env().project_root_dir / Path("src/abis")
+ABI_PATH = IOConfig.from_env().project_root_dir / Path("solver_rewards/abis")
 
 log = set_log(__name__)
 

@@ -13,16 +13,16 @@ import pandas
 from dune_client.types import Address
 from pandas import DataFrame, Series
 
-from src.config import AccountingConfig
-from src.fetch.dune import DuneFetcher
-from src.fetch.prices import exchange_rate_atoms
-from src.logger import log_saver, set_log
-from src.models.accounting_period import AccountingPeriod
-from src.models.overdraft import Overdraft
-from src.models.token import Token
-from src.models.transfer import Transfer
-from src.pg_client import MultiInstanceDBFetcher
-from src.utils.print_store import Category
+from solver_rewards.config import AccountingConfig
+from solver_rewards.fetch.dune import DuneFetcher
+from solver_rewards.fetch.prices import exchange_rate_atoms
+from solver_rewards.logger import log_saver, set_log
+from solver_rewards.models.accounting_period import AccountingPeriod
+from solver_rewards.models.overdraft import Overdraft
+from solver_rewards.models.token import Token
+from solver_rewards.models.transfer import Transfer
+from solver_rewards.pg_client import MultiInstanceDBFetcher
+from solver_rewards.utils.print_store import Category
 
 log = set_log(__name__)
 

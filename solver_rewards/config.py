@@ -246,7 +246,7 @@ class IOConfig:
         project_root_dir = Path(__file__).parent.parent
         file_out_dir = project_root_dir / Path("out")
         log_config_file = project_root_dir / Path("logging.conf")
-        query_dir = project_root_dir / Path("queries")
+        query_dir = IOConfig._get_query_directory(project_root_dir)
         dashboard_dir = project_root_dir / Path("dashboards/solver-rewards-accounting")
 
         return IOConfig(
@@ -258,6 +258,16 @@ class IOConfig:
             slack_channel=slack_channel,
             slack_token=slack_token,
         )
+
+    @staticmethod
+    def _get_query_directory(project_root_dir: Path) -> Path:
+        """Determine the path to the queries directory"""
+        local_query_dir = project_root_dir / "queries"
+
+        if local_query_dir.exists():
+            return local_query_dir
+        else:
+            return Path(os.getenv("PYTHON_PACKAGE_DIR", "solver_rewards/queries"))
 
 
 @dataclass(frozen=True)

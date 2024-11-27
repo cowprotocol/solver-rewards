@@ -11,7 +11,7 @@ from fractions import Fraction
 from coinpaprika import client as cp
 from dune_client.types import Address
 
-from src.logger import set_log
+from solver_rewards.logger import set_log
 
 log = set_log(__name__)
 

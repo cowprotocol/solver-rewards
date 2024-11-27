@@ -4,8 +4,8 @@ import unittest
 from dotenv import load_dotenv
 from dune_client.client import DuneClient
 
-from src.fetch.dune import DuneFetcher
-from src.models.accounting_period import AccountingPeriod
+from solver_rewards.fetch.dune import DuneFetcher
+from solver_rewards.models.accounting_period import AccountingPeriod
 
 
 class TestGetBlockNumber(unittest.TestCase):

@@ -3,8 +3,8 @@ import unittest
 import pandas.testing
 from pandas import DataFrame
 
-from src.config import RewardConfig, Network
-from src.pg_client import MultiInstanceDBFetcher
+from solver_rewards.config import RewardConfig, Network
+from solver_rewards.pg_client import MultiInstanceDBFetcher
 
 
 class TestBatchRewards(unittest.TestCase):

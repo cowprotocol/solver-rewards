@@ -5,9 +5,9 @@ from eth_typing import URI
 from gnosis.eth import EthereumNetwork, EthereumClient
 
 from web3 import Web3
-from src.fetch.transfer_file import Transfer
-from src.models.token import Token
-from src.multisend import post_multisend
+from solver_rewards.fetch.transfer_file import Transfer
+from solver_rewards.models.token import Token
+from solver_rewards.multisend import post_multisend
 import pytest
 
 
