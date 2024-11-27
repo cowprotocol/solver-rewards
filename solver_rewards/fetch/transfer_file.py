@@ -34,7 +34,7 @@ def manual_propose(
     transfers: list[Transfer],
     period: AccountingPeriod,
     config: AccountingConfig,
-) -> None:
+) -> str:
     """
     Entry point to manual creation of rewards payout transaction.
     This function generates the CSV transfer file to be pasted into the COW Safe app
@@ -48,8 +48,10 @@ def manual_propose(
         csv_transfers, f"transfers-{period}.csv"
     )
 
-    print(Transfer.summarize(transfers))
+    summary = Transfer.summarize(transfers)
+    print(summary)
     print("Please cross check these results with the dashboard linked above.\n")
+    return summary
 
 
 def auto_propose(
@@ -110,7 +112,7 @@ def auto_propose(
         )
 
 
-def main() -> None:
+def main() -> None | str:
     """Generate transfers for an accounting period"""
 
     args = generic_script_init(description="Fetch Complete Reimbursement")
@@ -169,7 +171,8 @@ def main() -> None:
             config=config,
         )
     else:
-        manual_propose(transfers=payout_transfers, period=dune.period, config=config)
+        summary = manual_propose(transfers=payout_transfers, period=dune.period, config=config)
+        return summary
 
 
 if __name__ == "__main__":
