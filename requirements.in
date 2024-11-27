@@ -1,6 +1,6 @@
 certifi>=2022.6.15
 duneapi>=8.0.0
-dune-client>=1.7.4
+dune-client==1.7.4
 psycopg2-binary>=2.9.3
 python-dotenv>=0.20.0
 coinpaprika>=0.1.0

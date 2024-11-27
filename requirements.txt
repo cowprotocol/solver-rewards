@@ -57,7 +57,7 @@ deprecated==1.2.14
     #   duneapi
 dill==0.3.8
     # via pylint
-dune-client==1.7.5
+dune-client==1.7.4
     # via -r requirements.in
 duneapi==8.0.0
     # via -r requirements.in
