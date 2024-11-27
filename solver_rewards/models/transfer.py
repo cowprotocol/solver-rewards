@@ -12,8 +12,8 @@ from eth_typing.encoding import HexStr
 from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
 from web3 import Web3
 
-from src.abis.load import erc20
-from src.models.token import TokenType, Token
+from solver_rewards.abis.load import erc20
+from solver_rewards.models.token import TokenType, Token
 
 ERC20_CONTRACT = erc20()
 

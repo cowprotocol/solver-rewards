@@ -5,8 +5,8 @@ import pandas
 from dune_client.types import Address
 from pandas import DataFrame
 
-from src.config import AccountingConfig, Network
-from src.fetch.payouts import (
+from solver_rewards.config import AccountingConfig, Network
+from solver_rewards.fetch.payouts import (
     extend_payment_df,
     normalize_address_field,
     validate_df_columns,
@@ -15,14 +15,14 @@ from src.fetch.payouts import (
     prepare_transfers,
     RewardAndPenaltyDatum,
 )
-from src.models.accounting_period import AccountingPeriod
-from src.models.overdraft import Overdraft
-from src.models.token import Token
-from src.models.transfer import Transfer
+from solver_rewards.models.accounting_period import AccountingPeriod
+from solver_rewards.models.overdraft import Overdraft
+from solver_rewards.models.token import Token
+from solver_rewards.models.transfer import Transfer
 
 
 class TestPayoutTransformations(unittest.TestCase):
-    """Contains tests all stray methods in src/fetch/payouts.py"""
+    """Contains tests all stray methods in solver_rewards/fetch/payouts.py"""
 
     def setUp(self) -> None:
         self.config = AccountingConfig.from_network(Network.MAINNET)

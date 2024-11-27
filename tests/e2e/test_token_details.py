@@ -3,7 +3,7 @@ import unittest
 from dune_client.types import Address
 from web3 import Web3
 
-from src.utils.token_details import get_token_decimals
+from solver_rewards.utils.token_details import get_token_decimals
 
 W3 = Web3(Web3.HTTPProvider("https://rpc.ankr.com/eth_sepolia"))
 
@@ -16,10 +16,10 @@ class TestTokenDecimals(unittest.TestCase):
 
     def test_token_decimals_cache(self):
         new_token = "0x0625afb445c3b6b7b929342a04a22599fd5dbb59"
-        with self.assertLogs("src.utils.token_details", level="INFO"):
+        with self.assertLogs("solver_rewards.utils.token_details", level="INFO"):
             get_token_decimals(W3, new_token)
 
-        with self.assertNoLogs("src.utils.token_details", level="INFO"):
+        with self.assertNoLogs("solver_rewards.utils.token_details", level="INFO"):
             get_token_decimals(W3, new_token)
 
 

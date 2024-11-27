@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from dune_client.types import Address
 
-from src.models.accounting_period import AccountingPeriod
+from solver_rewards.models.accounting_period import AccountingPeriod
 
 
 @dataclass

@@ -3,8 +3,8 @@
 import logging.config
 from logging import Logger
 
-from src.config import IOConfig
-from src.utils.print_store import PrintStore
+from solver_rewards.config import IOConfig
+from solver_rewards.utils.print_store import PrintStore
 
 io_config = IOConfig.from_env()
 

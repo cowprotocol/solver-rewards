@@ -7,8 +7,8 @@ import functools
 from dune_client.types import Address
 from web3 import Web3
 
-from src.abis.load import erc20
-from src.logger import set_log
+from solver_rewards.abis.load import erc20
+from solver_rewards.logger import set_log
 
 log = set_log(__name__)
 

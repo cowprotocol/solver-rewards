@@ -14,7 +14,7 @@ Fill out your Dune credentials in the `.env` file.
 Generate the solver-payouts with for the accounting period 7 days with today as end date).
 
 ```shell
-python -m src.fetch.transfer_file
+python -m solver_rewards.fetch.transfer_file
 ```
 
 For more advanced usage of this payout script see below.
@@ -72,7 +72,7 @@ However, many IDEs can be configured to auto format on save.
 looking at the script help menu can help provide a list of options!
 
 ```shell
-$  python -m src.fetch.transfer_file --help 
+$  python -m solver_rewards.fetch.transfer_file --help 
 
 usage: Fetch Complete Reimbursement [-h] [--start START] [--post-tx POST_TX] [--consolidate-transfers CONSOLIDATE_TRANSFERS] [--dry-run DRY_RUN]
                                     [--min-transfer-amount-wei MIN_TRANSFER_AMOUNT_WEI] [--min-transfer-amount-cow-atoms MIN_TRANSFER_AMOUNT_COW_ATOMS] 
@@ -102,7 +102,7 @@ To generate the CSV Transfer file manually run the "quickstart" variant of the s
 A more fine-tuned variant of the script execution could look like this:
 
 ```shell
-python -m src.fetch.transfer_file --start 2023-03-14 --post-tx True
+python -m solver_rewards.fetch.transfer_file --start 2023-03-14 --post-tx True
 ```
 
 which would run for the accounting period March 14 - 21, 2023, using the Post CIP-20 reward scheme and post the payout
@@ -144,7 +144,7 @@ docker run --pull=always -it --rm \
   --env-file .env \
   -v $PWD:/app/out \
   ghcr.io/cowprotocol/solver-rewards:main \
-  src.fetch.transfer_file \
+  solver_rewards.fetch.transfer_file \
   --start 'YYYY-MM-DD'
 ```
 

@@ -5,11 +5,11 @@ from eth_typing import URI
 from gnosis.eth import EthereumClient
 from web3 import Web3
 
-from src.abis.load import weth9
-from src.config import Network, PaymentConfig
-from src.fetch.transfer_file import Transfer
-from src.models.token import Token
-from src.multisend import build_encoded_multisend, prepend_unwrap_if_necessary
+from solver_rewards.abis.load import weth9
+from solver_rewards.config import Network, PaymentConfig
+from solver_rewards.fetch.transfer_file import Transfer
+from solver_rewards.models.token import Token
+from solver_rewards.multisend import build_encoded_multisend, prepend_unwrap_if_necessary
 
 
 class TestMultiSend(unittest.TestCase):

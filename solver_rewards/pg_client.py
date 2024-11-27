@@ -8,8 +8,8 @@ from pandas import DataFrame, Series
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
-from src.logger import set_log
-from src.utils.query_file import open_query
+from solver_rewards.logger import set_log
+from solver_rewards.utils.query_file import open_query
 
 log = set_log(__name__)
 
@@ -41,14 +41,14 @@ class MultiInstanceDBFetcher:
         Returns aggregated solver rewards for accounting period defined by block range
         """
         batch_reward_query_prod = (
-            open_query("orderbook/prod_batch_rewards.sql")
+            open_query("prod_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
             .replace("{{EPSILON_LOWER}}", str(reward_cap_lower))
             .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
         )
         batch_reward_query_barn = (
-            open_query("orderbook/barn_batch_rewards.sql")
+            open_query("barn_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
             .replace("{{EPSILON_LOWER}}", str(reward_cap_lower))
@@ -92,7 +92,7 @@ class MultiInstanceDBFetcher:
     def get_quote_rewards(self, start_block: str, end_block: str) -> DataFrame:
         """Returns aggregated solver quote rewards for block range"""
         quote_reward_query = (
-            open_query("orderbook/quote_rewards.sql")
+            open_query("quote_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
         )

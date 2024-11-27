@@ -1,4 +1,4 @@
-from src.models.transfer import Transfer
+from solver_rewards.models.transfer import Transfer
 
 
 def redirected_transfer(token, recipient, amount_wei, redirect) -> Transfer:

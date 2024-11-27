@@ -3,8 +3,8 @@ from datetime import datetime
 
 from dune_client.types import Address
 
-from src.config import AccountingConfig, Network
-from src.fetch.prices import (
+from solver_rewards.config import AccountingConfig, Network
+from solver_rewards.fetch.prices import (
     TokenId,
     exchange_rate_atoms,
     usd_price,
@@ -62,15 +62,15 @@ class TestPrices(unittest.TestCase):
         # First call logs
         day = datetime.strptime("2024-08-01", "%Y-%m-%d")  # A date we used yet!
         token = TokenId.USDC
-        with self.assertLogs("src.fetch.prices", level="INFO") as cm:
+        with self.assertLogs("solver_rewards.fetch.prices", level="INFO") as cm:
             usd_price(token, day)
         expected_msg = f"requesting price for token={token.value}, day={day.date()}"
         self.assertEqual(
             cm.output,
-            [f"INFO:src.fetch.prices:{expected_msg}"],
+            [f"INFO:solver_rewards.fetch.prices:{expected_msg}"],
         )
         # Second call does not log.
-        with self.assertNoLogs("src.utils.prices", level="INFO"):
+        with self.assertNoLogs("solver_rewards.utils.prices", level="INFO"):
             usd_price(token, day)
 
 

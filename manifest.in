@@ -1,0 +1,4 @@
+include logging.conf
+include requirements.txt
+include solver_rewards/sql/**/*.sql
+include solver_rewards/abis/**/*.json

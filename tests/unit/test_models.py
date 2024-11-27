@@ -6,11 +6,11 @@ from eth_typing import HexStr
 from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
 from web3 import Web3
 
-from src.abis.load import erc20
-from src.config import PaymentConfig, Network
-from src.fetch.transfer_file import Transfer
-from src.models.accounting_period import AccountingPeriod
-from src.models.token import Token
+from solver_rewards.abis.load import erc20
+from solver_rewards.config import PaymentConfig, Network
+from solver_rewards.fetch.transfer_file import Transfer
+from solver_rewards.models.accounting_period import AccountingPeriod
+from solver_rewards.models.token import Token
 
 from tests.unit.util_methods import redirected_transfer
 

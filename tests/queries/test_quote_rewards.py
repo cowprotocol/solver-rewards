@@ -3,7 +3,7 @@ import unittest
 import pandas.testing
 from pandas import DataFrame
 
-from src.pg_client import MultiInstanceDBFetcher
+from solver_rewards.pg_client import MultiInstanceDBFetcher
 
 
 class TestQuoteRewards(unittest.TestCase):
