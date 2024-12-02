@@ -36,7 +36,7 @@ QUERIES = {
     ),
     "VOUCH_REGISTRY": QueryData(
         name="Vouch Registry",
-        q_id=1541516,
+        q_id=4339624,
     ),
     "SERVICE_FEE_STATUS": QueryData(
         name="CIP-48 Service fee status",

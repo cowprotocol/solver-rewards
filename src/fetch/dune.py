@@ -97,6 +97,7 @@ class DuneFetcher:
                 params=[
                     QueryParameter.date_type("end_time", self.period.end),
                     QueryParameter.enum_type("vouch_cte_name", "named_results"),
+                    QueryParameter.text_type("blockchain", self.blockchain),
                 ],
             )
         )
