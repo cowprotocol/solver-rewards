@@ -117,7 +117,7 @@ def main() -> None:
 
     config = AccountingConfig.from_network(Network(os.environ["NETWORK"]))
 
-    accounting_period = AccountingPeriod(args.start, length_days=1)
+    accounting_period = AccountingPeriod(args.start, length_days=7)
 
     orderbook = MultiInstanceDBFetcher(
         [config.orderbook_config.prod_db_url, config.orderbook_config.barn_db_url]
