@@ -516,7 +516,13 @@ def construct_payouts(
         for service_fee_flag in service_fee_df["service_fee"]
     ]
 
-    reward_target_df = pandas.DataFrame(dune.get_vouches())
+    vouches = dune.get_vouches()
+    if vouches:
+        reward_target_df = pandas.DataFrame(dune.get_vouches())
+    else:
+        reward_target_df = DataFrame(
+            columns=["solver", "solver_name", "reward_target", "pool_address"]
+        )
     # construct slippage df
     if ignore_slippage_flag or (not config.buffer_accounting_config.include_slippage):
         slippage_df_temp = pandas.merge(
