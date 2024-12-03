@@ -541,12 +541,13 @@ def construct_payouts(
 
     reward_token = config.reward_config.reward_token_address
     native_token = Address(config.payment_config.wrapped_native_token_address)
+    wrapped_eth = config.payment_config.wrapped_eth_address
     price_day = dune.period.end - timedelta(days=1)
     exchange_rate_native_to_cow = exchange_rate_atoms(
         native_token, reward_token, price_day
     )
-    log.info(
-        f"An exchange rate of {exchange_rate_native_to_cow:.4f} COW/native token is used."
+    exchange_rate_native_to_eth = exchange_rate_atoms(
+        native_token, wrapped_eth, price_day
     )
     converter = TokenConversion(
         eth_to_token=lambda t: exchange_rate_native_to_cow * t,
@@ -593,7 +594,9 @@ def construct_payouts(
         f"Protocol Fees: {final_protocol_fee_wei / 10 ** 18:.4f}\n"
         f"Partner Fees Tax: {partner_fee_tax_wei / 10 ** 18:.4f}\n"
         f"Partner Fees: {total_partner_fee_wei_taxed / 10 ** 18:.4f}\n"
-        f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n",
+        f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n\n"
+        f"Exchange rate from native token to COW: {exchange_rate_native_to_cow:.4f} COW/native token\n"
+        f"Exchange rate from native token to ETH: {exchange_rate_native_to_eth:.4f} ETH/native token\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(

@@ -138,7 +138,9 @@ class BufferAccountingConfig:
                     f"No buffer accounting config set up for network {network}."
                 )
 
-        return BufferAccountingConfig(include_slippage=include_slippage)
+        return BufferAccountingConfig(
+            include_slippage=include_slippage,
+        )
 
 
 @dataclass(frozen=True)
@@ -226,6 +228,7 @@ class PaymentConfig:
     safe_queue_url: str
     verification_docs_url: str
     wrapped_native_token_address: ChecksumAddress
+    wrapped_eth_address: Address
 
     @staticmethod
     def from_network(network: Network) -> PaymentConfig:
@@ -253,6 +256,9 @@ class PaymentConfig:
                 wrapped_native_token_address = Web3.to_checksum_address(
                     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
                 )
+                wrapped_eth_address = Address(
+                    "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+                )
 
             case Network.GNOSIS:
                 payment_network = EthereumNetwork.GNOSIS
@@ -267,6 +273,9 @@ class PaymentConfig:
                 wrapped_native_token_address = Web3.to_checksum_address(
                     "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d"
                 )
+                wrapped_eth_address = Address(
+                    "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1"
+                )
             case Network.ARBITRUM_ONE:
                 payment_network = EthereumNetwork.GNOSIS
                 payment_safe_address = Web3.to_checksum_address(
@@ -278,6 +287,9 @@ class PaymentConfig:
                     "0xcb8b5cd20bdcaea9a010ac1f8d835824f5c87a04"
                 )
                 wrapped_native_token_address = Web3.to_checksum_address(
+                    "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
+                )
+                wrapped_eth_address = Address(
                     "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
                 )
             case _:
@@ -294,6 +306,7 @@ class PaymentConfig:
             safe_queue_url=safe_queue_url,
             verification_docs_url=docs_url,
             wrapped_native_token_address=wrapped_native_token_address,
+            wrapped_eth_address=wrapped_eth_address,
         )
 
 

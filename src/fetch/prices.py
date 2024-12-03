@@ -42,12 +42,13 @@ class TokenId(Enum):
 
 TOKEN_ADDRESS_TO_ID = {
     # mainnet tokens
-    Address("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"): TokenId.ETH,
     Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
+    Address("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"): TokenId.ETH,
     Address("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"): TokenId.USDC,
     # gnosis tokens
-    Address("0xe91d153e0b41518a2ce8dd3d7944fa863463a97d"): TokenId.XDAI,
     Address("0x177127622c4a00f3d409b75571e12cb3c8973d3c"): TokenId.COW,
+    Address("0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1"): TokenId.ETH,
+    Address("0xe91d153e0b41518a2ce8dd3d7944fa863463a97d"): TokenId.XDAI,
     # arbitrum tokens
     Address("0xcb8b5cd20bdcaea9a010ac1f8d835824f5c87a04"): TokenId.COW,
     Address("0x82af49447d8a07e3bd95bd0d56f35241523fbab1"): TokenId.ETH,
