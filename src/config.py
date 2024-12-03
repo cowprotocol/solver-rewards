@@ -244,7 +244,7 @@ class PaymentConfig:
                 payment_network = EthereumNetwork.MAINNET
                 payment_safe_address = Web3.to_checksum_address(
                     os.environ.get(
-                        "SAFE_ADDRESS_MAINNET",
+                        "PAYOUTS_SAFE_ADDRESS_MAINNET",
                         "0xA03be496e67Ec29bC62F01a428683D7F9c204930",
                     )
                 )
@@ -263,7 +263,7 @@ class PaymentConfig:
             case Network.GNOSIS:
                 payment_network = EthereumNetwork.GNOSIS
                 payment_safe_address = Web3.to_checksum_address(
-                    os.environ.get("SAFE_ADDRESS_GNOSIS", "")
+                    os.environ.get("PAYOUTS_SAFE_ADDRESS_GNOSIS", "")
                 )
                 short_name = "gno"
 
@@ -279,7 +279,7 @@ class PaymentConfig:
             case Network.ARBITRUM_ONE:
                 payment_network = EthereumNetwork.GNOSIS
                 payment_safe_address = Web3.to_checksum_address(
-                    os.environ.get("SAFE_ADDRESS_ARBITRUM", "")
+                    os.environ.get("PAYOUTS_SAFE_ADDRESS_ARBITRUM", "")
                 )
                 short_name = "arb1"
 
