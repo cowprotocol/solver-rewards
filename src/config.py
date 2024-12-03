@@ -104,19 +104,28 @@ class ProtocolFeeConfig:
     def from_network(network: Network) -> ProtocolFeeConfig:
         """Initialize protocol fee config for a given network."""
         match network:
-            case Network.MAINNET | Network.GNOSIS | Network.ARBITRUM_ONE:
-                return ProtocolFeeConfig(
-                    protocol_fee_safe=Address(
-                        "0xB64963f95215FDe6510657e719bd832BB8bb941B"
-                    ),
-                    partner_fee_cut=0.15,
-                    partner_fee_reduced_cut=0.10,
-                    reduced_cut_address="0x63695Eee2c3141BDE314C5a6f89B98E62808d716",
+            case Network.MAINNET:
+                protocol_fee_safe = Address(
+                    "0xB64963f95215FDe6510657e719bd832BB8bb941B"
+                )
+            case Network.GNOSIS:
+                protocol_fee_safe = Address(
+                    "0x6b3214fD11dc91De14718DeE98Ef59bCbFcfB432"
+                )
+            case Network.ARBITRUM_ONE:
+                protocol_fee_safe = Address(
+                    "0x451100Ffc88884bde4ce87adC8bB6c7Df7fACccd"
                 )
             case _:
                 raise ValueError(
                     f"No protocol fee config set up for network {network}."
                 )
+        return ProtocolFeeConfig(
+            protocol_fee_safe=protocol_fee_safe,
+            partner_fee_cut=0.15,
+            partner_fee_reduced_cut=0.10,
+            reduced_cut_address="0x63695Eee2c3141BDE314C5a6f89B98E62808d716",
+        )
 
 
 @dataclass(frozen=True)
