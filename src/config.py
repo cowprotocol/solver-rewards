@@ -160,20 +160,10 @@ class OrderbookConfig:
     barn_db_url: str
 
     @staticmethod
-    def from_network(network: Network) -> OrderbookConfig:
+    def from_env() -> OrderbookConfig:
         """Initialize orderbook config from environment variables."""
-        match network:
-            case Network.MAINNET:
-                prod_db_url = os.environ.get("PROD_DB_URL_MAINNET", "")
-                barn_db_url = os.environ.get("BARN_DB_URL_MAINNET", "")
-            case Network.GNOSIS:
-                prod_db_url = os.environ.get("PROD_DB_URL_GNOSIS", "")
-                barn_db_url = os.environ.get("BARN_DB_URL_GNOSIS", "")
-            case Network.ARBITRUM_ONE:
-                prod_db_url = os.environ.get("PROD_DB_URL_ARBITRUM", "")
-                barn_db_url = os.environ.get("BARN_DB_URL_ARBITRUM", "")
-            case _:
-                raise ValueError(f"No orderbook config set up for network {network}.")
+        prod_db_url = os.environ.get("PROD_DB_URL", "")
+        barn_db_url = os.environ.get("BARN_DB_URL", "")
 
         return OrderbookConfig(prod_db_url=prod_db_url, barn_db_url=barn_db_url)
 
@@ -209,18 +199,9 @@ class NodeConfig:
     node_url: str
 
     @staticmethod
-    def from_network(network: Network) -> NodeConfig:
-        """Initialize node config for a given network."""
-        match network:
-            case Network.MAINNET:
-                node_url = os.environ.get("NODE_URL_MAINNET", "")
-            case Network.GNOSIS:
-                node_url = os.environ.get("NODE_URL_GNOSIS", "")
-            case Network.ARBITRUM_ONE:
-                node_url = os.environ.get("NODE_URL_ARBITRUM", "")
-            case _:
-                raise ValueError(f"No node config set up for network {network}.")
-
+    def from_env() -> NodeConfig:
+        """Initialize node config from environment variables."""
+        node_url = os.environ.get("NODE_URL", "")
         return NodeConfig(node_url=node_url)
 
 
@@ -248,15 +229,16 @@ class PaymentConfig:
 
         docs_url = "https://www.notion.so/cownation/Solver-Payouts-3dfee64eb3d449ed8157a652cc817a8c"
 
+        payment_safe_address = Web3.to_checksum_address(
+            os.environ.get(
+                "PAYOUTS_SAFE_ADDRESS",
+                "",
+            )
+        )
+
         match network:
             case Network.MAINNET:
                 payment_network = EthereumNetwork.MAINNET
-                payment_safe_address = Web3.to_checksum_address(
-                    os.environ.get(
-                        "PAYOUTS_SAFE_ADDRESS_MAINNET",
-                        "0xA03be496e67Ec29bC62F01a428683D7F9c204930",
-                    )
-                )
                 short_name = "eth"
 
                 cow_token_address = Address(
@@ -271,9 +253,6 @@ class PaymentConfig:
 
             case Network.GNOSIS:
                 payment_network = EthereumNetwork.GNOSIS
-                payment_safe_address = Web3.to_checksum_address(
-                    os.environ.get("PAYOUTS_SAFE_ADDRESS_GNOSIS", "")
-                )
                 short_name = "gno"
 
                 cow_token_address = Address(
@@ -286,9 +265,6 @@ class PaymentConfig:
                     "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1"
                 )
             case Network.ARBITRUM_ONE:
-                payment_safe_address = Web3.to_checksum_address(
-                    os.environ.get("PAYOUTS_SAFE_ADDRESS_ARBITRUM", "")
-                )
                 payment_network = EthereumNetwork.ARBITRUM_ONE
                 short_name = "arb1"
 
@@ -375,9 +351,9 @@ class AccountingConfig:
 
         return AccountingConfig(
             payment_config=PaymentConfig.from_network(network),
-            orderbook_config=OrderbookConfig.from_network(network),
+            orderbook_config=OrderbookConfig.from_env(),
             dune_config=DuneConfig.from_network(network),
-            node_config=NodeConfig.from_network(network),
+            node_config=NodeConfig.from_env(),
             reward_config=RewardConfig.from_network(network),
             protocol_fee_config=ProtocolFeeConfig.from_network(network),
             buffer_accounting_config=BufferAccountingConfig.from_network(network),
@@ -385,8 +361,4 @@ class AccountingConfig:
         )
 
 
-web3 = Web3(
-    Web3.HTTPProvider(
-        NodeConfig.from_network(Network(os.environ.get("NETWORK", "mainnet"))).node_url
-    )
-)
+web3 = Web3(Web3.HTTPProvider(NodeConfig.from_env().node_url))
