@@ -286,10 +286,10 @@ class PaymentConfig:
                     "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1"
                 )
             case Network.ARBITRUM_ONE:
-                payment_network = EthereumNetwork.GNOSIS
                 payment_safe_address = Web3.to_checksum_address(
                     os.environ.get("PAYOUTS_SAFE_ADDRESS_ARBITRUM", "")
                 )
+                payment_network = EthereumNetwork.ARBITRUM_ONE
                 short_name = "arb1"
 
                 cow_token_address = Address(
