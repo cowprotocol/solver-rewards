@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from fractions import Fraction
@@ -23,7 +22,7 @@ from src.fetch.buffer_accounting import (
     BUFFER_ACCOUNTING_COLUMNS,
     compute_buffer_accounting,
 )
-from src.logger import log_saver
+from src.logger import log_saver, set_log
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
 from src.models.token import Token
@@ -31,6 +30,7 @@ from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
 from src.utils.print_store import Category
 
+log = set_log(__name__)
 
 SOLVER_PAYOUTS_COLUMNS = [
     "solver",
@@ -91,13 +91,13 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         slippage = int(frame["slippage_eth"]) + int(frame["network_fee_eth"])
         solver = frame["solver"]
         reward_target = frame["reward_target"]
-        if reward_target is None:
-            logging.warning(f"Solver {solver} without reward_target. Using solver")
+        if pandas.isna(reward_target):
+            log.warning(f"Solver {solver} without reward_target. Using solver")
             reward_target = solver
 
         buffer_accounting_target = frame["buffer_accounting_target"]
-        if buffer_accounting_target is None:
-            logging.warning(
+        if pandas.isna(buffer_accounting_target):
+            log.warning(
                 f"Solver {solver} without buffer_accounting_target. Using solver"
             )
             buffer_accounting_target = solver
@@ -190,7 +190,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                     )
                 )
             except AssertionError:
-                logging.warning(
+                log.warning(
                     f"Invalid ETH Transfer {self.solver} "
                     f"with amount={reimbursement_eth + total_eth_reward}"
                 )
@@ -210,7 +210,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                     )
                 )
             except AssertionError:
-                logging.warning(
+                log.warning(
                     f"Invalid COW Transfer {self.solver} "
                     f"with amount={reimbursement_cow + total_cow_reward}"
                 )
@@ -226,7 +226,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 )
             )
         except AssertionError:
-            logging.warning(
+            log.warning(
                 f"Invalid ETH Transfer {self.solver} with amount={reimbursement_eth}"
             )
         try:
@@ -238,13 +238,17 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
                 )
             )
         except AssertionError:
-            logging.warning(
+            log.warning(
                 f"Invalid COW Transfer {self.solver} with amount={total_cow_reward}"
             )
 
         return result
 
 
+    pdf["quote_reward_cow"] = (
+            min(
+                config.reward_config.quote_reward_cow,
+                converter.eth_to_token(config.reward_config.quote_reward_cap_native),
 def prepare_transfers(  # pylint: disable=too-many-locals
     solver_payouts: DataFrame,
     partner_payouts: DataFrame,
@@ -452,12 +456,14 @@ def construct_payouts(
         slippage_df = DataFrame(columns=["solver", "eth_slippage_wei"])
 
     # fetch conversion price
-    exchange_rate_native_to_cow = fetch_exchange_rate(dune.period.end, config)
     reward_token = config.reward_config.reward_token_address
     native_token = Address(config.payment_config.weth_address)
     price_day = dune.period.end - timedelta(days=1)
     exchange_rate_native_to_cow = exchange_rate_atoms(
         native_token, reward_token, price_day
+    )
+    log.info(
+        f"An exchange rate of {exchange_rate_native_to_cow:.4f} COW/native token is used."
     )
 
     # compute individual components of payments

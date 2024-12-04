@@ -5,7 +5,9 @@ from fractions import Fraction
 from pandas import DataFrame
 
 from src.config import RewardConfig
+from src.logger import set_log
 
+log = set_log(__name__)
 
 BATCH_REWARDS_COLUMNS = ["solver", "primary_reward_eth"]
 QUOTE_REWARDS_COLUMNS = ["solver", "num_quotes"]
@@ -52,15 +54,15 @@ def compute_rewards(
 
     # Pandas has poor support for large integers, must cast the constant to float here,
     # otherwise the dtype would be inferred as int64 (which overflows).
-    rewards["quote_reward_cow"] = (
-        float(
-            min(
-                reward_config.quote_reward_cow,
-                int(reward_config.quote_reward_cap_native * exchange_rate),
-            )
+    reward_per_quote = float(
+        min(
+            reward_config.quote_reward_cow,
+            int(reward_config.quote_reward_cap_native * exchange_rate),
         )
-        * rewards["num_quotes"]
     )
+    log.info(f"A reward of {reward_per_quote / 10**18:.4f} COW per quote is used.")
+
+    rewards["quote_reward_cow"] = reward_per_quote * rewards["num_quotes"]
     rewards = rewards.drop("num_quotes", axis=1)
 
     rewards["reward_token_address"] = str(reward_config.reward_token_address)
