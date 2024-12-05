@@ -27,5 +27,6 @@ jobs:
         run:
           python -m pytest tests/unit
         env:
+          NETWORK: 'mainnet'
           NODE_URL: https://rpc.ankr.com/eth
           PAYOUTS_SAFE_ADDRESS: '0x0000000000000000000000000000000000000000'
