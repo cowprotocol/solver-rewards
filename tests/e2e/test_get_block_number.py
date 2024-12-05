@@ -13,6 +13,7 @@ class TestGetBlockNumber(unittest.TestCase):
         load_dotenv()
         self.fetcher = DuneFetcher(
             DuneClient(os.environ["DUNE_API_KEY"]),
+            "ethereum",
             AccountingPeriod("2022-10-18"),
         )
 

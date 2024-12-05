@@ -393,7 +393,12 @@ def compute_solver_payouts(
     return solver_payouts
 
 
-def summarize_payments(solver_payouts: DataFrame, partner_payouts: DataFrame) -> None:
+def summarize_payments(
+    solver_payouts: DataFrame,
+    partner_payouts: DataFrame,
+    exchange_rate_native_to_cow: Fraction,
+    exchange_rate_native_to_eth: Fraction,
+) -> None:
     """Summarize payments."""
     performance_reward = solver_payouts["primary_reward_cow"].sum()
     quote_reward = solver_payouts["quote_reward_cow"].sum()
@@ -416,7 +421,9 @@ def summarize_payments(solver_payouts: DataFrame, partner_payouts: DataFrame) ->
         f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n",
         f"Protocol Fees (before partner fees): {protocol_fee / 10 ** 18:.4f}\n"
         f"Partner Fees (before tax): {partner_fee / 10 ** 18:.4f}\n"
-        f"Partner Fees Tax: {partner_fee_tax / 10 ** 18:.4f}\n",
+        f"Partner Fees Tax: {partner_fee_tax / 10 ** 18:.4f}\n\n"
+        f"Exchange rate native token to COW: {exchange_rate_native_to_cow:.4f} COW/native token\n"
+        f"Exchange rate native token to ETH: {exchange_rate_native_to_eth:.4f} ETH/native token\n",
     )
 
 
@@ -440,8 +447,13 @@ def construct_payouts(
     )
     service_fee_df = pandas.DataFrame(dune.get_service_fee_status())
 
-    reward_target_df = pandas.DataFrame(dune.get_vouches())
-
+    vouches = dune.get_vouches()
+    if vouches:
+        reward_target_df = pandas.DataFrame(dune.get_vouches())
+    else:
+        reward_target_df = DataFrame(
+            columns=["solver", "solver_name", "reward_target", "pool_address"]
+        )
     # fetch slippage only if configured to do so
     # otherwise set to an empty dataframe
     if config.buffer_accounting_config.include_slippage and not ignore_slippage_flag:
@@ -453,13 +465,14 @@ def construct_payouts(
 
     # fetch conversion price
     reward_token = config.reward_config.reward_token_address
-    native_token = Address(config.payment_config.weth_address)
+    native_token = Address(config.payment_config.wrapped_native_token_address)
+    wrapped_eth = config.payment_config.wrapped_eth_address
     price_day = dune.period.end - timedelta(days=1)
     exchange_rate_native_to_cow = exchange_rate_atoms(
         native_token, reward_token, price_day
     )
-    log.info(
-        f"An exchange rate of {exchange_rate_native_to_cow:.4f} COW/native token is used."
+    exchange_rate_native_to_eth = exchange_rate_atoms(
+        native_token, wrapped_eth, price_day
     )
 
     # compute individual components of payments
@@ -485,7 +498,12 @@ def construct_payouts(
     )
     partner_payouts = compute_partner_fees(batch_data, config.protocol_fee_config)
 
-    summarize_payments(solver_payouts, partner_payouts)
+    summarize_payments(
+        solver_payouts,
+        partner_payouts,
+        exchange_rate_native_to_cow,
+        exchange_rate_native_to_eth,
+    )
 
     # create transfers and overdrafts
     payouts = prepare_transfers(solver_payouts, partner_payouts, dune.period, config)

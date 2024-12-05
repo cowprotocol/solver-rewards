@@ -45,7 +45,7 @@ def manual_propose(
     )
     csv_transfers = [asdict(CSVTransfer.from_transfer(t)) for t in transfers]
     FileIO(config.io_config.csv_output_dir).write_csv(
-        csv_transfers, f"transfers-{period}.csv"
+        csv_transfers, f"transfers-{config.io_config.network.value}-{period}.csv"
     )
 
     print(Transfer.summarize(transfers))
@@ -75,7 +75,7 @@ def auto_propose(
     transactions = prepend_unwrap_if_necessary(
         client,
         config.payment_config.payment_safe_address,
-        wrapped_native_token=config.payment_config.weth_address,
+        wrapped_native_token=config.payment_config.wrapped_native_token_address,
         transactions=[t.as_multisend_tx() for t in transfers],
     )
     if len(transactions) > len(transfers):
@@ -124,6 +124,7 @@ def main() -> None:
     )
     dune = DuneFetcher(
         dune=DuneClient(config.dune_config.dune_api_key),
+        blockchain=config.dune_config.dune_blockchain,
         period=accounting_period,
     )
 
