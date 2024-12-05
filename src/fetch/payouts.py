@@ -313,12 +313,21 @@ def prepare_transfers(  # pylint: disable=too-many-locals
     return PeriodPayouts(overdrafts, transfers)
 
 
-def fetch_exchange_rate(period_end: datetime, config: AccountingConfig) -> Fraction:
+def fetch_exchange_rates(
+    period_end: datetime, config: AccountingConfig
+) -> tuple[Fraction, Fraction]:
     """Fetch exchange rate for converting the native token to COW."""
     reward_token = config.reward_config.reward_token_address
-    native_token = Address(config.payment_config.weth_address)
+    native_token = Address(config.payment_config.wrapped_native_token_address)
+    wrapped_eth = config.payment_config.wrapped_eth_address
     price_day = period_end - timedelta(days=1)
-    return exchange_rate_atoms(native_token, reward_token, price_day)
+    exchange_rate_native_to_cow = exchange_rate_atoms(
+        native_token, reward_token, price_day
+    )
+    exchange_rate_native_to_eth = exchange_rate_atoms(
+        native_token, wrapped_eth, price_day
+    )
+    return exchange_rate_native_to_cow, exchange_rate_native_to_eth
 
 
 def validate_df_columns(
@@ -464,15 +473,8 @@ def construct_payouts(
         slippage_df = DataFrame(columns=["solver", "eth_slippage_wei"])
 
     # fetch conversion price
-    reward_token = config.reward_config.reward_token_address
-    native_token = Address(config.payment_config.wrapped_native_token_address)
-    wrapped_eth = config.payment_config.wrapped_eth_address
-    price_day = dune.period.end - timedelta(days=1)
-    exchange_rate_native_to_cow = exchange_rate_atoms(
-        native_token, reward_token, price_day
-    )
-    exchange_rate_native_to_eth = exchange_rate_atoms(
-        native_token, wrapped_eth, price_day
+    exchange_rate_native_to_cow, exchange_rate_native_to_eth = fetch_exchange_rates(
+        dune.period.end, config
     )
 
     # compute individual components of payments
