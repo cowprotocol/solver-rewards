@@ -45,7 +45,7 @@ def manual_propose(
     )
     csv_transfers = [asdict(CSVTransfer.from_transfer(t)) for t in transfers]
     FileIO(config.io_config.csv_output_dir).write_csv(
-        csv_transfers, f"transfers-{period}.csv"
+        csv_transfers, f"transfers-{config.io_config.network.value}-{period}.csv"
     )
 
     print(Transfer.summarize(transfers))

@@ -299,6 +299,7 @@ class PaymentConfig:
 class IOConfig:
     """Configuration of input and output."""
 
+    network: Network
     log_config_file: Path
     project_root_dir: Path
     query_dir: Path
@@ -310,6 +311,7 @@ class IOConfig:
     @staticmethod
     def from_env() -> IOConfig:
         """Initialize io config from environment variables."""
+        network = Network(os.getenv("NETWORK"))
         slack_channel = os.getenv("SLACK_CHANNEL", None)
         slack_token = os.getenv("SLACK_TOKEN", None)
 
@@ -320,6 +322,7 @@ class IOConfig:
         dashboard_dir = project_root_dir / Path("dashboards/solver-rewards-accounting")
 
         return IOConfig(
+            network=network,
             project_root_dir=project_root_dir,
             log_config_file=log_config_file,
             query_dir=query_dir,
