@@ -22,13 +22,16 @@ class DuneFetcher:
 
     dune: DuneClient
     period: AccountingPeriod
+    blockchain: str
 
     def __init__(
         self,
         dune: DuneClient,
+        blockchain: str,
         period: AccountingPeriod,
     ):
         self.dune = dune
+        self.blockchain = blockchain
         self.period = period
         # Already have period set, so we might as well store this upon construction.
         # This may become an issue when we make the fetchers async;
@@ -38,6 +41,13 @@ class DuneFetcher:
     def _period_params(self) -> list[QueryParameter]:
         """Easier access to these parameters."""
         return self.period.as_query_params()
+
+    def _network_and_period_params(self) -> list[QueryParameter]:
+        """Easier access to parameters for network and accounting period."""
+        network_param = QueryParameter.text_type("blockchain", self.blockchain)
+        period_params = self._period_params()
+
+        return period_params + [network_param]
 
     @staticmethod
     def _parameterized_query(
@@ -71,7 +81,7 @@ class DuneFetcher:
         """Returns block numbers corresponding to date interval"""
         results = self._get_query_results(
             self._parameterized_query(
-                QUERIES["PERIOD_BLOCK_INTERVAL"], self._period_params()
+                QUERIES["PERIOD_BLOCK_INTERVAL"], self._network_and_period_params()
             )
         )
         assert len(results) == 1, "Block Interval Query should return only 1 result!"
@@ -87,6 +97,7 @@ class DuneFetcher:
                 params=[
                     QueryParameter.date_type("end_time", self.period.end),
                     QueryParameter.enum_type("vouch_cte_name", "named_results"),
+                    QueryParameter.text_type("blockchain", self.blockchain),
                 ],
             )
         )

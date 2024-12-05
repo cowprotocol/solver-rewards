@@ -516,7 +516,13 @@ def construct_payouts(
         for service_fee_flag in service_fee_df["service_fee"]
     ]
 
-    reward_target_df = pandas.DataFrame(dune.get_vouches())
+    vouches = dune.get_vouches()
+    if vouches:
+        reward_target_df = pandas.DataFrame(dune.get_vouches())
+    else:
+        reward_target_df = DataFrame(
+            columns=["solver", "solver_name", "reward_target", "pool_address"]
+        )
     # construct slippage df
     if ignore_slippage_flag or (not config.buffer_accounting_config.include_slippage):
         slippage_df_temp = pandas.merge(
@@ -534,13 +540,14 @@ def construct_payouts(
         slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
 
     reward_token = config.reward_config.reward_token_address
-    native_token = Address(config.payment_config.weth_address)
+    native_token = Address(config.payment_config.wrapped_native_token_address)
+    wrapped_eth = config.payment_config.wrapped_eth_address
     price_day = dune.period.end - timedelta(days=1)
     exchange_rate_native_to_cow = exchange_rate_atoms(
         native_token, reward_token, price_day
     )
-    log.info(
-        f"An exchange rate of {exchange_rate_native_to_cow:.4f} COW/native token is used."
+    exchange_rate_native_to_eth = exchange_rate_atoms(
+        native_token, wrapped_eth, price_day
     )
     converter = TokenConversion(
         eth_to_token=lambda t: exchange_rate_native_to_cow * t,
@@ -587,7 +594,9 @@ def construct_payouts(
         f"Protocol Fees: {final_protocol_fee_wei / 10 ** 18:.4f}\n"
         f"Partner Fees Tax: {partner_fee_tax_wei / 10 ** 18:.4f}\n"
         f"Partner Fees: {total_partner_fee_wei_taxed / 10 ** 18:.4f}\n"
-        f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n",
+        f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n\n"
+        f"Exchange rate native token to COW: {exchange_rate_native_to_cow:.4f} COW/native token\n"
+        f"Exchange rate native token to ETH: {exchange_rate_native_to_eth:.4f} ETH/native token\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(
