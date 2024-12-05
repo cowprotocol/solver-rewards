@@ -299,6 +299,8 @@ class PaymentConfig:
 class IOConfig:
     """Configuration of input and output."""
 
+    # pylint: disable=too-many-instance-attributes
+
     network: Network
     log_config_file: Path
     project_root_dir: Path
