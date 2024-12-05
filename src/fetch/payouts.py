@@ -245,10 +245,6 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         return result
 
 
-    pdf["quote_reward_cow"] = (
-            min(
-                config.reward_config.quote_reward_cow,
-                converter.eth_to_token(config.reward_config.quote_reward_cap_native),
 def prepare_transfers(  # pylint: disable=too-many-locals
     solver_payouts: DataFrame,
     partner_payouts: DataFrame,
