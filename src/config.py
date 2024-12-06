@@ -61,10 +61,10 @@ class RewardConfig:
                     reward_token_address=Address(
                         "0x177127622c4a00f3d409b75571e12cb3c8973d3c"
                     ),
-                    batch_reward_cap_upper=30 * 10**18,
-                    batch_reward_cap_lower=5 * 10**18,
+                    batch_reward_cap_upper=10 * 10**18,
+                    batch_reward_cap_lower=10 * 10**18,
                     quote_reward_cow=6 * 10**18,
-                    quote_reward_cap_native=1 * 10**18,
+                    quote_reward_cap_native=15 * 10**16,
                     service_fee_factor=service_fee_factor,
                     cow_bonding_pool=cow_bonding_pool,
                 )
@@ -76,7 +76,7 @@ class RewardConfig:
                     batch_reward_cap_upper=12 * 10**15,
                     batch_reward_cap_lower=10 * 10**15,
                     quote_reward_cow=6 * 10**18,
-                    quote_reward_cap_native=6 * 10**14,
+                    quote_reward_cap_native=2 * 10**14,
                     service_fee_factor=service_fee_factor,
                     cow_bonding_pool=cow_bonding_pool,
                 )
