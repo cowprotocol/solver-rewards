@@ -8,8 +8,7 @@ with winning_quotes as (
         JOIN order_quotes oq ON t.order_uid = oq.order_uid
     WHERE
         (
-            o.class = 'market'
-            OR (
+            (
                 o.kind = 'sell'
                 AND (
                     oq.sell_amount - oq.gas_amount * oq.gas_price / oq.sell_token_price
