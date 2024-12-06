@@ -1,4 +1,4 @@
-"""Main Entry point for app_hash sync"""
+"""Main Entry point for running any sync job"""
 
 import argparse
 import asyncio
