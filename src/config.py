@@ -140,8 +140,10 @@ class BufferAccountingConfig:
         match network:
             case Network.MAINNET:
                 include_slippage = True
-            case Network.GNOSIS | Network.ARBITRUM_ONE:
-                include_slippage = False
+            case Network.GNOSIS:
+                include_slippage = True
+            case Network.ARBITRUM_ONE:
+                include_slippage = True
             case _:
                 raise ValueError(
                     f"No buffer accounting config set up for network {network}."
