@@ -17,7 +17,7 @@ async def sync_batch_data(
     recompute_previous_month: bool,
 ) -> None:
     """
-    Batch data Sync Logic. The recompute_previous_month flag, when enabled, forces a recomputation
+    Batch data sync Logic. The recompute_previous_month flag, when enabled, forces a recomputation
     of the previous month. If it is set to False, previous month is still recomputed when the current
     date is the first day of the current month.
     """

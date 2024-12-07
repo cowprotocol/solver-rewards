@@ -4,16 +4,13 @@ import argparse
 import asyncio
 import os
 from dataclasses import dataclass
-
 from dotenv import load_dotenv
 from web3 import Web3
-
 from src.fetch.orderbook import OrderbookFetcher
 from src.logger import set_log
 from src.models.tables import SyncTable
 from src.dbt.batch_data import sync_batch_data
 from src.dbt.order_data import sync_order_data
-from src.dbt.common import node_suffix
 
 log = set_log(__name__)
 
@@ -52,8 +49,6 @@ def sync_data() -> None:
             sync_batch_data(web3, orderbook, network, recompute_previous_month=False)
         )
     elif args.sync_table == SyncTable.ORDER_DATA:
-        table = os.environ["ORDER_DATA_TARGET_TABLE"]
-        assert table, "ORDER DATA sync needs an ORDER_DATA_TARGET_TABLE env"
         asyncio.run(
             sync_order_data(web3, orderbook, network, recompute_previous_month=False)
         )
