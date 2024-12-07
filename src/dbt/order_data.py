@@ -1,4 +1,4 @@
-"""Main Entry point for batch data sync"""
+"""Main Entry point for order data sync"""
 
 from web3 import Web3
 from src.fetch.orderbook import OrderbookFetcher, OrderbookEnv
@@ -10,14 +10,14 @@ from src.models.block_range import BlockRange
 log = set_log(__name__)
 
 
-async def sync_batch_data(
+async def sync_order_data(
     node: Web3,
     orderbook: OrderbookFetcher,
     network: str,
     recompute_previous_month: bool,
 ) -> None:
     """
-    Batch data Sync Logic. The recompute_previous_month flag, when enabled, forces a recomputation
+    Order data Sync Logic. The recompute_previous_month flag, when enabled, forces a recomputation
     of the previous month. If it is set to False, previous month is still recomputed when the current
     date is the first day of the current month.
     """
@@ -29,16 +29,16 @@ async def sync_batch_data(
         start_block = block_range_list[i][0]
         end_block = block_range_list[i][1]
         if is_even[i]:
-            table_name = "raw_batch_data_latest_even_month_" + network.lower()
+            table_name = "raw_order_data_latest_even_month_" + network.lower()
         else:
-            table_name = "raw_batch_data_latest_odd_month_" + network.lower()
+            table_name = "raw_order_data_latest_odd_month_" + network.lower()
         block_range = BlockRange(block_from=start_block, block_to=end_block)
         log.info(
             f"About to process block range ({start_block}, {end_block}) for month {months_list[i]}"
         )
-        batch_data = orderbook.get_batch_data(block_range)
+        order_data = orderbook.get_order_data(block_range)
         log.info("SQL query successfully executed. About to update analytics table.")
-        batch_data.to_sql(
+        order_data.to_sql(
             table_name,
             orderbook._pg_engine(OrderbookEnv.ANALYTICS),
             if_exists="replace",

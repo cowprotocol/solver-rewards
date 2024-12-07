@@ -1,4 +1,5 @@
 """Basic client for connecting to postgres database with login credentials"""
+
 from __future__ import annotations
 
 import os
@@ -52,14 +53,7 @@ class OrderbookFetcher:
             db_string = f"postgresql+psycopg2://{db_url}"
             return create_engine(db_string)
 
-        if "NETWORK" in os.environ:
-            db_url = (
-                os.environ[f"{db_env}_DB_URL"]
-                + "/"
-                + os.environ.get("NETWORK", "mainnet")
-            )
-        else:
-            db_url = os.environ[f"{db_env}_DB_URL"]
+        db_url = os.environ[f"{db_env}_DB_URL"]
         db_string = f"postgresql+psycopg2://{db_url}"
         return create_engine(db_string)
 

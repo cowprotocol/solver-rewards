@@ -12,6 +12,7 @@ from src.fetch.orderbook import OrderbookFetcher
 from src.logger import set_log
 from src.models.tables import SyncTable
 from src.dbt.batch_data import sync_batch_data
+from src.dbt.order_data import sync_order_data
 from src.dbt.common import node_suffix
 
 log = set_log(__name__)
@@ -42,13 +43,19 @@ def sync_data() -> None:
     load_dotenv()
     args = ScriptArgs()
     orderbook = OrderbookFetcher()
-    network = node_suffix(os.environ.get("NETWORK", "mainnet"))
+    network = os.environ.get("NETWORK", "mainnet")
     log.info(f"Network is set to: {network}")
-    web3 = Web3(Web3.HTTPProvider(os.environ.get("NODE_URL" + "_" + network)))
+    web3 = Web3(Web3.HTTPProvider(os.environ.get("NODE_URL")))
 
     if args.sync_table == SyncTable.BATCH_DATA:
         asyncio.run(
             sync_batch_data(web3, orderbook, network, recompute_previous_month=False)
+        )
+    elif args.sync_table == SyncTable.ORDER_DATA:
+        table = os.environ["ORDER_DATA_TARGET_TABLE"]
+        assert table, "ORDER DATA sync needs an ORDER_DATA_TARGET_TABLE env"
+        asyncio.run(
+            sync_order_data(web3, orderbook, network, recompute_previous_month=False)
         )
     else:
         log.error(f"unsupported sync_table '{args.sync_table}'")

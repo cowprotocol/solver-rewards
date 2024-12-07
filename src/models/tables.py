@@ -1,13 +1,13 @@
 """Data structure containing the supported sync tables"""
+
 from enum import Enum
 
 
 class SyncTable(Enum):
     """Enum for Deployment Supported Table Sync"""
 
-    ORDER_REWARDS = "order_rewards"
-    BATCH_REWARDS = "batch_rewards"
     BATCH_DATA = "batch_data"
+    ORDER_DATA = "order_data"
 
     def __str__(self) -> str:
         return str(self.value)
