@@ -4,9 +4,9 @@ from datetime import datetime, timezone
 from typing import List, Tuple
 from web3 import Web3
 from src.logger import set_log
-from src.models.tables import SyncTable
 
 log = set_log(__name__)
+
 
 def node_suffix(network: str) -> str:
     """
@@ -19,6 +19,7 @@ def node_suffix(network: str) -> str:
     if network == "arbitrum-one":
         return "ARBITRUM"
     return ""
+
 
 def find_block_with_timestamp(node: Web3, time_stamp: float) -> int:
     """

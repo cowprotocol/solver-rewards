@@ -195,8 +195,6 @@ class OrderbookFetcher:
         """
         Fetches and validates Order Reward DataFrame as concatenation from Prod and Staging DB
         """
-        load_dotenv()
-        network = node_suffix(os.environ["NETWORK"])
         cow_reward_query_prod = (
             open_query("orderbook/order_data.sql")
             .replace("{{start_block}}", str(block_range.block_from))

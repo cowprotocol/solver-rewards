@@ -1,4 +1,5 @@
 """Configuration details for sync jobs"""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -50,6 +51,7 @@ class BatchDataSyncConfig:
     table: str = "batch_data_test"
     # Description of the table (for creation)
     description: str = "Table containing raw batch data"
+
 
 @dataclass
 class OrderDataSyncConfig:
