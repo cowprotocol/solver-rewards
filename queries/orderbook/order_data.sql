@@ -30,7 +30,7 @@ with trade_hashes as (
         join settlement_observations so on settlement.block_number = so.block_number
         and settlement.log_index = so.log_index
     where
-        settlement.block_number > {{start_block}}
+        settlement.block_number >= {{start_block}}
         and settlement.block_number <= {{end_block}}
 ),
 -- order data
@@ -99,7 +99,7 @@ trade_data_unprocessed AS (
         LEFT OUTER JOIN app_data ad -- contains full app data
         ON od.app_data = ad.contract_app_data
     WHERE
-        s.block_number > {{start_block}}
+        s.block_number >= {{start_block}}
         AND s.block_number <= {{end_block}}
 ),
 -- processed trade data:
@@ -196,7 +196,7 @@ winning_quotes as (
             )
         )
         AND o.partially_fillable = 'f' -- the code above might fail for partially fillable orders
-        AND t.block_number > {{start_block}}
+        AND t.block_number >= {{start_block}}
         AND t.block_number <= {{end_block}}
         AND oq.solver != '\x0000000000000000000000000000000000000000'
 ) -- Most efficient column order for sorting would be having tx_hash or order_uid first

@@ -14,7 +14,7 @@ WITH observed_settlements AS (
         AND s.log_index = so.log_index
         JOIN settlement_scores ss ON s.auction_id = ss.auction_id
     WHERE
-        ss.block_deadline > {{start_block}}
+        ss.block_deadline >= {{start_block}}
         AND ss.block_deadline <= {{end_block}}
 ),
 -- order data
@@ -73,7 +73,7 @@ trade_data_unprocessed AS (
         LEFT OUTER JOIN app_data ad -- contains full app data
         ON od.app_data = ad.contract_app_data
     WHERE
-        ss.block_deadline > {{start_block}}
+        ss.block_deadline >= {{start_block}}
         AND ss.block_deadline <= {{end_block}}
 ),
 -- processed trade data:
@@ -198,7 +198,7 @@ reward_data AS (
         LEFT OUTER JOIN batch_protocol_fees bpf ON bpf.tx_hash = os.tx_hash
         LEFT OUTER JOIN batch_network_fees bnf ON bnf.tx_hash = os.tx_hash
         WHERE
-            ss.block_deadline > {{start_block}}
+            ss.block_deadline >= {{start_block}}
             AND ss.block_deadline <= {{end_block}}
 ),
 reward_per_auction as (
