@@ -36,10 +36,9 @@ PAYMENT_COLUMNS = {
 }
 SLIPPAGE_COLUMNS = {
     "solver",
-    "solver_name",
     "eth_slippage_wei",
 }
-REWARD_TARGET_COLUMNS = {"solver", "reward_target", "pool_address"}
+REWARD_TARGET_COLUMNS = {"solver", "solver_name", "reward_target", "pool_address"}
 SERVICE_FEE_COLUMNS = {"solver", "service_fee"}
 ADDITIONAL_PAYMENT_COLUMNS = {"buffer_accounting_target", "reward_token_address"}
 
@@ -525,15 +524,8 @@ def construct_payouts(
         )
     # construct slippage df
     if ignore_slippage_flag or (not config.buffer_accounting_config.include_slippage):
-        slippage_df_temp = pandas.merge(
-            merged_df[["solver"]],
-            reward_target_df[["solver", "solver_name"]],
-            on="solver",
-            how="inner",
-        )
-        slippage_df = slippage_df_temp.assign(
-            eth_slippage_wei=[0] * slippage_df_temp.shape[0]
-        )
+        slippage_df = merged_df[["solver"]].copy()
+        slippage_df["eth_slippage_wei"] = [0] * slippage_df.shape[0]
     else:
         slippage_df = pandas.DataFrame(dune.get_period_slippage())
         # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
