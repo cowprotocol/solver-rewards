@@ -509,11 +509,15 @@ def construct_payouts(
         quote_rewards_df, batch_rewards_df, on="solver", how="outer"
     ).fillna(0)
 
-    service_fee_df = pandas.DataFrame(dune.get_service_fee_status())
-    service_fee_df["service_fee"] = [
-        service_fee_flag * config.reward_config.service_fee_factor
-        for service_fee_flag in service_fee_df["service_fee"]
-    ]
+    service_fee_dune = dune.get_service_fee_status()
+    if service_fee_dune:
+        service_fee_df = pandas.DataFrame(service_fee_dune)
+        service_fee_df["service_fee"] = [
+            service_fee_flag * config.reward_config.service_fee_factor
+            for service_fee_flag in service_fee_df["service_fee"]
+        ]
+    else:
+        service_fee_df = DataFrame(columns=["solver", "service_fee"])
 
     vouches = dune.get_vouches()
     if vouches:
