@@ -50,10 +50,9 @@ class OrderbookFetcher:
         load_dotenv()
         if db_env == OrderbookEnv.ANALYTICS:
             db_url = os.environ["ANALYTICS_DB_URL"]
-            db_string = f"postgresql+psycopg2://{db_url}"
-            return create_engine(db_string)
+        else:
+            db_url = os.environ[f"{db_env}_DB_URL"]
 
-        db_url = os.environ[f"{db_env}_DB_URL"]
         db_string = f"postgresql+psycopg2://{db_url}"
         return create_engine(db_string)
 
