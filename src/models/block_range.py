@@ -1,6 +1,7 @@
 """
 BlockRange Model is just a data class for left and right bounds
 """
+
 from dataclasses import dataclass
 
 from dune_client.types import QueryParameter

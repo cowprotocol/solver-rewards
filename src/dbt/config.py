@@ -18,6 +18,7 @@ class SyncConfig:
     sync_file: str = "sync_block.csv"
     sync_column: str = "last_synced_block"
 
+
 @dataclass
 class BatchDataSyncConfig:
     """Configuration for batch data sync."""
