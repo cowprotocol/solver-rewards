@@ -1,11 +1,10 @@
 with winning_quotes as (
-    select
+    select --noqa: ST06
         concat('0x', encode(oq.solver, 'hex')) as solver,
         oq.order_uid
-    from
-        trades t
-        inner join orders o on order_uid = uid
-        join order_quotes oq on t.order_uid = oq.order_uid
+    from trades as t
+    inner join orders as o on order_uid = uid
+    inner join order_quotes as oq on t.order_uid = oq.order_uid
     where
         (
             o.class = 'market'
@@ -25,10 +24,9 @@ with winning_quotes as (
         and block_number <= {{end_block}}
         and oq.solver != '\x0000000000000000000000000000000000000000'
 )
+
 select
     solver,
     count(*) as num_quotes
-from
-    winning_quotes
-group by
-    solver
+from winning_quotes
+group by solver
