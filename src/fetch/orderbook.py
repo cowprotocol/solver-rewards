@@ -118,7 +118,7 @@ class OrderbookFetcher:
         epsilon_upper = str(os.environ[f"EPSILON_UPPER_{network}"])
         epsilon_lower = str(os.environ[f"EPSILON_LOWER_{network}"])
         batch_data_query_prod = (
-            open_query("orderbook/batch_data.sql")
+            open_query("orderbook/prod_batch_rewards.sql")
             .replace("{{start_block}}", str(block_range.block_from))
             .replace("{{end_block}}", str(block_range.block_to))
             .replace(
@@ -127,10 +127,10 @@ class OrderbookFetcher:
             .replace(
                 "{{EPSILON_UPPER}}", epsilon_upper
             )  # upper ETH cap for payment (in WEI)
-            .replace("{{env}}", "prod")
+            .replace("{{results}}", "dune_sync_batch_data_table")
         )
         batch_data_query_barn = (
-            open_query("orderbook/batch_data.sql")
+            open_query("orderbook/barn_batch_rewards.sql")
             .replace("{{start_block}}", str(block_range.block_from))
             .replace("{{end_block}}", str(block_range.block_to))
             .replace(
@@ -139,7 +139,7 @@ class OrderbookFetcher:
             .replace(
                 "{{EPSILON_UPPER}}", epsilon_upper
             )  # upper ETH cap for payment (in WEI)
-            .replace("{{env}}", "barn")
+            .replace("{{results}}", "dune_sync_batch_data_table")
         )
         data_types = {
             # According to this: https://stackoverflow.com/a/11548224
