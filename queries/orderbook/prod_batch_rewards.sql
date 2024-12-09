@@ -11,9 +11,7 @@ with observed_settlements as (
     from settlements as s inner join settlement_observations as so
         on s.block_number = so.block_number and s.log_index = so.log_index
     inner join settlement_scores as ss on s.auction_id = ss.auction_id
-    where
-        ss.block_deadline >= {{start_block}}
-        and ss.block_deadline <= {{end_block}}
+    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
 ),
 
 -- order data
@@ -56,11 +54,10 @@ trade_data_unprocessed as (
             when od.kind = 'sell' then od.buy_token
             when od.kind = 'buy' then od.sell_token
         end as surplus_token,
-        convert_from(ad.full_app_data, 'UTF8')::JSONB->'metadata'->'partnerFee'->>'recipient' as partner_fee_recipient,
+        cast(convert_from(ad.full_app_data, 'UTF8') as jsonb) -> 'metadata' -> 'partnerFee' ->> 'recipient' as partner_fee_recipient,
         coalesce(oe.protocol_fee_amounts[1], 0) as first_protocol_fee_amount,
         coalesce(oe.protocol_fee_amounts[2], 0) as second_protocol_fee_amount
-    from
-        settlements as s inner join settlement_scores as ss -- contains block_deadline
+    from settlements as s inner join settlement_scores as ss -- contains block_deadline
         on s.auction_id = ss.auction_id
     inner join trades as t -- contains traded amounts
         on s.block_number = t.block_number -- given the join that follows with the order execution table, this works even when multiple txs appear in the same block
@@ -93,8 +90,7 @@ trade_data_processed as (
             else 0
         end as partner_fee,
         surplus_token as protocol_fee_token
-    from
-        trade_data_unprocessed
+    from trade_data_unprocessed
 ),
 
 price_data as (
@@ -140,11 +136,8 @@ batch_protocol_fees as (
         solver,
         tx_hash,
         sum(protocol_fee * protocol_fee_token_native_price) as protocol_fee
-    from
-        trade_data_processed_with_prices
-    group by
-        solver,
-        tx_hash
+    from trade_data_processed_with_prices
+    group by solver, tx_hash
 ),
 
 batch_network_fees as (
@@ -152,18 +145,15 @@ batch_network_fees as (
         solver,
         tx_hash,
         sum(network_fee * network_fee_token_native_price) as network_fee
-    from
-        trade_data_processed_with_prices
-    group by
-        solver,
-        tx_hash
+    from trade_data_processed_with_prices
+    group by solver, tx_hash
 ),
 
 reward_data as (
     select --noqa: ST06
         -- observations
-        os.tx_hash,
         ss.auction_id,
+        os.tx_hash,
         -- TODO - assuming that `solver == winner` when both not null
         --  We will need to monitor that `solver == winner`!
         ss.winner as solver,
@@ -183,9 +173,9 @@ reward_data as (
         coalesce(cast(network_fee as numeric(78, 0)), 0) as network_fee
     from settlement_scores as ss
     -- outer joins made in order to capture non-existent settlements.
-    left outer join observed_settlements as os on os.auction_id = ss.auction_id
-    left outer join batch_protocol_fees as bpf on bpf.tx_hash = os.tx_hash
-    left outer join batch_network_fees as bnf on bnf.tx_hash = os.tx_hash
+    left outer join observed_settlements as os on ss.auction_id = os.auction_id
+    left outer join batch_protocol_fees as bpf on os.tx_hash = bpf.tx_hash
+    left outer join batch_network_fees as bnf on os.tx_hash = bnf.tx_hash
     where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
 ),
 
@@ -211,8 +201,7 @@ reward_per_auction as (
         ) as capped_payment,
         winning_score,
         reference_score
-    from
-        reward_data
+    from reward_data
 ),
 
 primary_rewards as (
