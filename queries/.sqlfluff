@@ -1,0 +1,4 @@
+[sqlfluff]
+dialect = ansi
+exclude_rules = L046, RF02, RF06, CP02
+max_line_length = 0
