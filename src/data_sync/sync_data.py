@@ -9,7 +9,7 @@ from web3 import Web3
 from src.fetch.orderbook import OrderbookFetcher, OrderbookEnv
 from src.logger import set_log
 from src.models.tables import SyncTable
-from src.dbt.common import compute_block_and_month_range
+from src.data_sync.common import compute_block_and_month_range
 from src.models.block_range import BlockRange
 
 

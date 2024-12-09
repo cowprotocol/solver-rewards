@@ -23,10 +23,3 @@ class BlockRange:
 
     def __repr__(self) -> str:
         return str(self)
-
-    def as_query_params(self) -> list[QueryParameter]:
-        """Returns self as Dune QueryParameters"""
-        return [
-            QueryParameter.number_type("BlockFrom", self.block_from),
-            QueryParameter.number_type("BlockTo", self.block_to),
-        ]
