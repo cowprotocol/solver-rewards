@@ -74,41 +74,6 @@ class OrderbookFetcher:
         return barn, prod
 
     @classmethod
-    def get_order_rewards(cls, block_range: BlockRange) -> DataFrame:
-        """
-        Fetches and validates Order Reward DataFrame as concatenation from Prod and Staging DB
-        """
-        cow_reward_query_prod = (
-            open_query("orderbook/prod_order_rewards.sql")
-            .replace("{{start_block}}", str(block_range.block_from))
-            .replace("{{end_block}}", str(block_range.block_to))
-        )
-        cow_reward_query_barn = (
-            open_query("orderbook/barn_order_rewards.sql")
-            .replace("{{start_block}}", str(block_range.block_from))
-            .replace("{{end_block}}", str(block_range.block_to))
-        )
-        data_types = {"block_number": "int64", "amount": "float64"}
-        barn, prod = cls._query_both_dbs(
-            cow_reward_query_prod, cow_reward_query_barn, data_types
-        )
-
-        # Warn if solver appear in both environments.
-        if not set(prod.solver).isdisjoint(set(barn.solver)):
-            log.warning(
-                f"solver overlap in {block_range}: solvers "
-                f"{set(prod.solver).intersection(set(barn.solver))} part of both prod and barn"
-            )
-
-        if not prod.empty and not barn.empty:
-            return pd.concat([prod, barn])
-        if not prod.empty:
-            return prod.copy()
-        if not barn.empty:
-            return barn.copy()
-        return pd.DataFrame()
-
-    @classmethod
     def run_batch_data_query(cls, block_range: BlockRange) -> DataFrame:
         """
         Fetches and validates Batch data DataFrame as concatenation from Prod and Staging DB
