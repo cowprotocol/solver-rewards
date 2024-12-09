@@ -56,7 +56,7 @@ trade_data_unprocessed as (
             when od.kind = 'sell' then od.buy_token
             when od.kind = 'buy' then od.sell_token
         end as surplus_token,
-        convert_from(ad.full_app_data, 'UTF8')::JSonB->'metadata'->'partnerFee'->>'recipient' as partner_fee_recipient,
+        convert_from(ad.full_app_data, 'UTF8')::JSONB->'metadata'->'partnerFee'->>'recipient' as partner_fee_recipient,
         coalesce(oe.protocol_fee_amounts[1], 0) as first_protocol_fee_amount,
         coalesce(oe.protocol_fee_amounts[2], 0) as second_protocol_fee_amount
     from
