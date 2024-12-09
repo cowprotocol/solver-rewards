@@ -216,10 +216,10 @@ reward_per_auction as (
         -- Capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
         LEAST(
             GREATEST(
-                - 10000000000000000000,
+                - {{EPSILON_LOWER}},
                 observed_score - reference_score
             ),
-            20000000000000000000
+            {{EPSILON_UPPER}}
         ) as capped_payment,
         winning_score,
         reference_score

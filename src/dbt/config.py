@@ -18,31 +18,6 @@ class SyncConfig:
     sync_file: str = "sync_block.csv"
     sync_column: str = "last_synced_block"
 
-
-@dataclass
-class AppDataSyncConfig:
-    """Configuration for app data sync."""
-
-    # The name of the table to upload to
-    table: str = "app_data_test"
-    # Description of the table (for creation)
-    description: str = (
-        "Table containing known CoW Protocol appData hashes and their pre-images"
-    )
-
-
-@dataclass
-class PriceFeedSyncConfig:
-    """Configuration for price feed sync."""
-
-    # The name of the table to upload to
-    table: str = "price_feed_test"
-    # Description of the table (for creation)
-    description: str = (
-        "Table containing prices and timestamps from multiple price feeds"
-    )
-
-
 @dataclass
 class BatchDataSyncConfig:
     """Configuration for batch data sync."""

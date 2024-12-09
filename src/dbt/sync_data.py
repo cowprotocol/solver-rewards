@@ -72,7 +72,7 @@ async def sync_data_to_db(
         log.info("SQL query successfully executed. About to update analytics table.")
         data.to_sql(
             table_name,
-            orderbook._pg_engine(OrderbookEnv.ANALYTICS),
+            OrderbookFetcher.pg_engine(OrderbookEnv.ANALYTICS),
             if_exists="replace",
         )
         log.info(
