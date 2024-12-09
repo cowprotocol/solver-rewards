@@ -1,5 +1,5 @@
 with observed_settlements as (
-    select
+    select --noqa: ST06
         -- settlement
         tx_hash,
         solver,
@@ -8,15 +8,14 @@ with observed_settlements as (
         effective_gas_price * gas_used as execution_cost,
         surplus,
         s.auction_id
-    from
-        settlement_observations so
-        join settlements s on s.block_number = so.block_number
-        and s.log_index = so.log_index
-        join settlement_scores ss on s.auction_id = ss.auction_id
+    from settlements as s inner join settlement_observations as so
+        on s.block_number = so.block_number and s.log_index = so.log_index
+    inner join settlement_scores as ss on s.auction_id = ss.auction_id
     where
         ss.block_deadline >= {{start_block}}
         and ss.block_deadline <= {{end_block}}
 ),
+
 -- order data
 order_data as (
     select
@@ -39,9 +38,10 @@ order_data as (
         app_data
     from jit_orders
 ),
+
 -- unprocessed trade data
 trade_data_unprocessed as (
-    select
+    select --noqa: ST06
         ss.winner as solver,
         s.auction_id,
         s.tx_hash,
@@ -60,25 +60,22 @@ trade_data_unprocessed as (
         coalesce(oe.protocol_fee_amounts[1], 0) as first_protocol_fee_amount,
         coalesce(oe.protocol_fee_amounts[2], 0) as second_protocol_fee_amount
     from
-        settlements s
-        join settlement_scores ss -- contains block_deadline
+        settlements as s inner join settlement_scores as ss -- contains block_deadline
         on s.auction_id = ss.auction_id
-        join trades t -- contains traded amounts
+    inner join trades as t -- contains traded amounts
         on s.block_number = t.block_number -- given the join that follows with the order execution table, this works even when multiple txs appear in the same block
-        join order_data od -- contains tokens and limit amounts
+    inner join order_data as od -- contains tokens and limit amounts
         on t.order_uid = od.uid
-        join order_execution oe -- contains surplus fee
-        on t.order_uid = oe.order_uid
-        and s.auction_id = oe.auction_id
-        left outer join app_data ad -- contains full app data
+    inner join order_execution as oe -- contains surplus fee
+        on t.order_uid = oe.order_uid and s.auction_id = oe.auction_id
+    left outer join app_data as ad -- contains full app data
         on od.app_data = ad.contract_app_data
-    where
-        ss.block_deadline >= {{start_block}}
-        and ss.block_deadline <= {{end_block}}
+    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
 ),
+
 -- processed trade data:
 trade_data_processed as (
-    select
+    select --noqa: ST06
         auction_id,
         solver,
         tx_hash,
@@ -99,6 +96,7 @@ trade_data_processed as (
     from
         trade_data_unprocessed
 ),
+
 price_data as (
     select
         tdp.auction_id,
@@ -106,20 +104,16 @@ price_data as (
         ap_surplus.price / pow(10, 18) as surplus_token_native_price,
         ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
         ap_sell.price / pow(10, 18) as network_fee_token_native_price
-    from
-        trade_data_processed as tdp
-        left outer join auction_prices ap_sell -- contains price: sell token
-        on tdp.auction_id = ap_sell.auction_id
-        and tdp.sell_token = ap_sell.token
-        left outer join auction_prices ap_surplus -- contains price: surplus token
-        on tdp.auction_id = ap_surplus.auction_id
-        and tdp.surplus_token = ap_surplus.token
-        left outer join auction_prices ap_protocol -- contains price: protocol fee token
-        on tdp.auction_id = ap_protocol.auction_id
-        and tdp.surplus_token = ap_protocol.token
+    from trade_data_processed as tdp left outer join auction_prices as ap_sell -- contains price: sell token
+        on tdp.auction_id = ap_sell.auction_id and tdp.sell_token = ap_sell.token
+    left outer join auction_prices as ap_surplus -- contains price: surplus token
+        on tdp.auction_id = ap_surplus.auction_id and tdp.surplus_token = ap_surplus.token
+    left outer join auction_prices as ap_protocol -- contains price: protocol fee token
+        on tdp.auction_id = ap_protocol.auction_id and tdp.surplus_token = ap_protocol.token
 ),
+
 trade_data_processed_with_prices as (
-    select
+    select --noqa: ST06
         tdp.auction_id,
         tdp.solver,
         tdp.tx_hash,
@@ -137,12 +131,10 @@ trade_data_processed_with_prices as (
         surplus_token_native_price,
         protocol_fee_token_native_price,
         network_fee_token_native_price
-    from
-        trade_data_processed as tdp
-        join price_data pd
-        on tdp.auction_id = pd.auction_id
-        and tdp.order_uid = pd.order_uid
+    from trade_data_processed as tdp inner join price_data as pd
+        on tdp.auction_id = pd.auction_id and tdp.order_uid = pd.order_uid
 ),
+
 batch_protocol_fees as (
     select
         solver,
@@ -154,6 +146,7 @@ batch_protocol_fees as (
         solver,
         tx_hash
 ),
+
 batch_network_fees as (
     select
         solver,
@@ -165,8 +158,9 @@ batch_network_fees as (
         solver,
         tx_hash
 ),
+
 reward_data as (
-    select
+    select --noqa: ST06
         -- observations
         os.tx_hash,
         ss.auction_id,
@@ -180,27 +174,21 @@ reward_data as (
         -- scores
         winning_score,
         case
-            when block_number is not null
-            and block_number <= block_deadline + 1 then winning_score -- this includes a grace period of one block for settling a batch
+            when block_number is not null and block_number <= block_deadline + 1 then winning_score -- this includes a grace period of one block for settling a batch
             else 0
         end as observed_score,
         reference_score,
         -- protocol_fees
         coalesce(cast(protocol_fee as numeric(78, 0)), 0) as protocol_fee,
-        coalesce(
-            cast(network_fee as numeric(78, 0)),
-            0
-        ) as network_fee
-    from
-        settlement_scores ss
-        -- outer joins made in order to capture non-existent settlements.
-        left outer join observed_settlements os on os.auction_id = ss.auction_id
-        left outer join batch_protocol_fees bpf on bpf.tx_hash = os.tx_hash
-        left outer join batch_network_fees bnf on bnf.tx_hash = os.tx_hash
-        where
-            ss.block_deadline >= {{start_block}}
-            and ss.block_deadline <= {{end_block}}
+        coalesce(cast(network_fee as numeric(78, 0)), 0) as network_fee
+    from settlement_scores as ss
+    -- outer joins made in order to capture non-existent settlements.
+    left outer join observed_settlements as os on os.auction_id = ss.auction_id
+    left outer join batch_protocol_fees as bpf on bpf.tx_hash = os.tx_hash
+    left outer join batch_network_fees as bnf on bnf.tx_hash = os.tx_hash
+    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
 ),
+
 reward_per_auction as (
     select
         tx_hash,
@@ -216,7 +204,7 @@ reward_per_auction as (
         -- Capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
         least(
             greatest(
-                - {{EPSILON_LOWER}},
+                -{{EPSILON_LOWER}},
                 observed_score - reference_score
             ),
             {{EPSILON_UPPER}}
@@ -226,49 +214,47 @@ reward_per_auction as (
     from
         reward_data
 ),
+
 primary_rewards as (
     select
-        rpt.solver,
+        solver,
         sum(capped_payment) as payment,
         sum(protocol_fee) as protocol_fee,
         sum(network_fee) as network_fee
-    from
-        reward_per_auction rpt
-    group by
-        solver
+    from reward_per_auction
+    group by solver
 ),
+
 partner_fees_per_solver as (
     select
         solver,
         partner_fee_recipient,
         sum(partner_fee * protocol_fee_token_native_price) as partner_fee
-    from
-        trade_data_processed_with_prices
-        where partner_fee_recipient is not null
-        group by solver,partner_fee_recipient
+    from trade_data_processed_with_prices
+    where partner_fee_recipient is not null
+    group by solver, partner_fee_recipient
 ),
+
 aggregate_partner_fees_per_solver as (
     select
         solver,
         array_agg(partner_fee_recipient) as partner_list,
         array_agg(partner_fee) as partner_fee
     from partner_fees_per_solver
-        group by solver
+    group by solver
 ),
+
 aggregate_results as (
-    select
+    select --noqa: ST06
         concat('0x', encode(pr.solver, 'hex')) as solver,
         coalesce(payment, 0) as primary_reward_eth,
         coalesce(protocol_fee, 0) as protocol_fee_eth,
         coalesce(network_fee, 0) as network_fee_eth,
         partner_list,
         partner_fee as partner_fee_eth
-    from primary_rewards pr
-        left outer join aggregate_partner_fees_per_solver aif on pr.solver = aif.solver
-) --
-select
-    *
-from
-    aggregate_results
-order by
-    solver
+    from primary_rewards as pr left outer join aggregate_partner_fees_per_solver as aif on pr.solver = aif.solver
+)
+
+select *
+from aggregate_results
+order by solver
