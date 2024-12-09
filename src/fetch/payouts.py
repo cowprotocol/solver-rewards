@@ -415,9 +415,12 @@ def construct_payout_dataframe(
 
     # 3. Merge the three dataframes (joining on solver)
     merged_df = (
-        payment_df.merge(slippage_df, on=join_column, how="left")
-        .merge(reward_target_df, on=join_column, how="left")
-        .merge(service_fee_df, on=join_column, how="left")
+        payment_df[list(PAYMENT_COLUMNS)]
+        .merge(slippage_df[list(SLIPPAGE_COLUMNS)], on=join_column, how="left")
+        .merge(
+            reward_target_df[list(REWARD_TARGET_COLUMNS)], on=join_column, how="left"
+        )
+        .merge(service_fee_df[list(SERVICE_FEE_COLUMNS)], on=join_column, how="left")
     )
 
     # 4. Add slippage from fees to slippage
