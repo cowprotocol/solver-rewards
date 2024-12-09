@@ -270,5 +270,5 @@ select
     *
 from
     aggregate_results
-ORDER BY
+order by
     solver
