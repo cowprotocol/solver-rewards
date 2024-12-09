@@ -46,6 +46,7 @@ class MultiInstanceDBFetcher:
             .replace("{{end_block}}", end_block)
             .replace("{{EPSILON_LOWER}}", str(reward_cap_lower))
             .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
+            .replace("{{results}}", "solver_rewards_script_table")
         )
         batch_reward_query_barn = (
             open_query("orderbook/barn_batch_rewards.sql")
@@ -53,6 +54,7 @@ class MultiInstanceDBFetcher:
             .replace("{{end_block}}", end_block)
             .replace("{{EPSILON_LOWER}}", str(reward_cap_lower))
             .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
+            .replace("{{results}}", "solver_rewards_script_table")
         )
         results = []
 
