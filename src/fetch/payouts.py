@@ -36,10 +36,9 @@ PAYMENT_COLUMNS = {
 }
 SLIPPAGE_COLUMNS = {
     "solver",
-    "solver_name",
     "eth_slippage_wei",
 }
-REWARD_TARGET_COLUMNS = {"solver", "reward_target", "pool_address"}
+REWARD_TARGET_COLUMNS = {"solver", "solver_name", "reward_target", "pool_address"}
 SERVICE_FEE_COLUMNS = {"solver", "service_fee"}
 ADDITIONAL_PAYMENT_COLUMNS = {"buffer_accounting_target", "reward_token_address"}
 
@@ -416,9 +415,12 @@ def construct_payout_dataframe(
 
     # 3. Merge the three dataframes (joining on solver)
     merged_df = (
-        payment_df.merge(slippage_df, on=join_column, how="left")
-        .merge(reward_target_df, on=join_column, how="left")
-        .merge(service_fee_df, on=join_column, how="left")
+        payment_df[list(PAYMENT_COLUMNS)]
+        .merge(slippage_df[list(SLIPPAGE_COLUMNS)], on=join_column, how="left")
+        .merge(
+            reward_target_df[list(REWARD_TARGET_COLUMNS)], on=join_column, how="left"
+        )
+        .merge(service_fee_df[list(SERVICE_FEE_COLUMNS)], on=join_column, how="left")
     )
 
     # 4. Add slippage from fees to slippage
@@ -510,11 +512,15 @@ def construct_payouts(
         quote_rewards_df, batch_rewards_df, on="solver", how="outer"
     ).fillna(0)
 
-    service_fee_df = pandas.DataFrame(dune.get_service_fee_status())
-    service_fee_df["service_fee"] = [
-        service_fee_flag * config.reward_config.service_fee_factor
-        for service_fee_flag in service_fee_df["service_fee"]
-    ]
+    service_fee_dune = dune.get_service_fee_status()
+    if service_fee_dune:
+        service_fee_df = pandas.DataFrame(service_fee_dune)
+        service_fee_df["service_fee"] = [
+            service_fee_flag * config.reward_config.service_fee_factor
+            for service_fee_flag in service_fee_df["service_fee"]
+        ]
+    else:
+        service_fee_df = DataFrame(columns=["solver", "service_fee"])
 
     vouches = dune.get_vouches()
     if vouches:
@@ -525,15 +531,8 @@ def construct_payouts(
         )
     # construct slippage df
     if ignore_slippage_flag or (not config.buffer_accounting_config.include_slippage):
-        slippage_df_temp = pandas.merge(
-            merged_df[["solver"]],
-            reward_target_df[["solver", "solver_name"]],
-            on="solver",
-            how="inner",
-        )
-        slippage_df = slippage_df_temp.assign(
-            eth_slippage_wei=[0] * slippage_df_temp.shape[0]
-        )
+        slippage_df = merged_df[["solver"]].copy()
+        slippage_df["eth_slippage_wei"] = [0] * slippage_df.shape[0]
     else:
         slippage_df = pandas.DataFrame(dune.get_period_slippage())
         # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
