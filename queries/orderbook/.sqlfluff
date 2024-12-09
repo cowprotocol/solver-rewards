@@ -1,0 +1,5 @@
+[sqlfluff:templater:jinja:context]
+start_block=100
+end_block=100000000
+EPSILON_LOWER=10000000000000000
+EPSILON_UPPER=12000000000000000
