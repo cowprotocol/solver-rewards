@@ -1,13 +1,13 @@
 with trade_hashes as (
     select
         settlement.solver,
-        t.block_number as block_number,
+        t.block_number,
         order_uid,
         fee_amount,
         settlement.tx_hash,
         auction_id
     from
-        trades t
+        trades as t
         left outer join lateral (
             select
                 tx_hash,
@@ -18,7 +18,7 @@ with trade_hashes as (
                 block_number,
                 log_index
             from
-                settlements s
+                settlements as s
             where
                 s.block_number = t.block_number
                 and s.log_index > t.log_index
@@ -27,12 +27,13 @@ with trade_hashes as (
             limit
                 1
         ) as settlement on true
-        join settlement_observations so on settlement.block_number = so.block_number
+        join settlement_observations as so on settlement.block_number = so.block_number
         and settlement.log_index = so.log_index
     where
         settlement.block_number >= {{start_block}}
         and settlement.block_number <= {{end_block}}
 ),
+
 -- order data
 order_data as (
     select
@@ -44,7 +45,7 @@ order_data as (
         kind,
         app_data
     from orders
-    union ALL
+    union all
     select
         uid,
         sell_token,
@@ -55,16 +56,17 @@ order_data as (
         app_data
     from jit_orders
 ),
+
 protocol_fee_kind as (
     select distinct on (fp.auction_id, fp.order_uid)
         fp.auction_id,
         fp.order_uid,
         fp.kind
-    from fee_policies fp
-        join trade_hashes th
+    from fee_policies as fp inner join trade_hashes as th
         on fp.auction_id = th.auction_id and fp.order_uid = th.order_uid
     order by fp.auction_id, fp.order_uid, fp.application_order
 ),
+
 -- unprocessed trade data
 trade_data_unprocessed as (
     select
