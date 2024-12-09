@@ -45,7 +45,7 @@ class OrderbookFetcher:
     """
 
     @staticmethod
-    def _pg_engine(db_env: OrderbookEnv) -> Engine:
+    def pg_engine(db_env: OrderbookEnv) -> Engine:
         """Returns a connection to postgres database"""
         load_dotenv()
         if db_env == OrderbookEnv.ANALYTICS:
@@ -61,7 +61,7 @@ class OrderbookFetcher:
     def _read_query_for_env(
         cls, query: str, env: OrderbookEnv, data_types: Optional[dict[str, str]] = None
     ) -> DataFrame:
-        return pd.read_sql_query(query, con=cls._pg_engine(env), dtype=data_types)
+        return pd.read_sql_query(query, con=cls.pg_engine(env), dtype=data_types)
 
     @classmethod
     def _query_both_dbs(
