@@ -265,7 +265,7 @@ aggregate_results as (
         partner_list,
         partner_fee as partner_fee_eth
     from primary_rewards as pr left outer join aggregate_partner_fees_per_solver as aif on pr.solver = aif.solver
-)
+),
 
 solver_rewards_script_table as (
     select *
