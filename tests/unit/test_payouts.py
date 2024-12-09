@@ -153,11 +153,9 @@ class TestPayoutTransformations(unittest.TestCase):
                 "quote_reward_cow": [],
             }
         )
-        legit_slippages = DataFrame(
-            {"solver": [], "solver_name": [], "eth_slippage_wei": []}
-        )
+        legit_slippages = DataFrame({"solver": [], "eth_slippage_wei": []})
         legit_reward_targets = DataFrame(
-            {"solver": [], "reward_target": [], "pool_address": []}
+            {"solver": [], "solver_name": [], "reward_target": [], "pool_address": []}
         )
         legit_service_fees = DataFrame({"solver": [], "service_fee": []})
 
@@ -221,7 +219,6 @@ class TestPayoutTransformations(unittest.TestCase):
                 "solver": self.solvers[:3],
                 # Note that one of the solvers did not appear,
                 # in this list (we are testing the left join)
-                "solver_name": ["S_1", "S_2", "S_3"],
                 "eth_slippage_wei": [1, 0, -1],
             }
         )
@@ -229,6 +226,7 @@ class TestPayoutTransformations(unittest.TestCase):
         reward_targets = DataFrame(
             {
                 "solver": self.solvers,
+                "solver_name": ["S_1", "S_2", "S_3", "S_4"],
                 "reward_target": self.reward_targets,
                 "pool_address": self.pool_addresses,
             }
@@ -247,25 +245,36 @@ class TestPayoutTransformations(unittest.TestCase):
         )
         expected = DataFrame(
             {
-                "solver": self.solvers,
-                "num_quotes": self.num_quotes,
-                "primary_reward_eth": [600000000000000.0, 1.2e16, -1e16, 0.0],
-                "protocol_fee_eth": [
-                    1000000000000000.0,
-                    2000000000000000.0,
-                    0.0,
-                    0.0,
+                "buffer_accounting_target": [
+                    "0x0000000000000000000000000000000000000005",
+                    str(self.solvers[1]),
+                    str(self.solvers[2]),
+                    str(self.solvers[3]),
                 ],
+                "eth_slippage_wei": [2000000000000001.0, 4000000000000000.0, -1.0, 0.0],
                 "network_fee_eth": [
                     2000000000000000.0,
                     4000000000000000.0,
                     0.0,
                     0.0,
                 ],
+                "pool_address": [
+                    str(self.config.reward_config.cow_bonding_pool),
+                    "0x0000000000000000000000000000000000000010",
+                    "0x0000000000000000000000000000000000000011",
+                    "0x0000000000000000000000000000000000000012",
+                ],
                 "primary_reward_cow": [
                     600000000000000000.0,
                     12000000000000000000.0,
                     -10000000000000000000.0,
+                    0.0,
+                ],
+                "primary_reward_eth": [600000000000000.0, 1.2e16, -1e16, 0.0],
+                "protocol_fee_eth": [
+                    1000000000000000.0,
+                    2000000000000000.0,
+                    0.0,
                     0.0,
                 ],
                 "quote_reward_cow": [
@@ -274,31 +283,11 @@ class TestPayoutTransformations(unittest.TestCase):
                     6000000000000000000.00000,
                     12000000000000000000.00000,
                 ],
-                "solver_name": ["S_1", "S_2", "S_3", None],
-                "eth_slippage_wei": [2000000000000001.0, 4000000000000000.0, -1.0, 0.0],
                 "reward_target": [
                     "0x0000000000000000000000000000000000000005",
                     "0x0000000000000000000000000000000000000006",
                     "0x0000000000000000000000000000000000000007",
                     "0x0000000000000000000000000000000000000008",
-                ],
-                "pool_address": [
-                    str(self.config.reward_config.cow_bonding_pool),
-                    "0x0000000000000000000000000000000000000010",
-                    "0x0000000000000000000000000000000000000011",
-                    "0x0000000000000000000000000000000000000012",
-                ],
-                "service_fee": [
-                    Fraction(0, 100),
-                    Fraction(0, 100),
-                    Fraction(0, 100),
-                    Fraction(15, 100),
-                ],
-                "buffer_accounting_target": [
-                    "0x0000000000000000000000000000000000000005",
-                    str(self.solvers[1]),
-                    str(self.solvers[2]),
-                    str(self.solvers[3]),
                 ],
                 "reward_token_address": [
                     str(self.config.reward_config.reward_token_address),
@@ -306,10 +295,22 @@ class TestPayoutTransformations(unittest.TestCase):
                     str(self.config.reward_config.reward_token_address),
                     str(self.config.reward_config.reward_token_address),
                 ],
+                "service_fee": [
+                    Fraction(0, 100),
+                    Fraction(0, 100),
+                    Fraction(0, 100),
+                    Fraction(15, 100),
+                ],
+                "solver": self.solvers,
+                "solver_name": ["S_1", "S_2", "S_3", "S_4"],
             }
         )
 
-        self.assertIsNone(pandas.testing.assert_frame_equal(expected, result))
+        self.assertIsNone(
+            pandas.testing.assert_frame_equal(
+                expected, result.reindex(sorted(result.columns), axis=1)
+            )
+        )
 
     def test_prepare_transfers(self):
         # Need Example of every possible scenario
