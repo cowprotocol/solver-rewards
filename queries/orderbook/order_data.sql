@@ -10,21 +10,15 @@ with trade_hashes as (
         trades as t
     left outer join lateral (
         select
-            tx_hash,
-            solver,
-            tx_nonce,
-            tx_from,
-            auction_id,
-            block_number,
-            log_index
-        from
-            settlements as s
-        where
-            s.block_number = t.block_number and s.log_index > t.log_index
-        order by
-            s.log_index asc
-        limit
-            1
+            s.tx_hash,
+            s.solver,
+            s.auction_id,
+            s.block_number,
+            s.log_index
+        from settlements as s
+        where s.block_number = t.block_number and s.log_index > t.log_index
+        order by s.log_index asc
+        limit 1
     ) as settlement on true
     inner join settlement_observations as so
         on settlement.block_number = so.block_number and settlement.log_index = so.log_index
@@ -205,7 +199,7 @@ select
         when protocol_fee_token is not null then concat('0x', encode(protocol_fee_token, 'hex'))
     end as protocol_fee_token,
     coalesce(protocol_fee_token_native_price, 0.0) as protocol_fee_native_price,
-    cast(cast(oq.sell_amount as numeric(78, 0)) as text)  as quote_sell_amount,
+    cast(cast(oq.sell_amount as numeric(78, 0)) as text) as quote_sell_amount,
     cast(cast(oq.buy_amount as numeric(78, 0)) as text) as quote_buy_amount,
     oq.gas_amount * oq.gas_price as quote_gas_cost,
     oq.sell_token_price as quote_sell_token_price,
