@@ -1,15 +1,15 @@
 with trade_hashes as (
-    SELECT
+    select
         settlement.solver,
         t.block_number as block_number,
         order_uid,
         fee_amount,
         settlement.tx_hash,
         auction_id
-    FROM
+    from
         trades t
-        LEFT OUTER JOIN LATERAL (
-            SELECT
+        left outer join lateral (
+            select
                 tx_hash,
                 solver,
                 tx_nonce,
@@ -17,16 +17,16 @@ with trade_hashes as (
                 auction_id,
                 block_number,
                 log_index
-            FROM
+            from
                 settlements s
-            WHERE
+            where
                 s.block_number = t.block_number
-                AND s.log_index > t.log_index
-            ORDER BY
-                s.log_index ASC
-            LIMIT
+                and s.log_index > t.log_index
+            order by
+                s.log_index asc
+            limit
                 1
-        ) AS settlement ON true
+        ) as settlement on true
         join settlement_observations so on settlement.block_number = so.block_number
         and settlement.log_index = so.log_index
     where
@@ -34,8 +34,8 @@ with trade_hashes as (
         and settlement.block_number <= {{end_block}}
 ),
 -- order data
-order_data AS (
-    SELECT
+order_data as (
+    select
         uid,
         sell_token,
         buy_token,
@@ -43,9 +43,9 @@ order_data AS (
         buy_amount,
         kind,
         app_data
-    FROM orders
-    UNION ALL
-    SELECT
+    from orders
+    union ALL
+    select
         uid,
         sell_token,
         buy_token,
@@ -53,22 +53,22 @@ order_data AS (
         buy_amount,
         kind,
         app_data
-    FROM jit_orders
+    from jit_orders
 ),
-protocol_fee_kind AS (
-    SELECT DISTINCT ON (fp.auction_id, fp.order_uid)
+protocol_fee_kind as (
+    select distinct on (fp.auction_id, fp.order_uid)
         fp.auction_id,
         fp.order_uid,
         fp.kind
-    FROM fee_policies fp
-        JOIN trade_hashes th
-        ON fp.auction_id = th.auction_id AND fp.order_uid = th.order_uid
-    ORDER BY fp.auction_id, fp.order_uid, fp.application_order
+    from fee_policies fp
+        join trade_hashes th
+        on fp.auction_id = th.auction_id and fp.order_uid = th.order_uid
+    order by fp.auction_id, fp.order_uid, fp.application_order
 ),
 -- unprocessed trade data
-trade_data_unprocessed AS (
-    SELECT
-        ss.winner AS solver,
+trade_data_unprocessed as (
+    select
+        ss.winner as solver,
         s.auction_id,
         s.tx_hash,
         t.order_uid,
@@ -76,35 +76,35 @@ trade_data_unprocessed AS (
         od.buy_token,
         t.sell_amount, -- the total amount the user sends
         t.buy_amount, -- the total amount the user receives
-        oe.surplus_fee AS observed_fee, -- the total discrepancy between what the user sends and what they would have send if they traded at clearing price
+        oe.surplus_fee as observed_fee, -- the total discrepancy between what the user sends and what they would have send if they traded at clearing price
         od.kind,
-        CASE
-            WHEN od.kind = 'sell' THEN od.buy_token
-            WHEN od.kind = 'buy' THEN od.sell_token
-        END AS surplus_token,
-        convert_from(ad.full_app_data, 'UTF8')::JSONB->'metadata'->'partnerFee'->>'recipient' AS partner_fee_recipient,
-        COALESCE(oe.protocol_fee_amounts[1], 0) AS first_protocol_fee_amount,
-        COALESCE(oe.protocol_fee_amounts[2], 0) AS second_protocol_fee_amount
-    FROM
+        case
+            when od.kind = 'sell' then od.buy_token
+            when od.kind = 'buy' then od.sell_token
+        end as surplus_token,
+        convert_from(ad.full_app_data, 'UTF8')::JSONB->'metadata'->'partnerFee'->>'recipient' as partner_fee_recipient,
+        coalesce(oe.protocol_fee_amounts[1], 0) as first_protocol_fee_amount,
+        coalesce(oe.protocol_fee_amounts[2], 0) as second_protocol_fee_amount
+    from
         settlements s
-        JOIN settlement_scores ss -- contains block_deadline
-        ON s.auction_id = ss.auction_id
-        JOIN trades t -- contains traded amounts
-        ON s.block_number = t.block_number -- given the join that follows with the order execution table, this works even when multiple txs appear in the same block
-        JOIN order_data od -- contains tokens and limit amounts
-        ON t.order_uid = od.uid
-        JOIN order_execution oe -- contains surplus fee
-        ON t.order_uid = oe.order_uid
-        AND s.auction_id = oe.auction_id
-        LEFT OUTER JOIN app_data ad -- contains full app data
-        ON od.app_data = ad.contract_app_data
-    WHERE
+        join settlement_scores ss -- contains block_deadline
+        on s.auction_id = ss.auction_id
+        join trades t -- contains traded amounts
+        on s.block_number = t.block_number -- given the join that follows with the order execution table, this works even when multiple txs appear in the same block
+        join order_data od -- contains tokens and limit amounts
+        on t.order_uid = od.uid
+        join order_execution oe -- contains surplus fee
+        on t.order_uid = oe.order_uid
+        and s.auction_id = oe.auction_id
+        left outer join app_data ad -- contains full app data
+        on od.app_data = ad.contract_app_data
+    where
         s.block_number >= {{start_block}}
-        AND s.block_number <= {{end_block}}
+        and s.block_number <= {{end_block}}
 ),
 -- processed trade data:
-trade_data_processed AS (
-    SELECT
+trade_data_processed as (
+    select
         tdu.auction_id,
         tdu.solver,
         tdu.tx_hash,
@@ -115,40 +115,40 @@ trade_data_processed AS (
         tdu.observed_fee,
         tdu.surplus_token,
         tdu.second_protocol_fee_amount,
-        tdu.first_protocol_fee_amount + tdu.second_protocol_fee_amount AS protocol_fee,
+        tdu.first_protocol_fee_amount + tdu.second_protocol_fee_amount as protocol_fee,
         tdu.partner_fee_recipient,
-        CASE
-            WHEN tdu.partner_fee_recipient IS NOT NULL THEN tdu.second_protocol_fee_amount
-            ELSE 0
-        END AS partner_fee,
-        tdu.surplus_token AS protocol_fee_token,
+        case
+            when tdu.partner_fee_recipient is not null then tdu.second_protocol_fee_amount
+            else 0
+        end as partner_fee,
+        tdu.surplus_token as protocol_fee_token,
         pfk.kind as protocol_fee_kind
-    FROM
+    from
         trade_data_unprocessed tdu
-            LEFT OUTER JOIN protocol_fee_kind pfk
-            ON tdu.order_uid = pfk.order_uid AND tdu.auction_id = pfk.auction_id 
+            left outer join protocol_fee_kind pfk
+            on tdu.order_uid = pfk.order_uid and tdu.auction_id = pfk.auction_id 
 ),
-price_data AS (
-    SELECT
+price_data as (
+    select
         tdp.auction_id,
         tdp.order_uid,
-        ap_surplus.price / pow(10, 18) AS surplus_token_native_price,
-        ap_protocol.price / pow(10, 18) AS protocol_fee_token_native_price,
-        ap_sell.price / pow(10, 18) AS network_fee_token_native_price
-    FROM
-        trade_data_processed AS tdp
-        LEFT OUTER JOIN auction_prices ap_sell -- contains price: sell token
-        ON tdp.auction_id = ap_sell.auction_id
-        AND tdp.sell_token = ap_sell.token
-        LEFT OUTER JOIN auction_prices ap_surplus -- contains price: surplus token
-        ON tdp.auction_id = ap_surplus.auction_id
-        AND tdp.surplus_token = ap_surplus.token
-        LEFT OUTER JOIN auction_prices ap_protocol -- contains price: protocol fee token
-        ON tdp.auction_id = ap_protocol.auction_id
-        AND tdp.surplus_token = ap_protocol.token
+        ap_surplus.price / pow(10, 18) as surplus_token_native_price,
+        ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
+        ap_sell.price / pow(10, 18) as network_fee_token_native_price
+    from
+        trade_data_processed as tdp
+        left outer join auction_prices ap_sell -- contains price: sell token
+        on tdp.auction_id = ap_sell.auction_id
+        and tdp.sell_token = ap_sell.token
+        left outer join auction_prices ap_surplus -- contains price: surplus token
+        on tdp.auction_id = ap_surplus.auction_id
+        and tdp.surplus_token = ap_surplus.token
+        left outer join auction_prices ap_protocol -- contains price: protocol fee token
+        on tdp.auction_id = ap_protocol.auction_id
+        and tdp.surplus_token = ap_protocol.token
 ),
-trade_data_processed_with_prices AS (
-    SELECT
+trade_data_processed_with_prices as (
+    select
         tdp.auction_id,
         tdp.solver,
         tdp.tx_hash,
@@ -158,47 +158,47 @@ trade_data_processed_with_prices AS (
         tdp.protocol_fee_token,
         tdp.partner_fee,
         tdp.partner_fee_recipient,
-        CASE
-            WHEN tdp.sell_token != tdp.surplus_token THEN tdp.observed_fee - (tdp.sell_amount - tdp.observed_fee) / tdp.buy_amount * COALESCE(tdp.protocol_fee, 0)
-            ELSE tdp.observed_fee - COALESCE(tdp.protocol_fee, 0)
-        END AS network_fee,
-        tdp.sell_token AS network_fee_token,
+        case
+            when tdp.sell_token != tdp.surplus_token then tdp.observed_fee - (tdp.sell_amount - tdp.observed_fee) / tdp.buy_amount * coalesce(tdp.protocol_fee, 0)
+            else tdp.observed_fee - coalesce(tdp.protocol_fee, 0)
+        end as network_fee,
+        tdp.sell_token as network_fee_token,
         surplus_token_native_price,
         protocol_fee_token_native_price,
         network_fee_token_native_price,
         protocol_fee_kind
-    FROM
-        trade_data_processed AS tdp
-        JOIN price_data pd
-        ON tdp.auction_id = pd.auction_id
-        AND tdp.order_uid = pd.order_uid
+    from
+        trade_data_processed as tdp
+        join price_data pd
+        on tdp.auction_id = pd.auction_id
+        and tdp.order_uid = pd.order_uid
 ),
 winning_quotes as (
-    SELECT
+    select
         concat('0x', encode(oq.solver, 'hex')) as quote_solver,
         oq.order_uid
-    FROM
+    from
         trades t
-        INNER JOIN orders o ON order_uid = uid
-        JOIN order_quotes oq ON t.order_uid = oq.order_uid
-    WHERE
+        inner join orders o on order_uid = uid
+        join order_quotes oq on t.order_uid = oq.order_uid
+    where
         (
             o.class = 'market'
             OR (
                 o.kind = 'sell'
-                AND (
+                and (
                     oq.sell_amount - oq.gas_amount * oq.gas_price / oq.sell_token_price
                 ) * oq.buy_amount >= o.buy_amount * oq.sell_amount
             )
             OR (
                 o.kind = 'buy'
-                AND o.sell_amount >= oq.sell_amount + oq.gas_amount * oq.gas_price / oq.sell_token_price
+                and o.sell_amount >= oq.sell_amount + oq.gas_amount * oq.gas_price / oq.sell_token_price
             )
         )
-        AND o.partially_fillable = 'f' -- the code above might fail for partially fillable orders
-        AND t.block_number >= {{start_block}}
-        AND t.block_number <= {{end_block}}
-        AND oq.solver != '\x0000000000000000000000000000000000000000'
+        and o.partially_fillable = 'f' -- the code above might fail for partially fillable orders
+        and t.block_number >= {{start_block}}
+        and t.block_number <= {{end_block}}
+        and oq.solver != '\x0000000000000000000000000000000000000000'
 ) -- Most efficient column order for sorting would be having tx_hash or order_uid first
 select
     '{{env}}' as environment,
@@ -211,9 +211,9 @@ select
     coalesce(surplus_fee, 0) :: text as surplus_fee,
     coalesce(reward, 0.0) as amount,
     coalesce(cast(protocol_fee as numeric(78, 0)), 0) :: text as protocol_fee,
-    CASE
-        WHEN protocol_fee_token is not NULL THEN concat('0x', encode(protocol_fee_token, 'hex'))
-    END as protocol_fee_token,
+    case
+        when protocol_fee_token is not null then concat('0x', encode(protocol_fee_token, 'hex'))
+    end as protocol_fee_token,
     coalesce(protocol_fee_token_native_price, 0.0) as protocol_fee_native_price,
     cast(oq.sell_amount as numeric(78, 0)) :: text  as quote_sell_amount,
     cast(oq.buy_amount as numeric(78, 0)) :: text as quote_buy_amount,
