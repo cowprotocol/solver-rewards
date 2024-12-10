@@ -83,16 +83,24 @@ class OrderbookFetcher:
             open_query("orderbook/prod_batch_rewards.sql")
             .replace("{{start_block}}", str(block_range.block_from))
             .replace("{{end_block}}", str(block_range.block_to))
-            .replace("{{EPSILON_LOWER}}", config.reward_config.batch_reward_cap_lower)
-            .replace("{{EPSILON_UPPER}}", config.reward_config.batch_reward_cap_upper)
+            .replace(
+                "{{EPSILON_LOWER}}", str(config.reward_config.batch_reward_cap_lower)
+            )
+            .replace(
+                "{{EPSILON_UPPER}}", str(config.reward_config.batch_reward_cap_upper)
+            )
             .replace("{{results}}", "dune_sync_batch_data_table")
         )
         batch_data_query_barn = (
             open_query("orderbook/barn_batch_rewards.sql")
             .replace("{{start_block}}", str(block_range.block_from))
             .replace("{{end_block}}", str(block_range.block_to))
-            .replace("{{EPSILON_LOWER}}", config.reward_config.batch_reward_cap_lower)
-            .replace("{{EPSILON_UPPER}}", config.reward_config.batch_reward_cap_upper)
+            .replace(
+                "{{EPSILON_LOWER}}", str(config.reward_config.batch_reward_cap_lower)
+            )
+            .replace(
+                "{{EPSILON_UPPER}}", str(config.reward_config.batch_reward_cap_upper)
+            )
             .replace("{{results}}", "dune_sync_batch_data_table")
         )
         data_types = {
