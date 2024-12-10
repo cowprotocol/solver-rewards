@@ -336,6 +336,33 @@ class IOConfig:
 
 
 @dataclass(frozen=True)
+class DataProcessingConfig:
+    """Configuration of data processing component."""
+
+    # pylint: disable=too-many-instance-attributes
+    bucket_size: int
+
+    @staticmethod
+    def from_network(network: Network) -> DataProcessingConfig:
+        """Initialize data processing config for a given network."""
+        match network:
+            case Network.MAINNET:
+                bucket_size = 10000
+            case Network.GNOSIS:
+                bucket_size = 30000
+            case Network.ARBITRUM_ONE:
+                bucket_size = 1000000
+            case _:
+                raise ValueError(
+                    f"No buffer accounting config set up for network {network}."
+                )
+
+        return BufferAccountingConfig(
+            include_slippage=bucket_size,
+        )
+
+
+@dataclass(frozen=True)
 class AccountingConfig:
     """Full configuration for solver accounting."""
 
@@ -349,6 +376,7 @@ class AccountingConfig:
     protocol_fee_config: ProtocolFeeConfig
     buffer_accounting_config: BufferAccountingConfig
     io_config: IOConfig
+    data_processing_config: DataProcessingConfig
 
     @staticmethod
     def from_network(network: Network) -> AccountingConfig:
@@ -363,6 +391,7 @@ class AccountingConfig:
             protocol_fee_config=ProtocolFeeConfig.from_network(network),
             buffer_accounting_config=BufferAccountingConfig.from_network(network),
             io_config=IOConfig.from_env(),
+            data_processing_config=DataProcessingConfig.from_network(network),
         )
 
 

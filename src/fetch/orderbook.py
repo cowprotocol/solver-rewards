@@ -12,7 +12,7 @@ from dotenv import load_dotenv
 from pandas import DataFrame
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-
+from src.config import AccountingConfig
 from src.logger import set_log
 from src.models.block_range import BlockRange
 from src.utils.query_file import open_query
@@ -21,7 +21,6 @@ from src.data_sync.common import node_suffix
 log = set_log(__name__)
 
 MAX_PROCESSING_DELAY = 10
-BUCKET_SIZE = {"mainnet": 10000, "xdai": 30000, "arbitrum-one": 1000000}
 
 
 class OrderbookEnv(Enum):
@@ -74,36 +73,27 @@ class OrderbookFetcher:
         return barn, prod
 
     @classmethod
-    def run_batch_data_query(cls, block_range: BlockRange) -> DataFrame:
+    def run_batch_data_query(
+        cls, block_range: BlockRange, config: AccountingConfig
+    ) -> DataFrame:
         """
         Fetches and validates Batch data DataFrame as concatenation from Prod and Staging DB
         """
         load_dotenv()
-        network = node_suffix(os.environ["NETWORK"])
-        epsilon_upper = str(os.environ[f"EPSILON_UPPER_{network}"])
-        epsilon_lower = str(os.environ[f"EPSILON_LOWER_{network}"])
         batch_data_query_prod = (
             open_query("orderbook/prod_batch_rewards.sql")
             .replace("{{start_block}}", str(block_range.block_from))
             .replace("{{end_block}}", str(block_range.block_to))
-            .replace(
-                "{{EPSILON_LOWER}}", epsilon_lower
-            )  # lower ETH cap for payment (in WEI)
-            .replace(
-                "{{EPSILON_UPPER}}", epsilon_upper
-            )  # upper ETH cap for payment (in WEI)
+            .replace("{{EPSILON_LOWER}}", config.reward_config.batch_reward_cap_lower)
+            .replace("{{EPSILON_UPPER}}", config.reward_config.batch_reward_cap_upper)
             .replace("{{results}}", "dune_sync_batch_data_table")
         )
         batch_data_query_barn = (
             open_query("orderbook/barn_batch_rewards.sql")
             .replace("{{start_block}}", str(block_range.block_from))
             .replace("{{end_block}}", str(block_range.block_to))
-            .replace(
-                "{{EPSILON_LOWER}}", epsilon_lower
-            )  # lower ETH cap for payment (in WEI)
-            .replace(
-                "{{EPSILON_UPPER}}", epsilon_upper
-            )  # upper ETH cap for payment (in WEI)
+            .replace("{{EPSILON_LOWER}}", config.reward_config.batch_reward_cap_lower)
+            .replace("{{EPSILON_UPPER}}", config.reward_config.batch_reward_cap_upper)
             .replace("{{results}}", "dune_sync_batch_data_table")
         )
         data_types = {
@@ -132,7 +122,9 @@ class OrderbookFetcher:
         return pd.DataFrame()
 
     @classmethod
-    def get_batch_data(cls, block_range: BlockRange) -> DataFrame:
+    def get_batch_data(
+        cls, block_range: BlockRange, config: AccountingConfig
+    ) -> DataFrame:
         """
         Decomposes the block range into buckets of 10k blocks each,
         so as to ensure the batch data query runs fast enough.
@@ -141,14 +133,14 @@ class OrderbookFetcher:
         load_dotenv()
         start = block_range.block_from
         end = block_range.block_to
-        bucket_size = BUCKET_SIZE[os.environ.get("NETWORK", "mainnet")]
+        bucket_size = config.data_processing_config.bucket_size
         res = []
         while start < end:
             size = min(end - start, bucket_size)
             log.info(f"About to process block range ({start}, {start + size})")
             res.append(
                 cls.run_batch_data_query(
-                    BlockRange(block_from=start, block_to=start + size)
+                    BlockRange(block_from=start, block_to=start + size, config=config)
                 )
             )
             start = start + size
@@ -192,7 +184,9 @@ class OrderbookFetcher:
         return pd.DataFrame()
 
     @classmethod
-    def get_order_data(cls, block_range: BlockRange) -> DataFrame:
+    def get_order_data(
+        cls, block_range: BlockRange, config: AccountingConfig
+    ) -> DataFrame:
         """
         Decomposes the block range into buckets of 10k blocks each,
         so as to ensure the batch data query runs fast enough.
@@ -201,7 +195,7 @@ class OrderbookFetcher:
         load_dotenv()
         start = block_range.block_from
         end = block_range.block_to
-        bucket_size = BUCKET_SIZE[os.environ.get("NETWORK", "mainnet")]
+        bucket_size = config.data_processing_config.bucket_size
         res = []
         while start < end:
             size = min(end - start, bucket_size)

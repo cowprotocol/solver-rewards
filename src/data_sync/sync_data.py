@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 from web3 import Web3
 from src.fetch.orderbook import OrderbookFetcher, OrderbookEnv
+from src.config import AccountingConfig, Network, web3
 from src.logger import set_log
 from src.models.tables import SyncTable
 from src.data_sync.common import compute_block_and_month_range
@@ -39,6 +40,7 @@ async def sync_data_to_db(
     node: Web3,
     orderbook: OrderbookFetcher,
     network: str,
+    config: AccountingConfig,
     recompute_previous_month: bool,
 ) -> None:
     """
@@ -66,9 +68,9 @@ async def sync_data_to_db(
             f"About to process block range ({start_block}, {end_block}) for month {months_list[i]}"
         )
         if type_of_data == "batch":
-            data = orderbook.get_batch_data(block_range)
+            data = orderbook.get_batch_data(block_range, config)
         else:
-            data = orderbook.get_order_data(block_range)
+            data = orderbook.get_order_data(block_range, config)
         log.info("SQL query successfully executed. About to update analytics table.")
         data.to_sql(
             table_name,
@@ -88,19 +90,19 @@ def sync_data() -> None:
     args = ScriptArgs()
     orderbook = OrderbookFetcher()
     network = os.environ.get("NETWORK", "mainnet")
+    config = AccountingConfig.from_network(Network(os.environ["NETWORK"]))
     log.info(f"Network is set to: {network}")
-    web3 = Web3(Web3.HTTPProvider(os.environ.get("NODE_URL")))
 
     if args.sync_table == SyncTable.BATCH_DATA:
         asyncio.run(
             sync_data_to_db(
-                "batch", web3, orderbook, network, recompute_previous_month=False
+                "batch", web3, orderbook, network, config, recompute_previous_month=False
             )
         )
     elif args.sync_table == SyncTable.ORDER_DATA:
         asyncio.run(
             sync_data_to_db(
-                "order", web3, orderbook, network, recompute_previous_month=False
+                "order", web3, orderbook, network, config, recompute_previous_month=False
             )
         )
     else:
