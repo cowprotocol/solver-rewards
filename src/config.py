@@ -357,8 +357,8 @@ class DataProcessingConfig:
                     f"No buffer accounting config set up for network {network}."
                 )
 
-        return BufferAccountingConfig(
-            include_slippage=bucket_size,
+        return DataProcessingConfig(
+            bucket_size=bucket_size,
         )
 
 
