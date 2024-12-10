@@ -139,7 +139,7 @@ class OrderbookFetcher:
             log.info(f"About to process block range ({start}, {start + size})")
             res.append(
                 cls.run_batch_data_query(
-                    BlockRange(block_from=start, block_to=start + size, config=config)
+                    BlockRange(block_from=start, block_to=start + size), config=config
                 )
             )
             start = start + size

@@ -35,7 +35,7 @@ class ScriptArgs:
         self.sync_table: SyncTable = arguments.sync_table
 
 
-async def sync_data_to_db(
+async def sync_data_to_db(  # pylint: disable=too-many-arguments
     type_of_data: str,
     node: Web3,
     orderbook: OrderbookFetcher,
@@ -96,13 +96,23 @@ def sync_data() -> None:
     if args.sync_table == SyncTable.BATCH_DATA:
         asyncio.run(
             sync_data_to_db(
-                "batch", web3, orderbook, network, config, recompute_previous_month=False
+                "batch",
+                web3,
+                orderbook,
+                network,
+                config,
+                recompute_previous_month=False,
             )
         )
     elif args.sync_table == SyncTable.ORDER_DATA:
         asyncio.run(
             sync_data_to_db(
-                "order", web3, orderbook, network, config, recompute_previous_month=False
+                "order",
+                web3,
+                orderbook,
+                network,
+                config,
+                recompute_previous_month=False,
             )
         )
     else:
