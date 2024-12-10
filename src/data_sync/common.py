@@ -8,19 +8,6 @@ from src.logger import set_log
 log = set_log(__name__)
 
 
-def node_suffix(network: str) -> str:
-    """
-    Converts network internal name to name used for nodes and dune tables
-    """
-    if network == "mainnet":
-        return "ETHEREUM"
-    if network == "xdai":
-        return "GNOSIS"
-    if network == "arbitrum-one":
-        return "ARBITRUM"
-    return ""
-
-
 def find_block_with_timestamp(node: Web3, time_stamp: float) -> int:
     """
     This implements binary search and returns the smallest block number

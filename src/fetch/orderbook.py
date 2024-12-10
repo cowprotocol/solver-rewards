@@ -16,7 +16,6 @@ from src.config import AccountingConfig
 from src.logger import set_log
 from src.models.block_range import BlockRange
 from src.utils.query_file import open_query
-from src.data_sync.common import node_suffix
 
 log = set_log(__name__)
 
