@@ -76,7 +76,7 @@ class OrderbookFetcher:
         cls, block_range: BlockRange, config: AccountingConfig
     ) -> DataFrame:
         """
-        Fetches and validates Batch data DataFrame as concatenation from Prod and Staging DB
+        Fetches and validates Batch Data DataFrame as concatenation from Prod and Staging DB
         """
         load_dotenv()
         batch_data_query_prod = (
@@ -142,21 +142,22 @@ class OrderbookFetcher:
         end = block_range.block_to
         bucket_size = config.data_processing_config.bucket_size
         res = []
-        while start < end:
-            size = min(end - start, bucket_size)
-            log.info(f"About to process block range ({start}, {start + size})")
+        while start <= end:
+            size = min(end - start + 1, bucket_size)
+            log.info(f"About to process block range ({start}, {start + size - 1})")
             res.append(
                 cls.run_batch_data_query(
-                    BlockRange(block_from=start, block_to=start + size), config=config
+                    BlockRange(block_from=start, block_to=start + size - 1),
+                    config=config,
                 )
             )
             start = start + size
         return pd.concat(res)
 
     @classmethod
-    def run_order_data_sql(cls, block_range: BlockRange) -> DataFrame:
+    def run_order_data_query(cls, block_range: BlockRange) -> DataFrame:
         """
-        Fetches and validates Order Reward DataFrame as concatenation from Prod and Staging DB
+        Fetches and validates Order Data DataFrame as concatenation from Prod and Staging DB
         """
         cow_reward_query_prod = (
             open_query("orderbook/order_data.sql")
@@ -205,11 +206,11 @@ class OrderbookFetcher:
         bucket_size = config.data_processing_config.bucket_size
         res = []
         while start < end:
-            size = min(end - start, bucket_size)
-            log.info(f"About to process block range ({start}, {start + size})")
+            size = min(end - start + 1, bucket_size)
+            log.info(f"About to process block range ({start}, {start + size - 1})")
             res.append(
-                cls.run_order_data_sql(
-                    BlockRange(block_from=start, block_to=start + size)
+                cls.run_order_data_query(
+                    BlockRange(block_from=start, block_to=start + size - 1)
                 )
             )
             start = start + size

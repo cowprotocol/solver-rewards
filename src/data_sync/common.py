@@ -44,13 +44,15 @@ def find_block_with_timestamp(node: Web3, time_stamp: float) -> int:
 
 def compute_block_and_month_range(  # pylint: disable=too-many-locals
     node: Web3, recompute_previous_month: bool
-) -> Tuple[List[Tuple[int, int]], List[str], List[bool]]:
+) -> Tuple[List[Tuple[int, int]], List[str]]:
     """
     This determines the block range and the relevant months
     for which we will compute and upload data on Dune.
     """
-    # We first compute the relevant block range
-    # Here, we assume that the job runs at least once every 24h
+    # The function first a list of block ranges, followed by a list of
+    # # months. Block ranges are stored as (start_block, end_block) pairs,
+    # and are meant to be interpreted as closed intervals.
+    # Moreover, we assume that the job runs at least once every 24h
     # Because of that, if it is the first day of month, we also
     # compute the previous month's table just to be on the safe side
 
@@ -76,14 +78,9 @@ def compute_block_and_month_range(  # pylint: disable=too-many-locals
     current_month = (
         f"{current_month_end_datetime.year}_{current_month_end_datetime.month}"
     )
-    if current_month_end_datetime.month % 2 == 0:
-        is_even = [True]
-    else:
-        is_even = [False]
     months_list = [current_month]
     block_range = [(current_month_start_block, current_month_end_block)]
     if current_month_end_datetime.day == 1 or recompute_previous_month:
-        is_even.append(not is_even[0])
         if current_month_end_datetime.month == 1:
             previous_month = f"{current_month_end_datetime.year - 1}_12"
             previous_month_start_datetime = datetime(
@@ -107,7 +104,7 @@ def compute_block_and_month_range(  # pylint: disable=too-many-locals
         previous_month_start_block = find_block_with_timestamp(
             node, previous_month_start_timestamp
         )
-        previous_month_end_block = current_month_start_block
+        previous_month_end_block = current_month_start_block - 1
         block_range.append((previous_month_start_block, previous_month_end_block))
 
-    return block_range, months_list, is_even
+    return block_range, months_list

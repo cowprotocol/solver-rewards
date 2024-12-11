@@ -49,20 +49,15 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
     is still recomputed when the current date is the first day of the current month.
     """
 
-    block_range_list, months_list, is_even = compute_block_and_month_range(
+    block_range_list, months_list = compute_block_and_month_range(
         node, recompute_previous_month
     )
+    # we note that the block range computed above is meant to be interpreted as
+    # a closed interval
     for i, _ in enumerate(block_range_list):
         start_block = block_range_list[i][0]
         end_block = block_range_list[i][1]
-        if is_even[i]:
-            table_name = (
-                "raw_" + type_of_data + "_data_latest_even_month_" + network.lower()
-            )
-        else:
-            table_name = (
-                "raw_" + type_of_data + "_data_latest_odd_month_" + network.lower()
-            )
+        table_name = type_of_data + "_data_" + network + "_" + months_list[i]
         block_range = BlockRange(block_from=start_block, block_to=end_block)
         log.info(
             f"About to process block range ({start_block}, {end_block}) for month {months_list[i]}"
