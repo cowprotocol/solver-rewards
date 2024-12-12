@@ -1,8 +1,8 @@
--- sample table name for creating the intermediate tables used in the analytics db to store batch data
-create table raw_batch_data_latest_odd_month_gnosis (
+-- sample table for creating the intermediate tables used in the analytics db to store batch data
+create table if not exists table_name (
     environment varchar(6) not null,
     auction_id bigint not null,
-    settlement_block bigint,
+    block_number bigint,
     block_deadline bigint not null,
     tx_hash bytea,
     solver bytea not null,
