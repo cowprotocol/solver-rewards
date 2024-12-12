@@ -133,11 +133,11 @@ class OrderbookFetcher:
         cls, block_range: BlockRange, config: AccountingConfig
     ) -> DataFrame:
         """
-        Decomposes the block range into buckets of 10k blocks each,
-        so as to ensure the batch data query runs fast enough.
+        Decomposes the block range into buckets of X blocks each,
+        where X depends on the chain, so as to ensure the
+        batch data query runs fast enough.
         At the end, it concatenates everything into one data frame
         """
-        load_dotenv()
         start = block_range.block_from
         end = block_range.block_to
         bucket_size = config.data_processing_config.bucket_size
