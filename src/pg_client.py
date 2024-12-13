@@ -69,7 +69,7 @@ class MultiInstanceDBFetcher:
         # Here, we use the convention that we run the prod query for the first connection
         # and the barn query to all other connections
         log.info("Checking statement timeout")
-        _res = self.exec_query(query=text("SHOW statement_timeout;")).scalar()
+        _res = self.exec_query(query=text("SHOW statement_timeout;"), engine=self.connections[0]).scalar()
         log.info(f"Statement timeout for database is: {_res}")
         log.info("Running prod query for first connection (in get_solver_rewards)")
         results.append(
