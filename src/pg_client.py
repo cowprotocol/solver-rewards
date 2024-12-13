@@ -23,7 +23,7 @@ class MultiInstanceDBFetcher:
     def __init__(self, db_urls: list[str]):
         log.info("Initializing MultiInstanceDBFetcher")
         self.connections = [
-            create_engine(f"postgresql+psycopg2://{url}") for url in db_urls
+            create_engine(f"postgresql+psycopg2://{url}", pool_pre_ping=True) for url in db_urls
         ]
 
     @classmethod
