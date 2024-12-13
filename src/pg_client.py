@@ -71,13 +71,9 @@ class MultiInstanceDBFetcher:
         log.info("Setting tcp_keepalives_idle to 900 for prod connection")
         self.connections[0].execute(text("SET tcp_keepalives_idle = 900;"))
         log.info("Running prod query for first connection (in get_solver_rewards)")
-        try:
-            results.append(
-                self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
-            )
-        except Exception as e:
-            log.info("Query execution failed, re-throwing error")
-            raise e
+        results.append(
+            self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
+        )
         for engine in self.connections[1:]:
             log.info("Running barn query on other connections (in get_solver_rewards")
             results.append(
