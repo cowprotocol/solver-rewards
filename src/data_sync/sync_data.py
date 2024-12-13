@@ -54,9 +54,7 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
     )
     # we note that the block range computed above is meant to be interpreted as
     # a closed interval
-    for i, _ in enumerate(block_range_list):
-        start_block = block_range_list[i][0]
-        end_block = block_range_list[i][1]
+    for i, (start_block, end_block) in enumerate(block_range_list):
         network_name = "ethereum" if network == "mainnet" else network
         table_name = type_of_data + "_data_" + network_name + "_" + months_list[i]
         block_range = BlockRange(block_from=start_block, block_to=end_block)
@@ -68,26 +66,6 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
         else:
             data = orderbook.get_order_data(block_range, config)
         log.info("SQL query successfully executed. About to update analytics table.")
-
-        # ###############
-        # # we first create the corresponding table in case it does not exist yet.
-        # analytics_engine = OrderbookFetcher.pg_engine(OrderbookEnv.ANALYTICS)
-        # if type_of_data == "batch":
-        #     sql_file_path = "queries/orderbook/create_batch_table.sql"
-        # else:
-        #     sql_file_path = "queries/orderbook/create_order_table.sql"
-        # with open(sql_file_path, "r") as file:
-        #     sql_commands_prelim = file.read()
-        #     sql_commands = sql_commands_prelim.replace("table_name", table_name)
-        #     print(sql_commands)
-        # # Connect to the database and execute the command
-        # # Execute the SQL commands
-        # with analytics_engine.connect() as connection:
-        #     for statement in sql_commands.split(";"):  # Split commands by semicolon
-        #         statement = statement.strip()
-        #         if statement:  # Skip empty statements
-        #             connection.execute(text(statement))
-        # ###############
 
         data.to_sql(
             table_name,

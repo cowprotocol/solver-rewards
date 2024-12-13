@@ -214,7 +214,7 @@ dune_sync_batch_data_table as ( --noqa: ST03
             when tx_hash is null then null
             else concat('0x', encode(tx_hash, 'hex'))
         end as tx_hash,
-        solver,
+        concat('0x', encode(solver, 'hex')) as solver,
         execution_cost,
         surplus,
         protocol_fee,
