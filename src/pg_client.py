@@ -7,6 +7,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+from sqlalchemy import text
 
 from src.logger import set_log
 from src.utils.query_file import open_query
@@ -67,6 +68,9 @@ class MultiInstanceDBFetcher:
 
         # Here, we use the convention that we run the prod query for the first connection
         # and the barn query to all other connections
+        log.info("Checking statement timeout")
+        _res = self.exec_query(query=text("SHOW statement_timeout;")).scalar()
+        log.info(f"Statement timeout for database is: {_res}")
         log.info("Running prod query for first connection (in get_solver_rewards)")
         results.append(
             self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
