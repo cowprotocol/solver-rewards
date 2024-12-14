@@ -599,8 +599,8 @@ def construct_payouts(
         f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n\n"
         f"Network Fees: {total_network_fees / 10**18:.4f}\n"
         f"Slippage: {total_slippage / 10**18:.4f}\n\n"
-        f"Exchange rate native token to COW: {exchange_rate_native_to_cow:.4f} COW/native token\n"
-        f"Exchange rate native token to ETH: {exchange_rate_native_to_eth:.4f} ETH/native token\n",
+        f"Exchange rate native token to COW: {exchange_rate_native_to_cow:.6g} COW/native token\n"
+        f"Exchange rate native token to ETH: {exchange_rate_native_to_eth:.6g} ETH/native token\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(
