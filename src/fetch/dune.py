@@ -115,7 +115,7 @@ class DuneFetcher:
 
         return self._get_query_results(
             self._parameterized_query(
-                QUERIES["PERIOD_SLIPPAGE"], params=self._period_params()
+                QUERIES["PERIOD_SLIPPAGE"], params=self._network_and_period_params()
             ),
             job_id,
         )

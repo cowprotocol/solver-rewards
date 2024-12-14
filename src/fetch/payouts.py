@@ -586,6 +586,9 @@ def construct_payouts(
         for _, payment in complete_payout_df.iterrows()
     )
 
+    total_slippage = slippage_df["eth_slippage_wei"].sum()
+    total_network_fees = batch_rewards_df["network_fee_eth"].sum()
+
     log_saver.print(
         "Payment breakdown (ignoring service fees):\n"
         f"Performance Reward: {performance_reward / 10 ** 18:.4f}\n"
@@ -594,8 +597,10 @@ def construct_payouts(
         f"Partner Fees Tax: {partner_fee_tax_wei / 10 ** 18:.4f}\n"
         f"Partner Fees: {total_partner_fee_wei_taxed / 10 ** 18:.4f}\n"
         f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n\n"
-        f"Exchange rate native token to COW: {exchange_rate_native_to_cow:.4f} COW/native token\n"
-        f"Exchange rate native token to ETH: {exchange_rate_native_to_eth:.4f} ETH/native token\n",
+        f"Network Fees: {total_network_fees / 10**18:.4f}\n"
+        f"Slippage: {total_slippage / 10**18:.4f}\n\n"
+        f"Exchange rate native token to COW: {exchange_rate_native_to_cow:.6g} COW/native token\n"
+        f"Exchange rate native token to ETH: {exchange_rate_native_to_eth:.6g} ETH/native token\n",
         category=Category.TOTALS,
     )
     payouts = prepare_transfers(
