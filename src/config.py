@@ -138,10 +138,8 @@ class BufferAccountingConfig:
     def from_network(network: Network) -> BufferAccountingConfig:
         """Initialize buffer accounting config for a given network."""
         match network:
-            case Network.MAINNET:
+            case Network.MAINNET | Network.GNOSIS | Network.ARBITRUM_ONE:
                 include_slippage = True
-            case Network.GNOSIS | Network.ARBITRUM_ONE:
-                include_slippage = False
             case _:
                 raise ValueError(
                     f"No buffer accounting config set up for network {network}."
