@@ -29,7 +29,7 @@ class TokenId(Enum):
     """Coin Ids for coin paprika"""
 
     ETH = "eth-ethereum"
-    XDAI = "xdai-xdai"
+    XDAI = "dai-dai"
     COW = "cow-cow-protocol-token"
     USDC = "usdc-usd-coin"
 

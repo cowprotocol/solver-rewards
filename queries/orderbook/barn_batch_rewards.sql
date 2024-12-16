@@ -204,6 +204,29 @@ reward_per_auction as (
     from reward_data
 ),
 
+dune_sync_batch_data_table as ( --noqa: ST03
+    select --noqa: ST06
+        'barn' as environment,
+        auction_id,
+        settlement_block as block_number,
+        block_deadline,
+        case
+            when tx_hash is null then null
+            else concat('0x', encode(tx_hash, 'hex'))
+        end as tx_hash,
+        concat('0x', encode(solver, 'hex')) as solver,
+        execution_cost,
+        surplus,
+        protocol_fee,
+        network_fee,
+        uncapped_payment as uncapped_payment_eth,
+        capped_payment,
+        winning_score,
+        reference_score
+    from reward_per_auction
+    order by block_deadline
+),
+
 primary_rewards as (
     select
         solver,
@@ -242,8 +265,12 @@ aggregate_results as (
         partner_list,
         partner_fee as partner_fee_eth
     from primary_rewards as pr left outer join aggregate_partner_fees_per_solver as aif on pr.solver = aif.solver
+),
+
+solver_rewards_script_table as (
+    select *
+    from aggregate_results
+    order by solver
 )
 
-select *
-from aggregate_results
-order by solver
+select * from {{results}}
