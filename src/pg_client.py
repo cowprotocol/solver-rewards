@@ -7,6 +7,7 @@ import pandas as pd
 from pandas import DataFrame, Series
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
+from sqlalchemy import text
 
 from src.logger import set_log
 from src.utils.query_file import open_query
@@ -21,8 +22,19 @@ class MultiInstanceDBFetcher:
     """
 
     def __init__(self, db_urls: list[str]):
+        log.info("Initializing MultiInstanceDBFetcher")
         self.connections = [
-            create_engine(f"postgresql+psycopg2://{url}") for url in db_urls
+            create_engine(
+                f"postgresql+psycopg2://{url}",
+                pool_pre_ping=True,
+                connect_args={
+                    "keepalives": 1,
+                    "keepalives_idle": 30,
+                    "keepalives_interval": 10,
+                    "keepalives_count": 5,
+                },
+            )
+            for url in db_urls
         ]
 
     @classmethod
@@ -60,10 +72,14 @@ class MultiInstanceDBFetcher:
 
         # Here, we use the convention that we run the prod query for the first connection
         # and the barn query to all other connections
+        log.info("Setting tcp_keepalives_idle to 900 for prod connection")
+        self.connections[0].execute(text("SET tcp_keepalives_idle = 900;"))
+        log.info("Running prod query for first connection (in get_solver_rewards)")
         results.append(
             self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
         )
         for engine in self.connections[1:]:
+            log.info("Running barn query on other connections (in get_solver_rewards")
             results.append(
                 self.exec_query(query=batch_reward_query_barn, engine=engine)
             )
