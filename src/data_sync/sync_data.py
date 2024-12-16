@@ -71,6 +71,7 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
             table_name,
             OrderbookFetcher.pg_engine(OrderbookEnv.ANALYTICS),
             if_exists="replace",
+            index=False,
         )
         log.info(
             f"{type_of_data} data sync run completed successfully for month {months_list[i]}"
