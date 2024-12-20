@@ -80,6 +80,18 @@ class RewardConfig:
                     service_fee_factor=service_fee_factor,
                     cow_bonding_pool=cow_bonding_pool,
                 )
+            case Network.BASE:
+                return RewardConfig(
+                    reward_token_address=Address(
+                        "0xc694a91e6b071bf030a18bd3053a7fe09b6dae69"
+                    ),
+                    batch_reward_cap_upper=12 * 10**15,
+                    batch_reward_cap_lower=10 * 10**15,
+                    quote_reward_cow=6 * 10**18,
+                    quote_reward_cap_native=2 * 10**14,
+                    service_fee_factor=service_fee_factor,
+                    cow_bonding_pool=cow_bonding_pool,
+                )
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
 
@@ -116,6 +128,10 @@ class ProtocolFeeConfig:
                 protocol_fee_safe = Address(
                     "0x451100Ffc88884bde4ce87adC8bB6c7Df7fACccd"
                 )
+            case Network.BASE:
+                protocol_fee_safe = Address(
+                    "0x3c4DBcCf8d80D3d92B0d82197aebf52574ED1F3B"
+                )
             case _:
                 raise ValueError(
                     f"No protocol fee config set up for network {network}."
@@ -138,7 +154,7 @@ class BufferAccountingConfig:
     def from_network(network: Network) -> BufferAccountingConfig:
         """Initialize buffer accounting config for a given network."""
         match network:
-            case Network.MAINNET | Network.GNOSIS | Network.ARBITRUM_ONE:
+            case Network.MAINNET | Network.GNOSIS | Network.ARBITRUM_ONE | Network.BASE:
                 include_slippage = True
             case _:
                 raise ValueError(
@@ -184,6 +200,8 @@ class DuneConfig:
                 dune_blockchain = "gnosis"
             case Network.ARBITRUM_ONE:
                 dune_blockchain = "arbitrum"
+            case Network.BASE:
+                dune_blockchain = "base"
             case _:
                 raise ValueError(f"No dune config set up for network {network}.")
 
@@ -275,6 +293,19 @@ class PaymentConfig:
                 wrapped_eth_address = Address(
                     "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
                 )
+            case Network.BASE:
+                payment_network = EthereumNetwork.BASE_MAINNET
+                short_name = "base"
+
+                cow_token_address = Address(
+                    "0xc694a91e6b071bf030a18bd3053a7fe09b6dae69"
+                )
+                wrapped_native_token_address = Web3.to_checksum_address(
+                    "0x4200000000000000000000000000000000000006"
+                )
+                wrapped_eth_address = Address(
+                    "0x4200000000000000000000000000000000000006"
+                )
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
@@ -350,6 +381,8 @@ class DataProcessingConfig:
                 bucket_size = 30000
             case Network.ARBITRUM_ONE:
                 bucket_size = 1000000
+            case Network.BASE:
+                bucket_size = 50000
             case _:
                 raise ValueError(
                     f"No buffer accounting config set up for network {network}."

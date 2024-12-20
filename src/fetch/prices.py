@@ -52,6 +52,9 @@ TOKEN_ADDRESS_TO_ID = {
     # arbitrum tokens
     Address("0xcb8b5cd20bdcaea9a010ac1f8d835824f5c87a04"): TokenId.COW,
     Address("0x82af49447d8a07e3bd95bd0d56f35241523fbab1"): TokenId.ETH,
+    # base tokens
+    Address("0xc694a91e6b071bf030a18bd3053a7fe09b6dae69"): TokenId.COW,
+    Address("0x4200000000000000000000000000000000000006"): TokenId.ETH,
 }
 
 
