@@ -22,7 +22,9 @@ class TestPrices(unittest.TestCase):
         self.eth_price = usd_price(TokenId.ETH, self.some_date)
         self.usdc_price = usd_price(TokenId.USDC, self.some_date)
         self.cow_address = self.config.reward_config.reward_token_address
-        self.weth_address = Address(self.config.payment_config.weth_address)
+        self.weth_address = Address(
+            self.config.payment_config.wrapped_native_token_address
+        )
         self.usdc_address = Address("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
 
     def test_usd_price(self):

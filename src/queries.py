@@ -32,7 +32,7 @@ class QueryData:
 QUERIES = {
     "PERIOD_BLOCK_INTERVAL": QueryData(
         name="Block Interval for Accounting Period",
-        q_id=3333356,
+        q_id=4227027,
     ),
     "VOUCH_REGISTRY": QueryData(
         name="Vouch Registry",
