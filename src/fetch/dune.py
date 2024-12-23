@@ -107,16 +107,14 @@ class DuneFetcher:
         Executes & Fetches results of slippage query per solver for specified accounting period.
         Returns a class representation of the results as two lists (positive & negative).
         """
-        params = self._period_params()
+        params = self._network_and_period_params()
         # trigger dashboard update
         self.dune.execute(
             self._parameterized_query(QUERIES["DASHBOARD_SLIPPAGE"], params=params)
         )
 
         return self._get_query_results(
-            self._parameterized_query(
-                QUERIES["PERIOD_SLIPPAGE"], params=self._network_and_period_params()
-            ),
+            self._parameterized_query(QUERIES["PERIOD_SLIPPAGE"], params=params),
             job_id,
         )
 
