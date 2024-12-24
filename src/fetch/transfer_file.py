@@ -113,9 +113,9 @@ def auto_propose(
 def main() -> None:
     """Generate transfers for an accounting period"""
 
-    args = generic_script_init(description="Fetch Complete Reimbursement")
-
     config = AccountingConfig.from_network(Network(os.environ["NETWORK"]))
+
+    args = generic_script_init(description="Fetch Complete Reimbursement")
 
     accounting_period = AccountingPeriod(args.start)
 
