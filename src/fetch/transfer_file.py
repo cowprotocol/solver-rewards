@@ -58,6 +58,7 @@ def auto_propose(
     slack_client: WebClient,
     dry_run: bool,
     config: AccountingConfig,
+    network: Network,
 ) -> None:
     """
     Entry point auto creation of rewards payout transaction.
@@ -102,7 +103,7 @@ def auto_propose(
             slack_client,
             channel=slack_channel,
             message=(
-                f"Solver Rewards transaction with nonce {nonce} pending signatures.\n"
+                f"Solver Rewards transaction for network {network} with nonce {nonce} pending signatures.\n"
                 f"To sign and execute, visit:\n{config.payment_config.safe_queue_url}\n"
                 f"More details in thread"
             ),
@@ -114,10 +115,10 @@ def main() -> None:
     """Generate transfers for an accounting period"""
 
     args = generic_script_init(description="Fetch Complete Reimbursement")
+    network = Network(os.environ["NETWORK"])
+    config = AccountingConfig.from_network(network)
 
-    config = AccountingConfig.from_network(Network(os.environ["NETWORK"]))
-
-    accounting_period = AccountingPeriod(args.start)
+    accounting_period = AccountingPeriod(args.start, network)
 
     orderbook = MultiInstanceDBFetcher(
         [config.orderbook_config.prod_db_url, config.orderbook_config.barn_db_url]
@@ -134,7 +135,7 @@ def main() -> None:
     )
 
     log_saver.print(
-        f"The data aggregated can be visualized at\n{accounting_period.dashboard_url()}",
+        f"The data aggregated can be visualized at\n{accounting_period.dashboard_url()}\n",
         category=Category.GENERAL,
     )
 
@@ -168,6 +169,7 @@ def main() -> None:
             slack_client=slack_client,
             dry_run=args.dry_run,
             config=config,
+            network=network,
         )
     else:
         manual_propose(transfers=payout_transfers, period=dune.period, config=config)
