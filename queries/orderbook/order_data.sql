@@ -192,7 +192,7 @@ select
     concat('0x', encode(trade_hashes.solver, 'hex')) as solver,
     quote_solver,
     concat('0x', encode(trade_hashes.tx_hash, 'hex')) as tx_hash,
-    cast(coalesce(executed_fee, 0) as text) as executed_fee,
+    cast(coalesce(executed_fee, 0) as text) as surplus_fee,
     coalesce(reward, 0.0) as amount,
     cast(coalesce(cast(protocol_fee as numeric(78, 0)), 0) as text) as protocol_fee,
     case
