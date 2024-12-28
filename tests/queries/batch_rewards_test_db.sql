@@ -116,7 +116,7 @@ CREATE TABLE IF NOT EXISTS order_execution
   order_uid bytea NOT NULL,
   auction_id bigint NOT NULL,
   reward double precision NOT NULL,
-  surplus_fee numeric(78, 0) NOT NULL,
+  executed_fee numeric(78, 0) NOT NULL,
   protocol_fee_amounts numeric(78, 0)[],
 
   PRIMARY KEY (order_uid, auction_id)
@@ -246,7 +246,7 @@ VALUES (51, 0, '\x01'::bytea, 100000000, 95000000000000000000, 5000000),
 (59, 0, '\x09'::bytea, 100000000, 95000000000000000000, 0),
 (60, 0, '\x0a'::bytea, 100000000, 94500000000000000000, 0);
 
-INSERT INTO order_execution (order_uid, auction_id, reward, surplus_fee, protocol_fee_amounts)
+INSERT INTO order_execution (order_uid, auction_id, reward, executed_fee, protocol_fee_amounts)
 VALUES ('\x03'::bytea, 53, 0, 6000000, ARRAY[1000000000000000000]),
 ('\x04'::bytea, 54, 0, 6000000, ARRAY[1000000]),
 ('\x05'::bytea, 55, 0, 6000000, ARRAY[1000000000000000000, 500000000000000000]),

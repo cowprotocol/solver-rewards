@@ -69,7 +69,7 @@ trade_data_unprocessed as (
         od.buy_token,
         t.sell_amount, -- the total amount the user sends
         t.buy_amount, -- the total amount the user receives
-        oe.surplus_fee as observed_fee, -- the total discrepancy between what the user sends and what they would have send if they traded at clearing price
+        oe.executed_fee as observed_fee, -- the total discrepancy between what the user sends and what they would have send if they traded at clearing price
         od.kind,
         case
             when od.kind = 'sell' then od.buy_token
@@ -85,7 +85,7 @@ trade_data_unprocessed as (
         on s.block_number = t.block_number -- given the join that follows with the order execution table, this works even when multiple txs appear in the same block
     inner join order_data as od -- contains tokens and limit amounts
         on t.order_uid = od.uid
-    inner join order_execution as oe -- contains surplus fee
+    inner join order_execution as oe -- contains executed fee
         on t.order_uid = oe.order_uid and s.auction_id = oe.auction_id
     left outer join app_data as ad -- contains full app data
         on od.app_data = ad.contract_app_data
@@ -192,7 +192,7 @@ select
     concat('0x', encode(trade_hashes.solver, 'hex')) as solver,
     quote_solver,
     concat('0x', encode(trade_hashes.tx_hash, 'hex')) as tx_hash,
-    cast(coalesce(surplus_fee, 0) as text) as surplus_fee,
+    cast(coalesce(executed_fee, 0) as text) as surplus_fee,
     coalesce(reward, 0.0) as amount,
     cast(coalesce(cast(protocol_fee as numeric(78, 0)), 0) as text) as protocol_fee,
     case
