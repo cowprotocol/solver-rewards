@@ -51,8 +51,16 @@ class OrderbookFetcher:
         else:
             db_url = os.environ[f"{db_env}_DB_URL"]
 
-        db_string = f"postgresql+psycopg2://{db_url}"
-        return create_engine(db_string)
+        return create_engine(
+            f"postgresql+psycopg2://{db_url}",
+            pool_pre_ping=True,
+            connect_args={
+                "keepalives": 1,
+                "keepalives_idle": 30,
+                "keepalives_interval": 10,
+                "keepalives_count": 5,
+            },
+        )
 
     @classmethod
     def _read_query_for_env(
