@@ -78,6 +78,10 @@ def compute_block_and_month_range(  # pylint: disable=too-many-locals
     current_month = (
         f"{current_month_end_datetime.year}_{current_month_end_datetime.month}"
     )
+    ## in case the month is 1-9, we add a "0" prefix, so that we have a fixed-length representation
+    ## e.g., 2024-12, 2024-01
+    if len(current_month) < 7:
+        current_month = current_month[:5] + "0" + current_month[5]
     months_list = [current_month]
     block_range = [(current_month_start_block, current_month_end_block)]
     if current_month_end_datetime.day == 1 or recompute_previous_month:
@@ -90,6 +94,8 @@ def compute_block_and_month_range(  # pylint: disable=too-many-locals
             previous_month = f"""{current_month_end_datetime.year}_
                 {current_month_end_datetime.month - 1}
             """
+            if len(previous_month) < 7:
+                previous_month = previous_month[:5] + "0" + previous_month[5]
             previous_month_start_datetime = datetime(
                 current_month_end_datetime.year,
                 current_month_end_datetime.month - 1,
