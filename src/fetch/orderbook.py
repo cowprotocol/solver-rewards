@@ -1,3 +1,4 @@
+# pylint: disable=duplicate-code
 """Basic client for connecting to postgres database with login credentials"""
 
 from __future__ import annotations
@@ -51,7 +52,7 @@ class OrderbookFetcher:
         else:
             db_url = os.environ[f"{db_env}_DB_URL"]
 
-        return create_engine( # pylint: disable=duplicate-code
+        return create_engine(
             f"postgresql+psycopg2://{db_url}",
             pool_pre_ping=True,
             connect_args={
