@@ -51,7 +51,7 @@ class OrderbookFetcher:
         else:
             db_url = os.environ[f"{db_env}_DB_URL"]
 
-        return create_engine(
+        return create_engine( # pylint: disable=duplicate-code
             f"postgresql+psycopg2://{db_url}",
             pool_pre_ping=True,
             connect_args={
