@@ -133,7 +133,7 @@ price_data as (
         on tdp.auction_id = ap_protocol.auction_id and tdp.surplus_token = ap_protocol.token
 ),
 
-trade_data_processed_with_prices as (
+trade_data_processed_with_prices as materialized (
     select --noqa: ST06
         tdp.auction_id,
         tdp.solver,
