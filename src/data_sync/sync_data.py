@@ -97,7 +97,7 @@ def sync_data() -> None:
                 orderbook,
                 network,
                 config,
-                recompute_previous_month=False,
+                recompute_previous_month=True,
             )
         )
     elif args.sync_table == SyncTable.ORDER_DATA:
@@ -108,7 +108,7 @@ def sync_data() -> None:
                 orderbook,
                 network,
                 config,
-                recompute_previous_month=False,
+                recompute_previous_month=True,
             )
         )
     else:
