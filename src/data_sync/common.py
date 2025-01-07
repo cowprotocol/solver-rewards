@@ -16,17 +16,32 @@ log = set_log(__name__)
 def compute_time_range(
     start_time: datetime, end_time: datetime
 ) -> list[tuple[datetime, datetime]]:
-    """Computes (list of) time ranges from input parameters."""
+    """Computes (list of) time ranges from input parameters.
+    If both times are from the same month, only [(start_time, end_time)] is returned.
+    Otherwise, the range is split into n pieces of the form [(start_time, start_of_month_2),
+    (start_of_month_2, start_of_month_3),..., (start_of_month_n, end_time)].
+    """
     assert start_time < end_time, "start_time must be strictly smaller than end_time"
 
+    # if there is just one month to consider
     if end_time <= datetime(start_time.year, start_time.month, 1).replace(
         tzinfo=timezone.utc
     ) + relativedelta(months=1):
         return [(start_time, end_time)]
 
-    raise NotImplementedError(
-        "multiple month not implemented yet. call multiple times instead."
-    )
+    # if there are multiple month to consider
+    next_month_start_time = datetime(start_time.year, start_time.month, 1).replace(
+        tzinfo=timezone.utc
+    ) + relativedelta(months=1)
+    time_range_list = [(start_time, next_month_start_time)]
+    while end_time > next_month_start_time + relativedelta(months=1):
+        time_range_list.append(
+            (next_month_start_time, next_month_start_time + relativedelta(months=1))
+        )
+        next_month_start_time = next_month_start_time + relativedelta(months=1)
+    time_range_list.append((next_month_start_time, end_time))
+
+    return time_range_list
 
 
 def compute_block_range(
