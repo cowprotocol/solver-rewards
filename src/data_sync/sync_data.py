@@ -16,7 +16,10 @@ from src.fetch.orderbook import OrderbookFetcher, OrderbookEnv
 from src.config import AccountingConfig, Network, web3
 from src.logger import set_log
 from src.models.tables import SyncTable
-from src.data_sync.common import compute_block_and_month_range
+from src.data_sync.common import (
+    compute_block_range,
+    compute_time_range,
+)
 from src.models.block_range import BlockRange
 
 
@@ -85,15 +88,20 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
     forces a recomputation of the previous month. If it is set to False, previous month
     is still recomputed when the current date is the first day of the current month.
     """
-    block_range_list, months_list = compute_block_and_month_range(time, node)
+    time_range_list = compute_time_range(start_time, end_time)
+    block_range_list = [
+        compute_block_range(start_time, end_time, node)
+        for start_time, end_time in time_range_list
+    ]
+    months_list = [start_time.strftime("%Y_%m") for start_time, _ in time_range_list]
     # we note that the block range computed above is meant to be interpreted as
     # a closed interval
-    for i, (start_block, end_block) in enumerate(block_range_list):
+    for (start_block, end_block), month in zip(block_range_list, months_list):
         network_name = config.dune_config.dune_blockchain
-        table_name = type_of_data + "_data_" + network_name + "_" + months_list[i]
+        table_name = type_of_data + "_data_" + network_name + "_" + month
         block_range = BlockRange(block_from=start_block, block_to=end_block)
         log.info(
-            f"About to process block range ({start_block}, {end_block}) for month {months_list[i]}"
+            f"About to process block range ({start_block}, {end_block}) for month {month}"
         )
         if type_of_data == "batch":
             data = orderbook.get_batch_data(block_range, config)
@@ -108,7 +116,7 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
             index=False,
         )
         log.info(
-            f"{type_of_data} data sync run completed successfully for month {months_list[i]}"
+            f"{type_of_data} data sync run completed successfully for month {month}"
         )
 
 

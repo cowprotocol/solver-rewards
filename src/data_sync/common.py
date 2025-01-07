@@ -2,10 +2,55 @@
 
 from datetime import datetime, timezone
 from typing import List, Tuple
+
+from dateutil.relativedelta import (
+    relativedelta,
+)  # dateutil is currently not explicitly required in requirement.in, only installed via dune
 from web3 import Web3
+
 from src.logger import set_log
 
 log = set_log(__name__)
+
+
+def compute_time_range(
+    start_time: datetime, end_time: datetime
+) -> list[tuple[datetime, datetime]]:
+    """Computes (list of) time ranges from input parameters."""
+    assert start_time < end_time, "start_time must be strictly smaller than end_time"
+
+    if end_time <= datetime(start_time.year, start_time.month, 1).replace(
+        tzinfo=timezone.utc
+    ) + relativedelta(months=1):
+        return [(start_time, end_time)]
+
+    raise NotImplementedError(
+        "multiple month not implemented yet. call multiple times instead."
+    )
+
+
+def compute_block_range(
+    start_time: datetime, end_time: datetime, node: Web3
+) -> tuple[int, int]:
+    """Computes a block range from start and end time.
+    The convention for block ranges is to be inclusive, while the end time is exclusive.
+    """
+    latest_block = node.eth.get_block("finalized")
+    latest_block_time = datetime.fromtimestamp(
+        latest_block["timestamp"], tz=timezone.utc
+    )
+
+    assert (
+        start_time < latest_block_time
+    ), "start time must be smaller than latest block time"
+
+    start_block = find_block_with_timestamp(node, start_time.timestamp())
+    if latest_block_time < end_time:
+        end_block = int(latest_block["number"])
+    else:
+        end_block = find_block_with_timestamp(node, end_time.timestamp()) - 1
+
+    return start_block, end_block
 
 
 def find_block_with_timestamp(node: Web3, time_stamp: float) -> int:
