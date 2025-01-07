@@ -3,7 +3,6 @@
 import argparse
 from datetime import date, timedelta
 from dataclasses import dataclass
-from src.config import AccountingConfig
 
 
 @dataclass
@@ -18,7 +17,7 @@ class ScriptArgs:
     ignore_slippage: bool
 
 
-def generic_script_init(description: str, config: AccountingConfig) -> ScriptArgs:
+def generic_script_init(description: str) -> ScriptArgs:
     """
     1. parses parses command line arguments,
     2. establishes dune connection
@@ -45,18 +44,6 @@ def generic_script_init(description: str, config: AccountingConfig) -> ScriptArg
         "Primarily intended for deployment in staging environment.",
     )
     parser.add_argument(
-        "--min-transfer-amount-wei",
-        type=int,
-        help="Ignore ETH transfers with amount less than this",
-        default=config.payment_config.min_native_token_transfer,
-    )
-    parser.add_argument(
-        "--min-transfer-amount-cow-atoms",
-        type=int,
-        help="Ignore COW transfers with amount less than this",
-        default=config.payment_config.min_cow_transfer,
-    )
-    parser.add_argument(
         "--ignore-slippage",
         action="store_true",
         help="Flag for ignoring slippage computations",
@@ -66,7 +53,5 @@ def generic_script_init(description: str, config: AccountingConfig) -> ScriptArg
         start=args.start,
         post_tx=args.post_tx,
         dry_run=args.dry_run,
-        min_transfer_amount_wei=args.min_transfer_amount_wei,
-        min_transfer_amount_cow_atoms=args.min_transfer_amount_cow_atoms,
         ignore_slippage=args.ignore_slippage,
     )
