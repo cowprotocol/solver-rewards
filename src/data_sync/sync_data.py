@@ -12,7 +12,7 @@ from dateutil.relativedelta import (
 from dotenv import load_dotenv
 from web3 import Web3
 
-from src.fetch.orderbook import OrderbookFetcher, OrderbookEnv
+from src.fetch.orderbook import OrderbookFetcher
 from src.config import AccountingConfig, Network, web3
 from src.logger import set_log
 from src.models.tables import SyncTable
