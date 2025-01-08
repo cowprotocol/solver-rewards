@@ -12,8 +12,6 @@ class ScriptArgs:
     start: str
     post_tx: bool
     dry_run: bool
-    min_transfer_amount_wei: int
-    min_transfer_amount_cow_atoms: int
     ignore_slippage: bool
 
 

@@ -148,10 +148,10 @@ def main() -> None:
     payout_transfers = []
     for tr in payout_transfers_temp:
         if tr.token is None:
-            if tr.amount_wei >= args.min_transfer_amount_wei:
+            if tr.amount_wei >= config.payment_config.min_native_token_transfer:
                 payout_transfers.append(tr)
         else:
-            if tr.amount_wei >= args.min_transfer_amount_cow_atoms:
+            if tr.amount_wei >= config.payment_config.min_cow_transfer:
                 payout_transfers.append(tr)
 
     if args.post_tx:
