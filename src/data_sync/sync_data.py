@@ -109,12 +109,8 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments, too-many-local
             data = orderbook.get_order_data(block_range, config)
         log.info("SQL query successfully executed. About to update analytics table.")
 
-        data.to_sql(
-            table_name,
-            OrderbookFetcher.pg_engine(OrderbookEnv.ANALYTICS),
-            if_exists="replace",
-            index=False,
-        )
+        orderbook.write_data(type_of_data, data, table_name)
+
         log.info(
             f"{type_of_data} data sync run completed successfully for month {month}"
         )

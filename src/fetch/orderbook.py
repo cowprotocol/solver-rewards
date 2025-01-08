@@ -10,7 +10,7 @@ from typing import Optional
 
 import pandas as pd
 from dotenv import load_dotenv
-from pandas import DataFrame
+from pandas import DataFrame, read_sql_table
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from src.config import AccountingConfig
@@ -224,3 +224,41 @@ class OrderbookFetcher:
             )
             start = start + size
         return pd.concat(res)
+
+    @classmethod
+    def write_data(
+        cls, type_of_data: str, new_data: DataFrame, table_name: str
+    ) -> None:
+        """Write new data into database table.
+        Data is upserted: it is inserted if possible (i.e. it does not yet exist) and updated
+        otherwise."""
+        # set index for upserting data depending on type of data
+        match type_of_data:
+            case "batch":
+                index_cols = ["environment", "auction_id"]
+            case "order":
+                index_cols = ["environment", "auction_id", "order_uid"]
+            case _:
+                raise ValueError(f"Unknown type {type_of_data}")
+
+        # set index of new data
+        new_data = new_data.set_index(index_cols)
+        # try getting table data from database, just use new_data if table is not available
+        try:
+            data = read_sql_table(
+                table_name,
+                cls.pg_engine(OrderbookEnv.ANALYTICS),
+                index_col=index_cols,
+            ).drop("index", axis=1)
+            # upsert data (insert if possible, otherwise update)
+            data = pd.concat([data[~data.index.isin(new_data.index)], new_data])
+        except ValueError:  # this catches the case of a missing table
+            data = new_data
+        # reset index for compatibility with the current integer index
+        # this can be removed to not have the unnecessary index column
+        data = data.reset_index()
+        data.to_sql(
+            table_name,
+            cls.pg_engine(OrderbookEnv.ANALYTICS),
+            if_exists="replace",
+        )
