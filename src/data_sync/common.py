@@ -1,7 +1,6 @@
 """Shared methods between both sync scripts."""
 
 from datetime import datetime, timezone
-from typing import List, Tuple
 
 from dateutil.relativedelta import (
     relativedelta,
