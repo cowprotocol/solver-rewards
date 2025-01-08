@@ -74,17 +74,14 @@ looking at the script help menu can help provide a list of options!
 ```shell
 $  python -m src.fetch.transfer_file --help 
 
-usage: Fetch Complete Reimbursement [-h] [--start START] [--post-tx POST_TX] [--consolidate-transfers CONSOLIDATE_TRANSFERS] [--dry-run DRY_RUN]
+usage: Fetch Complete Reimbursement [-h] [--start START] [--post-tx] [--dry-run]
 
 options:
   -h, --help            show this help message and exit
   --start START         Accounting Period Start. Defaults to previous Tuesday
-  --post-tx POST_TX     Flag indicating whether multisend should be posted to safe (requires valid env var `PROPOSER_PK`)
-  --consolidate-transfers CONSOLIDATE_TRANSFERS
-                        Flag to indicate whether payout transfer file should be optimized (i.e. squash transfers having same receiver-token pair)
-  --dry-run DRY_RUN     Flag indicating whether script should not post alerts or transactions. Only relevant in combination with --post-tx TruePrimarily intended for
-                        deployment in staging environment.
-  --ignore-slippage IGNORE_SLIPPAGE
+  --post-tx     Flag indicating whether multisend should be posted to safe (requires valid env var `PROPOSER_PK`)
+  --dry-run     Flag indicating whether script should not post alerts or transactions.
+  --ignore-slippage
                         Ignore slippage computations
 ```
 
