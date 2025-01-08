@@ -75,7 +75,6 @@ looking at the script help menu can help provide a list of options!
 $  python -m src.fetch.transfer_file --help 
 
 usage: Fetch Complete Reimbursement [-h] [--start START] [--post-tx POST_TX] [--consolidate-transfers CONSOLIDATE_TRANSFERS] [--dry-run DRY_RUN]
-                                    [--min-transfer-amount-wei MIN_TRANSFER_AMOUNT_WEI] [--min-transfer-amount-cow-atoms MIN_TRANSFER_AMOUNT_COW_ATOMS] 
 
 options:
   -h, --help            show this help message and exit
@@ -85,10 +84,6 @@ options:
                         Flag to indicate whether payout transfer file should be optimized (i.e. squash transfers having same receiver-token pair)
   --dry-run DRY_RUN     Flag indicating whether script should not post alerts or transactions. Only relevant in combination with --post-tx TruePrimarily intended for
                         deployment in staging environment.
-  --min-transfer-amount-wei MIN_TRANSFER_AMOUNT_WEI
-                        Ignore ETH transfers with amount less than this
-  --min-transfer-amount-cow-atoms MIN_TRANSFER_AMOUNT_COW_ATOMS
-                        Ignore COW transfers with amount less than this
   --ignore-slippage IGNORE_SLIPPAGE
                         Ignore slippage computations
 ```

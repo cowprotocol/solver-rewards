@@ -235,6 +235,8 @@ class PaymentConfig:
     verification_docs_url: str
     wrapped_native_token_address: ChecksumAddress
     wrapped_eth_address: Address
+    min_native_token_transfer: int
+    min_cow_transfer: int
 
     @staticmethod
     def from_network(network: Network) -> PaymentConfig:
@@ -266,6 +268,8 @@ class PaymentConfig:
                 wrapped_eth_address = Address(
                     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
                 )
+                min_native_token_transfer = 10**15  # 0.001 ETH
+                min_cow_transfer = 10 * 10**18  # 10 COW
 
             case Network.GNOSIS:
                 payment_network = EthereumNetwork.GNOSIS
@@ -280,6 +284,9 @@ class PaymentConfig:
                 wrapped_eth_address = Address(
                     "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1"
                 )
+                min_native_token_transfer = 10**16  # 0.01 xDAI
+                min_cow_transfer = 10**18  # 1 COW
+
             case Network.ARBITRUM_ONE:
                 payment_network = EthereumNetwork.ARBITRUM_ONE
                 short_name = "arb1"
@@ -293,6 +300,9 @@ class PaymentConfig:
                 wrapped_eth_address = Address(
                     "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
                 )
+                min_native_token_transfer = 10**14  # 0.0001 ETH
+                min_cow_transfer = 10**18  # 1 COW
+
             case Network.BASE:
                 payment_network = EthereumNetwork.BASE_MAINNET
                 short_name = "base"
@@ -306,6 +316,9 @@ class PaymentConfig:
                 wrapped_eth_address = Address(
                     "0x4200000000000000000000000000000000000006"
                 )
+                min_native_token_transfer = 10**14  # 0.0001 ETH
+                min_cow_transfer = 10**18  # 1 COW
+
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
@@ -321,6 +334,8 @@ class PaymentConfig:
             verification_docs_url=docs_url,
             wrapped_native_token_address=wrapped_native_token_address,
             wrapped_eth_address=wrapped_eth_address,
+            min_native_token_transfer=min_native_token_transfer,
+            min_cow_transfer=min_cow_transfer,
         )
 
 

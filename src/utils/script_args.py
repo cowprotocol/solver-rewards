@@ -12,8 +12,6 @@ class ScriptArgs:
     start: str
     post_tx: bool
     dry_run: bool
-    min_transfer_amount_wei: int
-    min_transfer_amount_cow_atoms: int
     ignore_slippage: bool
 
 
@@ -44,18 +42,6 @@ def generic_script_init(description: str) -> ScriptArgs:
         "Primarily intended for deployment in staging environment.",
     )
     parser.add_argument(
-        "--min-transfer-amount-wei",
-        type=int,
-        help="Ignore ETH transfers with amount less than this",
-        default=1000000000000000,
-    )
-    parser.add_argument(
-        "--min-transfer-amount-cow-atoms",
-        type=int,
-        help="Ignore COW transfers with amount less than this",
-        default=20000000000000000000,
-    )
-    parser.add_argument(
         "--ignore-slippage",
         action="store_true",
         help="Flag for ignoring slippage computations",
@@ -65,7 +51,5 @@ def generic_script_init(description: str) -> ScriptArgs:
         start=args.start,
         post_tx=args.post_tx,
         dry_run=args.dry_run,
-        min_transfer_amount_wei=args.min_transfer_amount_wei,
-        min_transfer_amount_cow_atoms=args.min_transfer_amount_cow_atoms,
         ignore_slippage=args.ignore_slippage,
     )
