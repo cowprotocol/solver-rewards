@@ -59,6 +59,10 @@ def compute_block_range(
 
     start_block = find_block_with_timestamp(node, start_time.timestamp())
     if latest_block_time < end_time:
+        log.info(
+            f"Latest finalized block time {latest_block_time} is smaller than {end_time}."
+            "Using latest finalized block."
+        )
         end_block = int(latest_block["number"])
     else:
         end_block = find_block_with_timestamp(node, end_time.timestamp()) - 1
