@@ -115,7 +115,7 @@ def main() -> None:
 
     args = generic_script_init(description="Fetch Complete Reimbursement")
 
-    config = AccountingConfig.from_network(os.environ["NETWORK"])
+    config = AccountingConfig.from_network(Network(os.environ["NETWORK"]))
 
     accounting_period = AccountingPeriod(args.start)
 
