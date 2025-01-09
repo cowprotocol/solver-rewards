@@ -30,6 +30,7 @@ class ScriptArgs:
     """Runtime arguments' parser/initializer"""
 
     sync_table: SyncTable
+    recreate_table: bool
     start_time: datetime.datetime
     end_time: datetime.datetime
 
@@ -59,8 +60,14 @@ class ScriptArgs:
                 "beginning of the next month."
             ),
         )
+        parser.add_argument(
+            "--recreate-table",
+            action="store_true",
+            help="If set, tables are dropped and recreated. Otherwise, tables are upserted.",
+        )
         arguments, _ = parser.parse_known_args()
         self.sync_table: SyncTable = arguments.sync_table
+        self.recreate_table: bool = arguments.recreate_table
 
         # parse time arguments
         current_time = datetime.datetime.now(datetime.timezone.utc)
@@ -93,6 +100,7 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
     config: AccountingConfig,
     start_time: datetime.datetime,
     end_time: datetime.datetime,
+    recreate_table: bool,
 ) -> None:
     """Order and Batch data Sync Logic."""
     time_range_list = compute_time_range(start_time, end_time)
@@ -108,7 +116,7 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
             data = orderbook.get_order_data(block_range, config)
         log.info("SQL query successfully executed. About to update analytics table.")
 
-        orderbook.write_data(type_of_data, data, table_name)
+        orderbook.write_data(type_of_data, data, table_name, recreate_table)
 
         log.info(
             f"{type_of_data} data sync run completed successfully for month {month}."
@@ -142,6 +150,7 @@ def sync_data() -> None:
             config,
             args.start_time,
             args.end_time,
+            args.recreate_table,
         )
     )
 
