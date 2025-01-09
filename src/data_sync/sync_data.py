@@ -59,7 +59,7 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
         "arbitrum": "arbitrum",
         "base": "base",
     }
-    network_name = network_name_map[config.network]
+    network_name = network_name_map[config.network.value]
     for i, (start_block, end_block) in enumerate(block_range_list):
         table_name = type_of_data + "_data_" + network_name + "_" + months_list[i]
         block_range = BlockRange(block_from=start_block, block_to=end_block)
