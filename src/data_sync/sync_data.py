@@ -45,11 +45,19 @@ class ScriptArgs:
             "--start-time",
             type=datetime.datetime.fromisoformat,
             default=None,
+            help=(
+                "Start of the time range for syncing (inclusive). If not set, it defaults to the "
+                "beginning of the current month."
+            ),
         )
         parser.add_argument(
             "--end-time",
             type=datetime.datetime.fromisoformat,
             default=None,
+            help=(
+                "End of the time range for syncing (inclusive). If not set, it defaults to the "
+                "beginning of the next month."
+            ),
         )
         arguments, _ = parser.parse_known_args()
         self.sync_table: SyncTable = arguments.sync_table
@@ -61,6 +69,7 @@ class ScriptArgs:
             self.start_time = datetime.datetime(
                 current_time.year, current_time.month, 1
             )
+            log.info(f"No start time set, using beginning of month {self.start_time}.")
         else:
             self.start_time = arguments.start_time
         if arguments.end_time is None:
@@ -68,6 +77,9 @@ class ScriptArgs:
             self.end_time = datetime.datetime(
                 current_time.year, current_time.month, 1
             ) + relativedelta(months=1)
+            log.info(
+                f"No start time set, using beginning of next month {self.end_time}."
+            )
         else:
             self.end_time: datetime.datetime = arguments.end_time
         self.start_time = self.start_time.replace(tzinfo=datetime.timezone.utc)
@@ -99,7 +111,7 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
         orderbook.write_data(type_of_data, data, table_name)
 
         log.info(
-            f"{type_of_data} data sync run completed successfully for month {month}"
+            f"{type_of_data} data sync run completed successfully for month {month}."
         )
 
 
