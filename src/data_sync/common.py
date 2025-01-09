@@ -2,9 +2,7 @@
 
 from datetime import datetime, timezone
 
-from dateutil.relativedelta import (
-    relativedelta,
-)  # dateutil is currently not explicitly required in requirement.in, only installed via dune
+from dateutil.relativedelta import relativedelta
 from web3 import Web3
 
 from src.logger import set_log

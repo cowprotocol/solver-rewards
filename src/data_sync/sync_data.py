@@ -6,9 +6,7 @@ import datetime
 import os
 from dataclasses import dataclass
 
-from dateutil.relativedelta import (
-    relativedelta,
-)  # dateutil is currently not explicitly required in requirement.in, only installed via dune
+from dateutil.relativedelta import relativedelta
 from dotenv import load_dotenv
 from web3 import Web3
 
