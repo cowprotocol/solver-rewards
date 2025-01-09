@@ -600,8 +600,9 @@ def construct_payouts(
         f"Network Fees: {total_network_fees / 10**18:.4f}\n"
         f"Slippage: {total_slippage / 10**18:.4f}\n\n"
         f"Exchange rate native token to COW: {exchange_rate_native_to_cow:.6g} COW/native token\n"
-        f"Exchange rate native token to ETH: {exchange_rate_native_to_eth:.6g} ETH/native token\n",
-        f"Minimum native token transfer: {config.payment_config.min_native_token_transfer / 10**18} units\n",
+        f"Exchange rate native token to ETH: {exchange_rate_native_to_eth:.6g} ETH/native token\n"
+        f"""Minimum native token transfer: 
+        {config.payment_config.min_native_token_transfer / 10**18} units\n"""
         f"Minimum COW transfer: {config.payment_config.min_cow_transfer / 10**18} units\n",
         category=Category.TOTALS,
     )
