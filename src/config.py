@@ -423,6 +423,7 @@ class AccountingConfig:
     buffer_accounting_config: BufferAccountingConfig
     io_config: IOConfig
     data_processing_config: DataProcessingConfig
+    network: Network
 
     @staticmethod
     def from_network(network: Network) -> AccountingConfig:
@@ -438,6 +439,7 @@ class AccountingConfig:
             buffer_accounting_config=BufferAccountingConfig.from_network(network),
             io_config=IOConfig.from_env(),
             data_processing_config=DataProcessingConfig.from_network(network),
+            network=network,
         )
 
 

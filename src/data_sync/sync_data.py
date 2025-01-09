@@ -39,7 +39,6 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
     type_of_data: str,
     node: Web3,
     orderbook: OrderbookFetcher,
-    network: str,
     config: AccountingConfig,
     recompute_previous_month: bool,
 ) -> None:
@@ -54,8 +53,14 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
     )
     # we note that the block range computed above is meant to be interpreted as
     # a closed interval
+    network_name_map = {
+        "mainnet": "ethereum",
+        "gnosis": "gnosis",
+        "arbitrum": "arbitrum",
+        "base": "base",
+    }
+    network_name = network_name_map[config.network]
     for i, (start_block, end_block) in enumerate(block_range_list):
-        network_name = "ethereum" if network == "mainnet" else network
         table_name = type_of_data + "_data_" + network_name + "_" + months_list[i]
         block_range = BlockRange(block_from=start_block, block_to=end_block)
         log.info(
@@ -95,7 +100,6 @@ def sync_data() -> None:
                 "batch",
                 web3,
                 orderbook,
-                network,
                 config,
                 recompute_previous_month=False,
             )
@@ -106,7 +110,6 @@ def sync_data() -> None:
                 "order",
                 web3,
                 orderbook,
-                network,
                 config,
                 recompute_previous_month=False,
             )
