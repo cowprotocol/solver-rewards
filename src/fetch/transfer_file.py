@@ -103,8 +103,8 @@ def auto_propose(
             channel=slack_channel,
             message=(
                 f"""Solver Rewards transaction for network {config.dune_config.dune_blockchain} 
-                with nonce {nonce} pending signatures.\n"
-                To sign and execute, visit:\n{config.payment_config.safe_queue_url}\n"
+                with nonce {nonce} pending signatures.\n
+                To sign and execute, visit:\n{config.payment_config.safe_queue_url}\n
                 More details in thread"""
             ),
             sub_messages=log_saver_obj.get_values(),
