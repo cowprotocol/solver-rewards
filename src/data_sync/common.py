@@ -8,6 +8,7 @@ from dateutil.relativedelta import (
 from web3 import Web3
 
 from src.logger import set_log
+from src.models.block_range import BlockRange
 
 log = set_log(__name__)
 
@@ -45,7 +46,7 @@ def compute_time_range(
 
 def compute_block_range(
     start_time: datetime, end_time: datetime, node: Web3
-) -> tuple[int, int]:
+) -> BlockRange:
     """Computes a block range from start and end time.
     The convention for block ranges is to be inclusive, while the end time is exclusive.
     """
@@ -64,7 +65,7 @@ def compute_block_range(
     else:
         end_block = find_block_with_timestamp(node, end_time.timestamp()) - 1
 
-    return start_block, end_block
+    return BlockRange(block_from=start_block, block_to=end_block)
 
 
 def find_block_with_timestamp(node: Web3, time_stamp: float) -> int:

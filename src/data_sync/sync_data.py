@@ -20,7 +20,6 @@ from src.data_sync.common import (
     compute_block_range,
     compute_time_range,
 )
-from src.models.block_range import BlockRange
 
 
 log = set_log(__name__)
@@ -75,7 +74,7 @@ class ScriptArgs:
         self.end_time = self.end_time.replace(tzinfo=datetime.timezone.utc)
 
 
-async def sync_data_to_db(  # pylint: disable=too-many-arguments, too-many-locals
+async def sync_data_to_db(  # pylint: disable=too-many-arguments
     type_of_data: str,
     node: Web3,
     orderbook: OrderbookFetcher,
@@ -83,26 +82,14 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments, too-many-local
     start_time: datetime.datetime,
     end_time: datetime.datetime,
 ) -> None:
-    """
-    Order/Batch data Sync Logic. The recompute_previous_month flag, when enabled,
-    forces a recomputation of the previous month. If it is set to False, previous month
-    is still recomputed when the current date is the first day of the current month.
-    """
+    """Order and Batch data Sync Logic."""
     time_range_list = compute_time_range(start_time, end_time)
-    block_range_list = [
-        compute_block_range(start_time, end_time, node)
-        for start_time, end_time in time_range_list
-    ]
-    months_list = [start_time.strftime("%Y_%m") for start_time, _ in time_range_list]
-    # we note that the block range computed above is meant to be interpreted as
-    # a closed interval
-    for (start_block, end_block), month in zip(block_range_list, months_list):
+    for start_time_month, end_time_month in time_range_list:
+        month = start_time_month.strftime("%Y_%m")
         network_name = config.dune_config.dune_blockchain
         table_name = type_of_data + "_data_" + network_name + "_" + month
-        block_range = BlockRange(block_from=start_block, block_to=end_block)
-        log.info(
-            f"About to process block range ({start_block}, {end_block}) for month {month}"
-        )
+        block_range = compute_block_range(start_time_month, end_time_month, node)
+        log.info(f"About to process {block_range}) for month {month}")
         if type_of_data == "batch":
             data = orderbook.get_batch_data(block_range, config)
         else:
