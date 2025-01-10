@@ -264,6 +264,7 @@ class OrderbookFetcher:
             except ValueError:  # this catches the case of a missing table
                 data = new_data
                 log.info(f"Creating new table {table_name}.")
+        data = data.reset_index()
         data.to_sql(
             table_name,
             cls.pg_engine(OrderbookEnv.ANALYTICS),
