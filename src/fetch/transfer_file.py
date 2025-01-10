@@ -33,6 +33,7 @@ log = set_log(__name__)
 
 
 def dashboard_url(period: AccountingPeriod, config: AccountingConfig) -> str:
+    """Returns a link to the solver accounting dashboard.s"""
     base = "https://dune.com/cowprotocol/"
     slug = "cow-solver-rewards"
     upper_cap = Fraction(config.reward_config.batch_reward_cap_upper, 10**18)
