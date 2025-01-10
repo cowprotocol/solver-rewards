@@ -27,7 +27,7 @@ def compute_time_range(
     ) + relativedelta(months=1):
         return [(start_time, end_time)]
 
-    # if there are multiple month to consider
+    # if there are multiple months to consider
     next_month_start_time = datetime(start_time.year, start_time.month, 1).replace(
         tzinfo=timezone.utc
     ) + relativedelta(months=1)
