@@ -37,13 +37,6 @@ class AccountingPeriod:
             QueryParameter.date_type("end_time", self.end),
         ]
 
-    def dashboard_url(self) -> str:
-        """Constructs Solver Accounting Dashboard URL for Period"""
-        base = "https://dune.com/cowprotocol/"
-        slug = "cow-solver-rewards"
-        query = f"?start_time={self.start}&end_time={self.end}"
-        return base + urllib.parse.quote_plus(slug + query, safe="=&?")
-
     def unusual_slippage_url(self) -> str:
         """Returns a link to unusual slippage query for period"""
         base = "https://dune.com/queries/2332678"
