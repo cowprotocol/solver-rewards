@@ -67,6 +67,8 @@ def compute_block_range(
     else:
         end_block = find_block_with_timestamp(node, end_time.timestamp()) - 1
 
+    assert start_block < end_block, "start block must be smaller than end block"
+
     return BlockRange(block_from=start_block, block_to=end_block)
 
 
