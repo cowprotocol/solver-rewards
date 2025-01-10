@@ -36,15 +36,19 @@ def dashboard_url(period: AccountingPeriod, config: AccountingConfig) -> str:
     """Returns a link to the solver accounting dashboard.s"""
     base = "https://dune.com/cowprotocol/"
     slug = "cow-solver-rewards"
-    upper_cap = Fraction(config.reward_config.batch_reward_cap_upper, 10**18)
-    lower_cap = -Fraction(config.reward_config.batch_reward_cap_lower, 10**18)
+    # reward parameters
+    decimals = 18  # this might need to be network dependent
+    upper_cap = Fraction(config.reward_config.batch_reward_cap_upper, 10**decimals)
+    lower_cap = -Fraction(config.reward_config.batch_reward_cap_lower, 10**decimals)
+    quote_reward = Fraction(config.reward_config.quote_reward_cow, 10**decimals)
     quote_cap_native_token = Fraction(
-        config.reward_config.quote_reward_cap_native, 10**18
+        config.reward_config.quote_reward_cap_native, 10**decimals
     )
     query = (
         f"?start_time={period.start}&end_time={period.end}"
         f"&blockchain={config.dune_config.dune_blockchain}"
         f"&upper_cap={upper_cap:g}&lower_cap={lower_cap:g}"
+        f"&quote_reward={quote_reward:g}"
         f"&quote_cap_native_token={quote_cap_native_token:g}"
     )
     return base + urllib.parse.quote_plus(slug + query, safe="=&?")
