@@ -47,6 +47,7 @@ def compute_block_range(
 ) -> BlockRange:
     """Computes a block range from start and end time.
     The convention for block ranges is to be inclusive, while the end time is exclusive.
+    Only finalized blocks are considered.
     """
     latest_block = node.eth.get_block("finalized")
     latest_block_time = datetime.fromtimestamp(
