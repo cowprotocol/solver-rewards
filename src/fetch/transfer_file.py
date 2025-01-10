@@ -37,12 +37,17 @@ def dashboard_url(period: AccountingPeriod, config: AccountingConfig) -> str:
     base = "https://dune.com/cowprotocol/"
     slug = "cow-solver-rewards"
     # reward parameters
-    decimals = 18  # this might need to be network dependent
-    upper_cap = Fraction(config.reward_config.batch_reward_cap_upper, 10**decimals)
-    lower_cap = -Fraction(config.reward_config.batch_reward_cap_lower, 10**decimals)
-    quote_reward = Fraction(config.reward_config.quote_reward_cow, 10**decimals)
+    decimals_native_token = 18  # this could be fetched from a node
+    decimals_cow = 18  # this could be fetched from a node
+    upper_cap = Fraction(
+        config.reward_config.batch_reward_cap_upper, 10**decimals_native_token
+    )
+    lower_cap = -Fraction(
+        config.reward_config.batch_reward_cap_lower, 10**decimals_native_token
+    )
+    quote_reward = Fraction(config.reward_config.quote_reward_cow, 10**decimals_cow)
     quote_cap_native_token = Fraction(
-        config.reward_config.quote_reward_cap_native, 10**decimals
+        config.reward_config.quote_reward_cap_native, 10**decimals_native_token
     )
     query = (
         f"?start_time={period.start}&end_time={period.end}"
