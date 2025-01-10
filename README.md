@@ -1,4 +1,4 @@
-# CoW Protocol: Solver Reimbursement & Rewards Distributor
+# CoW Protocol: Solver Accounting
 
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 
@@ -11,13 +11,19 @@ cp .env.sample .env    <----- Copy your Dune and orderbook credentials here!
 
 Fill out your Dune credentials in the `.env` file.
 
-Generate the solver-payouts with for the accounting period 7 days with today as end date).
+Generate the solver-payouts with for the accounting period 7 days (with today as end date).
 
 ```shell
 python -m src.fetch.transfer_file
 ```
 
-For more advanced usage of this payout script see below.
+To generate order data for the current month to upload to Dune run the following command.
+
+```shell
+python -m src.data_sync.sync_data --sync-table order_data
+```
+
+For more advanced usage of these scripts see below.
 
 # Summary of Accounting Procedure
 
@@ -142,6 +148,18 @@ docker run --pull=always -it --rm \
 
 and (usually after about 30 seconds) find the transfer file written to your current working directory.
 
-### Managing Dependencies
+# Creating payment data for syncing
+
+The script `src/data_sync/sync_data.py` creates tables for syncing to dune. The scripts can be called with a table to sync, start and end times, and a flag for dropping old data.
+
+To create order rewards tables with data from `2024-12-30` to `2025-01-02` use
+```shell
+python -m src.data_sync.sync_data --sync_table order_data --start-time 2024-12-30 --end-time 2025-01-02
+```
+This will update (or create, if they do not exist yet) the tables `order_data_{NETWORK}_2024_12` and `order_data_{NETWORK}_2025_01`.
+
+The script requires the additional environment variable `ANALYTICS_DB_URL`.
+
+# Managing Dependencies
 Python libraries can be added to the `requirements.in` file. After this `pip-compile` or `python -m pip-compile` will update the `requirements.txt` for you (you may have to install the libry manually first). 
 Warning: this might take a long time for large changes or when you run pip-compile for the first time. Running the command with the `-v` flag can help keep track of what's happening.
