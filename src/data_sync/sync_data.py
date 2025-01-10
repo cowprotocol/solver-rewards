@@ -16,7 +16,7 @@ from src.logger import set_log
 from src.models.tables import SyncTable
 from src.data_sync.common import (
     compute_block_range,
-    compute_time_range,
+    partition_time_range,
 )
 
 
@@ -101,7 +101,8 @@ async def sync_data_to_db(  # pylint: disable=too-many-arguments
     recreate_table: bool,
 ) -> None:
     """Order and Batch data Sync Logic."""
-    time_range_list = compute_time_range(start_time, end_time)
+    # partition time range into time ranges restricted to single months
+    time_range_list = partition_time_range(start_time, end_time)
     for start_time_month, end_time_month in time_range_list:
         month = start_time_month.strftime("%Y_%m")
         network_name = config.dune_config.dune_blockchain

@@ -11,7 +11,7 @@ from src.models.block_range import BlockRange
 log = set_log(__name__)
 
 
-def compute_time_range(
+def partition_time_range(
     start_time: datetime, end_time: datetime
 ) -> list[tuple[datetime, datetime]]:
     """Computes (list of) time ranges from input parameters.
