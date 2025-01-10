@@ -59,10 +59,6 @@ def manual_propose(
     Entry point to manual creation of rewards payout transaction.
     This function generates the CSV transfer file to be pasted into the COW Safe app
     """
-    print(
-        f"Please double check the batches with unusual slippage: "
-        f"{period.unusual_slippage_url()}"
-    )
     csv_transfers = [asdict(CSVTransfer.from_transfer(t)) for t in transfers]
     FileIO(config.io_config.csv_output_dir).write_csv(
         csv_transfers, f"transfers-{config.io_config.network.value}-{period}.csv"

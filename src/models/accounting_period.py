@@ -4,7 +4,6 @@ Common location for shared resources throughout the project.
 
 from __future__ import annotations
 
-import urllib.parse
 from datetime import datetime, timedelta
 
 from dune_client.types import QueryParameter
@@ -36,9 +35,3 @@ class AccountingPeriod:
             QueryParameter.date_type("start_time", self.start),
             QueryParameter.date_type("end_time", self.end),
         ]
-
-    def unusual_slippage_url(self) -> str:
-        """Returns a link to unusual slippage query for period"""
-        base = "https://dune.com/queries/2332678"
-        query = f"?start_time={self.start}&end_time={self.end}"
-        return base + urllib.parse.quote_plus(query, safe="=&?")
