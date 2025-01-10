@@ -257,18 +257,16 @@ class OrderbookFetcher:
                     table_name,
                     cls.pg_engine(OrderbookEnv.ANALYTICS),
                     index_col=index_cols,
-                ).drop("index", axis=1)
+                )
                 # upsert data (insert if possible, otherwise update)
                 log.info(f"Upserting into table {table_name}.")
                 data = pd.concat([data[~data.index.isin(new_data.index)], new_data])
             except ValueError:  # this catches the case of a missing table
                 data = new_data
                 log.info(f"Creating new table {table_name}.")
-        # reset index for compatibility with the current integer index
-        # this can be removed to not have the unnecessary index column
-        data = data.reset_index()
         data.to_sql(
             table_name,
             cls.pg_engine(OrderbookEnv.ANALYTICS),
             if_exists="replace",
+            index=False,
         )
