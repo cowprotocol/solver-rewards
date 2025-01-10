@@ -7,6 +7,8 @@ from __future__ import annotations
 import os
 import ssl
 from dataclasses import asdict
+from fractions import Fraction
+import urllib.parse
 
 import certifi
 from dune_client.client import DuneClient
@@ -30,6 +32,33 @@ from src.utils.script_args import generic_script_init
 log = set_log(__name__)
 
 
+def dashboard_url(period: AccountingPeriod, config: AccountingConfig) -> str:
+    """Returns a link to the solver accounting dashboard.s"""
+    base = "https://dune.com/cowprotocol/"
+    slug = "cow-solver-rewards"
+    # reward parameters
+    decimals_native_token = 18  # this could be fetched from a node
+    decimals_cow = 18  # this could be fetched from a node
+    upper_cap = Fraction(
+        config.reward_config.batch_reward_cap_upper, 10**decimals_native_token
+    )
+    lower_cap = -Fraction(
+        config.reward_config.batch_reward_cap_lower, 10**decimals_native_token
+    )
+    quote_reward = Fraction(config.reward_config.quote_reward_cow, 10**decimals_cow)
+    quote_cap_native_token = Fraction(
+        config.reward_config.quote_reward_cap_native, 10**decimals_native_token
+    )
+    query = (
+        f"?start_time={period.start}&end_time={period.end}"
+        f"&blockchain={config.dune_config.dune_blockchain}"
+        f"&upper_cap={upper_cap:g}&lower_cap={lower_cap:g}"
+        f"&quote_reward={quote_reward:g}"
+        f"&quote_cap_native_token={quote_cap_native_token:g}"
+    )
+    return base + urllib.parse.quote_plus(slug + query, safe="=&?")
+
+
 def manual_propose(
     transfers: list[Transfer],
     period: AccountingPeriod,
@@ -39,10 +68,6 @@ def manual_propose(
     Entry point to manual creation of rewards payout transaction.
     This function generates the CSV transfer file to be pasted into the COW Safe app
     """
-    print(
-        f"Please double check the batches with unusual slippage: "
-        f"{period.unusual_slippage_url()}"
-    )
     csv_transfers = [asdict(CSVTransfer.from_transfer(t)) for t in transfers]
     FileIO(config.io_config.csv_output_dir).write_csv(
         csv_transfers, f"transfers-{config.io_config.network.value}-{period}.csv"
@@ -134,7 +159,7 @@ def main() -> None:
     )
 
     log_saver.print(
-        f"The data aggregated can be visualized at\n{accounting_period.dashboard_url()}",
+        f"The data aggregated can be visualized at\n{dashboard_url(accounting_period, config)}",
         category=Category.GENERAL,
     )
 
