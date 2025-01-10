@@ -37,9 +37,7 @@ def generic_script_init(description: str) -> ScriptArgs:
     parser.add_argument(
         "--dry-run",
         action="store_true",
-        help="Flag indicating whether script should not post alerts or transactions. "
-        "Only relevant in combination with --post-tx"
-        "Primarily intended for deployment in staging environment.",
+        help="Flag indicating whether script should not post alerts or transactions. ",
     )
     parser.add_argument(
         "--ignore-slippage",
