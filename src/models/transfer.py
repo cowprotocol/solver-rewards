@@ -9,7 +9,7 @@ from typing import Optional
 
 from dune_client.types import Address
 from eth_typing.encoding import HexStr
-from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
+from safe_eth.safe.multi_send import MultiSendOperation, MultiSendTx
 from web3 import Web3
 
 from src.abis.load import erc20
@@ -105,7 +105,7 @@ class Transfer:
             assert self.token is not None
             return MultiSendTx(
                 operation=MultiSendOperation.CALL,
-                to=str(self.token.address),
+                to=Web3.to_checksum_address(str(self.token.address)),
                 value=0,
                 data=ERC20_CONTRACT.encodeABI(
                     fn_name="transfer", args=[receiver, self.amount_wei]

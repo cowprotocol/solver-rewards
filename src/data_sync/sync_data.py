@@ -91,7 +91,7 @@ class ScriptArgs:
         self.end_time = self.end_time.replace(tzinfo=datetime.timezone.utc)
 
 
-async def sync_data_to_db(  # pylint: disable=too-many-arguments
+async def sync_data_to_db(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     type_of_data: str,
     node: Web3,
     orderbook: OrderbookFetcher,

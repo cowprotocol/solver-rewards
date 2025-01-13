@@ -1,9 +1,8 @@
 import unittest
 
-import pandas as pd
 from dune_client.types import Address
 from eth_typing import HexStr
-from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
+from safe_eth.safe.multi_send import MultiSendTx, MultiSendOperation
 from web3 import Web3
 
 from src.abis.load import erc20
@@ -48,7 +47,9 @@ class TestTransfer(unittest.TestCase):
             erc20_transfer.as_multisend_tx(),
             MultiSendTx(
                 operation=MultiSendOperation.CALL,
-                to=self.payment_config.cow_token_address.address,
+                to=Web3.to_checksum_address(
+                    self.payment_config.cow_token_address.address
+                ),
                 value=0,
                 data=erc20().encodeABI(fn_name="transfer", args=[receiver, 15]),
             ),

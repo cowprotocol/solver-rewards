@@ -4,11 +4,11 @@ Safe Multisend transaction consisting of Transfers
 """
 
 from eth_typing.evm import ChecksumAddress
-from gnosis.eth.ethereum_client import EthereumClient
-from gnosis.eth.ethereum_network import EthereumNetwork
-from gnosis.safe.api import TransactionServiceApi
-from gnosis.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
-from gnosis.safe.safe import Safe
+from safe_eth.eth.ethereum_client import EthereumClient
+from safe_eth.eth.ethereum_network import EthereumNetwork
+from safe_eth.safe.api import TransactionServiceApi
+from safe_eth.safe.multi_send import MultiSend, MultiSendOperation, MultiSendTx
+from safe_eth.safe.safe import Safe
 
 
 from src.config import web3
@@ -84,7 +84,9 @@ def post_multisend(
     """Posts a MultiSend Transaction from a list of Transfers."""
 
     encoded_multisend = build_encoded_multisend(transactions, client=client)
-    safe = Safe(address=safe_address, ethereum_client=client)
+    safe = Safe(  # type: ignore  # pylint: disable=abstract-class-instantiated
+        address=safe_address, ethereum_client=client
+    )
     safe_tx = safe.build_multisig_tx(
         to=MULTISEND_CONTRACT,
         value=0,

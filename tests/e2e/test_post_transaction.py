@@ -2,13 +2,13 @@ import unittest
 
 from dune_client.types import Address
 from eth_typing import URI
-from gnosis.eth import EthereumNetwork, EthereumClient
-
+import pytest
+from safe_eth.eth import EthereumNetwork, EthereumClient
 from web3 import Web3
+
 from src.fetch.transfer_file import Transfer
 from src.models.token import Token
 from src.multisend import post_multisend
-import pytest
 
 
 class TestTransactionPost(unittest.TestCase):
