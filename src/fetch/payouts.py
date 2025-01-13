@@ -69,7 +69,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
     All pertinent information and functionality related to individual solver payout (or overdraft)
     """
 
-    def __init__(  # pylint: disable=too-many-arguments
+    def __init__(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         solver: Address,
         solver_name: str,
@@ -299,7 +299,7 @@ def extend_payment_df(
     return pdf
 
 
-def prepare_transfers(  # pylint: disable=too-many-arguments
+def prepare_transfers(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     payout_df: DataFrame,
     period: AccountingPeriod,
     final_protocol_fee_wei: int,
@@ -440,7 +440,7 @@ def construct_payout_dataframe(
         config.reward_config.reward_token_address.address
     )
 
-    merged_df["service_fee"] = merged_df["service_fee"].fillna(Fraction(0, 1))  # type: ignore
+    merged_df["service_fee"] = merged_df["service_fee"].fillna(Fraction(0, 1))
 
     return merged_df
 
