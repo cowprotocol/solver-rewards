@@ -2,8 +2,7 @@ import unittest
 
 from dune_client.types import Address
 from eth_typing import URI
-from gnosis.eth import EthereumClient
-from web3 import Web3
+from safe_eth.eth import EthereumClient
 
 from src.abis.load import weth9
 from src.config import Network, PaymentConfig

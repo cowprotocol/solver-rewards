@@ -3,7 +3,7 @@ import unittest
 import pandas as pd
 from dune_client.types import Address
 from eth_typing import HexStr
-from gnosis.safe.multi_send import MultiSendTx, MultiSendOperation
+from safe_eth.safe.multi_send import MultiSendTx, MultiSendOperation
 from web3 import Web3
 
 from src.abis.load import erc20
