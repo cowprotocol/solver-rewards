@@ -9,7 +9,7 @@ from typing import Optional
 
 from dune_client.types import Address
 from eth_typing.encoding import HexStr
-from gnosis.safe.multi_send import MultiSendOperation, MultiSendTx
+from safe_eth.safe.multi_send import MultiSendOperation, MultiSendTx
 from web3 import Web3
 
 from src.abis.load import erc20

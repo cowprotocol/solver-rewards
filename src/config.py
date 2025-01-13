@@ -11,7 +11,7 @@ from pathlib import Path
 from eth_typing.evm import ChecksumAddress
 from dotenv import load_dotenv
 from dune_client.types import Address
-from gnosis.eth.ethereum_network import EthereumNetwork
+from safe_eth.eth.ethereum_network import EthereumNetwork
 from web3 import Web3
 
 load_dotenv()
@@ -304,7 +304,7 @@ class PaymentConfig:
                 min_cow_transfer = 10**18  # 1 COW
 
             case Network.BASE:
-                payment_network = EthereumNetwork.BASE_MAINNET
+                payment_network = EthereumNetwork.BASE
                 short_name = "base"
 
                 cow_token_address = Address(
