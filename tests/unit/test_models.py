@@ -47,7 +47,9 @@ class TestTransfer(unittest.TestCase):
             erc20_transfer.as_multisend_tx(),
             MultiSendTx(
                 operation=MultiSendOperation.CALL,
-                to=self.payment_config.cow_token_address.address,
+                to=Web3.to_checksum_address(
+                    self.payment_config.cow_token_address.address
+                ),
                 value=0,
                 data=erc20().encodeABI(fn_name="transfer", args=[receiver, 15]),
             ),
