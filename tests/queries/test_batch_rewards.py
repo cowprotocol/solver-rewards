@@ -2,6 +2,7 @@ import unittest
 
 import pandas.testing
 from pandas import DataFrame
+from sqlalchemy import text
 
 from src.config import RewardConfig, Network
 from src.pg_client import MultiInstanceDBFetcher
@@ -17,7 +18,9 @@ class TestBatchRewards(unittest.TestCase):
         with open(
             "./tests/queries/batch_rewards_test_db.sql", "r", encoding="utf-8"
         ) as file:
-            self.fetcher.connections[0].execute(file.read())
+            with self.fetcher.connections[0].connect() as connection:
+                with connection.begin():
+                    connection.execute(text(file.read()))
 
     def test_get_batch_rewards(self):
         start_block, end_block = "0", "100"

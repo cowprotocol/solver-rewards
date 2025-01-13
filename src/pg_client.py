@@ -72,18 +72,21 @@ class MultiInstanceDBFetcher:
 
         # querying the prod database
         log.info("Setting tcp_keepalives_idle to 900 for prod connection")
+        # set tcp_keepalive_idle to not time out behind firewall
         with self.connections[0].connect() as connection:
-            # set tcp_keepalive_idle to not time out behind firewall
-            connection.execute(text("SET tcp_keepalives_idle = 900;"))
-            log.info("Running prod query for first connection (in get_solver_rewards)")
-            results.append(
-                self.exec_query(query=batch_reward_query_prod, engine=connection)
-            )
+            with connection.begin():
+                connection.execute(text("SET tcp_keepalives_idle = 900;"))
+        log.info("Running prod query for first connection (in get_solver_rewards)")
+        results.append(
+            self.exec_query(query=batch_reward_query_prod, engine=self.connections[0])
+        )
         # query for barn database
-        with self.connections[1].connect() as connection:
+        if len(self.connections) > 1:  # this is required due to our test setup
             log.info("Running barn query on other connections (in get_solver_rewards")
             results.append(
-                self.exec_query(query=batch_reward_query_barn, engine=connection)
+                self.exec_query(
+                    query=batch_reward_query_barn, engine=self.connections[1]
+                )
             )
 
         results_df = pd.concat(results)
