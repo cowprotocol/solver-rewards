@@ -1,6 +1,5 @@
 import unittest
 
-import pandas as pd
 from dune_client.types import Address
 from eth_typing import HexStr
 from safe_eth.safe.multi_send import MultiSendTx, MultiSendOperation
