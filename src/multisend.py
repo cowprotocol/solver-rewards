@@ -84,7 +84,9 @@ def post_multisend(
     """Posts a MultiSend Transaction from a list of Transfers."""
 
     encoded_multisend = build_encoded_multisend(transactions, client=client)
-    safe = Safe(address=safe_address, ethereum_client=client)
+    safe = Safe(  # type: ignore  # pylint: disable=abstract-class-instantiated
+        address=safe_address, ethereum_client=client
+    )
     safe_tx = safe.build_multisig_tx(
         to=MULTISEND_CONTRACT,
         value=0,

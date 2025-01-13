@@ -105,7 +105,7 @@ class Transfer:
             assert self.token is not None
             return MultiSendTx(
                 operation=MultiSendOperation.CALL,
-                to=str(self.token.address),
+                to=Web3.to_checksum_address(str(self.token.address)),
                 value=0,
                 data=ERC20_CONTRACT.encodeABI(
                     fn_name="transfer", args=[receiver, self.amount_wei]
