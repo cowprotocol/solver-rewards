@@ -66,7 +66,7 @@ class Transfer:
             t.amount_wei for t in transfers if t.token_type == TokenType.ERC20
         )
         return (
-            f"Total ETH Funds needed: {eth_total / 10 ** 18:.4f}\n"
+            f"Total Native Token Funds needed: {eth_total / 10 ** 18:.4f}\n"
             f"Total COW Funds needed: {cow_total / 10 ** 18:.4f}\n"
         )
 

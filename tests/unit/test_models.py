@@ -104,7 +104,7 @@ class TestTransfer(unittest.TestCase):
         )
         self.assertEqual(
             result,
-            "Total ETH Funds needed: 123.4568\nTotal COW Funds needed: 10000000.0000\n",
+            "Total Native Token Funds needed: 123.4568\nTotal COW Funds needed: 10000000.0000\n",
         )
 
 
