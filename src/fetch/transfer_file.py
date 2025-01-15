@@ -59,10 +59,13 @@ def dashboard_url(period: AccountingPeriod, config: AccountingConfig) -> str:
     return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
 
-def manual_propose(
+def manual_propose(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     transfers: list[Transfer],
     period: AccountingPeriod,
     config: AccountingConfig,
+    send_to_slack: bool = False,
+    slack_client: WebClient | None = None,
+    log_saver_obj: PrintStore | None = None,
 ) -> None:
     """
     Entry point to manual creation of rewards payout transaction.
@@ -75,6 +78,20 @@ def manual_propose(
 
     print(Transfer.summarize(transfers))
     print("Please cross check these results with the dashboard linked above.\n")
+
+    if send_to_slack:
+        slack_channel = config.io_config.slack_channel
+        assert slack_channel is not None
+
+        post_to_slack(
+            slack_client,  # type: ignore
+            channel=slack_channel,
+            message=(
+                f"""Solver Rewards dry-run results for network {config.dune_config.dune_blockchain}
+                More details in thread"""
+            ),
+            sub_messages=log_saver_obj.get_values(),  # type: ignore
+        )
 
 
 def auto_propose(
@@ -194,6 +211,22 @@ def main() -> None:
             slack_client=slack_client,
             dry_run=args.dry_run,
             config=config,
+        )
+    elif args.send_to_slack:
+        ssl_context = ssl.create_default_context(cafile=certifi.where())
+        ssl_context.verify_mode = ssl.CERT_REQUIRED
+        slack_client = WebClient(
+            token=config.io_config.slack_token,
+            # https://stackoverflow.com/questions/59808346/python-3-slack-client-ssl-sslcertverificationerror
+            ssl=ssl_context,
+        )
+        manual_propose(
+            transfers=payout_transfers,
+            period=dune.period,
+            config=config,
+            send_to_slack=args.send_to_slack,
+            slack_client=slack_client,
+            log_saver_obj=log_saver,
         )
     else:
         manual_propose(transfers=payout_transfers, period=dune.period, config=config)

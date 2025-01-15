@@ -13,6 +13,7 @@ class ScriptArgs:
     post_tx: bool
     dry_run: bool
     ignore_slippage: bool
+    send_to_slack: bool
 
 
 def generic_script_init(description: str) -> ScriptArgs:
@@ -44,10 +45,16 @@ def generic_script_init(description: str) -> ScriptArgs:
         action="store_true",
         help="Flag for ignoring slippage computations",
     )
+    parser.add_argument(
+        "--send-to-slack",
+        action="store_true",
+        help="Flag indicating whether or not the script should send the results to a slack channel",
+    )
     args = parser.parse_args()
     return ScriptArgs(
         start=args.start,
         post_tx=args.post_tx,
         dry_run=args.dry_run,
         ignore_slippage=args.ignore_slippage,
+        send_to_slack=args.send_to_slack,
     )
