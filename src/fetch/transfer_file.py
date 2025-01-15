@@ -59,13 +59,13 @@ def dashboard_url(period: AccountingPeriod, config: AccountingConfig) -> str:
     return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
 
-def manual_propose(
+def manual_propose( #pylint: disable=too-many-arguments, too-many-positional-arguments
     transfers: list[Transfer],
     period: AccountingPeriod,
     config: AccountingConfig,
-    log_saver_obj: PrintStore,
-    send_to_slack: bool,
+    send_to_slack: bool = False,
     slack_client: WebClient | None = None,
+    log_saver_obj: PrintStore | None = None,
 ) -> None:
     """
     Entry point to manual creation of rewards payout transaction.
@@ -223,9 +223,9 @@ def main() -> None:
         manual_propose(transfers=payout_transfers,
                        period=dune.period,
                        config=config,
-                       log_saver_obj=log_saver,
                        send_to_slack=args.send_to_slack,
                        slack_client=slack_client,
+                       log_saver_obj=log_saver,
         )
     else:
         manual_propose(transfers=payout_transfers, period=dune.period, config=config)
