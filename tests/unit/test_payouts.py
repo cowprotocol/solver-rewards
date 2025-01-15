@@ -641,6 +641,38 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             ],
         )
 
+    def test_negative_reward_service_fee(self):
+        """Sevice fee reduces COW quote reward but not reduce a negative batch reward."""
+        primary_reward = -(10**18)  # negative reward
+        slippage = 2 * 10**18  # to avoid overdraft
+        num_quotes = 100
+        service_fee = Fraction(15, 100)
+        reward_per_quote = 6 * 10**18
+
+        test_datum = self.sample_record(
+            primary_reward=primary_reward,
+            slippage=slippage,
+            num_quotes=num_quotes,
+            service_fee=service_fee,
+        )
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [
+                Transfer(
+                    token=self.cow_token,
+                    recipient=self.reward_target,
+                    amount_wei=int(reward_per_quote * num_quotes * (1 - service_fee)),
+                ),
+                Transfer(
+                    token=None,
+                    recipient=self.buffer_accounting_target,
+                    amount_wei=slippage
+                    + primary_reward,  # no multiplication by 1 - service_fee
+                ),
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
