@@ -84,13 +84,13 @@ def manual_propose(  # pylint: disable=too-many-arguments, too-many-positional-a
         assert slack_channel is not None
 
         post_to_slack(
-            slack_client,
+            slack_client, #type: ignore
             channel=slack_channel,
             message=(
                 f"""Solver Rewards dry-run results for network {config.dune_config.dune_blockchain}
                 More details in thread"""
             ),
-            sub_messages=log_saver_obj.get_values(),
+            sub_messages=log_saver_obj.get_values(), #type: ignore
         )
 
 
