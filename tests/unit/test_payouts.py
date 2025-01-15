@@ -605,6 +605,17 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             num_quotes=num_quotes,
             service_fee=service_fee,
         )
+
+        self.assertTrue(
+            test_datum.total_cow_reward(),
+            test_datum.total_eth_reward() * self.conversion_rate,
+        )  # ensure consistency of cow and eth batch rewards
+        self.assertEqual(
+            test_datum.total_service_fee(),
+            int(
+                primary_reward * self.conversion_rate * service_fee
+            ),  # only quote rewards enter
+        )
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
             test_datum.as_payouts(),
@@ -621,11 +632,20 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
     def test_quote_reward_service_fee(self):
         """Sevice fee reduces COW reward."""
         primary_reward, num_quotes, service_fee = 0, 100, Fraction(15, 100)
+        reward_per_quote = 6 * 10**18
+
         test_datum = self.sample_record(
             primary_reward=primary_reward,
             slippage=0,
             num_quotes=num_quotes,
             service_fee=service_fee,
+        )
+
+        self.assertEqual(
+            test_datum.total_service_fee(),
+            int(
+                reward_per_quote * num_quotes * service_fee
+            ),  # only quote rewards enter
         )
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
@@ -654,6 +674,17 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
             slippage=slippage,
             num_quotes=num_quotes,
             service_fee=service_fee,
+        )
+
+        self.assertTrue(
+            test_datum.total_cow_reward(),
+            test_datum.total_eth_reward() * self.conversion_rate,
+        )  # ensure consistency of cow and eth batch rewards
+        self.assertEqual(
+            test_datum.total_service_fee(),
+            int(
+                reward_per_quote * num_quotes * service_fee
+            ),  # only quote rewards enter
         )
         self.assertFalse(test_datum.is_overdraft())
         self.assertEqual(
