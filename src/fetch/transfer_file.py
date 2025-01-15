@@ -59,7 +59,7 @@ def dashboard_url(period: AccountingPeriod, config: AccountingConfig) -> str:
     return base + urllib.parse.quote_plus(slug + query, safe="=&?")
 
 
-def manual_propose( #pylint: disable=too-many-arguments, too-many-positional-arguments
+def manual_propose(  # pylint: disable=too-many-arguments, too-many-positional-arguments
     transfers: list[Transfer],
     period: AccountingPeriod,
     config: AccountingConfig,
@@ -220,12 +220,13 @@ def main() -> None:
             # https://stackoverflow.com/questions/59808346/python-3-slack-client-ssl-sslcertverificationerror
             ssl=ssl_context,
         )
-        manual_propose(transfers=payout_transfers,
-                       period=dune.period,
-                       config=config,
-                       send_to_slack=args.send_to_slack,
-                       slack_client=slack_client,
-                       log_saver_obj=log_saver,
+        manual_propose(
+            transfers=payout_transfers,
+            period=dune.period,
+            config=config,
+            send_to_slack=args.send_to_slack,
+            slack_client=slack_client,
+            log_saver_obj=log_saver,
         )
     else:
         manual_propose(transfers=payout_transfers, period=dune.period, config=config)
