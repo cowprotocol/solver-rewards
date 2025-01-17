@@ -654,8 +654,46 @@ class TestRewardAndPenaltyDatum(unittest.TestCase):
                 Transfer(
                     token=self.cow_token,
                     recipient=self.reward_target,
+                    amount_wei=int(reward_per_quote * num_quotes * (1 - service_fee)),
+                ),
+            ],
+        )
+
+    def test_positive_reward_service_fee(self):
+        """Sevice fee reduces COW reward."""
+        primary_reward = 10**18  # positive reward
+        num_quotes = 100
+        service_fee = Fraction(15, 100)
+        reward_per_quote = 6 * 10**18
+
+        test_datum = self.sample_record(
+            primary_reward=primary_reward,
+            slippage=0,
+            num_quotes=num_quotes,
+            service_fee=service_fee,
+        )
+
+        self.assertEqual(
+            test_datum.total_service_fee(),
+            int(
+                (primary_reward * self.conversion_rate + reward_per_quote * num_quotes)
+                * service_fee
+            ),
+        )
+        self.assertFalse(test_datum.is_overdraft())
+        self.assertEqual(
+            test_datum.as_payouts(),
+            [
+                Transfer(
+                    token=self.cow_token,
+                    recipient=self.reward_target,
+                    amount_wei=int(reward_per_quote * num_quotes * (1 - service_fee)),
+                ),
+                Transfer(
+                    token=self.cow_token,
+                    recipient=self.reward_target,
                     amount_wei=int(
-                        6000000000000000000 * num_quotes * (1 - service_fee)
+                        primary_reward * self.conversion_rate * (1 - service_fee)
                     ),
                 ),
             ],
