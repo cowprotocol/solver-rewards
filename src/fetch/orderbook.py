@@ -107,7 +107,7 @@ class OrderbookFetcher:
 auction_prices_corrections as (
     select
         0 as auction_id,
-        '\\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' as token,
+        '\\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'::bytea as token,
         1000000000000000000 as price
     where false
 ),
@@ -125,7 +125,7 @@ auction_prices_corrections as (
             token_str = "\\x" + row["token"].hex()
             formatted_row = (
                 f"    {row['auction_id']} as auction_id,\n"
-                f"    '{token_str}' as token,\n"
+                f"    '{token_str}'::bytea as token,\n"
                 f"    {int(row['price'])} as price\n"
             )
 
