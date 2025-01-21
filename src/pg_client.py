@@ -43,6 +43,7 @@ class MultiInstanceDBFetcher:
         return pd.read_sql(sql=query, con=engine)
 
     def get_solver_rewards(  # pylint: disable=too-many-arguments
+        self,
         start_block: str,
         end_block: str,
         reward_cap_upper: int,
