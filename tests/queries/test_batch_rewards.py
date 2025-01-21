@@ -27,7 +27,7 @@ class TestBatchRewards(unittest.TestCase):
         empty_table = """
 auction_prices_corrections as (
     select
-        0 as action_id,
+        0 as auction_id,
         '\\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' as token,
         1000000000000000000 as price
     where false
