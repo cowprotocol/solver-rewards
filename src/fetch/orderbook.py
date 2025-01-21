@@ -81,6 +81,81 @@ class OrderbookFetcher:
         return barn, prod
 
     @classmethod
+    def fetch_auction_price_corrections(
+        cls, config: AccountingConfig
+    ) -> tuple[str, str]:
+        query_str = "select * from auction_prices_corrections"
+        auction_correction_prices = cls._read_query_for_env(
+            query_str, OrderbookEnv.ANALYTICS
+        )
+
+        # If there are no auction correction prices, return empty strings
+        if auction_correction_prices.empty:
+            return "", ""
+
+        # Initialize the select statements
+        auction_prices_corrections_barn_str = (
+            "auction_prices_corrections as (\nselect\n"
+        )
+        auction_prices_corrections_prod_str = (
+            "auction_prices_corrections as (\nselect\n"
+        )
+        empty_table = """
+auction_prices_corrections as (
+    select
+        0 as action_id,
+        '\\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' as token,
+        1000000000000000000 as price
+    where false
+),
+        """
+
+        prod_counter = 0
+        barn_counter = 0
+
+        blockchain = config.dune_config.dune_blockchain
+
+        # Process each row in the DataFrame
+        for _, row in auction_correction_prices.iterrows():
+            if row["blockchain"] != blockchain:
+                continue
+            token_str = "\\" + row["token"].hex()[1:]
+            formatted_row = (
+                f"    {row['auction_id']} as auction_id,\n"
+                f"    '{token_str}' as token,\n"
+                f"    {int(row['price'])} as price\n"
+            )
+
+            # Append the formatted row to the appropriate string
+            if row["environment"] == "prod":
+                if prod_counter == 0:
+                    auction_prices_corrections_prod_str += formatted_row
+                    prod_counter += 1
+                else:
+                    auction_prices_corrections_prod_str += (
+                        "union\nselect\n" + formatted_row
+                    )
+            else:
+                if barn_counter == 0:
+                    auction_prices_corrections_barn_str += formatted_row
+                    barn_counter += 1
+                else:
+                    auction_prices_corrections_barn_str += (
+                        "union\nselect\n" + formatted_row
+                    )
+
+        if prod_counter > 0:
+            auction_prices_corrections_prod_str += "),"
+        else:
+            auction_prices_corrections_prod_str = empty_table
+        if barn_counter > 0:
+            auction_prices_corrections_barn_str += "),"
+        else:
+            auction_prices_corrections_barn_str = empty_table
+
+        return auction_prices_corrections_prod_str, auction_prices_corrections_barn_str
+
+    @classmethod
     def run_batch_data_query(
         cls, block_range: BlockRange, config: AccountingConfig
     ) -> DataFrame:
@@ -88,6 +163,9 @@ class OrderbookFetcher:
         Fetches and validates Batch Data DataFrame as concatenation from Prod and Staging DB
         """
         load_dotenv()
+        prod_prices_corrections_str, barn_prices_corrections_str = (
+            cls.fetch_auction_price_corrections(config)
+        )
         batch_data_query_prod = (
             open_query("orderbook/prod_batch_rewards.sql")
             .replace("{{start_block}}", str(block_range.block_from))
@@ -99,6 +177,7 @@ class OrderbookFetcher:
                 "{{EPSILON_UPPER}}", str(config.reward_config.batch_reward_cap_upper)
             )
             .replace("{{results}}", "dune_sync_batch_data_table")
+            .replace("{{auction_prices_corrections}}", prod_prices_corrections_str)
         )
         batch_data_query_barn = (
             open_query("orderbook/barn_batch_rewards.sql")
@@ -111,6 +190,7 @@ class OrderbookFetcher:
                 "{{EPSILON_UPPER}}", str(config.reward_config.batch_reward_cap_upper)
             )
             .replace("{{results}}", "dune_sync_batch_data_table")
+            .replace("{{auction_prices_corrections}}", barn_prices_corrections_str)
         )
         data_types = {
             # According to this: https://stackoverflow.com/a/11548224
@@ -164,21 +244,28 @@ class OrderbookFetcher:
         return pd.concat(res)
 
     @classmethod
-    def run_order_data_query(cls, block_range: BlockRange) -> DataFrame:
+    def run_order_data_query(
+        cls, block_range: BlockRange, config: AccountingConfig
+    ) -> DataFrame:
         """
         Fetches and validates Order Data DataFrame as concatenation from Prod and Staging DB
         """
+        prod_prices_corrections_str, barn_prices_corrections_str = (
+            cls.fetch_auction_price_corrections(config)
+        )
         cow_reward_query_prod = (
             open_query("orderbook/order_data.sql")
             .replace("{{start_block}}", str(block_range.block_from))
             .replace("{{end_block}}", str(block_range.block_to))
             .replace("{{env}}", "prod")
+            .replace("{{auction_prices_corrections}}", prod_prices_corrections_str)
         )
         cow_reward_query_barn = (
             open_query("orderbook/order_data.sql")
             .replace("{{start_block}}", str(block_range.block_from))
             .replace("{{end_block}}", str(block_range.block_to))
             .replace("{{env}}", "barn")
+            .replace("{{auction_prices_corrections}}", barn_prices_corrections_str)
         )
         data_types = {"block_number": "int64", "amount": "float64"}
         barn, prod = cls._query_both_dbs(
@@ -219,7 +306,8 @@ class OrderbookFetcher:
             log.info(f"About to process block range ({start}, {start + size - 1})")
             res.append(
                 cls.run_order_data_query(
-                    BlockRange(block_from=start, block_to=start + size - 1)
+                    BlockRange(block_from=start, block_to=start + size - 1),
+                    config=config,
                 )
             )
             start = start + size
