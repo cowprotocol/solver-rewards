@@ -81,7 +81,7 @@ class OrderbookFetcher:
         return barn, prod
 
     @classmethod
-    def fetch_auction_price_corrections(
+    def fetch_auction_prices_corrections(
         cls, config: AccountingConfig
     ) -> tuple[str, str]:
         """
@@ -167,7 +167,7 @@ auction_prices_corrections as (
         """
         load_dotenv()
         prod_prices_corrections_str, barn_prices_corrections_str = (
-            cls.fetch_auction_price_corrections(config)
+            cls.fetch_auction_prices_corrections(config)
         )
         batch_data_query_prod = (
             open_query("orderbook/prod_batch_rewards.sql")
@@ -254,7 +254,7 @@ auction_prices_corrections as (
         Fetches and validates Order Data DataFrame as concatenation from Prod and Staging DB
         """
         prod_prices_corrections_str, barn_prices_corrections_str = (
-            cls.fetch_auction_price_corrections(config)
+            cls.fetch_auction_prices_corrections(config)
         )
         cow_reward_query_prod = (
             open_query("orderbook/order_data.sql")
