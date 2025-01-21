@@ -29,6 +29,8 @@ class TestBatchRewards(unittest.TestCase):
             end_block,
             self.batch_reward_cap_upper,
             self.batch_reward_cap_lower,
+            "",
+            "",
         )
         expected = DataFrame(
             {
