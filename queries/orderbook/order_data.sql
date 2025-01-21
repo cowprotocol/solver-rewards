@@ -121,8 +121,14 @@ price_data as (
     select
         tdp.auction_id,
         tdp.order_uid,
-        ap_surplus.price / pow(10, 18) as surplus_token_native_price,
-        ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
+        case
+            when tdp.auction_id = 10052057 and tdp.surplus_token = '\x06b964d96f5dcf7eae9d7c559b09edce244d4b8e' then 212011986287238 / pow(10, 18)
+            else ap_surplus.price / pow(10, 18)
+        end as surplus_token_native_price,
+        case
+            when tdp.auction_id = 10052057 and tdp.surplus_token = '\x06b964d96f5dcf7eae9d7c559b09edce244d4b8e' then 212011986287238 / pow(10, 18)
+            else ap_protocol.price / pow(10, 18)
+        end as protocol_fee_token_native_price,
         ap_sell.price / pow(10, 18) as network_fee_token_native_price
     from trade_data_processed as tdp
     left outer join auction_prices as ap_sell -- contains price: sell token
