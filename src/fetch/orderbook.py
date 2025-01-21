@@ -122,7 +122,7 @@ auction_prices_corrections as (
         for _, row in auction_correction_prices.iterrows():
             if row["blockchain"] != blockchain:
                 continue
-            token_str = "\\" + row["token"].hex()[1:]
+            token_str = "\\x" + row["token"].hex()
             formatted_row = (
                 f"    {row['auction_id']} as auction_id,\n"
                 f"    '{token_str}' as token,\n"
