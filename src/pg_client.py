@@ -48,6 +48,8 @@ class MultiInstanceDBFetcher:
         end_block: str,
         reward_cap_upper: int,
         reward_cap_lower: int,
+        prod_prices_corrections_str: str,
+        barn_prices_corrections_str: str,
     ) -> DataFrame:
         """
         Returns aggregated solver rewards for accounting period defined by block range
@@ -59,6 +61,7 @@ class MultiInstanceDBFetcher:
             .replace("{{EPSILON_LOWER}}", str(reward_cap_lower))
             .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
             .replace("{{results}}", "solver_rewards_script_table")
+            .replace("{{auction_prices_corrections}}", prod_prices_corrections_str)
         )
         batch_reward_query_barn = (
             open_query("orderbook/barn_batch_rewards.sql")
@@ -67,6 +70,7 @@ class MultiInstanceDBFetcher:
             .replace("{{EPSILON_LOWER}}", str(reward_cap_lower))
             .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
             .replace("{{results}}", "solver_rewards_script_table")
+            .replace("{{auction_prices_corrections}}", barn_prices_corrections_str)
         )
         results = []
 

@@ -22,6 +22,7 @@ from src.models.overdraft import Overdraft
 from src.models.token import Token
 from src.models.transfer import Transfer
 from src.pg_client import MultiInstanceDBFetcher
+from src.fetch.orderbook import OrderbookFetcher
 from src.utils.print_store import Category
 
 log = set_log(__name__)
@@ -503,13 +504,18 @@ def construct_payouts(
 ) -> list[Transfer]:
     """Workflow of solver reward payout logic post-CIP27"""
     # pylint: disable-msg=too-many-locals
-
+    analytics_data_fetcher = OrderbookFetcher()
+    prod_prices_corrections_str, barn_prices_corrections_str = (
+        analytics_data_fetcher.fetch_auction_prices_corrections(config)
+    )
     quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
     batch_rewards_df = orderbook.get_solver_rewards(
         dune.start_block,
         dune.end_block,
         config.reward_config.batch_reward_cap_upper,
         config.reward_config.batch_reward_cap_lower,
+        prod_prices_corrections_str,
+        barn_prices_corrections_str,
     )
     partner_fees_df = batch_rewards_df[["partner_list", "partner_fee_eth"]]
     batch_rewards_df = batch_rewards_df.drop(
