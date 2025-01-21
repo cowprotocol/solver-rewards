@@ -24,13 +24,22 @@ class TestBatchRewards(unittest.TestCase):
 
     def test_get_batch_rewards(self):
         start_block, end_block = "0", "100"
+        empty_table = """
+auction_prices_corrections as (
+    select
+        0 as action_id,
+        '\\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2' as token,
+        1000000000000000000 as price
+    where false
+),
+        """
         batch_rewards = self.fetcher.get_solver_rewards(
             start_block,
             end_block,
             self.batch_reward_cap_upper,
             self.batch_reward_cap_lower,
-            "",
-            "",
+            empty_table,
+            empty_table,
         )
         expected = DataFrame(
             {
