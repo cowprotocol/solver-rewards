@@ -84,6 +84,9 @@ class OrderbookFetcher:
     def fetch_auction_price_corrections(
         cls, config: AccountingConfig
     ) -> tuple[str, str]:
+        """
+        Fetches potentially relevant native price corrections from the analytics db
+        """
         query_str = "select * from auction_prices_corrections"
         auction_correction_prices = cls._read_query_for_env(
             query_str, OrderbookEnv.ANALYTICS
