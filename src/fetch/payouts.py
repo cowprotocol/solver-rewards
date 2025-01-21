@@ -558,9 +558,7 @@ def construct_payouts(
         exchange_rate_native_to_cow,
         config.reward_config,
     )
-    protocol_fees = compute_protocol_fees(
-        batch_data,
-    )
+    protocol_fees = compute_protocol_fees(batch_data)
     partner_fees = compute_partner_fees(batch_data, config.protocol_fee_config)
     buffer_accounting = compute_buffer_accounting(batch_data, slippage_df)
 
