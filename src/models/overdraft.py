@@ -29,5 +29,5 @@ class Overdraft:
     def __str__(self) -> str:
         return (
             f"Overdraft(solver={self.account} ({self.name}),"
-            f"period={self.period},owed={self.eth} ETH)"
+            f"period={self.period},owed={self.eth} native token units)"
         )

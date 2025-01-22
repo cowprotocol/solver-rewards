@@ -82,9 +82,7 @@ class ScriptArgs:
             self.end_time = datetime.datetime(
                 current_time.year, current_time.month, 1
             ) + relativedelta(months=1)
-            log.info(
-                f"No start time set, using beginning of next month {self.end_time}."
-            )
+            log.info(f"No end time set, using beginning of next month {self.end_time}.")
         else:
             self.end_time: datetime.datetime = arguments.end_time
         self.start_time = self.start_time.replace(tzinfo=datetime.timezone.utc)
