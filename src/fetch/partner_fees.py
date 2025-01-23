@@ -16,7 +16,7 @@ PARTNER_FEES_COLUMNS = ["partner", "partner_fee_eth", "partner_fee_tax"]
 def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> DataFrame:
     """Compute partner fees per integrator"""
 
-    # validate batch rewards and quote rewards columns
+    # validate batch data columns
     assert set(BATCH_DATA_COLUMNS).issubset(set(batch_data.columns))
 
     partner_fee_lists = batch_data[BATCH_DATA_COLUMNS]

@@ -24,15 +24,15 @@ REWARDS_COLUMNS = [
 
 def compute_rewards(
     batch_data: DataFrame,
-    quote_rewards: DataFrame,
+    quote_data: DataFrame,
     exchange_rate: Fraction,
     reward_config: RewardConfig,
 ) -> DataFrame:
     """Compute solver rewards"""
 
-    # validate batch rewards and quote rewards columns
+    # validate batch data and quote data columns
     assert set(BATCH_REWARDS_COLUMNS).issubset(set(batch_data.columns))
-    assert set(QUOTE_REWARDS_COLUMNS).issubset(set(quote_rewards.columns))
+    assert set(QUOTE_REWARDS_COLUMNS).issubset(set(quote_data.columns))
 
     with pd.option_context(
         "future.no_silent_downcasting", True
@@ -42,7 +42,7 @@ def compute_rewards(
             batch_data[BATCH_REWARDS_COLUMNS]
             .astype(object)
             .merge(
-                quote_rewards[QUOTE_REWARDS_COLUMNS].astype(object),
+                quote_data[QUOTE_REWARDS_COLUMNS].astype(object),
                 how="outer",
                 on="solver",
                 validate="one_to_one",
@@ -54,8 +54,6 @@ def compute_rewards(
         (rewards["primary_reward_eth"] * exchange_rate).apply(int).astype(object)
     )
 
-    # Pandas has poor support for large integers, must cast the constant to float here,
-    # otherwise the dtype would be inferred as int64 (which overflows).
     reward_per_quote = min(
         reward_config.quote_reward_cow,
         int(reward_config.quote_reward_cap_native * exchange_rate),

@@ -21,7 +21,7 @@ def compute_buffer_accounting(
 ) -> DataFrame:
     """Compute buffer accounting per solver"""
 
-    # validate batch rewards and quote rewards columns
+    # validate batch data and slippage data columns
     assert set(BATCH_DATA_COLUMNS).issubset(set(batch_data.columns))
     assert set(SLIPPAGE_COLUMNS).issubset(set(slippage_data.columns))
 

@@ -12,7 +12,7 @@ def compute_protocol_fees(
 ) -> DataFrame:
     """Compute protocol fees per solver."""
 
-    # validate batch rewards and quote rewards columns
+    # validate batch data columns
     assert set(BATCH_DATA_COLUMNS).issubset(set(batch_data.columns))
 
     protocol_fees = batch_data[BATCH_DATA_COLUMNS].copy()

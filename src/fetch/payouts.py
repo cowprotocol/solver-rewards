@@ -97,13 +97,17 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         solver = frame["solver"]
         reward_target = frame["reward_target"]
         if pd.isna(reward_target):
-            log.warning(f"Solver {solver} without reward_target. Using solver")
+            log.warning(
+                f"Solver {solver} without reward_target. "
+                f"Using solver submission address instead."
+            )
             reward_target = solver
 
         buffer_accounting_target = frame["buffer_accounting_target"]
         if pd.isna(buffer_accounting_target):
             log.warning(
-                f"Solver {solver} without buffer_accounting_target. Using solver"
+                f"Solver {solver} without buffer_accounting_target. "
+                f"Using solver submission address instead."
             )
             buffer_accounting_target = solver
 
@@ -513,7 +517,7 @@ def construct_payouts(
     # fetch data
     # TODO: move data fetching into respective files for rewards, protocol fees, buffer accounting,
     #       solver info
-    quote_rewards_df = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
+    quote_data = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
     batch_data = (  # TODO: use bare batch data before aggregation
         orderbook.get_solver_rewards(
             dune.start_block,
@@ -554,7 +558,7 @@ def construct_payouts(
     )
     rewards = compute_rewards(
         batch_data,
-        quote_rewards_df,
+        quote_data,
         exchange_rate_native_to_cow,
         config.reward_config,
     )
