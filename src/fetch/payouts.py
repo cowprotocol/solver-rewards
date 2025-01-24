@@ -530,7 +530,7 @@ def construct_payouts(
 
     vouches = dune.get_vouches()
     if vouches:
-        reward_target_df = DataFrame(dune.get_vouches())
+        reward_target_df = DataFrame(vouches)
     else:
         log.warning("No results for vouch query.")
         reward_target_df = DataFrame(
