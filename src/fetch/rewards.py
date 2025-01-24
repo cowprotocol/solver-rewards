@@ -10,8 +10,8 @@ from src.logger import set_log
 
 log = set_log(__name__)
 
-BATCH_REWARDS_COLUMNS = ["solver", "primary_reward_eth"]
-QUOTE_REWARDS_COLUMNS = ["solver", "num_quotes"]
+BATCH_DATA_COLUMNS = ["solver", "primary_reward_eth"]
+QUOTE_DATA_COLUMNS = ["solver", "num_quotes"]
 
 REWARDS_COLUMNS = [
     "solver",
@@ -31,18 +31,18 @@ def compute_rewards(
     """Compute solver rewards"""
 
     # validate batch data and quote data columns
-    assert set(BATCH_REWARDS_COLUMNS).issubset(set(batch_data.columns))
-    assert set(QUOTE_REWARDS_COLUMNS).issubset(set(quote_data.columns))
+    assert set(BATCH_DATA_COLUMNS).issubset(set(batch_data.columns))
+    assert set(QUOTE_DATA_COLUMNS).issubset(set(quote_data.columns))
 
     with pd.option_context(
         "future.no_silent_downcasting", True
     ):  # remove this after Future warning disappears. We do not depend on down-casting,
         # as we will work with object and int explicitly.
         rewards = (
-            batch_data[BATCH_REWARDS_COLUMNS]
+            batch_data[BATCH_DATA_COLUMNS]
             .astype(object)
             .merge(
-                quote_data[QUOTE_REWARDS_COLUMNS].astype(object),
+                quote_data[QUOTE_DATA_COLUMNS].astype(object),
                 how="outer",
                 on="solver",
                 validate="one_to_one",
