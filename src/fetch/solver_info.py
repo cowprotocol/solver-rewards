@@ -54,7 +54,7 @@ def compute_solver_info(
 
     Returns
     -------
-    rewards : DataFrame
+    solver_info : DataFrame
         Data frame containing required information per solver.
         The columns are SOLVER_INFO_COLUMNS:
         solver : str
