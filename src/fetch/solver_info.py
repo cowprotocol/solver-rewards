@@ -49,7 +49,7 @@ def compute_solver_info(
         - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
         - service_fee : bool
-            True if a solver needs to pay a service fee to the COW DAO. Otherwise, it is False.
+            True if a solver needs to pay a service fee to the CoW DAO. Otherwise, it is False.
 
     config : AccountingConfig
         Accounting configuration.
@@ -71,7 +71,7 @@ def compute_solver_info(
             Results of the buffer accounting are sent to this address. It is equal to `solver` or
             `reward_target`.
         - service_fee : Fraction
-            The fraction of rewards which need to be paid to the COW DAO.
+            The fraction of rewards which need to be paid to the CoW DAO.
 
     Raises
     ------

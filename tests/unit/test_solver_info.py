@@ -48,7 +48,7 @@ def test_compute_solver_info():
 
 
 def test_compute_solver_info_cow_dao_buffer_target():
-    """Test that buffer accounting target is set to reward target for cow dao solvers."""
+    """Test that buffer accounting target is set to reward target for CoW DAO solvers."""
     config = AccountingConfig.from_network(Network.MAINNET)
     reward_targets = DataFrame(
         {

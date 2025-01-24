@@ -475,7 +475,7 @@ def compute_solver_payouts(
             Results of the buffer accounting are sent to this address. It is equal to `solver` or
             `reward_target`.
         - service_fee : Fraction
-            The fraction of rewards which need to be paid to the COW DAO.
+            The fraction of rewards which need to be paid to the CoW DAO.
 
 
     rewards : DataFrame
@@ -544,7 +544,7 @@ def compute_solver_payouts(
         - reward_token_address : str
             "0x"-prefixed hex representation of the reward token contract address.
         - service_fee : Fraction
-            The fraction of rewards which need to be paid to the COW DAO.
+            The fraction of rewards which need to be paid to the CoW DAO.
 
     Raises
     ------
@@ -684,7 +684,7 @@ def summarize_payments(  # pylint: disable=too-many-locals
         "Payment breakdown:\n"
         f"Performance Reward (before fee): {performance_reward / 10 ** 18:.4f}\n"
         f"Quote Reward (before fee): {quote_reward / 10 ** 18:.4f}\n"
-        f"COW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n"
+        f"CoW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n"
         f"Protocol Fees (before partner fees): {protocol_fee / 10 ** 18:.4f}\n"  # changed meaning
         f"Partner Fees (before tax): {partner_fee / 10 ** 18:.4f}\n"  # changed meaning
         f"Partner Fees Tax: {partner_fee_tax / 10 ** 18:.4f}\n"

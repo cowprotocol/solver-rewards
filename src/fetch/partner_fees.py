@@ -43,7 +43,7 @@ def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> Da
             Total partner fee in wei of a partner. This amount is reduced by partner_fee_tax before
             payment.
         - partner_fee_tax : Fraction
-            The fraction of partner fees which need to be paid to the COW DAO.
+            The fraction of partner fees which need to be paid to the CoW DAO.
 
     Raises
     ------
@@ -99,7 +99,7 @@ def compute_partner_fees_per_partner(
             Total partner fee in wei of a partner. This amount is reduced by partner_fee_tax before
             payment.
         - partner_fee_tax : Fraction
-            The fraction of partner fees which need to be paid to the COW DAO.
+            The fraction of partner fees which need to be paid to the CoW DAO.
 
     Notes
     -----
