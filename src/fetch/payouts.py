@@ -270,7 +270,45 @@ def prepare_payouts(  # pylint: disable=too-many-locals
     period: AccountingPeriod,
     config: AccountingConfig,
 ) -> PeriodPayouts:
-    """Create transfers from payout data."""
+    """Prepare payouts.
+
+    Prepares and calculates payouts for solvers and partners based on the input data.
+
+    Parameters
+    ----------
+    solver_payouts : DataFrame
+        Data frame containing payout information for solvers. The expected columns are defined by
+        `SOLVER_PAYOUTS_COLUMNS`.
+
+    partner_payouts : DataFrame
+        Data frame containing payout information for partners. The expected columns are defined by
+        `PARTNER_PAYOUTS_COLUMNS`.
+
+    period : AccountingPeriod
+        The current accounting period for which the payouts are being prepared.
+
+    config : AccountingConfig
+        Configuration object that contains payout-related settings, such as protocol fee
+        configurations.
+
+    Returns
+    -------
+    PeriodPayouts
+        An object containing the prepared overdrafts and transfers based on the input data.
+
+    Raises
+    ------
+    AssertionError
+        If the columns in the solver_payouts or partner_payouts DataFrame do not match the required
+        columns.
+
+    Notes
+    -----
+    - Overdrafts are calculated for solvers whose outgoing payouts exceed available balances.
+    - Transfers are constructed for batch and quote rewards, protocol fee payouts, partner payouts,
+        and adjusted for any applicable taxes.
+    - All transfers and overdrafts are accumulated and returned as part of the result.
+    """
 
     assert set(SOLVER_PAYOUTS_COLUMNS) == set(solver_payouts.columns)
     assert set(PARTNER_PAYOUTS_COLUMNS) == set(partner_payouts.columns)
@@ -335,7 +373,26 @@ def prepare_payouts(  # pylint: disable=too-many-locals
 def fetch_exchange_rates(
     period_end: datetime, config: AccountingConfig
 ) -> tuple[Fraction, Fraction]:
-    """Fetch exchange rate for converting the native token to COW."""
+    """Fetch exchange rates.
+
+    Fetches exchange rates for converting COW to native tokens and ETH to native tokens. The
+    exchange rate is an average rate from the day before the end of the accounting period.
+
+    Parameters
+    ----------
+    period_end : datetime
+        The end of the accounting period for which the exchange rates are being fetched.
+
+    config : AccountingConfig
+        Configuration object containing reward and payment settings, including token addresses.
+
+    Returns
+    -------
+    exchange_rate_native_to_cow : Fraction
+        The rate of exchange from the native token to COW.
+    exchange_rate_native_to_eth: Fraction
+        The rate of exchange from the native token to ETH.
+    """
     reward_token = config.reward_config.reward_token_address
     native_token = Address(config.payment_config.wrapped_native_token_address)
     wrapped_eth = config.payment_config.wrapped_eth_address
@@ -358,6 +415,11 @@ def validate_df_columns(
     """Validate data frame columns.
     Since we are working with dataframes rather than concrete objects,
     we validate that the expected columns/fields are available within our datasets.
+
+    Raises
+    ------
+    AssertionError
+        If the columns of input dataframes are not equal to expected columns.
     """
     assert set(solver_info.columns) == set(
         SOLVER_INFO_COLUMNS
@@ -375,7 +437,12 @@ def validate_df_columns(
 
 def normalize_address_field(frame: DataFrame, column_name: str) -> None:
     """Lower-cases column_name field
-    This function changes the input dataframe in place."""
+
+    This function changes the input dataframe in place.
+
+    This operation is required in cases where a join is executed on a column which contains
+    non-unique string representations of addresses.
+    """
     if len(frame[column_name]) > 0:  # necessary for the case of having zero rows
         frame.loc[:, column_name] = frame[column_name].str.lower()
 
@@ -386,7 +453,104 @@ def compute_solver_payouts(
     protocol_fees: DataFrame,
     buffer_accounting: DataFrame,
 ) -> DataFrame:
-    """Combines solver accounting data into one payment dataframe."""
+    """Compute solver payouts.
+
+    Information on solvers is combined with data on rewards, protocol fees, and buffer accounting to
+    compute solver payouts.
+
+    Parameters
+    ----------
+    solver_info : DataFrame
+        Data containing information about solvers.
+        The columns are SOLVER_INFO_COLUMNS:
+        solver : str
+            "0x"-prefixed hex representation of the submission address of a solver.
+        solver_name : str
+            Name of a solver.
+        reward_target : str
+            "0x"-prefixed hex representation of the reward target of a solver. All
+            rewards are sent to this address.
+        buffer_accounting_target : str
+            "0x"-prefixed hex representation of the buffer accounting target address of a solver.
+            Results of the buffer accounting are sent to this address. It is equal to `solver` or
+            `reward_target`.
+        service_fee : Fraction
+            The fraction of rewards which need to be paid to the COW DAO.
+
+
+    rewards : DataFrame
+        Data containing reward-related information for solvers, such as batch and quote rewards.
+        The columns are REWARDS_COLUMNS:
+        solver : str
+            "0x"-prefixed hex representation of the submission address of a solver.
+        primary_reward_eth : int
+            Reward for settling batches in wei.
+        primary_reward_cow : int
+            Reward for settling batches in atoms of COW.
+        quote_reward_cow : int
+            Reward for providing quotes in atoms of COW.
+        reward_token_address : str
+            "0x"-prefixed hex representation of the reward token contract address.
+
+    protocol_fees : DataFrame
+        Data containing protocol fee information associated with solvers.
+        The columns are PROTOCOL_FEES_COLUMNS:
+        solver : str
+            "0x"-prefixed hex representation of the submission address of a solver.
+        protocol_fee_eth : int
+            Protocol fee of a solver for settling batches in wei.
+
+    buffer_accounting : DataFrame
+        Data containing buffer accounting information related to solvers.
+        The columns are REWARDS_COLUMNS:
+        solver : str
+            "0x"-prefixed hex representation of the submission address of a solver.
+        network_fee_eth : int
+            Network fees in wei of a solver for settling batches.
+        slippage_eth : int
+            Slippage in wei accrued by a solver in settling batches.
+
+    Returns
+    -------
+    solver_payouts : DataFrame
+        A consolidated DataFrame with solver payout information, including rewards, fees, and other
+        accounting details. Merges and processes input DataFrames with applied default values and
+        normalized fields.
+        Missing values are set to zero or some other reasonable default value.
+        The columns are SOLVER_PAYOUTS_COLUMNS:
+        solver : str
+            "0x"-prefixed hex representation of the submission address of a solver.
+        solver_name : str
+            Name of a solver.
+        primary_reward_eth : int
+            Reward for settling batches in wei.
+        primary_reward_cow : int
+            Reward for settling batches in wei.
+        quote_reward_cow : int
+            Reward for providing quotes in atoms of COW.
+        protocol_fee_eth : int
+            Protocol fee of a solver for settling batches in wei.
+        network_fee_eth : int
+            Network fees in wei of a solver for settling batches.
+        slippage_eth : int
+            Slippage in wei accrued by a solver in settling batches.
+        reward_target : str
+            "0x"-prefixed hex representation of the reward target of a solver. All
+            rewards are sent to this address.
+        buffer_accounting_target : str
+            "0x"-prefixed hex representation of the buffer accounting target address of a solver.
+            Results of the buffer accounting are sent to this address. It is equal to `solver` or
+            `reward_target`.
+        reward_token_address : str
+            "0x"-prefixed hex representation of the reward token contract address.
+        service_fee : Fraction
+            The fraction of rewards which need to be paid to the COW DAO.
+
+    Raises
+    ------
+    AssertionError
+        If columns of input or output data frames are not equal to what is expected.
+    """
     # 1. Validate data
     validate_df_columns(solver_info, rewards, protocol_fees, buffer_accounting)
 
@@ -467,7 +631,30 @@ def summarize_payments(  # pylint: disable=too-many-locals
     exchange_rate_native_to_eth: Fraction,
     config: AccountingConfig,
 ) -> None:
-    """Summarize payments."""
+    """Summarize payment information.
+
+    Summarizes payment information, calculating various fees and rewards, and outputs a detailed
+    payment breakdown log.
+
+    The log is written to the global variable `log_saver`.
+
+    Parameters
+    ----------
+    solver_payouts : DataFrame
+        Contains payout details from solvers, including primary rewards, quote rewards, protocol
+        fees, slippage, and network fees.
+    partner_payouts : DataFrame
+        Contains partner-related payout details such as partner fees and associated tax information.
+    exchange_rate_native_to_cow : Fraction
+        Exchange rate that defines the number of COW tokens equivalent to one unit of the native
+        token.
+    exchange_rate_native_to_eth : Fraction
+        Exchange rate that defines the number of ETH tokens equivalent to one unit of the native
+        token.
+    config : AccountingConfig
+        Configuration object containing payment parameters such as minimum acceptable native token
+        transfer and COW transfer thresholds.
+    """
     performance_reward = solver_payouts["primary_reward_cow"].sum()
     quote_reward = solver_payouts["quote_reward_cow"].sum()
     protocol_fee = solver_payouts["protocol_fee_eth"].sum()
@@ -511,7 +698,28 @@ def construct_payouts(
     ignore_slippage_flag: bool,
     config: AccountingConfig,
 ) -> list[Transfer]:
-    """Workflow of solver reward payout logic post-CIP27"""
+    """Construct payouts by combining data from multiple sources.
+
+    Parameters
+    ----------
+    orderbook : MultiInstanceDBFetcher
+        Fetcher for databases providing batch and quote data.
+    dune : DuneFetcher
+        Fetcher for querying Dune to retrieve various metrics.
+    ignore_slippage_flag : bool
+        Flag to skip fetching slippage data if set to True.
+    config : AccountingConfig
+        Configuration object containing all settings relevant to accounting.
+
+    Returns
+    -------
+    list[Transfer]
+        A list of Transfer objects representing the payouts.
+
+    Notes
+    -----
+    Overdrafts are computed and printed, but not returned by the function.
+    """
     # pylint: disable=too-many-locals
 
     # fetch data
