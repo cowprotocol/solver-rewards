@@ -17,9 +17,9 @@ def compute_protocol_fees(
     batch_data : DataFrame
         Batch rewards data.
         The columns have to contain BATCH_DATA_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        protocol_fee_eth : int
+        - protocol_fee_eth : int
             Protocol fee of a solver for settling batches in wei.
 
     Returns
@@ -27,9 +27,9 @@ def compute_protocol_fees(
     protocol_fees : DataFrame
         Data frame containing protocol fees per solver.
         The columns are PROTOCOL_FEES_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        protocol_fee_eth : int
+        - protocol_fee_eth : int
             Protocol fee of a solver for settling batches in wei.
 
     Raises

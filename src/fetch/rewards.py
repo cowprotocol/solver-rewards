@@ -35,19 +35,22 @@ def compute_rewards(
     batch_data : DataFrame
         Batch rewards data.
         The columns have to contain BATCH_REWARDS_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        primary_reward_eth : int
+        - primary_reward_eth : int
             Reward for settling batches in wei.
+
     quote_data : DataFrame
         Quote rewards data.
         The columns have to contain BATCH_REWARDS_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        num_quotes : int
+        - num_quotes : int
             Number of wins in the quote competition of executed orders.
+
     exchange_rate : Fraction
         Exchange rate of ETH to COW.
+
     reward_config : RewardConfig
         Reward configuration.
 
@@ -56,15 +59,15 @@ def compute_rewards(
     rewards : DataFrame
         Data frame containing rewards per solver.
         The columns are REWARDS_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        primary_reward_eth : int
+        - primary_reward_eth : int
             Reward for settling batches in wei.
-        primary_reward_cow : int
+        - primary_reward_cow : int
             Reward for settling batches in atoms of COW.
-        quote_reward_cow : int
+        - quote_reward_cow : int
             Reward for providing quotes in atoms of COW.
-        reward_token_address : str
+        - reward_token_address : str
             "0x"-prefixed hex representation of the reward token contract address.
 
     Raises

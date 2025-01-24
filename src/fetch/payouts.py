@@ -463,51 +463,51 @@ def compute_solver_payouts(
     solver_info : DataFrame
         Data containing information about solvers.
         The columns are SOLVER_INFO_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        solver_name : str
+        - solver_name : str
             Name of a solver.
-        reward_target : str
+        - reward_target : str
             "0x"-prefixed hex representation of the reward target of a solver. All
             rewards are sent to this address.
-        buffer_accounting_target : str
+        - buffer_accounting_target : str
             "0x"-prefixed hex representation of the buffer accounting target address of a solver.
             Results of the buffer accounting are sent to this address. It is equal to `solver` or
             `reward_target`.
-        service_fee : Fraction
+        - service_fee : Fraction
             The fraction of rewards which need to be paid to the COW DAO.
 
 
     rewards : DataFrame
         Data containing reward-related information for solvers, such as batch and quote rewards.
         The columns are REWARDS_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        primary_reward_eth : int
+        - primary_reward_eth : int
             Reward for settling batches in wei.
-        primary_reward_cow : int
+        - primary_reward_cow : int
             Reward for settling batches in atoms of COW.
-        quote_reward_cow : int
+        - quote_reward_cow : int
             Reward for providing quotes in atoms of COW.
-        reward_token_address : str
+        - reward_token_address : str
             "0x"-prefixed hex representation of the reward token contract address.
 
     protocol_fees : DataFrame
         Data containing protocol fee information associated with solvers.
         The columns are PROTOCOL_FEES_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        protocol_fee_eth : int
+        - protocol_fee_eth : int
             Protocol fee of a solver for settling batches in wei.
 
     buffer_accounting : DataFrame
         Data containing buffer accounting information related to solvers.
         The columns are REWARDS_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        network_fee_eth : int
+        - network_fee_eth : int
             Network fees in wei of a solver for settling batches.
-        slippage_eth : int
+        - slippage_eth : int
             Slippage in wei accrued by a solver in settling batches.
 
     Returns
@@ -518,32 +518,32 @@ def compute_solver_payouts(
         normalized fields.
         Missing values are set to zero or some other reasonable default value.
         The columns are SOLVER_PAYOUTS_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        solver_name : str
+        - solver_name : str
             Name of a solver.
-        primary_reward_eth : int
+        - primary_reward_eth : int
             Reward for settling batches in wei.
-        primary_reward_cow : int
+        - primary_reward_cow : int
             Reward for settling batches in wei.
-        quote_reward_cow : int
+        - quote_reward_cow : int
             Reward for providing quotes in atoms of COW.
-        protocol_fee_eth : int
+        - protocol_fee_eth : int
             Protocol fee of a solver for settling batches in wei.
-        network_fee_eth : int
+        - network_fee_eth : int
             Network fees in wei of a solver for settling batches.
-        slippage_eth : int
+        - slippage_eth : int
             Slippage in wei accrued by a solver in settling batches.
-        reward_target : str
+        - reward_target : str
             "0x"-prefixed hex representation of the reward target of a solver. All
             rewards are sent to this address.
-        buffer_accounting_target : str
+        - buffer_accounting_target : str
             "0x"-prefixed hex representation of the buffer accounting target address of a solver.
             Results of the buffer accounting are sent to this address. It is equal to `solver` or
             `reward_target`.
-        reward_token_address : str
+        - reward_token_address : str
             "0x"-prefixed hex representation of the reward token contract address.
-        service_fee : Fraction
+        - service_fee : Fraction
             The fraction of rewards which need to be paid to the COW DAO.
 
     Raises
@@ -615,7 +615,9 @@ def compute_solver_payouts(
 
 def compute_partner_payouts(partner_fees: DataFrame) -> DataFrame:
     """Combine partner fee information into partner fee payouts.
-    At the moment, this function only copies the partner fee data frame."""
+
+    At the moment, this function only copies the partner fee data frame.
+    """
     assert set(PARTNER_FEES_COLUMNS).issubset(set(partner_fees.columns))
 
     partner_payouts = partner_fees[PARTNER_FEES_COLUMNS]
@@ -643,14 +645,18 @@ def summarize_payments(  # pylint: disable=too-many-locals
     solver_payouts : DataFrame
         Contains payout details from solvers, including primary rewards, quote rewards, protocol
         fees, slippage, and network fees.
+
     partner_payouts : DataFrame
         Contains partner-related payout details such as partner fees and associated tax information.
+
     exchange_rate_native_to_cow : Fraction
         Exchange rate that defines the number of COW tokens equivalent to one unit of the native
         token.
+
     exchange_rate_native_to_eth : Fraction
         Exchange rate that defines the number of ETH tokens equivalent to one unit of the native
         token.
+
     config : AccountingConfig
         Configuration object containing payment parameters such as minimum acceptable native token
         transfer and COW transfer thresholds.

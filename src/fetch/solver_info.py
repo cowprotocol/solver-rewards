@@ -33,22 +33,24 @@ def compute_solver_info(
     reward_targets : DataFrame
         Data on reward targets and bonding pools.
         The columns have to contain REWARD_TARGETS_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        reward_target : str
+        - reward_target : str
             "0x"-prefixed hex representation of the reward target of a solver. All rewards are sent
             to this address.
-        pool_address: str
+        - pool_address: str
             "0x"-prefixed hex representation of address of a solvers bonding pool.
-        solver_name: str
+        - solver_name: str
             Name of a solver.
+
     service_fees : DataFrame
         Service fee data.
         The columns have to contain SERVICE_FEES_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        service_fee : bool
-            True is a solver needs to pay a service fee to the COW DAO. Otherwise, it is False.
+        - service_fee : bool
+            True if a solver needs to pay a service fee to the COW DAO. Otherwise, it is False.
+
     config : AccountingConfig
         Accounting configuration.
 
@@ -57,18 +59,18 @@ def compute_solver_info(
     solver_info : DataFrame
         Data frame containing required information per solver.
         The columns are SOLVER_INFO_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        solver_name : str
+        - solver_name : str
             Name of a solver.
-        reward_target : str
+        - reward_target : str
             "0x"-prefixed hex representation of the reward target of a solver. All
             rewards are sent to this address.
-        buffer_accounting_target : str
+        - buffer_accounting_target : str
             "0x"-prefixed hex representation of the buffer accounting target address of a solver.
             Results of the buffer accounting are sent to this address. It is equal to `solver` or
             `reward_target`.
-        service_fee : Fraction
+        - service_fee : Fraction
             The fraction of rewards which need to be paid to the COW DAO.
 
     Raises

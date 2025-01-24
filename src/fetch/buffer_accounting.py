@@ -26,16 +26,17 @@ def compute_buffer_accounting(
     batch_data : DataFrame
         Batch rewards data.
         The columns have to contain BATCH_REWARDS_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        network_fee_eth : int
+        - network_fee_eth : int
             Network fees in wei of a solver for settling batches.
+
     slippage_data : DataFrame
         Slippage data.
         The columns have to contain SLIPPAGE_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        eth_slippage_wei : int
+        - eth_slippage_wei : int
             Slippage in wei accrued by a solver in settling batches.
 
     Returns
@@ -43,11 +44,11 @@ def compute_buffer_accounting(
     buffer_accounting : DataFrame
         Data frame containing rewards per solver.
         The columns are REWARDS_COLUMNS:
-        solver : str
+        - solver : str
             "0x"-prefixed hex representation of the submission address of a solver.
-        network_fee_eth : int
+        - network_fee_eth : int
             Network fees in wei of a solver for settling batches.
-        slippage_eth : int
+        - slippage_eth : int
             Slippage in wei accrued by a solver in settling batches.
 
     Raises

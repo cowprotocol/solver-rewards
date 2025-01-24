@@ -21,12 +21,13 @@ def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> Da
     batch_data : DataFrame
         Batch rewards data.
         The columns have to contain BATCH_DATA_COLUMNS:
-        partner_list : list[str]
+        - partner_list : list[str]
             List of "0x"-prefixed hex representations of the partner addresses. Partner fees are
             paid to these addresses.
-        partner_fee_eth : list[int]
+        - partner_fee_eth : list[int]
             List of partner fees in wei a solver owes to a partner for settling batches. The list is
             aligned with the respective partners in partner_list.
+
     config : ProtocolFeeConfig
         Protocol fee configuration.
 
@@ -35,13 +36,13 @@ def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> Da
     partner_fees : DataFrame
         Data frame containing partner fees per partner.
         The columns are PARTNER_FEES_COLUMNS:
-        partner : str
+        - partner : str
             "0x"-prefixed hex representation of the address of a partner. Partner fees are paid to
             these addresses.
-        partner_fee_eth : int
+        - partner_fee_eth : int
             Total partner fee in wei of a partner. This amount is reduced by partner_fee_tax before
             payment.
-        partner_fee_tax : Fraction
+        - partner_fee_tax : Fraction
             The fraction of partner fees which need to be paid to the COW DAO.
 
     Raises
@@ -76,12 +77,13 @@ def compute_partner_fees_per_partner(
     partner_fee_lists : DataFrame
         Batch rewards data.
         The columns are BATCH_DATA_COLUMNS:
-        partner_list : list[str]
+        - partner_list : list[str]
             List of "0x"-prefixed hex representations of the partner addresses. Partner fees are
             paid to these addresses.
-        partner_fee_eth : list[int]
+        - partner_fee_eth : list[int]
             List of partner fees in wei a solver owes to a partner for settling batches. The list is
             aligned with the respective partners in partner_list.
+
     config : ProtocolFeeConfig
         Protocol fee configuration.
 
@@ -90,13 +92,13 @@ def compute_partner_fees_per_partner(
     partner_fees_df : DataFrame
         Data frame containing partner fees per partner.
         The columns are PARTNER_FEES_COLUMNS:
-        partner : str
+        - partner : str
             "0x"-prefixed hex representation of the address of a partner. Partner fees are paid to
             these addresses.
-        partner_fee_eth : int
+        - partner_fee_eth : int
             Total partner fee in wei of a partner. This amount is reduced by partner_fee_tax before
             payment.
-        partner_fee_tax : Fraction
+        - partner_fee_tax : Fraction
             The fraction of partner fees which need to be paid to the COW DAO.
 
     Notes
