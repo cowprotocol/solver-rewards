@@ -28,7 +28,56 @@ def compute_rewards(
     exchange_rate: Fraction,
     reward_config: RewardConfig,
 ) -> DataFrame:
-    """Compute solver rewards"""
+    """Compute solver rewards.
+
+    Parameters
+    ----------
+    batch_data : DataFrame
+        Batch rewards data.
+        The columns have to contain BATCH_REWARDS_COLUMNS:
+        solver : str
+            "0x"-prefixed hex representation of the submission address of a solver.
+        primary_reward_eth : int
+            Reward for settling batches in wei.
+    quote_data : DataFrame
+        Quote rewards data.
+        The columns have to contain BATCH_REWARDS_COLUMNS:
+        solver : str
+            "0x"-prefixed hex representation of the submission address of a solver.
+        num_quotes : int
+            Number of wins in the quote competition of executed orders.
+    exchange_rate : Fraction
+        Exchange rate of ETH to COW.
+    reward_config : RewardConfig
+        Reward configuration.
+
+    Returns
+    -------
+    rewards : DataFrame
+        Data frame containing rewards per solver.
+        The columns are REWARDS_COLUMNS:
+        solver : str
+            "0x"-prefixed hex representation of the submission address of a solver.
+        primary_reward_eth : int
+            Reward for settling batches in wei.
+        primary_reward_cow : int
+            Reward for settling batches in atoms of COW.
+        quote_reward_cow : int
+            Reward for providing quotes in atoms of COW.
+        reward_token_address : str
+            "0x"-prefixed hex representation of the reward token contract address.
+
+    Raises
+    ------
+    AssertionError
+        If input dataframes do not contain required columns or if the result does not have correct
+        columns.
+
+    Notes
+    -----
+    All data frames are set to have data type `object`. Otherwise, implicit conversion to int64 can
+    lead to overflows.
+    """
 
     # validate batch data and quote data columns
     assert set(BATCH_DATA_COLUMNS).issubset(set(batch_data.columns))
