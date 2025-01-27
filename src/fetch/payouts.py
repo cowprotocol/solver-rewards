@@ -587,13 +587,6 @@ def compute_solver_payouts(
         solver_payouts["quote_reward_cow"] = (
             solver_payouts["quote_reward_cow"].fillna(0).astype(object)
         )
-        solver_payouts["reward_token_address"] = (
-            solver_payouts["reward_token_address"]
-            .fillna(
-                "0x0000000000000000000000000000000000000001"
-            )  # dummy address, not used
-            .astype(object)
-        )
         solver_payouts["slippage_eth"] = (
             solver_payouts["slippage_eth"].fillna(0).astype(object)
         )

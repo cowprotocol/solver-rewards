@@ -180,7 +180,7 @@ def test_compute_solver_payouts_defaults():
             ],
             "reward_target": [
                 None,
-                "reward_target_2",  # solver 2 gets rewards and also needs to have a reward target
+                "reward_target_2",
                 None,
                 None,
             ],
@@ -200,11 +200,15 @@ def test_compute_solver_payouts_defaults():
     )
     rewards = DataFrame(
         {
-            "solver": ["solver_2"],
-            "primary_reward_eth": [10**16],
-            "primary_reward_cow": [10**19],
-            "quote_reward_cow": [10**20],
-            "reward_token_address": ["cow_token_address"],
+            "solver": ["solver_2", "solver_3", "solver_4"],
+            "primary_reward_eth": [10**16, -(10**15), None],
+            "primary_reward_cow": [10**19, -(10**18), None],
+            "quote_reward_cow": [10**20, None, 10**16],
+            "reward_token_address": [
+                "cow_token_address",
+                "cow_token_address",
+                "cow_token_address",
+            ],
         }
     ).astype(object)
     protocol_fees = DataFrame(
@@ -229,9 +233,9 @@ def test_compute_solver_payouts_defaults():
                 "solver_name_3",
                 "solver_name_4",
             ],
-            "primary_reward_eth": [10**16, 0, 0],
-            "primary_reward_cow": [10**19, 0, 0],
-            "quote_reward_cow": [10**20, 0, 0],
+            "primary_reward_eth": [10**16, -(10**15), 0],
+            "primary_reward_cow": [10**19, -(10**18), 0],
+            "quote_reward_cow": [10**20, 0, 10**16],
             "protocol_fee_eth": [0, 10**14, 0],
             "network_fee_eth": [0, 0, 10**13],
             "slippage_eth": [0, 0, 10**12],
@@ -247,8 +251,8 @@ def test_compute_solver_payouts_defaults():
             ],
             "reward_token_address": [
                 "cow_token_address",
-                "0x0000000000000000000000000000000000000001",  # dummy default
-                "0x0000000000000000000000000000000000000001",
+                "cow_token_address",
+                "cow_token_address",
             ],
             "service_fee": [
                 Fraction(11, 100),
