@@ -685,8 +685,8 @@ def summarize_payments(  # pylint: disable=too-many-locals
         f"Performance Reward (before fee): {performance_reward / 10 ** 18:.4f}\n"
         f"Quote Reward (before fee): {quote_reward / 10 ** 18:.4f}\n"
         f"CoW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n"
-        f"Protocol Fees (before partner fees): {protocol_fee / 10 ** 18:.4f}\n"  # changed meaning
-        f"Partner Fees (before tax): {partner_fee / 10 ** 18:.4f}\n"  # changed meaning
+        f"Protocol Fees (excluding partner fees): {(protocol_fee - partner_fee) / 10 ** 18:.4f}\n"
+        f"Partner Fees (after tax): {(partner_fee - partner_fee_tax) / 10 ** 18:.4f}\n"
         f"Partner Fees Tax: {partner_fee_tax / 10 ** 18:.4f}\n"
         f"Network Fees: {network_fee / 10**18:.4f}\n"
         f"Slippage: {slippage / 10**18:.4f}\n\n"
