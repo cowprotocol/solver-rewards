@@ -164,21 +164,39 @@ class OrderbookFetcher:
         return pd.concat(res)
 
     @classmethod
-    def run_order_data_query(cls, block_range: BlockRange) -> DataFrame:
+    def run_order_data_query(
+        cls, block_range: BlockRange, blockchain: str
+    ) -> DataFrame:
         """
         Fetches and validates Order Data DataFrame as concatenation from Prod and Staging DB
         """
+        barn_auction_prices_corrections_str = (
+            open_query("orderbook/auction_prices_corrections.sql")
+            .replace("{{blockchain}}", blockchain)
+            .replace("{{environment}}", "barn")
+        )
+        prod_auction_prices_corrections_str = (
+            open_query("orderbook/auction_prices_corrections.sql")
+            .replace("{{blockchain}}", blockchain)
+            .replace("{{environment}}", "prod")
+        )
         cow_reward_query_prod = (
             open_query("orderbook/order_data.sql")
             .replace("{{start_block}}", str(block_range.block_from))
             .replace("{{end_block}}", str(block_range.block_to))
             .replace("{{env}}", "prod")
+            .replace(
+                "{{auction_prices_corrections}}", prod_auction_prices_corrections_str
+            )
         )
         cow_reward_query_barn = (
             open_query("orderbook/order_data.sql")
             .replace("{{start_block}}", str(block_range.block_from))
             .replace("{{end_block}}", str(block_range.block_to))
             .replace("{{env}}", "barn")
+            .replace(
+                "{{auction_prices_corrections}}", barn_auction_prices_corrections_str
+            )
         )
         data_types = {"block_number": "int64", "amount": "float64"}
         barn, prod = cls._query_both_dbs(
@@ -219,7 +237,11 @@ class OrderbookFetcher:
             log.info(f"About to process block range ({start}, {start + size - 1})")
             res.append(
                 cls.run_order_data_query(
-                    BlockRange(block_from=start, block_to=start + size - 1)
+                    BlockRange(
+                        block_from=start,
+                        block_to=start + size - 1,
+                        blockchain=config.dune_config.dune_blockchain,
+                    )
                 )
             )
             start = start + size
