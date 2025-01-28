@@ -42,7 +42,7 @@ class MultiInstanceDBFetcher:
         """Executes query on DB engine"""
         return pd.read_sql(sql=query, con=engine)
 
-    def get_solver_rewards(  # pylint: disable=too-many-arguments
+    def get_solver_rewards(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         start_block: str,
         end_block: str,
@@ -86,10 +86,6 @@ class MultiInstanceDBFetcher:
             )
         )
 
-        print(batch_reward_query_barn)
-        print()
-        print(batch_reward_query_prod)
-        exit()
         results = []
 
         # querying the prod database
