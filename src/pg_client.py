@@ -42,7 +42,7 @@ class MultiInstanceDBFetcher:
         """Executes query on DB engine"""
         return pd.read_sql(sql=query, con=engine)
 
-    def get_solver_rewards(
+    def get_solver_rewards(  # pylint: disable=too-many-instance-attributes
         self,
         start_block: str,
         end_block: str,

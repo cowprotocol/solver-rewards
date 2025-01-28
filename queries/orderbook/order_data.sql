@@ -143,7 +143,7 @@ price_data as (
     left outer join auction_prices_processed as ap_protocol -- contains price: protocol fee token
         on tdp.auction_id = ap_protocol.auction_id and tdp.surplus_token = ap_protocol.token
 ),
- 
+
 trade_data_processed_with_prices as materialized (
     select --noqa: ST06
         tdp.auction_id,
