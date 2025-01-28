@@ -240,8 +240,8 @@ class OrderbookFetcher:
                     BlockRange(
                         block_from=start,
                         block_to=start + size - 1,
-                        blockchain=config.dune_config.dune_blockchain,
-                    )
+                    ),
+                    config.dune_config.dune_blockchain,
                 )
             )
             start = start + size

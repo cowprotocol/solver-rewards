@@ -11,7 +11,6 @@ from sqlalchemy import text
 
 from src.logger import set_log
 from src.utils.query_file import open_query
-from src.config import AccountingConfig
 
 log = set_log(__name__)
 
