@@ -1,4 +1,4 @@
-auction_price_corrections (blockchain, environment, auction_id, price) as (
+auction_price_corrections (blockchain, environment, auction_id, price) as ( --noqa: PRS
     select *
     from (
         values 

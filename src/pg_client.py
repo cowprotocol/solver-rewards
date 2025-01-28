@@ -53,17 +53,16 @@ class MultiInstanceDBFetcher:
         """
         Returns aggregated solver rewards for accounting period defined by block range
         """
-        barn_auction_prices_corrections_str = (
-            open_query("orderbook/auction_prices_corrections.sql")
-            .replace("{{blockchain}}", blockchain)
-            .replace("{{environment}}", "barn")
-        )
         prod_auction_prices_corrections_str = (
             open_query("orderbook/auction_prices_corrections.sql")
             .replace("{{blockchain}}", blockchain)
             .replace("{{environment}}", "prod")
         )
-
+        barn_auction_prices_corrections_str = (
+            open_query("orderbook/auction_prices_corrections.sql")
+            .replace("{{blockchain}}", blockchain)
+            .replace("{{environment}}", "barn")
+        )
         batch_reward_query_prod = (
             open_query("orderbook/prod_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
@@ -72,7 +71,7 @@ class MultiInstanceDBFetcher:
             .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
             .replace("{{results}}", "solver_rewards_script_table")
             .replace(
-                "{{auction_prices_corrections}}", barn_auction_prices_corrections_str
+                "{{auction_prices_corrections}}", prod_auction_prices_corrections_str
             )
         )
         batch_reward_query_barn = (
@@ -83,9 +82,14 @@ class MultiInstanceDBFetcher:
             .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
             .replace("{{results}}", "solver_rewards_script_table")
             .replace(
-                "{{auction_prices_corrections}}", prod_auction_prices_corrections_str
+                "{{auction_prices_corrections}}", barn_auction_prices_corrections_str
             )
         )
+
+        print(batch_reward_query_barn)
+        print()
+        print(batch_reward_query_prod)
+        exit()
         results = []
 
         # querying the prod database
