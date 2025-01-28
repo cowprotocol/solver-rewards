@@ -97,9 +97,36 @@ price_data as (
     select
         tdp.auction_id,
         tdp.order_uid,
-        ap_surplus.price / pow(10, 18) as surplus_token_native_price,
-        ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
-        ap_sell.price / pow(10, 18) as network_fee_token_native_price
+        case
+            when tdp.surplus_token = '\xad038eb671c44b853887a7e32528fab35dc5d710' and ap_surplus.price > 100 * pow(10, 18) then 43314929461672 / pow(10, 18)
+            when tdp.surplus_token = '\x06b964d96f5dcf7eae9d7c559b09edce244d4b8e' and ap_surplus.price > 100 * pow(10, 18) then 124975619281188 / pow(10, 18)
+            when tdp.surplus_token = '\x5c47902c8c80779cb99235e42c354e53f38c3b0d' and ap_surplus.price > 100 * pow(10, 18) then 101902651 / pow(10, 18)
+            when tdp.surplus_token = '\x0943d06a5ff3b25ddc51642717680c105ad63c01' and ap_surplus.price > 100 * pow(10, 18) then 144858293311 / pow(10, 18)
+            when tdp.surplus_token = '\x4eca7761a516f8300711cbf920c0b85555261993' and ap_surplus.price > 100 * pow(10, 18) then 23670618 / pow(10, 18)
+            when tdp.surplus_token = '\xe2cfd7a01ec63875cd9da6c7c1b7025166c2fa2f' and ap_surplus.price > 100 * pow(10, 18) then 163508274 / pow(10, 18)
+            when tdp.surplus_token = '\x1a88df1cfe15af22b3c4c783d4e6f7f9e0c1885d' and ap_surplus.price > 100 * pow(10, 18) then 318978711000518 / pow(10, 18)
+            else ap_surplus.price / pow(10, 18)
+        end as surplus_token_native_price,
+        case
+            when tdp.surplus_token = '\xad038eb671c44b853887a7e32528fab35dc5d710' and ap_protocol.price > 100 * pow(10, 18) then 43314929461672 / pow(10, 18)
+            when tdp.surplus_token = '\x06b964d96f5dcf7eae9d7c559b09edce244d4b8e' and ap_protocol.price > 100 * pow(10, 18) then 124975619281188 / pow(10, 18)
+            when tdp.surplus_token = '\x5c47902c8c80779cb99235e42c354e53f38c3b0d' and ap_protocol.price > 100 * pow(10, 18) then 101902651 / pow(10, 18)
+            when tdp.surplus_token = '\x0943d06a5ff3b25ddc51642717680c105ad63c01' and ap_protocol.price > 100 * pow(10, 18) then 144858293311 / pow(10, 18)
+            when tdp.surplus_token = '\x4eca7761a516f8300711cbf920c0b85555261993' and ap_protocol.price > 100 * pow(10, 18) then 23670618 / pow(10, 18)
+            when tdp.surplus_token = '\xe2cfd7a01ec63875cd9da6c7c1b7025166c2fa2f' and ap_protocol.price > 100 * pow(10, 18) then 163508274 / pow(10, 18)
+            when tdp.surplus_token = '\x1a88df1cfe15af22b3c4c783d4e6f7f9e0c1885d' and ap_protocol.price > 100 * pow(10, 18) then 318978711000518 / pow(10, 18)
+            else ap_protocol.price / pow(10, 18)
+        end as protocol_fee_token_native_price,
+        case
+            when tdp.sell_token = '\xad038eb671c44b853887a7e32528fab35dc5d710' and ap_sell.price > 100 * pow(10, 18) then 43314929461672 / pow(10, 18)
+            when tdp.sell_token = '\x06b964d96f5dcf7eae9d7c559b09edce244d4b8e' and ap_sell.price > 100 * pow(10, 18) then 124975619281188 / pow(10, 18)
+            when tdp.sell_token = '\x5c47902c8c80779cb99235e42c354e53f38c3b0d' and ap_sell.price > 100 * pow(10, 18) then 101902651 / pow(10, 18)
+            when tdp.sell_token = '\x0943d06a5ff3b25ddc51642717680c105ad63c01' and ap_sell.price > 100 * pow(10, 18) then 144858293311 / pow(10, 18)
+            when tdp.sell_token = '\x4eca7761a516f8300711cbf920c0b85555261993' and ap_sell.price > 100 * pow(10, 18) then 23670618 / pow(10, 18)
+            when tdp.sell_token = '\xe2cfd7a01ec63875cd9da6c7c1b7025166c2fa2f' and ap_sell.price > 100 * pow(10, 18) then 163508274 / pow(10, 18)
+            when tdp.sell_token = '\x1a88df1cfe15af22b3c4c783d4e6f7f9e0c1885d' and ap_sell.price > 100 * pow(10, 18) then 318978711000518 / pow(10, 18)
+            else ap_sell.price / pow(10, 18)
+        end as network_fee_token_native_price
     from trade_data_processed as tdp left outer join auction_prices as ap_sell -- contains price: sell token
         on tdp.auction_id = ap_sell.auction_id and tdp.sell_token = ap_sell.token
     left outer join auction_prices as ap_surplus -- contains price: surplus token
