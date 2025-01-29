@@ -45,7 +45,7 @@ auction_prices_corrections (blockchain, environment, auction_id, token, price) a
         ('ethereum', 'prod', 10104748::bigint, '\x4eca7761a516f8300711cbf920c0b85555261993'::bytea, 23670618::numeric(78, 0)),
 
         -- 0xb46617d67c592518ed51d2a00292d0e86728b1ac9aa700220c0b010b19b5f96b, network fee issue
-        ('ethereum', 'prod', 10104715::bigint, '\x1a88df1cfe15af22b3c4c783d4e6f7f9e0c1885d'::bytea, 318978711000518::numeric(78, 0)),
+        ('ethereum', 'prod', 10104715::bigint, '\x1a88df1cfe15af22b3c4c783d4e6f7f9e0c1885d'::bytea, 318978711000518::numeric(78, 0))
 
     ) as temp(blockchain, environment, auction_id, token, price)
     where blockchain = '{{blockchain}}' and environment = '{{environment}}'
