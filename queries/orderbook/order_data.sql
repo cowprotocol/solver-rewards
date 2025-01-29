@@ -124,8 +124,7 @@ auction_prices_processed as (
         ap.auction_id,
         ap.token,
         coalesce(apc.price, ap.price) as price
-    from auction_prices as ap inner join trade_hashes as th on ap.auction_id = th.auction_id
-    left outer join auction_prices_corrections as apc
+    from auction_prices as ap left outer join auction_prices_corrections as apc
         on ap.auction_id = apc.auction_id and ap.token = apc.token
 ),
 
