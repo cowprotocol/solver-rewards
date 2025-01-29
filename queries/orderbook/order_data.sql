@@ -124,9 +124,10 @@ auction_prices_processed as (
         ap.auction_id,
         ap.token,
         coalesce(apc.price, ap.price) as price
-    from auction_prices as ap inner join trade_hashes as th on ap.auction_id = th.auction_id -- inner join done to speed up query
+    from auction_prices as ap inner join settlements as s on ap.auction_id = s.auction_id -- inner join done to speed up query
     left outer join auction_prices_corrections as apc
         on ap.auction_id = apc.auction_id and ap.token = apc.token
+    where s.block_number >= {{start_block}} and s.block_number <= {{end_block}}
 ),
 
 price_data as (
