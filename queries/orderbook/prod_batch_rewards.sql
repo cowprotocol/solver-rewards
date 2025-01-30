@@ -25,7 +25,9 @@ order_data as (
         kind,
         app_data
     from orders
-    union all
+    union distinct -- A _distinct_ union is needed since orders can appear in the normal orders
+    -- table and in the jit orders table. Since the uid is otherwise unique, no valid order is
+    -- removed by the _distinct_ union.
     select
         uid,
         sell_token,
