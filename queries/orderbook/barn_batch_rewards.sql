@@ -166,7 +166,7 @@ reward_data as (
         -- scores
         winning_score,
         case
-            when block_number is not null and block_number <= block_deadline + 1 then winning_score -- this includes a grace period of one block for settling a batch
+            when block_number is not null and block_number <= block_deadline then winning_score
             else 0
         end as observed_score,
         reference_score,
