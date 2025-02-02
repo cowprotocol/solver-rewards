@@ -731,6 +731,7 @@ def construct_payouts(
             dune.end_block,
             config.reward_config.batch_reward_cap_upper,
             config.reward_config.batch_reward_cap_lower,
+            config.dune_config.dune_blockchain,
         )
     )
     service_fee_df = DataFrame(dune.get_service_fee_status())
