@@ -79,7 +79,6 @@ auction_prices_corrections (blockchain, environment, auction_id, token, price) a
 
         -- correction only relevant for the tests in the test_batch_rewards.py file
         ('ethereum', 'prod', 53::bigint, '\x02'::bytea, 500000000000000::numeric(78, 0))
-)
 
     ) as temp(blockchain, environment, auction_id, token, price)
     where blockchain = '{{blockchain}}' and environment = '{{environment}}'
