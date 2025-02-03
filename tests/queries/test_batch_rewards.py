@@ -24,11 +24,13 @@ class TestBatchRewards(unittest.TestCase):
 
     def test_get_batch_rewards(self):
         start_block, end_block = "0", "100"
+        blockchain = "ethereum"
         batch_rewards = self.fetcher.get_solver_rewards(
             start_block,
             end_block,
             self.batch_reward_cap_upper,
             self.batch_reward_cap_lower,
+            blockchain,
         )
         expected = DataFrame(
             {

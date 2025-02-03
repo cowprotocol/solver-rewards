@@ -119,6 +119,19 @@ trade_data_processed as (
         on tdu.order_uid = pfk.order_uid and tdu.auction_id = pfk.auction_id
 ),
 
+{{auction_prices_corrections}}
+
+auction_prices_processed as (
+    select
+        ap.auction_id,
+        ap.token,
+        coalesce(apc.price, ap.price) as price
+    from auction_prices as ap inner join settlements as s on ap.auction_id = s.auction_id -- inner join done to speed up query
+    left outer join auction_prices_corrections as apc
+        on ap.auction_id = apc.auction_id and ap.token = apc.token
+    where s.block_number >= {{start_block}} and s.block_number <= {{end_block}}
+),
+
 price_data as (
     select
         tdp.auction_id,
@@ -127,11 +140,11 @@ price_data as (
         ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
         ap_sell.price / pow(10, 18) as network_fee_token_native_price
     from trade_data_processed as tdp
-    left outer join auction_prices as ap_sell -- contains price: sell token
+    left outer join auction_prices_processed as ap_sell -- contains price: sell token
         on tdp.auction_id = ap_sell.auction_id and tdp.sell_token = ap_sell.token
-    left outer join auction_prices as ap_surplus -- contains price: surplus token
+    left outer join auction_prices_processed as ap_surplus -- contains price: surplus token
         on tdp.auction_id = ap_surplus.auction_id and tdp.surplus_token = ap_surplus.token
-    left outer join auction_prices as ap_protocol -- contains price: protocol fee token
+    left outer join auction_prices_processed as ap_protocol -- contains price: protocol fee token
         on tdp.auction_id = ap_protocol.auction_id and tdp.surplus_token = ap_protocol.token
 ),
 
