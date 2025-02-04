@@ -121,7 +121,7 @@ trade_data_processed as (
 
 {{auction_prices_corrections}}
 
-auction_prices_processed as (
+auction_prices_processed as materialized (
     select
         ap.auction_id,
         ap.token,
@@ -132,7 +132,7 @@ auction_prices_processed as (
     where s.block_number >= {{start_block}} and s.block_number <= {{end_block}}
 ),
 
-price_data as (
+price_data as materialized (
     select
         tdp.auction_id,
         tdp.order_uid,

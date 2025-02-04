@@ -97,7 +97,7 @@ trade_data_processed as (
 
 {{auction_prices_corrections}}
 
-auction_prices_processed as (
+auction_prices_processed as materialized (
     select
         ap.auction_id,
         ap.token,
@@ -107,7 +107,7 @@ auction_prices_processed as (
         on ap.auction_id = apc.auction_id and ap.token = apc.token
 ),
 
-price_data as (
+price_data as materialized (
     select
         tdp.auction_id,
         tdp.order_uid,
