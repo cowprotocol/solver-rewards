@@ -125,8 +125,8 @@ def compute_partner_fees_per_partner(
     )
 
     partner_fees_df["partner_fee_tax"] = np.where(
-        partner_fees_df["partner"] in config.reduced_partner_fee_list,
-        config.reduced_partner_fee_list[partner_fees_df["partner"]],
+        partner_fees_df["partner"] in config.custom_partner_fee_list,
+        config.custom_partner_fee_list[partner_fees_df["partner"]],
         config.default_partner_fee_cut,
     )
 

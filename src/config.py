@@ -108,7 +108,7 @@ class ProtocolFeeConfig:
 
     protocol_fee_safe: Address
     default_partner_fee_cut: float
-    reduced_partner_fee_list: list[dict[str, float]]
+    custom_partner_fee_list: list[dict[str, float]]
 
     @staticmethod
     def from_network(network: Network) -> ProtocolFeeConfig:
@@ -137,7 +137,7 @@ class ProtocolFeeConfig:
         return ProtocolFeeConfig(
             protocol_fee_safe=protocol_fee_safe,
             default_partner_fee_cut=0.5,
-            partner_fee_reduced_cut=[
+            custom_partner_fee_list=[
                 {"0xe37da2d07e769b7fcb808bdeaeffb84561ff4eca": 0.15},
                 {"0x63695eee2c3141bde314c5a6f89b98e62808d716": 0.10},
                 {"0x352a3666b27bb09aca7b4a71ed624429b7549551": 0.15},
