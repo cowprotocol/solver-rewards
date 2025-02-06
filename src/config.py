@@ -102,15 +102,13 @@ class ProtocolFeeConfig:
 
     Attributes:
     protocol_fee_safe -- address to forward protocol fees to
-    partner_fee_cut -- fraction of partner fees withheld from integration partners
-    partner_fee_reduced_cut -- reduced amount withheld from partner specified as reduced_cut_address
-    reduced_cut_address -- partner fee recipient who pays the reduced cut partner_fee_reduced_cut
+    default_partner_fee_cut -- default fraction of partner fees withheld from integration partners
+    reduced_partner_fee_list -- list of partner fee recipients and corresponding fractions for custom fee cuts
     """
 
     protocol_fee_safe: Address
-    partner_fee_cut: float
-    partner_fee_reduced_cut: float
-    reduced_cut_address: str
+    default_partner_fee_cut: float
+    reduced_partner_fee_list: list[dict[str, float]]
 
     @staticmethod
     def from_network(network: Network) -> ProtocolFeeConfig:
@@ -138,9 +136,12 @@ class ProtocolFeeConfig:
                 )
         return ProtocolFeeConfig(
             protocol_fee_safe=protocol_fee_safe,
-            partner_fee_cut=0.15,
-            partner_fee_reduced_cut=0.10,
-            reduced_cut_address="0x63695Eee2c3141BDE314C5a6f89B98E62808d716",
+            default_partner_fee_cut=0.5,
+            partner_fee_reduced_cut=[
+                {"0xe37da2d07e769b7fcb808bdeaeffb84561ff4eca": 0.15},
+                {"0x63695eee2c3141bde314c5a6f89b98e62808d716": 0.10},
+                {"0x352a3666b27bb09aca7b4a71ed624429b7549551": 0.15},
+            ],
         )
 
 

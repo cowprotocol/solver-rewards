@@ -125,9 +125,9 @@ def compute_partner_fees_per_partner(
     )
 
     partner_fees_df["partner_fee_tax"] = np.where(
-        partner_fees_df["partner"] == config.reduced_cut_address,
-        config.partner_fee_reduced_cut,
-        config.partner_fee_cut,
+        partner_fees_df["partner"] in config.reduced_partner_fee_list,
+        config.reduced_partner_fee_list[partner_fees_df["partner"]],
+        config.default_partner_fee_cut,
     )
 
     # change all types to object to use native python types
