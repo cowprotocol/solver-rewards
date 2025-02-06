@@ -103,7 +103,7 @@ class ProtocolFeeConfig:
     Attributes:
     protocol_fee_safe -- address to forward protocol fees to
     default_partner_fee_cut -- default fraction of partner fees withheld from integration partners
-    reduced_partner_fee_list -- list of partner fee recipients and corresponding fractions for custom fee cuts
+    custom_partner_fee_list -- list of partner fee recipients and corresponding fractions for custom fee cuts
     """
 
     protocol_fee_safe: Address
