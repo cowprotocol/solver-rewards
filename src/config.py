@@ -118,17 +118,49 @@ class ProtocolFeeConfig:
                 protocol_fee_safe = Address(
                     "0xB64963f95215FDe6510657e719bd832BB8bb941B"
                 )
+                custom_partner_fee_dict = (
+                    {
+                        "0x63695eee2c3141bde314c5a6f89b98e62808d716": 0.10,  # Safe
+                        "0x352a3666b27bb09aca7b4a71ed624429b7549551": 0.15,  # OneKey
+                        "0xe37da2d07e769b7fcb808bdeaeffb84561ff4eca": 0.15,  # Den
+                        "0x90a48d5cf7343b08da12e067680b4c6dbfe551be": 0.15,  # Shapeshift
+                    },
+                )
             case Network.GNOSIS:
                 protocol_fee_safe = Address(
                     "0x6b3214fD11dc91De14718DeE98Ef59bCbFcfB432"
+                )
+                custom_partner_fee_dict = (
+                    {
+                        "0x63695eee2c3141bde314c5a6f89b98e62808d716": 0.10,  # Safe
+                        "0x352a3666b27bb09aca7b4a71ed624429b7549551": 0.15,  # OneKey
+                        "0x8387fae9951724c00c753797b22b897111750673": 0.15,  # Den
+                        "0xb0E3175341794D1dc8E5F02a02F9D26989EbedB3": 0.15,  # Shapeshift
+                    },
                 )
             case Network.ARBITRUM_ONE:
                 protocol_fee_safe = Address(
                     "0x451100Ffc88884bde4ce87adC8bB6c7Df7fACccd"
                 )
+                custom_partner_fee_dict = (
+                    {
+                        "0x63695eee2c3141bde314c5a6f89b98e62808d716": 0.10,  # Safe
+                        "0x352a3666b27bb09aca7b4a71ed624429b7549551": 0.15,  # OneKey
+                        "0x86cd2bBC859E797B75D86E6eEEC1a726A9284c23": 0.15,  # Den
+                        "0x38276553F8fbf2A027D901F8be45f00373d8Dd48": 0.15,  # Shapeshift
+                    },
+                )
             case Network.BASE:
                 protocol_fee_safe = Address(
                     "0x3c4DBcCf8d80D3d92B0d82197aebf52574ED1F3B"
+                )
+                custom_partner_fee_dict = (
+                    {
+                        "0x63695eee2c3141bde314c5a6f89b98e62808d716": 0.10,  # Safe
+                        "0x352a3666b27bb09aca7b4a71ed624429b7549551": 0.15,  # OneKey
+                        "0xAf1c727B605530AcDb00906a158E817f41aFD778": 0.15,  # Den
+                        "0x9c9aA90363630d4ab1D9dbF416cc3BBC8d3Ed502": 0.15,  # Shapeshift
+                    },
                 )
             case _:
                 raise ValueError(
@@ -137,12 +169,7 @@ class ProtocolFeeConfig:
         return ProtocolFeeConfig(
             protocol_fee_safe=protocol_fee_safe,
             default_partner_fee_cut=0.5,
-            custom_partner_fee_dict={
-                "0xe37da2d07e769b7fcb808bdeaeffb84561ff4eca": 0.15,
-                "0x63695eee2c3141bde314c5a6f89b98e62808d716": 0.10,
-                "0x352a3666b27bb09aca7b4a71ed624429b7549551": 0.15,
-                "0x90a48d5cf7343b08da12e067680b4c6dbfe551be": 0.15,
-            },
+            custom_partner_fee_dict=custom_partner_fee_dict,
         )
 
 
