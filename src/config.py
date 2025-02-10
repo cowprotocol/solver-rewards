@@ -120,7 +120,7 @@ class ProtocolFeeConfig:
                 )
                 custom_partner_fee_dict = {
                     "0x63695eee2c3141bde314c5a6f89b98e62808d716": 0.10,
-                    "0x352a3666b27bb09aca7b4a71ed624429b7549551": 0.15, 
+                    "0x352a3666b27bb09aca7b4a71ed624429b7549551": 0.15,
                     "0xe37da2d07e769b7fcb808bdeaeffb84561ff4eca": 0.15,
                     "0x90a48d5cf7343b08da12e067680b4c6dbfe551be": 0.15,
                 }
