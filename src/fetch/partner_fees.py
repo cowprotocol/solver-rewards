@@ -2,7 +2,6 @@
 
 from collections import defaultdict
 
-import numpy as np
 import pandas as pd
 from pandas import DataFrame
 
@@ -124,10 +123,10 @@ def compute_partner_fees_per_partner(
         columns=["partner", "partner_fee_eth"],
     )
 
-    partner_fees_df["partner_fee_tax"] = np.where(
-        partner_fees_df["partner"] == config.reduced_cut_address,
-        config.partner_fee_reduced_cut,
-        config.partner_fee_cut,
+    partner_fees_df["partner_fee_tax"] = (
+        partner_fees_df["partner"]
+        .map(config.custom_partner_fee_dict)
+        .fillna(config.default_partner_fee_cut)
     )
 
     # change all types to object to use native python types
