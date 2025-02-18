@@ -42,16 +42,27 @@ class MultiInstanceDBFetcher:
         """Executes query on DB engine"""
         return pd.read_sql(sql=query, con=engine)
 
-    def get_solver_rewards(
+    def get_solver_rewards(  # pylint: disable=too-many-arguments, too-many-positional-arguments
         self,
         start_block: str,
         end_block: str,
         reward_cap_upper: int,
         reward_cap_lower: int,
+        blockchain: str,
     ) -> DataFrame:
         """
         Returns aggregated solver rewards for accounting period defined by block range
         """
+        prod_auction_prices_corrections_str = (
+            open_query("orderbook/auction_prices_corrections.sql")
+            .replace("{{blockchain}}", blockchain)
+            .replace("{{environment}}", "prod")
+        )
+        barn_auction_prices_corrections_str = (
+            open_query("orderbook/auction_prices_corrections.sql")
+            .replace("{{blockchain}}", blockchain)
+            .replace("{{environment}}", "barn")
+        )
         batch_reward_query_prod = (
             open_query("orderbook/prod_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
@@ -59,6 +70,9 @@ class MultiInstanceDBFetcher:
             .replace("{{EPSILON_LOWER}}", str(reward_cap_lower))
             .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
             .replace("{{results}}", "solver_rewards_script_table")
+            .replace(
+                "{{auction_prices_corrections}}", prod_auction_prices_corrections_str
+            )
         )
         batch_reward_query_barn = (
             open_query("orderbook/barn_batch_rewards.sql")
@@ -67,7 +81,11 @@ class MultiInstanceDBFetcher:
             .replace("{{EPSILON_LOWER}}", str(reward_cap_lower))
             .replace("{{EPSILON_UPPER}}", str(reward_cap_upper))
             .replace("{{results}}", "solver_rewards_script_table")
+            .replace(
+                "{{auction_prices_corrections}}", barn_auction_prices_corrections_str
+            )
         )
+
         results = []
 
         # querying the prod database
