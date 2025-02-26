@@ -31,7 +31,7 @@ class RewardConfig:
     """Configuration for reward mechanism."""
 
     reward_token_address: Address
-    cow_bonding_pool: Address
+    send_everything_to_rewards_address_bonding_pools: list[Address]
     batch_reward_cap_upper: int
     batch_reward_cap_lower: int
     quote_reward_cow: int
@@ -41,7 +41,14 @@ class RewardConfig:
     @staticmethod
     def from_network(network: Network) -> RewardConfig:
         """Initialize reward config for a given network."""
-        cow_bonding_pool = Address("0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6")
+        send_everything_to_rewards_address_bonding_pools = [
+            Address(
+                "0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6"
+            ),  # CoW DAO bonding pool
+            Address(
+                "0x0deb0ae9c4399c51289adb1f3ed83557a56df657"
+            ),  # Rizzolver bonding pool
+        ]
         service_fee_factor = Fraction(15, 100)
         match network:
             case Network.MAINNET:
@@ -54,7 +61,7 @@ class RewardConfig:
                     quote_reward_cow=6 * 10**18,
                     quote_reward_cap_native=6 * 10**14,
                     service_fee_factor=service_fee_factor,
-                    cow_bonding_pool=cow_bonding_pool,
+                    send_everything_to_rewards_address_bonding_pools=send_everything_to_rewards_address_bonding_pools,
                 )
             case Network.GNOSIS:
                 return RewardConfig(
@@ -66,7 +73,7 @@ class RewardConfig:
                     quote_reward_cow=6 * 10**18,
                     quote_reward_cap_native=15 * 10**16,
                     service_fee_factor=service_fee_factor,
-                    cow_bonding_pool=cow_bonding_pool,
+                    send_everything_to_rewards_address_bonding_pools=send_everything_to_rewards_address_bonding_pools,
                 )
             case Network.ARBITRUM_ONE:
                 return RewardConfig(
@@ -78,7 +85,7 @@ class RewardConfig:
                     quote_reward_cow=6 * 10**18,
                     quote_reward_cap_native=2 * 10**14,
                     service_fee_factor=service_fee_factor,
-                    cow_bonding_pool=cow_bonding_pool,
+                    send_everything_to_rewards_address_bonding_pools=send_everything_to_rewards_address_bonding_pools,
                 )
             case Network.BASE:
                 return RewardConfig(
@@ -90,7 +97,7 @@ class RewardConfig:
                     quote_reward_cow=6 * 10**18,
                     quote_reward_cap_native=2 * 10**14,
                     service_fee_factor=service_fee_factor,
-                    cow_bonding_pool=cow_bonding_pool,
+                    send_everything_to_rewards_address_bonding_pools=send_everything_to_rewards_address_bonding_pools,
                 )
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")

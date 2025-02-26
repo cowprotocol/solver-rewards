@@ -93,10 +93,16 @@ def compute_solver_info(
         service_fees[SERVICE_FEES_COLUMNS], how="outer", on="solver"
     )
 
+    send_everything_to_rewards_address_bonding_pools_addresses = [
+        pool.address
+        for pool in config.reward_config.send_everything_to_rewards_address_bonding_pools
+    ]
     solver_info["buffer_accounting_target"] = np.where(
-        solver_info["pool_address"] != config.reward_config.cow_bonding_pool.address,
-        solver_info["solver"],
+        solver_info["pool_address"].isin(
+            send_everything_to_rewards_address_bonding_pools_addresses
+        ),
         solver_info["reward_target"],
+        solver_info["solver"],
     )
     solver_info = solver_info.drop("pool_address", axis=1)
 
