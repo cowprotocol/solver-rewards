@@ -31,7 +31,6 @@ class RewardConfig:
     """Configuration for reward mechanism."""
 
     reward_token_address: Address
-    send_gas_to_rewards_address_pools: list[Address]
     batch_reward_cap_upper: int
     batch_reward_cap_lower: int
     quote_reward_cow: int
@@ -41,14 +40,6 @@ class RewardConfig:
     @staticmethod
     def from_network(network: Network) -> RewardConfig:
         """Initialize reward config for a given network."""
-        send_gas_to_rewards_address_pools = [
-            Address(
-                "0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6"
-            ),  # CoW DAO bonding pool
-            Address(
-                "0x0deb0ae9c4399c51289adb1f3ed83557a56df657"
-            ),  # Rizzolver bonding pool
-        ]
         service_fee_factor = Fraction(15, 100)
         match network:
             case Network.MAINNET:
@@ -61,7 +52,6 @@ class RewardConfig:
                     quote_reward_cow=6 * 10**18,
                     quote_reward_cap_native=6 * 10**14,
                     service_fee_factor=service_fee_factor,
-                    send_gas_to_rewards_address_pools=send_gas_to_rewards_address_pools,
                 )
             case Network.GNOSIS:
                 return RewardConfig(
@@ -73,7 +63,6 @@ class RewardConfig:
                     quote_reward_cow=6 * 10**18,
                     quote_reward_cap_native=15 * 10**16,
                     service_fee_factor=service_fee_factor,
-                    send_gas_to_rewards_address_pools=send_gas_to_rewards_address_pools,
                 )
             case Network.ARBITRUM_ONE:
                 return RewardConfig(
@@ -85,7 +74,6 @@ class RewardConfig:
                     quote_reward_cow=6 * 10**18,
                     quote_reward_cap_native=2 * 10**14,
                     service_fee_factor=service_fee_factor,
-                    send_gas_to_rewards_address_pools=send_gas_to_rewards_address_pools,
                 )
             case Network.BASE:
                 return RewardConfig(
@@ -97,7 +85,6 @@ class RewardConfig:
                     quote_reward_cow=6 * 10**18,
                     quote_reward_cap_native=2 * 10**14,
                     service_fee_factor=service_fee_factor,
-                    send_gas_to_rewards_address_pools=send_gas_to_rewards_address_pools,
                 )
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
@@ -177,10 +164,19 @@ class BufferAccountingConfig:
     """Configuration for buffer accounting."""
 
     include_slippage: bool
+    send_buffers_to_rewards_address_pools: list[Address]
 
     @staticmethod
     def from_network(network: Network) -> BufferAccountingConfig:
         """Initialize buffer accounting config for a given network."""
+        send_buffers_to_rewards_address_pools = [
+            Address(
+                "0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6"
+            ),  # CoW DAO bonding pool
+            Address(
+                "0x0deb0ae9c4399c51289adb1f3ed83557a56df657"
+            ),  # Rizzolver bonding pool
+        ]
         match network:
             case Network.MAINNET | Network.GNOSIS | Network.ARBITRUM_ONE | Network.BASE:
                 include_slippage = True
@@ -191,6 +187,7 @@ class BufferAccountingConfig:
 
         return BufferAccountingConfig(
             include_slippage=include_slippage,
+            send_buffers_to_rewards_address_pools=send_buffers_to_rewards_address_pools,
         )
 
 
