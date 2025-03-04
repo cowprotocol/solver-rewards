@@ -57,6 +57,7 @@ trade_data_unprocessed as (
             when od.kind = 'buy' then od.sell_token
         end as surplus_token,
         cast(convert_from(ad.full_app_data, 'UTF8') as jsonb) -> 'metadata' -> 'partnerFee' ->> 'recipient' as partner_fee_recipient,
+        cast(convert_from(ad.full_app_data, 'UTF8') as jsonb) ->> 'appCode' as app_code,
         coalesce(oe.protocol_fee_amounts[1], 0) as first_protocol_fee_amount,
         coalesce(oe.protocol_fee_amounts[2], 0) as second_protocol_fee_amount
     from settlements as s inner join settlement_scores as ss -- contains block_deadline
@@ -87,6 +88,7 @@ trade_data_processed as (
         second_protocol_fee_amount,
         first_protocol_fee_amount + second_protocol_fee_amount as protocol_fee,
         partner_fee_recipient,
+        app_code,
         case
             when partner_fee_recipient is not null then second_protocol_fee_amount
             else 0
@@ -102,7 +104,7 @@ auction_prices_processed as materialized (
         ap.auction_id,
         ap.token,
         coalesce(apc.price, ap.price) as price
-    from auction_prices as ap inner join observed_settlements as os on ap.auction_id = os.auction_id -- inner join done to speed up query
+    from auction_prices as ap inner join observed_settlements as os on ap.auction_id = os.auction_id
     left outer join auction_prices_corrections as apc
         on ap.auction_id = apc.auction_id and ap.token = apc.token
 ),
@@ -133,6 +135,7 @@ trade_data_processed_with_prices as (
         tdp.protocol_fee_token,
         tdp.partner_fee,
         tdp.partner_fee_recipient,
+        tdp.app_code,
         case
             when tdp.sell_token != tdp.surplus_token then tdp.observed_fee - (tdp.sell_amount - tdp.observed_fee) / tdp.buy_amount * coalesce(tdp.protocol_fee, 0)
             else tdp.observed_fee - coalesce(tdp.protocol_fee, 0)
@@ -220,7 +223,7 @@ reward_per_auction as (
 
 dune_sync_batch_data_table as ( --noqa: ST03
     select --noqa: ST06
-        'barn' as environment,
+        'prod' as environment,
         auction_id,
         settlement_block as block_number,
         block_deadline,
@@ -255,16 +258,18 @@ partner_fees_per_solver as (
     select
         solver,
         partner_fee_recipient,
+        app_code,
+        array[partner_fee_recipient, app_code] as recipient_app_code_pair,
         sum(partner_fee * protocol_fee_token_native_price) as partner_fee
     from trade_data_processed_with_prices
     where partner_fee_recipient is not null
-    group by solver, partner_fee_recipient
+    group by solver, partner_fee_recipient, app_code
 ),
 
 aggregate_partner_fees_per_solver as (
     select
         solver,
-        array_agg(partner_fee_recipient) as partner_list,
+        array_agg(recipient_app_code_pair) as partner_list,
         array_agg(partner_fee) as partner_fee
     from partner_fees_per_solver
     group by solver
