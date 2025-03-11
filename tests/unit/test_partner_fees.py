@@ -14,7 +14,10 @@ def test_compute_partner_fees_per_partner():
     config = ProtocolFeeConfig.from_network(Network.MAINNET)
     partner_fee_lists = DataFrame(
         {
-            "partner_list": [["partner_1", "partner_2"], ["partner_2", "partner_3"]],
+            "partner_list": [
+                [["partner_1", ""], ["partner_2", ""]],
+                [["partner_2", ""], ["partner_3", ""]],
+            ],
             "partner_fee_eth": [[10**16, 10**17], [10**18, 10**19]],
         }
     )
