@@ -67,7 +67,7 @@ class TestBatchRewards(unittest.TestCase):
                     0.0,
                 ],
                 "partner_list": [
-                    ["0x90a48d5cf7343b08da12e067680b4c6dbfe551be"],
+                    [["0x90a48d5cf7343b08da12e067680b4c6dbfe551be", "shapeshift"]],
                     None,
                     None,
                     None,

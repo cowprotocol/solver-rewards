@@ -20,8 +20,9 @@ def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> Da
     batch_data : DataFrame
         Batch rewards data.
         The columns have to contain BATCH_DATA_COLUMNS:
-        - partner_list : list[str]
-            List of "0x"-prefixed hex representations of the partner addresses. Partner fees are
+        - partner_list : list[tuple[str, str]]
+            List of pairs (address, app_code), where address is "0x"-prefixed hex representation
+            of the partner addresses and app_code is the relevant app_code. Partner fees are
             paid to these addresses.
         - partner_fee_eth : list[int]
             List of partner fees in wei a solver owes to a partner for settling batches. The list is
@@ -63,6 +64,38 @@ def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> Da
     return partner_fees
 
 
+def get_partner_fee_tax(pair: tuple[str, str], config: ProtocolFeeConfig) -> float:
+    """Helper function to determine whether a (partner_recipient, app_code) pair
+        has a custom tax policy.
+
+    Parameters
+    ----------
+    pair : tuple[str, str]
+        This is a (recipient_address, app_code) pair.
+
+    config : ProtocolFeeConfig
+        Protocol fee configuration.
+
+    Returns
+    -------
+    float that represents the cut that needs to be applied to the fees collected for that partner
+    """
+    partner, app_code = pair[0].lower(), pair[1].lower()
+
+    # Check direct match in custom fee dict
+    for (k0, k1), v in config.custom_partner_fee_dict.items():
+        if partner == k0.lower() and app_code == k1.lower():
+            return v
+
+    # Check fallback match where only partner matches
+    for (k0, k1), v in config.custom_partner_fee_dict.items():
+        if partner == k0.lower() and not k1:
+            return v
+
+    # Default fee if no match found
+    return config.default_partner_fee_cut
+
+
 def compute_partner_fees_per_partner(
     partner_fee_lists: DataFrame, config: ProtocolFeeConfig
 ) -> DataFrame:
@@ -76,8 +109,9 @@ def compute_partner_fees_per_partner(
     partner_fee_lists : DataFrame
         Batch rewards data.
         The columns are BATCH_DATA_COLUMNS:
-        - partner_list : list[str]
-            List of "0x"-prefixed hex representations of the partner addresses. Partner fees are
+        - partner_list : list[tuple[str, str]]
+            List of pairs (address, app_code), where address is "0x"-prefixed hex representation
+            of the partner addresses and app_code is the relevant app_code. Partner fees are
             paid to these addresses.
         - partner_fee_eth : list[int]
             List of partner fees in wei a solver owes to a partner for settling batches. The list is
@@ -106,7 +140,7 @@ def compute_partner_fees_per_partner(
     lead to overflows.
     """
 
-    partner_fees_dict: defaultdict[str, int] = defaultdict(int)
+    partner_fees_dict: defaultdict[tuple[str, str], int] = defaultdict(int)
     for _, row in partner_fee_lists.iterrows():
         if row["partner_list"] is None:
             continue
@@ -115,24 +149,29 @@ def compute_partner_fees_per_partner(
         # partner_list and partner_fee_eth,
         # are "aligned".
 
-        for partner, partner_fee in zip(row["partner_list"], row["partner_fee_eth"]):
-            partner_fees_dict[partner] += int(partner_fee)
+        for partner_app_code_pair, partner_fee in zip(
+            row["partner_list"], row["partner_fee_eth"]
+        ):
+            partner = partner_app_code_pair[0]
+            app_code = partner_app_code_pair[1]
+            partner_fees_dict[(partner, app_code)] += int(partner_fee)
 
     partner_fees_df = pd.DataFrame(
         list(partner_fees_dict.items()),
-        columns=["partner", "partner_fee_eth"],
+        columns=["partner_app_code_pair", "partner_fee_eth"],
     )
 
-    partner_fees_df["partner_fee_tax"] = (
-        partner_fees_df["partner"]
-        .str.lower()  # Convert the partner column to lowercase
-        .map(
-            {k.lower(): v for k, v in config.custom_partner_fee_dict.items()}
-        )  # Convert keys to lowercase
-        .fillna(config.default_partner_fee_cut)  # Fill missing values
+    # Apply function to compute partner fee tax
+    partner_fees_df["partner_fee_tax"] = partner_fees_df["partner_app_code_pair"].apply(
+        lambda x: get_partner_fee_tax(x, config)
     )
+    # Extract 'partner' from tuple and drop original column
+    partner_fees_df["partner"] = partner_fees_df["partner_app_code_pair"].apply(
+        lambda x: x[0]
+    )
+    partner_fees_df.drop(columns=["partner_app_code_pair"], inplace=True)
 
-    # change all types to object to use native python types
+    # Ensure all columns use native Python types
     partner_fees_df = partner_fees_df.astype(object)
 
     return partner_fees_df
