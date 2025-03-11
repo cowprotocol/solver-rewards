@@ -25,8 +25,8 @@ def test_compute_partner_fees_per_partner():
     partner_fees_df = compute_partner_fees_per_partner(partner_fee_lists, config)
     expected_protocol_fees_df = DataFrame(
         {
-            "partner": ["partner_1", "partner_2", "partner_3"],
             "partner_fee_eth": [10**16, 10**17 + 10**18, 10**19],
+            "partner": ["partner_1", "partner_2", "partner_3"],
             "partner_fee_tax": [0.5, 0.5, 0.5],
         }
     ).astype(object)
@@ -47,8 +47,8 @@ def test_compute_partner_fees_per_partner_empty():
     partner_fees_df = compute_partner_fees_per_partner(partner_fee_lists, config)
     expected_protocol_fees_df = DataFrame(
         {
-            "partner": [],
             "partner_fee_eth": [],
+            "partner": [],
             "partner_fee_tax": [],
         }
     ).astype(object)
@@ -69,8 +69,8 @@ def test_compute_partner_fees_per_partner_reduced_cut():
     partner_fees_df = compute_partner_fees_per_partner(partner_fee_lists, config)
     expected_protocol_fees_df = DataFrame(
         {
-            "partner": ["0x63695eee2c3141bde314c5a6f89b98e62808d716"],
             "partner_fee_eth": [10**18],
+            "partner": ["0x63695eee2c3141bde314c5a6f89b98e62808d716"],
             "partner_fee_tax": [
                 config.custom_partner_fee_dict[
                     ["0x63695eee2c3141bde314c5a6f89b98e62808d716", ""]
@@ -97,8 +97,8 @@ def test_compute_partner_fees_per_partner_duplicates():
     partner_fees_df = compute_partner_fees_per_partner(partner_fee_lists, config)
     expected_protocol_fees_df = DataFrame(
         {
-            "partner": ["partner_1"],
             "partner_fee_eth": [10**17 + 10**18],
+            "partner": ["partner_1"],
             "partner_fee_tax": [0.5],
         }
     ).astype(object)
