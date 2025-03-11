@@ -126,7 +126,7 @@ def compute_partner_fees_per_partner(
     lead to overflows.
     """
 
-    partner_fees_dict: defaultdict[str, int] = defaultdict(int)
+    partner_fees_dict: defaultdict[tuple[str, str], int] = defaultdict(int)
     for _, row in partner_fee_lists.iterrows():
         if row["partner_list"] is None:
             continue
