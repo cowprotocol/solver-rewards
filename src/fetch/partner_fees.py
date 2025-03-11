@@ -65,7 +65,20 @@ def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> Da
 
 
 def get_partner_fee_tax(pair: tuple[str, str], config: ProtocolFeeConfig) -> float:
-    """Helper function to determine partner fee tax"""
+    """Helper function to determine whether a (partner_recipient, app_code) pair has a custom tax policy.
+
+    Parameters
+    ----------
+    pair : tuple[str, str]
+        This is a (recipient_address, app_code) pair.
+
+    config : ProtocolFeeConfig
+        Protocol fee configuration.
+
+    Returns
+    -------
+    float that represents the cut that needs to be applied to the fees collected for that partner
+    """
     partner, app_code = pair[0].lower(), pair[1].lower()
 
     # Check direct match in custom fee dict

@@ -97,7 +97,10 @@ class ProtocolFeeConfig:
     Attributes:
     protocol_fee_safe -- address to forward protocol fees to
     default_partner_fee_cut -- default fraction of partner fees withheld from integration partners
-    custom_partner_fee_dict -- dictionary of partner fee recipients and corresponding fractions
+    custom_partner_fee_dict -- dictionary of partner_fee_recipients/app_code pairs and corresponding fractions.
+        here, we use the convention that if there is an explicit recipient+app_code match, the corresponding fraction
+        applies, while if there is no such match but there is still a recipient match with the custom (recipient, "") entry
+        in the dictionary, that entry is matched. In other words, the empty string "" serves as placeholder here.
     """
 
     protocol_fee_safe: Address
