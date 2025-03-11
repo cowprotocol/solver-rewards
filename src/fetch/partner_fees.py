@@ -20,7 +20,7 @@ def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> Da
     batch_data : DataFrame
         Batch rewards data.
         The columns have to contain BATCH_DATA_COLUMNS:
-        - partner_list : list[list[str]]
+        - partner_list : list[tuple[str, str]]
             List of pairs (address, app_code), where address is "0x"-prefixed hex representation
             of the partner addresses and app_code is the relevant app_code. Partner fees are
             paid to these addresses.
@@ -64,7 +64,7 @@ def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> Da
     return partner_fees
 
 
-def get_partner_fee_tax(pair: list[str], config: ProtocolFeeConfig) -> float:
+def get_partner_fee_tax(pair: tuple[str, str], config: ProtocolFeeConfig) -> float:
     """Helper function to determine partner fee tax"""
     partner, app_code = pair[0].lower(), pair[1].lower()
 
@@ -95,7 +95,7 @@ def compute_partner_fees_per_partner(
     partner_fee_lists : DataFrame
         Batch rewards data.
         The columns are BATCH_DATA_COLUMNS:
-        - partner_list : list[list[str]]
+        - partner_list : list[tuple[str, str]]
             List of pairs (address, app_code), where address is "0x"-prefixed hex representation
             of the partner addresses and app_code is the relevant app_code. Partner fees are
             paid to these addresses.

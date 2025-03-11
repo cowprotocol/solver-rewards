@@ -102,7 +102,7 @@ class ProtocolFeeConfig:
 
     protocol_fee_safe: Address
     default_partner_fee_cut: float
-    custom_partner_fee_dict: dict[str, float]
+    custom_partner_fee_dict: dict[tuple[str, str], float]
 
     @staticmethod
     def from_network(network: Network) -> ProtocolFeeConfig:
