@@ -88,7 +88,7 @@ def test_compute_partner_fees_per_partner_duplicates():
     """
     partner_fee_lists = DataFrame(
         {
-            "partner_list": [["partner_1", "partner_1"]],
+            "partner_list": [[["partner_1", ""], ["partner_1", ""]]],
             "partner_fee_eth": [[10**17, 10**18]],
         }
     )
