@@ -54,7 +54,7 @@ def test_compute_solver_info_cow_dao_buffer_target():
         {
             "solver": ["solver_1"],
             "reward_target": ["target_1"],
-            "pool_address": [str(config.reward_config.cow_bonding_pool)],
+            "pool_address": ["0x5d4020b9261f01b6f8a45db929704b0ad6f5e9e6"],
             "solver_name": ["solver_name_1"],
         }
     )
