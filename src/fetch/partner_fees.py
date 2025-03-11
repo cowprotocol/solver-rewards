@@ -138,7 +138,9 @@ def compute_partner_fees_per_partner(
         for partner_app_code_pair, partner_fee in zip(
             row["partner_list"], row["partner_fee_eth"]
         ):
-            partner_fees_dict[partner_app_code_pair] += int(partner_fee)
+            partner = partner_app_code_pair[0]
+            app_code = partner_app_code_pair[1]
+            partner_fees_dict[(partner, app_code)] += int(partner_fee)
 
     partner_fees_df = pd.DataFrame(
         list(partner_fees_dict.items()),
