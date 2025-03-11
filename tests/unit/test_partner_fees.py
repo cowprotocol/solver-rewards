@@ -61,7 +61,7 @@ def test_compute_partner_fees_per_partner_reduced_cut():
     config = ProtocolFeeConfig.from_network(Network.MAINNET)
     partner_fee_lists = DataFrame(
         {
-            "partner_list": [["0x63695eee2c3141bde314c5a6f89b98e62808d716"]],
+            "partner_list": [[["0x63695eee2c3141bde314c5a6f89b98e62808d716", ""]]],
             "partner_fee_eth": [[10**18]],
         }
     )
