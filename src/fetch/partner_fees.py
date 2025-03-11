@@ -65,7 +65,8 @@ def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> Da
 
 
 def get_partner_fee_tax(pair: tuple[str, str], config: ProtocolFeeConfig) -> float:
-    """Helper function to determine whether a (partner_recipient, app_code) pair has a custom tax policy.
+    """Helper function to determine whether a (partner_recipient, app_code) pair
+        has a custom tax policy.
 
     Parameters
     ----------
