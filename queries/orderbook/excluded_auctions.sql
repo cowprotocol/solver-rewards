@@ -1,5 +1,8 @@
 excluded_auctions (blockchain, environment, auction_id) as ( --noqa: PRS
-    select *
+    -- the table returns (blockchain, environment, auction, 0)
+    -- 0 is added so that it is easy to scale performance rewards down to zero
+    -- for auctions that we want to exclude from rewards
+    select *, 0 as multiplier
     from (
         values
         -- What follows is all single-order auctions/batches that executed this order
