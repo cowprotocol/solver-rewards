@@ -2,6 +2,9 @@ excluded_auctions (blockchain, environment, auction_id) as ( --noqa: PRS
     select *
     from (
         values
+        -- What follows is all single-order auctions/batches that executed this order
+        -- https://explorer.cow.fi/base/orders/0x3971adfb215a6174115a977b1d8915466699c1bc17c493c548971668b1780653bebe59328bd8b0b2879a6b897592e6190773c09567cfd4b2
+        -- and affected the Base payouts of March 4-11, 2025
         ('base', 'prod', 24275833::bigint),
         ('base', 'prod', 24275839::bigint),
         ('base', 'prod', 24275841::bigint),
@@ -4994,6 +4997,7 @@ excluded_auctions (blockchain, environment, auction_id) as ( --noqa: PRS
         ('base', 'prod', 24288415::bigint),
         ('base', 'prod', 24288417::bigint),
         ('base', 'prod', 24288421::bigint)
+        -----------------------------------
     ) as temp(blockchain, environment, auction_id)
     where blockchain = '{{blockchain}}' and environment = '{{environment}}'
 ),
