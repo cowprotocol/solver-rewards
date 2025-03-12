@@ -63,6 +63,16 @@ class MultiInstanceDBFetcher:
             .replace("{{blockchain}}", blockchain)
             .replace("{{environment}}", "barn")
         )
+        prod_excluded_auctions_str = (
+            open_query("orderbook/excluded_auctions.sql")
+            .replace("{{blockchain}}", blockchain)
+            .replace("{{environment}}", "prod")
+        )
+        barn_excluded_auctions_str = (
+            open_query("orderbook/excluded_auctions.sql")
+            .replace("{{blockchain}}", blockchain)
+            .replace("{{environment}}", "barn")
+        )
         batch_reward_query_prod = (
             open_query("orderbook/prod_batch_rewards.sql")
             .replace("{{start_block}}", start_block)
@@ -73,6 +83,7 @@ class MultiInstanceDBFetcher:
             .replace(
                 "{{auction_prices_corrections}}", prod_auction_prices_corrections_str
             )
+            .replace("{{excluded_auctions}}", prod_excluded_auctions_str)
         )
         batch_reward_query_barn = (
             open_query("orderbook/barn_batch_rewards.sql")
@@ -84,6 +95,7 @@ class MultiInstanceDBFetcher:
             .replace(
                 "{{auction_prices_corrections}}", barn_auction_prices_corrections_str
             )
+            .replace("{{excluded_auctions}}", barn_excluded_auctions_str)
         )
 
         results = []

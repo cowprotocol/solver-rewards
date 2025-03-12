@@ -186,15 +186,25 @@ class OrderbookFetcher:
         """
         Fetches and validates Order Data DataFrame as concatenation from Prod and Staging DB
         """
+        prod_auction_prices_corrections_str = (
+            open_query("orderbook/auction_prices_corrections.sql")
+            .replace("{{blockchain}}", blockchain)
+            .replace("{{environment}}", "prod")
+        )
         barn_auction_prices_corrections_str = (
             open_query("orderbook/auction_prices_corrections.sql")
             .replace("{{blockchain}}", blockchain)
             .replace("{{environment}}", "barn")
         )
-        prod_auction_prices_corrections_str = (
-            open_query("orderbook/auction_prices_corrections.sql")
+        prod_excluded_auctions_str = (
+            open_query("orderbook/excluded_auctions.sql")
             .replace("{{blockchain}}", blockchain)
             .replace("{{environment}}", "prod")
+        )
+        barn_excluded_auctions_str = (
+            open_query("orderbook/excluded_auctions.sql")
+            .replace("{{blockchain}}", blockchain)
+            .replace("{{environment}}", "barn")
         )
         cow_reward_query_prod = (
             open_query("orderbook/order_data.sql")
@@ -204,6 +214,7 @@ class OrderbookFetcher:
             .replace(
                 "{{auction_prices_corrections}}", prod_auction_prices_corrections_str
             )
+            .replace("{{excluded_auctions}}", prod_excluded_auctions_str)
         )
         cow_reward_query_barn = (
             open_query("orderbook/order_data.sql")
@@ -213,6 +224,7 @@ class OrderbookFetcher:
             .replace(
                 "{{auction_prices_corrections}}", barn_auction_prices_corrections_str
             )
+            .replace("{{excluded_auctions}}", barn_excluded_auctions_str)
         )
         data_types = {"block_number": "int64", "amount": "float64"}
         barn, prod = cls._query_both_dbs(

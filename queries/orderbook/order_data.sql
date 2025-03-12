@@ -121,6 +121,8 @@ trade_data_processed as (
 
 {{auction_prices_corrections}}
 
+{{excluded_auctions}}
+
 auction_prices_processed as materialized (
     select
         ap.auction_id,
@@ -227,4 +229,5 @@ left outer join winning_quotes as wq on trade_hashes.order_uid = wq.order_uid
 left outer join trade_data_processed_with_prices as tdpwp
     on trade_hashes.order_uid = tdpwp.order_uid and trade_hashes.auction_id = tdpwp.auction_id
 left outer join order_quotes as oq on trade_hashes.order_uid = oq.order_uid
+where trade_hashes.auction_id not in (select auction_id from excluded_auctions)
 order by trade_hashes.block_number asc

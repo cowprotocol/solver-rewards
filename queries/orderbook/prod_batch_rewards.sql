@@ -99,6 +99,8 @@ trade_data_processed as (
 
 {{auction_prices_corrections}}
 
+{{excluded_auctions}}
+
 auction_prices_processed as materialized (
     select
         ap.auction_id,
@@ -146,6 +148,7 @@ trade_data_processed_with_prices as (
         network_fee_token_native_price
     from trade_data_processed as tdp inner join price_data as pd
         on tdp.auction_id = pd.auction_id and tdp.order_uid = pd.order_uid
+    where tdp.auction_id not in (select auction_id from excluded_auctions)
 ),
 
 batch_protocol_fees as (
@@ -193,7 +196,7 @@ reward_data as (
     left outer join observed_settlements as os on ss.auction_id = os.auction_id
     left outer join batch_protocol_fees as bpf on os.tx_hash = bpf.tx_hash
     left outer join batch_network_fees as bnf on os.tx_hash = bnf.tx_hash
-    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
+    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}} and ss.auction_id not in (select auction_id from excluded_auctions)
 ),
 
 reward_per_auction as (
