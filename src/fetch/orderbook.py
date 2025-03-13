@@ -186,15 +186,15 @@ class OrderbookFetcher:
         """
         Fetches and validates Order Data DataFrame as concatenation from Prod and Staging DB
         """
-        barn_auction_prices_corrections_str = (
-            open_query("orderbook/auction_prices_corrections.sql")
-            .replace("{{blockchain}}", blockchain)
-            .replace("{{environment}}", "barn")
-        )
         prod_auction_prices_corrections_str = (
             open_query("orderbook/auction_prices_corrections.sql")
             .replace("{{blockchain}}", blockchain)
             .replace("{{environment}}", "prod")
+        )
+        barn_auction_prices_corrections_str = (
+            open_query("orderbook/auction_prices_corrections.sql")
+            .replace("{{blockchain}}", blockchain)
+            .replace("{{environment}}", "barn")
         )
         cow_reward_query_prod = (
             open_query("orderbook/order_data.sql")

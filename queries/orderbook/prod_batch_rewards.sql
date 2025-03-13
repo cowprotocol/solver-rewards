@@ -99,12 +99,14 @@ trade_data_processed as (
 
 {{auction_prices_corrections}}
 
+{{excluded_auctions}}
+
 auction_prices_processed as materialized (
     select
         ap.auction_id,
         ap.token,
         coalesce(apc.price, ap.price) as price
-    from auction_prices as ap inner join observed_settlements as os on ap.auction_id = os.auction_id
+    from auction_prices as ap inner join observed_settlements as os on ap.auction_id = os.auction_id -- inner join done to speed up query
     left outer join auction_prices_corrections as apc
         on ap.auction_id = apc.auction_id and ap.token = apc.token
 ),
@@ -244,13 +246,22 @@ dune_sync_batch_data_table as ( --noqa: ST03
     order by block_deadline
 ),
 
+reward_per_auction_filtered as (
+    select
+        rpa.solver,
+        rpa.protocol_fee,
+        rpa.network_fee,
+        rpa.capped_payment * coalesce(ea.multiplier, 1) as capped_payment
+    from reward_per_auction as rpa left outer join excluded_auctions as ea on rpa.auction_id = ea.auction_id
+),
+
 primary_rewards as (
     select
         solver,
         sum(capped_payment) as payment,
         sum(protocol_fee) as protocol_fee,
         sum(network_fee) as network_fee
-    from reward_per_auction
+    from reward_per_auction_filtered
     group by solver
 ),
 

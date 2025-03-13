@@ -6,5 +6,6 @@ EPSILON_UPPER=12000000000000000
 results=solver_rewards_script_table
 env=prod
 auction_prices_corrections=
+excluded_auctions=
 blockchain=ethereum
 environment=prod
