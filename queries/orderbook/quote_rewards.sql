@@ -32,5 +32,5 @@ winning_quotes as (
 select
     solver,
     count(*) as num_quotes
-from filtered
+from winning_quotes
 group by solver
