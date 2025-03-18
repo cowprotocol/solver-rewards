@@ -27,7 +27,7 @@ winning_quotes as (
         and block_number <= {{end_block}}
         and oq.solver != '\x0000000000000000000000000000000000000000'
         and oq.order_uid not in (select order_uid from excluded_quotes)
-),
+)
 
 select
     solver,
