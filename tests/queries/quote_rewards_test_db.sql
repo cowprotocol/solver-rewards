@@ -19,7 +19,9 @@ CREATE TABLE IF NOT EXISTS orders
     kind OrderKind NOT NULL,
     partially_fillable boolean NOT NULL,
     class OrderClass NOT NULL,
-    owner bytea NOT NULL
+    owner bytea NOT NULL,
+    sell_token bytea NOT NULL,
+    buy_token bytea NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS order_quotes
