@@ -18,7 +18,8 @@ CREATE TABLE IF NOT EXISTS orders
     fee_amount numeric(78,0) NOT NULL,
     kind OrderKind NOT NULL,
     partially_fillable boolean NOT NULL,
-    class OrderClass NOT NULL
+    class OrderClass NOT NULL,
+    owner bytea NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS order_quotes
@@ -49,13 +50,13 @@ TRUNCATE order_quotes;
 TRUNCATE trades;
 
 
-INSERT INTO orders (uid, sell_amount, buy_amount, fee_amount, kind, partially_fillable, class)
-VALUES ('\x01'::bytea, 95000000, 94000000000000000000, 5000000, 'sell', 'f', 'market'), -- normal sell market order
-('\x02'::bytea, 101000000, 100000000000000000000, 5000000, 'buy', 'f', 'market'), -- normal buy market order
-('\x03'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't', 'limit'), -- partially fillable sell limit order
-('\x04'::bytea, 100000000, 100000000000000000000, 0, 'buy', 't', 'limit'), -- partially fillable buy limit order
-('\x05'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 'limit'), -- in market sell limit order
-('\x06'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 'limit'); -- in market buy limit order
+INSERT INTO orders (uid, sell_amount, buy_amount, fee_amount, kind, partially_fillable, class, owner)
+VALUES ('\x01'::bytea, 95000000, 94000000000000000000, 5000000, 'sell', 'f', 'market', '\x0000000000000000000000000000000000000000'::bytea), -- normal sell market order
+('\x02'::bytea, 101000000, 100000000000000000000, 5000000, 'buy', 'f', 'market', '\x0000000000000000000000000000000000000000'::bytea), -- normal buy market order
+('\x03'::bytea, 100000000, 100000000000000000000, 0, 'sell', 't', 'limit', '\x0000000000000000000000000000000000000000'::bytea), -- partially fillable sell limit order
+('\x04'::bytea, 100000000, 100000000000000000000, 0, 'buy', 't', 'limit', '\x0000000000000000000000000000000000000000'::bytea), -- partially fillable buy limit order
+('\x05'::bytea, 100000000, 94000000000000000000, 0, 'sell', 'f', 'limit', '\x0000000000000000000000000000000000000000'::bytea), -- in market sell limit order
+('\x06'::bytea, 106000000, 100000000000000000000, 0, 'buy', 'f', 'limit', '\x0000000000000000000000000000000000000000'::bytea); -- in market buy limit order
 
 INSERT INTO order_quotes (order_uid, gas_amount, gas_price, sell_token_price, sell_amount, buy_amount, solver)
 VALUES ('\x01'::bytea, 100000, 25000000000, 500000000., 95000000, 95000000000000000000, '\x01'::bytea),
