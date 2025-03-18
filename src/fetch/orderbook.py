@@ -208,6 +208,7 @@ class OrderbookFetcher:
             .replace("{{blockchain}}", blockchain)
             .replace("{{environment}}", "barn")
         )
+        excluded_quotes_str = open_query("orderbook/excluded_quotes.sql")
         cow_reward_query_prod = (
             open_query("orderbook/order_data.sql")
             .replace("{{start_block}}", str(block_range.block_from))
@@ -216,6 +217,7 @@ class OrderbookFetcher:
             .replace(
                 "{{auction_prices_corrections}}", prod_auction_prices_corrections_str
             )
+            .replace("{{excluded_quotes}}", excluded_quotes_str)
         )
         cow_reward_query_barn = (
             open_query("orderbook/order_data.sql")
@@ -225,6 +227,7 @@ class OrderbookFetcher:
             .replace(
                 "{{auction_prices_corrections}}", barn_auction_prices_corrections_str
             )
+            .replace("{{excluded_quotes}}", excluded_quotes_str)
         )
         data_types = {"block_number": "int64", "amount": "float64"}
         barn, prod = cls._query_both_dbs(
