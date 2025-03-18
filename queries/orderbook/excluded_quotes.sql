@@ -1,5 +1,5 @@
 -- this table excludes certain accounts due to wash-trading
-excluded_quotes as (
+excluded_quotes as ( --noqa: PRS
     select uid as order_uid
     from orders
     where
