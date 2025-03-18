@@ -144,10 +144,12 @@ class MultiInstanceDBFetcher:
 
     def get_quote_rewards(self, start_block: str, end_block: str) -> DataFrame:
         """Returns aggregated solver quote rewards for block range"""
+        excluded_quotes_str = open_query("orderbook/excluded_quotes.sql")
         quote_reward_query = (
             open_query("orderbook/quote_rewards.sql")
             .replace("{{start_block}}", start_block)
             .replace("{{end_block}}", end_block)
+            .replace("{{excluded_quotes}}", excluded_quotes_str)
         )
         results = [
             self.exec_query(query=quote_reward_query, engine=engine)

@@ -173,6 +173,8 @@ trade_data_processed_with_prices as materialized (
         on tdp.auction_id = pd.auction_id and tdp.order_uid = pd.order_uid
 ),
 
+{{excluded_quotes}}
+
 winning_quotes as (
     select --noqa: ST06
         concat('0x', encode(oq.solver, 'hex')) as quote_solver,
@@ -197,6 +199,7 @@ winning_quotes as (
         and t.block_number >= {{start_block}}
         and t.block_number <= {{end_block}}
         and oq.solver != '\x0000000000000000000000000000000000000000'
+        and oq.order_uid not in (select order_uid from excluded_quotes)
 ) -- Most efficient column order for sorting would be having tx_hash or order_uid first
 
 select
