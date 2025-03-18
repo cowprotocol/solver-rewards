@@ -7,5 +7,6 @@ results=solver_rewards_script_table
 env=prod
 auction_prices_corrections=
 excluded_auctions=
+excluded_quotes
 blockchain=ethereum
 environment=prod

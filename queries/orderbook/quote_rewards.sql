@@ -1,4 +1,7 @@
-with winning_quotes as (
+with
+{{excluded_quotes}}
+
+winning_quotes as (
     select --noqa: ST06
         concat('0x', encode(oq.solver, 'hex')) as solver,
         oq.order_uid
@@ -23,10 +26,11 @@ with winning_quotes as (
         and block_number >= {{start_block}}
         and block_number <= {{end_block}}
         and oq.solver != '\x0000000000000000000000000000000000000000'
-)
+        and oq.order_uid not in (select order_uid from excluded_quotes)
+),
 
 select
     solver,
     count(*) as num_quotes
-from winning_quotes
+from filtered
 group by solver

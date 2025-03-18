@@ -77,6 +77,10 @@ auction_prices_corrections (blockchain, environment, auction_id, token, price) a
         -- 0xd6bd149df0d16cc26b1e2581e25340bf6aa31bf218cbffd4cbb5e55e9d1dfae2, network fee issue
         ('ethereum', 'prod', 10104624::bigint, '\x4eca7761a516f8300711cbf920c0b85555261993'::bytea, 23670618::numeric(78, 0)),
 
+        -- https://etherscan.io/tx/0x130ec24cc595a803431e78aaf4013168f82cc61a626fcbb3d73e6dae62350ba7, protocol fee issue
+        -- price taken from nearby auction 10325156
+        ('ethereum', 'prod', 10325171::bigint, '\x35d8949372d46b7a3d5a56006ae77b215fc69bc0'::bytea, 533247805376780::numeric(78, 0)),
+
         -- correction only relevant for the tests in the test_batch_rewards.py file
         ('ethereum', 'prod', 53::bigint, '\x02'::bytea, 500000000000000::numeric(78, 0))
 
