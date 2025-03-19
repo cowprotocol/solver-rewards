@@ -67,3 +67,4 @@ def test_find_block_with_timestamp(mocker: MockerFixture, mock_node, times):
     results = find_block_with_timestamp(node=mock_node, time_stamp=end_timestamp)
     assert results == 400
     assert mock_get_block.call_count == 3
+
