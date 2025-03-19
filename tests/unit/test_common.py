@@ -21,23 +21,26 @@ def times():
 def mock_node():
     return Web3()
 
-def test_partition_time_range(mocker: MockerFixture):
-    start_time = datetime.datetime.now(tz=datetime.timezone.utc)
-    end_time = start_time + datetime.timedelta(seconds=10)
+
+def test_partition_time_range(times):
 
     # test that if they are equal or negative the function raises an error
     with pytest.raises(AssertionError):
-        partition_time_range(start_time=start_time, end_time=start_time)
+        partition_time_range(start_time=times["start_time"], end_time=times["start_time"])
+    
+    # test timezones don't match
+    with pytest.raises(AssertionError):
+        partition_time_range(start_time=datetime.datetime.now(), end_time=times["end_time"])
     
     with pytest.raises(AssertionError):
-        partition_time_range(start_time=start_time, end_time=start_time + datetime.timedelta(seconds=-10))
+        partition_time_range(start_time=times["start_time"], end_time=times["end_time"] + datetime.timedelta(seconds=-10))
     
     # end time is not greater than a month
-    result = partition_time_range(start_time=start_time, end_time=end_time)
-    assert result == [(start_time, end_time)]
+    result = partition_time_range(start_time=times["start_time"], end_time=times["end_time"])
+    assert result == [(times["start_time"], times["end_time"])]
 
     # end time is greater than a month
-    result = partition_time_range(start_time=start_time, end_time=end_time + datetime.timedelta(days=60))
+    result = partition_time_range(start_time=times["start_time"], end_time=times["end_time"] + datetime.timedelta(days=60))
 
     assert len(result) == 3
 
