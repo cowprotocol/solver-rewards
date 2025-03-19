@@ -76,7 +76,6 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         service_fee: Fraction,
         reward_token_address: Address,
     ):
-
         assert quote_reward_cow >= 0, "invalid quote_reward_cow"
 
         self.solver = solver
