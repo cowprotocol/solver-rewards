@@ -47,6 +47,17 @@ excluded_quotes as ( --noqa: PRS
     )
     or
     (
+        -- wash-trading DAI/USDT on mainnet
+        owner = '\xbde2ff8a6c87594dff3ef96ef7809be5d5eacde4'
+        and
+        (
+            (sell_token = '\x6b175474e89094c44da98b954eedeac495271d0f' and buy_token = '\xdac17f958d2ee523a2206206994597c13d831ec7')
+            or
+            (buy_token = '\x6b175474e89094c44da98b954eedeac495271d0f' and sell_token = '\xdac17f958d2ee523a2206206994597c13d831ec7')            
+        )
+    )
+    or
+    (
         -- wash-trading USDC/USDBC on Base
         owner = '\xd5c813a01224cabc76e4cd8e10e4029dca0bd7f9'
         and
