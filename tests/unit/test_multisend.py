@@ -13,7 +13,7 @@ from src.multisend import build_encoded_multisend, prepend_unwrap_if_necessary
 
 class TestMultiSend(unittest.TestCase):
     def setUp(self) -> None:
-        node_url = "https://rpc.ankr.com/eth"
+        node_url = "https://ethereum-rpc.publicnode.com"
         self.client = EthereumClient(URI(node_url))
         self.payment_config = PaymentConfig.from_network(Network.MAINNET)
 
