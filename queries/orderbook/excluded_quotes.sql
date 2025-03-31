@@ -41,6 +41,10 @@ excluded_quotes as ( --noqa: PRS
             owner = '\x4527ec31207f085ed537bcb0d058756837eabb16'
             or
             owner = '\x687f584fd1f4a4d9eb277c03a24fe28f4b0675b7'
+            or
+            owner = '\xa9685ca163b19fe5be03fb2aa79fcf04ad3916af'
+            or
+            owner = '\xc302069440688c8c4108d58ec28a35c44c261528'
         )
         and
         (
