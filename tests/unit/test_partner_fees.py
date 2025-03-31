@@ -72,10 +72,10 @@ def test_compute_partner_fees_per_partner_reduced_cut():
             "partner_fee_eth": [10**18],
             "partner_fee_tax": [
                 config.custom_partner_fee_dict[
-                    ("0x63695eee2c3141bde314c5a6f89b98e62808d716", "")
+                    ("0x8025bacf968aa82bdfe51b513123b55bfb0060d3", "")
                 ]
             ],
-            "partner": ["0x63695eee2c3141bde314c5a6f89b98e62808d716"],
+            "partner": ["0x8025bacf968aa82bdfe51b513123b55bfb0060d3"],
         }
     ).astype(object)
 
