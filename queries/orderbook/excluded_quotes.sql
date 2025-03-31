@@ -1,9 +1,9 @@
--- this table excludes certain accounts due to wash-trading
+-- this table excludes certain accounts due to repetitive trading back and forth
 excluded_quotes as ( --noqa: PRS
     select uid as order_uid
     from orders
     where (
-        -- wash-trading USDC/DAI on mainnet
+        -- repetitive trading USDC/DAI on mainnet
         (
             owner = '\x687f584fd1f4a4d9eb277c03a24fe28f4b0675b7'
             or
@@ -20,7 +20,7 @@ excluded_quotes as ( --noqa: PRS
     )
     or
     (
-        -- wash-trading USDC/USDT on mainnet
+        -- repetitive trading USDC/USDT on mainnet
         (
             owner = '\x9071bfe89d0880edc21e977f3837b5503200f11d'
             or
@@ -55,7 +55,7 @@ excluded_quotes as ( --noqa: PRS
     )
     or
     (
-        -- wash-trading DAI/USDT on mainnet
+        -- repetitive trading DAI/USDT on mainnet
         owner = '\xbde2ff8a6c87594dff3ef96ef7809be5d5eacde4'
         and
         (
@@ -66,7 +66,7 @@ excluded_quotes as ( --noqa: PRS
     )
     or
     (
-        -- wash-trading WETH/WSTETH on mainnet
+        -- repetitive trading WETH/WSTETH on mainnet
         owner = '\x8ca1187f83f434d5db5c7688fd64bffa281acccc'
         and
         (
@@ -77,7 +77,7 @@ excluded_quotes as ( --noqa: PRS
     )
     or
     (
-        -- wash-trading USDC/USDBC on Base
+        -- repetitive trading USDC/USDBC on Base
         owner = '\xd5c813a01224cabc76e4cd8e10e4029dca0bd7f9'
         and
         (
@@ -88,7 +88,7 @@ excluded_quotes as ( --noqa: PRS
     )
     or
     (
-        -- wash-trading USDC/USDCE on Arbitrum
+        -- repetitive trading USDC/USDCE on Arbitrum
         owner = '\xd7fcb6fdb9e51507f872442efb4d5c40a60c6d36'
         and
         (
@@ -99,7 +99,7 @@ excluded_quotes as ( --noqa: PRS
     )
     or
     (
-        -- wash-trading WETH/USDC on Base
+        -- repetitive trading WETH/USDC on Base
         owner = '\x2bcd269ff2c06c95834cb3eca0e52987e58cc5b1'
         and
         (
