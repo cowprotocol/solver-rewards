@@ -81,6 +81,42 @@ auction_prices_corrections (blockchain, environment, auction_id, token, price) a
         -- price taken from nearby auction 10325156
         ('ethereum', 'prod', 10325171::bigint, '\x35d8949372d46b7a3d5a56006ae77b215fc69bc0'::bytea, 533247805376780::numeric(78, 0)),
 
+        -- bogus baseline price for USDC that caused a crazy native price for the token
+        -- query to confirm results: select * from auction_prices where token='\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' and price > 56150942718177291268870111000;
+        -- fixing 29 auctions in total
+
+        ('ethereum', 'prod', 10410755::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410754::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410753::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410752::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410751::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410750::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410749::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410748::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410747::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410746::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410745::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410744::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410743::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410742::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410741::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410740::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410739::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410738::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410737::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410736::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410735::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410734::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410733::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410732::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410731::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410730::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410729::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410728::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+        ('ethereum', 'prod', 10410727::bigint, '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'::bytea, 524485367578693373855268864::numeric(78, 0)),
+
+        ----------- USDC fix done -----------
+
         -- correction only relevant for the tests in the test_batch_rewards.py file
         ('ethereum', 'prod', 53::bigint, '\x02'::bytea, 500000000000000::numeric(78, 0))
 
