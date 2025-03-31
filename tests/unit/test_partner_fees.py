@@ -75,7 +75,7 @@ def test_compute_partner_fees_per_partner_reduced_cut():
                     ("0x63695eee2c3141bde314c5a6f89b98e62808d716", "")
                 ]
             ],
-            "partner": ["0x63695eee2c3141bde314c5a6f89b98e62808d716"],
+            "partner": ["0xe344241493d573428076c022835856a221db3e26"],
         }
     ).astype(object)
 
