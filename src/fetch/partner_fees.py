@@ -160,20 +160,21 @@ def compute_partner_fees_per_partner(
     partner_fees_dict_new: defaultdict[tuple[str, str], int] = defaultdict(int)
     for (partner, app_code), v in partner_fees_dict.items():
         if (
-            partner == "0x63695eee2c3141bde314c5a6f89b98e62808d716"
+            partner.lower() == "0x63695eee2c3141bde314c5a6f89b98e62808d716"
             and app_code == "CoW Swap-SafeApp"
         ):
             partner_fees_dict_new[
                 ("0x8025bacf968aa82bdfe51b513123b55bfb0060d3", "CoW Swap-SafeApp")
             ] = v
         else:
-            if partner == "0x63695eee2c3141bde314c5a6f89b98e62808d716":
+            if partner.lower() == "0x63695eee2c3141bde314c5a6f89b98e62808d716":
                 partner_fees_dict_new[
                     ("0xe344241493d573428076c022835856a221db3e26", app_code)
                 ] = v
             else:
                 partner_fees_dict_new[(partner, app_code)] = v
     ###############################################################################################
+    print(partner_fees_dict_new)
 
     partner_fees_df = pd.DataFrame(
         list(partner_fees_dict_new.items()),
