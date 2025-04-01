@@ -174,7 +174,6 @@ def compute_partner_fees_per_partner(
             else:
                 partner_fees_dict_new[(partner, app_code)] = v
     ###############################################################################################
-    print(partner_fees_dict_new)
 
     partner_fees_df = pd.DataFrame(
         list(partner_fees_dict_new.items()),
