@@ -45,6 +45,10 @@ excluded_quotes as ( --noqa: PRS
             owner = '\xa9685ca163b19fe5be03fb2aa79fcf04ad3916af'
             or
             owner = '\xc302069440688c8c4108d58ec28a35c44c261528'
+            or
+            owner = '\x0f6dd577b7059e5840f8f433fa3cbeedabb2467e'
+            or
+            owner = '\x787fd1b3c729f386123e2becb829d9bc480eb610'
         )
         and
         (
@@ -56,7 +60,11 @@ excluded_quotes as ( --noqa: PRS
     or
     (
         -- repetitive trading DAI/USDT on mainnet
-        owner = '\xbde2ff8a6c87594dff3ef96ef7809be5d5eacde4'
+        (
+            owner = '\xbde2ff8a6c87594dff3ef96ef7809be5d5eacde4'
+            or
+            owner = '\xb497070466dc15fa6420b4781bb0352257146495'
+        )
         and
         (
             (sell_token = '\x6b175474e89094c44da98b954eedeac495271d0f' and buy_token = '\xdac17f958d2ee523a2206206994597c13d831ec7')
@@ -95,6 +103,19 @@ excluded_quotes as ( --noqa: PRS
             (sell_token = '\xaf88d065e77c8cc2239327c5edb3a432268e5831' and buy_token = '\xff970a61a04b1ca14834a43f5de4533ebddb5cc8')
             or
             (buy_token = '\xaf88d065e77c8cc2239327c5edb3a432268e5831' and sell_token = '\xff970a61a04b1ca14834a43f5de4533ebddb5cc8')            
+        )
+    )
+    or
+    (
+        -- repetitive trading USDC/USDT0 on Arbitrum
+        (
+            owner = '\x9b31a116e129e36599fdcb08f5e6c208accc4315'
+        )
+        and
+        (
+            (sell_token = '\xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9' and buy_token = '\xaf88d065e77c8cc2239327c5edb3a432268e5831')
+            or
+            (buy_token = '\xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9' and sell_token = '\xaf88d065e77c8cc2239327c5edb3a432268e5831')
         )
     )
     or
