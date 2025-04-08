@@ -117,7 +117,7 @@ auction_prices_corrections (blockchain, environment, auction_id, token, price) a
 
         ----------- USDC fix done -----------
 
-        -- bogus baseline price for USD0++ that caused a crazy native price for the token
+        -- bogus native price for USD0++
         -- query to confirm results: 
         -- select * from auction_prices
         -- where token='\x35d8949372d46b7a3d5a56006ae77b215fc69bc0'
