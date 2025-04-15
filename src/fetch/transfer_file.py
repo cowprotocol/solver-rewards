@@ -119,6 +119,7 @@ def auto_propose(
         config.payment_config.payment_safe_address,
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
         transactions=[t.as_multisend_tx() for t in transfers],
+        skip_validation=True,
     )
     if len(transactions) > len(transfers):
         log_saver_obj.print("Prepended WETH unwrap", Category.GENERAL)
