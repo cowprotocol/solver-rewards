@@ -79,7 +79,11 @@ excluded_quotes as ( --noqa: PRS
     or
     (
         -- repetitive trading WETH/WSTETH on mainnet
-        owner = '\x8ca1187f83f434d5db5c7688fd64bffa281acccc'
+        (
+            owner = '\x8ca1187f83f434d5db5c7688fd64bffa281acccc'
+            or
+            owner = '\xb4fbdbc8371a1a3ad3b92012c7a3cdad807b6641'
+        )
         and
         (
             (sell_token = '\x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0' and buy_token = '\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
