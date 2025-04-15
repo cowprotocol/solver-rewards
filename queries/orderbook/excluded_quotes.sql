@@ -49,6 +49,10 @@ excluded_quotes as ( --noqa: PRS
             owner = '\x0f6dd577b7059e5840f8f433fa3cbeedabb2467e'
             or
             owner = '\x787fd1b3c729f386123e2becb829d9bc480eb610'
+            or
+            owner = '\x4b3bfce15a064acf3178a91fe1e3d0fe579dda52'
+            or
+            owner = '\x9b31a116e129e36599fdcb08f5e6c208accc4315'
         )
         and
         (
@@ -75,7 +79,11 @@ excluded_quotes as ( --noqa: PRS
     or
     (
         -- repetitive trading WETH/WSTETH on mainnet
-        owner = '\x8ca1187f83f434d5db5c7688fd64bffa281acccc'
+        (
+            owner = '\x8ca1187f83f434d5db5c7688fd64bffa281acccc'
+            or
+            owner = '\xb4fbdbc8371a1a3ad3b92012c7a3cdad807b6641'
+        )
         and
         (
             (sell_token = '\x7f39c581f595b53c5cb19bd0b3f8da6c935e2ca0' and buy_token = '\xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2')
@@ -127,6 +135,39 @@ excluded_quotes as ( --noqa: PRS
             (sell_token = '\x833589fcd6edb6e08f4c7c32d4f71b54bda02913' and buy_token = '\x4200000000000000000000000000000000000006')
             or
             (buy_token = '\x833589fcd6edb6e08f4c7c32d4f71b54bda02913' and sell_token = '\x4200000000000000000000000000000000000006')            
+        )
+    )
+    or
+    (
+        -- repetitive trading USDC/EURe on Gnosis Chain
+        owner = '\x52276c1a39c4bcec4f4496388614b0c6214f53d9'
+        and
+        (
+            (sell_token = '\xddafbb505ad214d7b80b1f830fccc89b60fb7a83' and buy_token = '\xcb444e90d8198415266c6a2724b7900fb12fc56e')
+            or
+            (buy_token = '\xddafbb505ad214d7b80b1f830fccc89b60fb7a83' and sell_token = '\xcb444e90d8198415266c6a2724b7900fb12fc56e')              
+        )
+    )
+    or
+    (
+        -- repetitive trading USDC/USDCE on Arbitrum
+        owner = '\xa465f8761c6a08cc4e60275613833dec23dda7d1'
+        and
+        (
+            (sell_token = '\xaf88d065e77c8cc2239327c5edb3a432268e5831' and buy_token = '\xff970a61a04b1ca14834a43f5de4533ebddb5cc8')
+            or
+            (buy_token = '\xaf88d065e77c8cc2239327c5edb3a432268e5831' and sell_token = '\xff970a61a04b1ca14834a43f5de4533ebddb5cc8')             
+        )
+    )
+    or
+    (
+        -- repetitive trading USDC/USDT on Base
+        owner = '\x996d749a61c7f56f560f1abe1fc05ed64cc05f75'
+        and
+        (
+            (sell_token = '\x833589fcd6edb6e08f4c7c32d4f71b54bda02913' and buy_token = '\xfde4c96c8593536e31f229ea8f37b2ada2699bb2')
+            or
+            (buy_token = '\x833589fcd6edb6e08f4c7c32d4f71b54bda02913' and sell_token = '\xfde4c96c8593536e31f229ea8f37b2ada2699bb2')             
         )
     )
 ),
