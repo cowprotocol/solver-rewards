@@ -154,6 +154,45 @@ excluded_quotes as ( --noqa: PRS
     )
     or
     (
+        -- repetitive trading DAI/USDe on mainnet
+        (
+            owner = '\xa00a519d2fabdce7d30a1763ba76eea6ba062c86'
+        )
+        and
+        (
+            (sell_token = '\x4c9edd5852cd905f086c759e8383e09bff1e68b3' and buy_token = '\x6b175474e89094c44da98b954eedeac495271d0f')
+            or
+            (buy_token = '\x4c9edd5852cd905f086c759e8383e09bff1e68b3' and sell_token = '\x6b175474e89094c44da98b954eedeac495271d0f')            
+        )
+    )
+    or
+    (
+        -- repetitive trading USDT/USDe on mainnet
+        (
+            owner = '\xa00a519d2fabdce7d30a1763ba76eea6ba062c86'
+        )
+        and
+        (
+            (sell_token = '\x4c9edd5852cd905f086c759e8383e09bff1e68b3' and buy_token = '\xdac17f958d2ee523a2206206994597c13d831ec7')
+            or
+            (buy_token = '\x4c9edd5852cd905f086c759e8383e09bff1e68b3' and sell_token = '\xdac17f958d2ee523a2206206994597c13d831ec7')            
+        )
+    )
+    or
+    (
+        -- repetitive trading USDS/USDe on mainnet
+        (
+            owner = '\xa00a519d2fabdce7d30a1763ba76eea6ba062c86'
+        )
+        and
+        (
+            (sell_token = '\x4c9edd5852cd905f086c759e8383e09bff1e68b3' and buy_token = '\xdc035d45d973e3ec169d2276ddab16f1e407384f')
+            or
+            (buy_token = '\x4c9edd5852cd905f086c759e8383e09bff1e68b3' and sell_token = '\xdc035d45d973e3ec169d2276ddab16f1e407384f')            
+        )
+    )
+    or
+    (
         -- repetitive trading USDC/USDBC on Base
         (
             owner = '\xd5c813a01224cabc76e4cd8e10e4029dca0bd7f9'
