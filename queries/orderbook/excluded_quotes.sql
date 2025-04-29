@@ -252,4 +252,17 @@ excluded_quotes as ( --noqa: PRS
             (buy_token = '\x833589fcd6edb6e08f4c7c32d4f71b54bda02913' and sell_token = '\x820c137fa70c8691f0e44dc420a5e53c168921dc')             
         )
     )
+    or
+    (
+        -- repetitive trading WETH/WSTETH on Arbitrum
+        (
+            owner = '\x246a4f9e08523496963e17a39b15c81bf09a47d8'
+        )
+        and
+        (
+            (sell_token = '\x82af49447d8a07e3bd95bd0d56f35241523fbab1' and buy_token = '\x5979d7b546e38e414f7e9822514be443a4800529')
+            or
+            (buy_token = '\x82af49447d8a07e3bd95bd0d56f35241523fbab1' and sell_token = '\x5979d7b546e38e414f7e9822514be443a4800529')            
+        )
+    )
 ),
