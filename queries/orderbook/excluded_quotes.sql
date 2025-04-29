@@ -141,6 +141,19 @@ excluded_quotes as ( --noqa: PRS
     )
     or
     (
+        -- repetitive trading USDC/USDe on mainnet
+        (
+            owner = '\xa00a519d2fabdce7d30a1763ba76eea6ba062c86'
+        )
+        and
+        (
+            (sell_token = '\x4c9edd5852cd905f086c759e8383e09bff1e68b3' and buy_token = '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
+            or
+            (buy_token = '\x4c9edd5852cd905f086c759e8383e09bff1e68b3' and sell_token = '\xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')            
+        )
+    )
+    or
+    (
         -- repetitive trading USDC/USDBC on Base
         (
             owner = '\xd5c813a01224cabc76e4cd8e10e4029dca0bd7f9'
