@@ -603,6 +603,54 @@ auction_prices_corrections (blockchain, environment, auction_id, token, price) a
 
         ----------- EUSD fix done -----------
 
+        ------ bogus native price for DAI----
+        ('ethereum', 'prod', 10575807::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 555478138834434::numeric(78, 0)),
+        ('ethereum', 'prod', 10575811::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 555478138834434::numeric(78, 0)),
+        ('ethereum', 'prod', 10575821::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 555478138834434::numeric(78, 0)),
+        ('ethereum', 'prod', 10575823::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 555478138834434::numeric(78, 0)),
+        ('ethereum', 'prod', 10575827::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 555478138834434::numeric(78, 0)),
+        ('ethereum', 'prod', 10575830::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 555478138834434::numeric(78, 0)),
+        ('ethereum', 'prod', 10575832::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 555478138834434::numeric(78, 0)),
+        ('ethereum', 'prod', 10575834::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 555478138834434::numeric(78, 0)),
+        ('ethereum', 'prod', 10575837::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 554369113139800::numeric(78, 0)),
+        ('ethereum', 'prod', 10576233::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 552991368374321::numeric(78, 0)),
+        ('ethereum', 'prod', 10576237::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 552991368374321::numeric(78, 0)),
+        ('ethereum', 'prod', 10576240::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 552991368374321::numeric(78, 0)),
+        ('ethereum', 'prod', 10576241::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 552991368374321::numeric(78, 0)),
+        ('ethereum', 'prod', 10577378::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 554623118196053::numeric(78, 0)),
+        ('ethereum', 'prod', 10577383::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 554623118196053::numeric(78, 0)),
+        ('ethereum', 'prod', 10577386::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 554623118196053::numeric(78, 0)),
+        ('ethereum', 'prod', 10577389::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 554623118196053::numeric(78, 0)),
+        ('ethereum', 'prod', 10577394::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 554623118196053::numeric(78, 0)),
+        ('ethereum', 'prod', 10577397::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 555881918418206::numeric(78, 0)),
+        ('ethereum', 'prod', 10583043::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 569567129899440::numeric(78, 0)),
+        ('ethereum', 'prod', 10583045::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 569567129899440::numeric(78, 0)),
+        ('ethereum', 'prod', 10583047::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 569567129899440::numeric(78, 0)),
+        ('ethereum', 'prod', 10586215::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 548084713310616::numeric(78, 0)),
+        ('ethereum', 'prod', 10586222::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 548084713310616::numeric(78, 0)),
+        ('ethereum', 'prod', 10586229::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 548084713310616::numeric(78, 0)),
+        ('ethereum', 'prod', 10586230::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 548084713310616::numeric(78, 0)),
+        ('ethereum', 'prod', 10586231::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 548084713310616::numeric(78, 0)),
+        ('ethereum', 'prod', 10586243::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 548084713310616::numeric(78, 0)),
+        ('ethereum', 'prod', 10586245::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 548084713310616::numeric(78, 0)),
+        ('ethereum', 'prod', 10588314::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 549683367140194::numeric(78, 0)),
+        ('ethereum', 'prod', 10588314::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 549683367140194::numeric(78, 0)),
+        ('ethereum', 'prod', 10588315::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 549683367140194::numeric(78, 0)),
+        ('ethereum', 'prod', 10588315::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 549683367140194::numeric(78, 0)),
+        ('ethereum', 'prod', 10588320::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 547797385345413::numeric(78, 0)),
+        ('ethereum', 'prod', 10589122::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 557766520120722::numeric(78, 0)),
+        ('ethereum', 'prod', 10591237::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 553885250023597::numeric(78, 0)),
+        ('ethereum', 'prod', 10591247::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 553885250023597::numeric(78, 0)),
+        ('ethereum', 'prod', 10591253::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 554033706341816::numeric(78, 0)),
+        ('ethereum', 'prod', 10591259::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 554033706341816::numeric(78, 0)),
+        ('ethereum', 'prod', 10591262::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 554033706341816::numeric(78, 0)),
+        ('ethereum', 'prod', 10598060::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 544367450972690::numeric(78, 0)),
+        ('ethereum', 'prod', 10599848::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 541892753741094::numeric(78, 0)),
+        ('ethereum', 'prod', 10599869::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 542978206304251::numeric(78, 0)),
+
+        ----------- DAI fix done ------------
+
+
         -- correction only relevant for the tests in the test_batch_rewards.py file
         ('ethereum', 'prod', 53::bigint, '\x02'::bytea, 500000000000000::numeric(78, 0))
 
