@@ -18,3 +18,4 @@ black
 mypy
 pylint
 pytest
+pytest-mock
