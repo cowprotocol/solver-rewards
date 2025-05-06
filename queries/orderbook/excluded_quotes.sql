@@ -73,6 +73,20 @@ excluded_quotes as ( --noqa: PRS
             owner = '\x61d2872d56cd98e9bacc3012644dad911533038f'
             or
             owner = '\x4545d4b5a2a8e8a95d52014efbeab9055d8a2cf2'
+            or
+            owner = '\x9c4ac47b22b06dd5476e07582c465ccfb41c8e98'
+            or
+            owner = '\x94e5238e8d9df6fcae58ec027a4fef889b87d140'
+            or
+            owner = '\x51a81516b571dbd99753361b44f744b4c0408610'
+            or
+            owner = '\x21edb65009859332758f5493542d0589c12960c4'
+            or
+            owner = '\x1c1cd75576595388cf4098b3815424db2a7b9e50'
+            or
+            owner = '\x5525fc1d1b14da9e623b4ca54a7ba5477b94dc47'
+            or
+            owner = '\xba7678f1a2f17699414cffd55309968bf2e01637'
         )
         and
         (
@@ -274,6 +288,8 @@ excluded_quotes as ( --noqa: PRS
             owner = '\x996d749a61c7f56f560f1abe1fc05ed64cc05f75'
             or
             owner = '\x444c4a1add4acdd3fe632b4e7732ac233c1b84aa'
+            or
+            owner = '\x9b31a116e129e36599fdcb08f5e6c208accc4315'
         )
         and
         (
@@ -315,6 +331,71 @@ excluded_quotes as ( --noqa: PRS
             (sell_token = '\x82af49447d8a07e3bd95bd0d56f35241523fbab1' and buy_token = '\x5979d7b546e38e414f7e9822514be443a4800529')
             or
             (buy_token = '\x82af49447d8a07e3bd95bd0d56f35241523fbab1' and sell_token = '\x5979d7b546e38e414f7e9822514be443a4800529')            
+        )
+    )
+    or
+    (
+        -- repetitive trading USDC/WXDAI on Gnosis Chain
+        (
+            owner = '\xf2682e334e2095a37197e52b4877c444c4076d15'
+        )
+        and
+        (
+            (sell_token = '\xddafbb505ad214d7b80b1f830fccc89b60fb7a83' and buy_token = '\xe91d153e0b41518a2ce8dd3d7944fa863463a97d')
+            or
+            (buy_token = '\xddafbb505ad214d7b80b1f830fccc89b60fb7a83' and sell_token = '\xe91d153e0b41518a2ce8dd3d7944fa863463a97d')            
+        )
+    )
+    or
+    (
+        -- repetitive trading USDT/WXDAI on Gnosis Chain
+        (
+            owner = '\xf2682e334e2095a37197e52b4877c444c4076d15'
+        )
+        and
+        (
+            (sell_token = '\xe91d153e0b41518a2ce8dd3d7944fa863463a97d' and buy_token = '\x4ecaba5870353805a9f068101a40e0f32ed605c6')
+            or
+            (buy_token = '\xe91d153e0b41518a2ce8dd3d7944fa863463a97d' and sell_token = '\x4ecaba5870353805a9f068101a40e0f32ed605c6')            
+        )
+    )
+    or
+    (
+        -- repetitive trading sDAI/WXDAI on Gnosis Chain
+        (
+            owner = '\xf2682e334e2095a37197e52b4877c444c4076d15'
+        )
+        and
+        (
+            (sell_token = '\xaf204776c7245bf4147c2612bf6e5972ee483701' and buy_token = '\xe91d153e0b41518a2ce8dd3d7944fa863463a97d')
+            or
+            (buy_token = '\xaf204776c7245bf4147c2612bf6e5972ee483701' and sell_token = '\xe91d153e0b41518a2ce8dd3d7944fa863463a97d')            
+        )
+    )
+    or
+    (
+        -- repetitive trading sDAI/USDC on Gnosis Chain
+        (
+            owner = '\xf2682e334e2095a37197e52b4877c444c4076d15'
+        )
+        and
+        (
+            (sell_token = '\xaf204776c7245bf4147c2612bf6e5972ee483701' and buy_token = '\xddafbb505ad214d7b80b1f830fccc89b60fb7a83')
+            or
+            (buy_token = '\xaf204776c7245bf4147c2612bf6e5972ee483701' and sell_token = '\xddafbb505ad214d7b80b1f830fccc89b60fb7a83')            
+        )
+    )
+    or
+    (
+        -- repetitive trading USDT/USDC on Gnosis Chain
+        (
+            owner = '\xf2682e334e2095a37197e52b4877c444c4076d15'
+        )
+        and
+        (
+            (sell_token = '\x4ecaba5870353805a9f068101a40e0f32ed605c6' and buy_token = '\xddafbb505ad214d7b80b1f830fccc89b60fb7a83')
+            or
+            (buy_token = '\x4ecaba5870353805a9f068101a40e0f32ed605c6' and sell_token = '\xddafbb505ad214d7b80b1f830fccc89b60fb7a83')            
         )
     )
 ),
