@@ -87,6 +87,8 @@ excluded_quotes as ( --noqa: PRS
             owner = '\x5525fc1d1b14da9e623b4ca54a7ba5477b94dc47'
             or
             owner = '\xba7678f1a2f17699414cffd55309968bf2e01637'
+            or
+            owner = '\xcd9743450dac4dda8fec3902bab99f6aa1d0910e'
         )
         and
         (
@@ -396,6 +398,19 @@ excluded_quotes as ( --noqa: PRS
             (sell_token = '\x4ecaba5870353805a9f068101a40e0f32ed605c6' and buy_token = '\xddafbb505ad214d7b80b1f830fccc89b60fb7a83')
             or
             (buy_token = '\x4ecaba5870353805a9f068101a40e0f32ed605c6' and sell_token = '\xddafbb505ad214d7b80b1f830fccc89b60fb7a83')            
+        )
+    )
+    or
+    (
+        -- repetitive trading USDT/USDCbC on Base
+        (
+            owner = '\x118a21ffb083bc467ab1e6f5e54b7f1df25552f6'
+        )
+        and
+        (
+            (sell_token = '\xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca' and buy_token = '\xfde4c96c8593536e31f229ea8f37b2ada2699bb2')
+            or
+            (buy_token = '\xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca' and sell_token = '\xfde4c96c8593536e31f229ea8f37b2ada2699bb2')            
         )
     )
 ),
