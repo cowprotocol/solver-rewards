@@ -1,17 +1,17 @@
 with observed_settlements as (
     select --noqa: ST06
         -- settlement
-        tx_hash,
-        solver,
+        s.tx_hash,
+        s.solver,
         s.block_number,
         -- settlement_observations
-        effective_gas_price * gas_used as execution_cost,
-        surplus,
+        so.effective_gas_price * so.gas_used as execution_cost,
+        so.surplus,
         s.auction_id
     from settlements as s inner join settlement_observations as so
         on s.block_number = so.block_number and s.log_index = so.log_index
-    inner join settlement_scores as ss on s.auction_id = ss.auction_id
-    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
+    inner join competition_auctions as ca on s.auction_id = ca.id
+    where ca.deadline >= {{start_block}} and ca.deadline <= {{end_block}}
 ),
 
 -- order data
