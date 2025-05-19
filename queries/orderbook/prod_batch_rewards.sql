@@ -1,40 +1,15 @@
-with auction_id_range as (
+with
+relevant_auction_info as materialized (
     select
-        min(id) as start_auction_id,
-        max(id) as end_auction_id
-    from competition_auctions
-    where deadline >= {{start_block}} and deadline <= {{end_block}}
-),
-
-winning_score_per_auction as (
-    select
-        auction_id,
-        solver,
-        max(score) as winning_score
-    from proposed_solutions
-    where
-        is_winner = true and auction_id >= (select start_auction_id from auction_id_range) and auction_id <= (select end_auction_id from auction_id_range)
-    group by auction_id, solver
-),
-
-reference_score_per_auction as (
-    select
-        rs.auction_id,
-        rs.reference_score
-    from reference_scores as rs inner join winning_score_per_auction as wspa
-        on rs.auction_id = wspa.auction_id and rs.solver = wspa.solver
-),
-
-relevant_auction_info as (
-    select
-        ca.id as auction_id,
+        ps.auction_id,
         ca.deadline as block_deadline,
-        wspa.solver,
-        wspa.winning_score,
-        rspa.reference_score
-    from competition_auctions as ca inner join winning_score_per_auction as wspa
-        on ca.id = wspa.auction_id inner join reference_score_per_auction as rspa
-        on ca.id = rspa.auction_id
+        ps.solver,
+        rs.reference_score,
+        max(ps.score) as winning_score
+    from proposed_solutions as ps inner join competition_auctions as ca on ps.auction_id = ca.id
+    inner join reference_scores as rs on ps.auction_id = rs.auction_id and ps.solver = rs.solver
+    where ps.is_winner = true and ca.deadline >= {{start_block}} and ca.deadline <= {{end_block}}
+    group by ps.auction_id, ca.deadline, ps.solver, rs.reference_score
 ),
 
 observed_settlements as (
@@ -47,12 +22,8 @@ observed_settlements as (
         so.effective_gas_price * so.gas_used as execution_cost,
         so.surplus,
         s.auction_id
-    from settlements as s inner join settlement_observations as so
-        on s.block_number = so.block_number and s.log_index = so.log_index
-    inner join competition_auctions as ca on s.auction_id = ca.id
-    where
-        s.auction_id >= (select start_auction_id from auction_id_range)
-        and s.auction_id <= (select end_auction_id from auction_id_range)
+    from settlements as s inner join relevant_auction_info as rai on s.auction_id = rai.auction_id
+    inner join settlement_observations as so on s.block_number = so.block_number and s.log_index = so.log_index
 ),
 
 -- order data
@@ -101,7 +72,8 @@ trade_data_unprocessed as (
         cast(convert_from(ad.full_app_data, 'UTF8') as jsonb) ->> 'appCode' as app_code,
         coalesce(oe.protocol_fee_amounts[1], 0) as first_protocol_fee_amount,
         coalesce(oe.protocol_fee_amounts[2], 0) as second_protocol_fee_amount
-    from settlements as s inner join trades as t -- contains traded amounts
+    from settlements as s inner join observed_settlements as os on s.auction_id = os.auction_id
+    inner join trades as t -- contains traded amounts
         on s.block_number = t.block_number -- given the join that follows with the order execution table, this works even when multiple txs appear in the same block
     inner join order_data as od -- contains tokens and limit amounts
         on t.order_uid = od.uid
@@ -109,9 +81,6 @@ trade_data_unprocessed as (
         on t.order_uid = oe.order_uid and s.auction_id = oe.auction_id
     left outer join app_data as ad -- contains full app data
         on od.app_data = ad.contract_app_data
-    where
-        s.auction_id >= (select start_auction_id from auction_id_range)
-        and s.auction_id <= (select end_auction_id from auction_id_range)
 ),
 
 -- processed trade data:
