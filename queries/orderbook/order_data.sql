@@ -63,7 +63,7 @@ protocol_fee_kind as (
 -- unprocessed trade data
 trade_data_unprocessed as (
     select
-        ss.winner as solver,
+        s.solver,
         s.auction_id,
         s.tx_hash,
         t.order_uid,
@@ -80,10 +80,7 @@ trade_data_unprocessed as (
         cast(convert_from(ad.full_app_data, 'UTF8') as jsonb) -> 'metadata' -> 'partnerFee' ->> 'recipient' as partner_fee_recipient,
         coalesce(oe.protocol_fee_amounts[1], 0) as first_protocol_fee_amount,
         coalesce(oe.protocol_fee_amounts[2], 0) as second_protocol_fee_amount
-    from
-        settlements as s inner join settlement_scores as ss -- contains block_deadline
-        on s.auction_id = ss.auction_id
-    inner join trades as t -- contains traded amounts
+    from settlements as s inner join trades as t -- contains traded amounts
         on s.block_number = t.block_number -- given the join that follows with the order execution table, this works even when multiple txs appear in the same block
     inner join order_data as od -- contains tokens and limit amounts
         on t.order_uid = od.uid

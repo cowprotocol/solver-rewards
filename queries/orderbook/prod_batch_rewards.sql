@@ -12,7 +12,7 @@ relevant_auction_info as materialized (
     group by ps.auction_id, ca.deadline, ps.solver, rs.reference_score
 ),
 
-observed_settlements as (
+observed_settlements as materialized (
     select --noqa: ST06
         -- settlement
         s.tx_hash,
@@ -84,7 +84,7 @@ trade_data_unprocessed as (
 ),
 
 -- processed trade data:
-trade_data_processed as (
+trade_data_processed as materialized (
     select --noqa: ST06
         auction_id,
         solver,
