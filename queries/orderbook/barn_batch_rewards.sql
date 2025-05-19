@@ -1,17 +1,29 @@
-with observed_settlements as (
+with
+relevant_auction_info as materialized (
+    select
+        ps.auction_id,
+        ca.deadline as block_deadline,
+        ps.solver,
+        rs.reference_score,
+        max(ps.score) as winning_score
+    from proposed_solutions as ps inner join competition_auctions as ca on ps.auction_id = ca.id
+    inner join reference_scores as rs on ps.auction_id = rs.auction_id and ps.solver = rs.solver
+    where ps.is_winner = true and ca.deadline >= {{start_block}} and ca.deadline <= {{end_block}}
+    group by ps.auction_id, ca.deadline, ps.solver, rs.reference_score
+),
+
+observed_settlements as materialized (
     select --noqa: ST06
         -- settlement
-        tx_hash,
-        solver,
+        s.tx_hash,
+        s.solver,
         s.block_number,
         -- settlement_observations
-        effective_gas_price * gas_used as execution_cost,
-        surplus,
+        so.effective_gas_price * so.gas_used as execution_cost,
+        so.surplus,
         s.auction_id
-    from settlements as s inner join settlement_observations as so
-        on s.block_number = so.block_number and s.log_index = so.log_index
-    inner join settlement_scores as ss on s.auction_id = ss.auction_id
-    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
+    from settlements as s inner join relevant_auction_info as rai on s.auction_id = rai.auction_id
+    inner join settlement_observations as so on s.block_number = so.block_number and s.log_index = so.log_index
 ),
 
 -- order data
@@ -42,7 +54,7 @@ order_data as (
 -- unprocessed trade data
 trade_data_unprocessed as (
     select --noqa: ST06
-        ss.winner as solver,
+        s.solver,
         s.auction_id,
         s.tx_hash,
         t.order_uid,
@@ -60,8 +72,7 @@ trade_data_unprocessed as (
         cast(convert_from(ad.full_app_data, 'UTF8') as jsonb) ->> 'appCode' as app_code,
         coalesce(oe.protocol_fee_amounts[1], 0) as first_protocol_fee_amount,
         coalesce(oe.protocol_fee_amounts[2], 0) as second_protocol_fee_amount
-    from settlements as s inner join settlement_scores as ss -- contains block_deadline
-        on s.auction_id = ss.auction_id
+    from settlements as s inner join observed_settlements as os on s.auction_id = os.auction_id
     inner join trades as t -- contains traded amounts
         on s.block_number = t.block_number -- given the join that follows with the order execution table, this works even when multiple txs appear in the same block
     inner join order_data as od -- contains tokens and limit amounts
@@ -70,11 +81,10 @@ trade_data_unprocessed as (
         on t.order_uid = oe.order_uid and s.auction_id = oe.auction_id
     left outer join app_data as ad -- contains full app data
         on od.app_data = ad.contract_app_data
-    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
 ),
 
 -- processed trade data:
-trade_data_processed as (
+trade_data_processed as materialized (
     select --noqa: ST06
         auction_id,
         solver,
@@ -171,13 +181,13 @@ batch_network_fees as (
 reward_data as (
     select --noqa: ST06
         -- observations
-        ss.auction_id,
+        rai.auction_id,
         os.tx_hash,
         -- TODO - assuming that `solver == winner` when both not null
         --  We will need to monitor that `solver == winner`!
-        ss.winner as solver,
+        rai.solver,
         block_number as settlement_block,
-        block_deadline,
+        rai.block_deadline,
         coalesce(execution_cost, 0) as execution_cost,
         coalesce(surplus, 0) as surplus,
         -- scores
@@ -190,12 +200,11 @@ reward_data as (
         -- protocol_fees
         coalesce(cast(protocol_fee as numeric(78, 0)), 0) as protocol_fee,
         coalesce(cast(network_fee as numeric(78, 0)), 0) as network_fee
-    from settlement_scores as ss
+    from relevant_auction_info as rai
     -- outer joins made in order to capture non-existent settlements.
-    left outer join observed_settlements as os on ss.auction_id = os.auction_id
+    left outer join observed_settlements as os on rai.auction_id = os.auction_id
     left outer join batch_protocol_fees as bpf on os.tx_hash = bpf.tx_hash
     left outer join batch_network_fees as bnf on os.tx_hash = bnf.tx_hash
-    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
 ),
 
 reward_per_auction as (
@@ -225,7 +234,7 @@ reward_per_auction as (
 
 dune_sync_batch_data_table as ( --noqa: ST03
     select --noqa: ST06
-        'barn' as environment,
+        'prod' as environment,
         auction_id,
         settlement_block as block_number,
         block_deadline,
