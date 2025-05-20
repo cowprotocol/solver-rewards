@@ -47,7 +47,8 @@ excluded_quotes as ( --noqa: PRS
             '\xb4fbdbc8371a1a3ad3b92012c7a3cdad807b6641',
             '\xfd8bc0330655ecf48a3f0695eb07b22416d185f2',
             '\x3bb5c8a00190da68059f0f66c24794584eb10d07',
-            '\xa00a519d2fabdce7d30a1763ba76eea6ba062c86'
+            '\xa00a519d2fabdce7d30a1763ba76eea6ba062c86',
+            '\xba4fe6d43b45a531bdf1a6f0816314ad480c1c17'
         )
         and
         (
@@ -164,7 +165,10 @@ excluded_quotes as ( --noqa: PRS
             '\x9b31a116e129e36599fdcb08f5e6c208accc4315',
             '\x44c8cf41ec81fbd259abb6b9bb07da43ea55deee',
             '\xa465f8761c6a08cc4e60275613833dec23dda7d1',
-            '\x246a4f9e08523496963e17a39b15c81bf09a47d8'
+            '\x246a4f9e08523496963e17a39b15c81bf09a47d8',
+            '\xb018492ca1da735692283d30c2dec3ad52c35f39',
+            '\xe2950f766f9c9e157f876a5989ad1da5453842af',
+            '\xfc2060a817d0da52b70a00c016075153a46efdf5'
         )
         and (
             -------------------------------------------------------- USDC/USDCE ---------------------------------------------------
@@ -196,7 +200,21 @@ excluded_quotes as ( --noqa: PRS
             '\x996d749a61c7f56f560f1abe1fc05ed64cc05f75',
             '\x9b31a116e129e36599fdcb08f5e6c208accc4315',
             '\x0d19987a99ba9407045f937fc20ff20083662f36',
-            '\x118a21ffb083bc467ab1e6f5e54b7f1df25552f6'
+            '\x118a21ffb083bc467ab1e6f5e54b7f1df25552f6',
+            '\x77dce6ce85a2becf275c049d4d77ceeef1fba089',
+            '\xe2950f766f9c9e157f876a5989ad1da5453842af',
+            '\x56ef793b5dbf1581a57f0a557ade1355f18bff9e',
+            '\xde67abe92630a501a5e7f020dfd186b876d10733',
+            '\xfc2060a817d0da52b70a00c016075153a46efdf5',
+            '\xbf87f95dcc98b8e667542a88a1089727c255fb9d',
+            '\x543e443ad39a1a5b05124e9adc80dc7defd607b6',
+            '\x3a846da52e8afd3ff1b582c21342d4871132f66d',
+            '\x94d94ddadab142a3fdd0302b3e28d3b85076a76c',
+            '\x691c915ce60db38df0fe54677269f2902823a2b4',
+            '\xec6f9350bc29a0b7313dcde85de569770dcd2c94',
+            '\xcc539cb6a334b5bc90ee9c7a6ce4847cd3a2ae2b',
+            '\x3864fc758669e481e8f2bef458bd958ebbdbbdea',
+            '\xa9beedd6460fae841cfd146e27ec5881bc241303'
         )
         and (
             --------------------------------------------------------- USDC/USDBC --------------------------------------------------
@@ -227,6 +245,12 @@ excluded_quotes as ( --noqa: PRS
             (sell_token = '\xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca' and buy_token = '\xfde4c96c8593536e31f229ea8f37b2ada2699bb2')
             or
             (buy_token = '\xd9aaec86b65d86f6a7b5b1b0c42ffa531710b6ca' and sell_token = '\xfde4c96c8593536e31f229ea8f37b2ada2699bb2')
+            -----------------------------------------------------------------------------------------------------------------------
+            or
+            --------------------------------------------------------- USDT/USDS ---------------------------------------------------
+            (sell_token = '\x820c137fa70c8691f0e44dc420a5e53c168921dc' and buy_token = '\xfde4c96c8593536e31f229ea8f37b2ada2699bb2')
+            or
+            (buy_token = '\x820c137fa70c8691f0e44dc420a5e53c168921dc' and sell_token = '\xfde4c96c8593536e31f229ea8f37b2ada2699bb2')
             -----------------------------------------------------------------------------------------------------------------------
         )
     )
