@@ -133,6 +133,7 @@ class ProtocolFeeConfig:
                     ("0x90a48d5cf7343b08da12e067680b4c6dbfe551be", ""): 0.15,
                     ("0xcd777a10502256db93c2b0a8e8f64a5174c6cbda", ""): 0.15,
                     ("0xe423c63e8a25811c9cbe71c8585c4505117397c6", ""): 0.25,
+                    ("0x1713b79e3dbb8a76d80e038ca701a4a781ac69eb", ""): 0.25,
                 }
             case Network.GNOSIS:
                 protocol_fee_safe = Address(
@@ -154,6 +155,7 @@ class ProtocolFeeConfig:
                     ("0xb0E3175341794D1dc8E5F02a02F9D26989EbedB3", ""): 0.15,
                     ("0xcd777a10502256db93c2b0a8e8f64a5174c6cbda", ""): 0.15,
                     ("0xe423c63e8a25811c9cbe71c8585c4505117397c6", ""): 0.25,
+                    ("0x1713b79e3dbb8a76d80e038ca701a4a781ac69eb", ""): 0.25,
                 }
             case Network.ARBITRUM_ONE:
                 protocol_fee_safe = Address(
@@ -175,6 +177,7 @@ class ProtocolFeeConfig:
                     ("0x38276553F8fbf2A027D901F8be45f00373d8Dd48", ""): 0.15,
                     ("0xcd777a10502256db93c2b0a8e8f64a5174c6cbda", ""): 0.15,
                     ("0xe423c63e8a25811c9cbe71c8585c4505117397c6", ""): 0.25,
+                    ("0x1713b79e3dbb8a76d80e038ca701a4a781ac69eb", ""): 0.25,
                 }
             case Network.BASE:
                 protocol_fee_safe = Address(
@@ -196,6 +199,7 @@ class ProtocolFeeConfig:
                     ("0x9c9aA90363630d4ab1D9dbF416cc3BBC8d3Ed502", ""): 0.15,
                     ("0xcd777a10502256db93c2b0a8e8f64a5174c6cbda", ""): 0.15,
                     ("0xe423c63e8a25811c9cbe71c8585c4505117397c6", ""): 0.25,
+                    ("0x1713b79e3dbb8a76d80e038ca701a4a781ac69eb", ""): 0.25,
                 }
             case _:
                 raise ValueError(
