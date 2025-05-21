@@ -695,6 +695,7 @@ def construct_payouts(
     orderbook: MultiInstanceDBFetcher,
     dune: DuneFetcher,
     ignore_slippage_flag: bool,
+    fetch_from_analytics_db: bool,
     config: AccountingConfig,
 ) -> list[Transfer]:
     """Construct payouts by combining data from multiple sources.
@@ -722,65 +723,73 @@ def construct_payouts(
     # pylint: disable=too-many-locals
 
     # fetch data
-    # TODO: move data fetching into respective files for rewards, protocol fees, buffer accounting,
-    #       solver info
-    quote_data = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
-    batch_data = (  # TODO: use bare batch data before aggregation
-        orderbook.get_solver_rewards(
-            dune.start_block,
-            dune.end_block,
-            config.reward_config.batch_reward_cap_upper,
-            config.reward_config.batch_reward_cap_lower,
-            config.dune_config.dune_blockchain,
+    if fetch_from_analytics_db:
+        solver_payouts = orderbook.get_solver_payouts()
+        partner_payouts = orderbook.get_solver_payouts()
+        exchange_rate_native_to_cow, exchange_rate_native_to_eth = (
+            orderbook.get_exchange_rates()
         )
-    )
-    service_fee_df = DataFrame(dune.get_service_fee_status())
-
-    vouches = dune.get_vouches()
-    if vouches:
-        reward_target_df = DataFrame(vouches)
     else:
-        log.warning("No results for vouch query.")
-        reward_target_df = DataFrame(
-            columns=["solver", "solver_name", "reward_target", "pool_address"]
+        quote_data = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
+        batch_data = (  # TODO: use bare batch data before aggregation
+            orderbook.get_solver_rewards(
+                dune.start_block,
+                dune.end_block,
+                config.reward_config.batch_reward_cap_upper,
+                config.reward_config.batch_reward_cap_lower,
+                config.dune_config.dune_blockchain,
+            )
         )
-    # fetch slippage only if configured to do so
-    # otherwise set to an empty dataframe
-    if config.buffer_accounting_config.include_slippage and not ignore_slippage_flag:
-        slippage_df = DataFrame(dune.get_period_slippage())
-        # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
-        slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
-    else:
-        slippage_df = DataFrame(columns=["solver", "eth_slippage_wei"])
+        service_fee_df = DataFrame(dune.get_service_fee_status())
 
-    # fetch conversion price
-    exchange_rate_native_to_cow, exchange_rate_native_to_eth = fetch_exchange_rates(
-        dune.period.end, config
-    )
+        vouches = dune.get_vouches()
+        if vouches:
+            reward_target_df = DataFrame(vouches)
+        else:
+            log.warning("No results for vouch query.")
+            reward_target_df = DataFrame(
+                columns=["solver", "solver_name", "reward_target", "pool_address"]
+            )
+        # fetch slippage only if configured to do so
+        # otherwise set to an empty dataframe
+        if (
+            config.buffer_accounting_config.include_slippage
+            and not ignore_slippage_flag
+        ):
+            slippage_df = DataFrame(dune.get_period_slippage())
+            # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
+            slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
+        else:
+            slippage_df = DataFrame(columns=["solver", "eth_slippage_wei"])
 
-    # compute individual components of payments
-    solver_info = compute_solver_info(
-        reward_target_df,
-        service_fee_df,
-        config,
-    )
-    rewards = compute_rewards(
-        batch_data,
-        quote_data,
-        exchange_rate_native_to_cow,
-        config.reward_config,
-    )
-    protocol_fees = compute_protocol_fees(batch_data)
-    partner_fees = compute_partner_fees(batch_data, config.protocol_fee_config)
-    buffer_accounting = compute_buffer_accounting(batch_data, slippage_df)
+        # fetch conversion price
+        exchange_rate_native_to_cow, exchange_rate_native_to_eth = fetch_exchange_rates(
+            dune.period.end, config
+        )
 
-    # combine into solver payouts and partner payouts
-    solver_payouts = compute_solver_payouts(
-        solver_info, rewards, protocol_fees, buffer_accounting
-    )
-    partner_payouts = (
-        partner_fees  # no additional computation required here at the moment
-    )
+        # compute individual components of payments
+        solver_info = compute_solver_info(
+            reward_target_df,
+            service_fee_df,
+            config,
+        )
+        rewards = compute_rewards(
+            batch_data,
+            quote_data,
+            exchange_rate_native_to_cow,
+            config.reward_config,
+        )
+        protocol_fees = compute_protocol_fees(batch_data)
+        partner_fees = compute_partner_fees(batch_data, config.protocol_fee_config)
+        buffer_accounting = compute_buffer_accounting(batch_data, slippage_df)
+
+        # combine into solver payouts and partner payouts
+        solver_payouts = compute_solver_payouts(
+            solver_info, rewards, protocol_fees, buffer_accounting
+        )
+        partner_payouts = (
+            partner_fees  # no additional computation required here at the moment
+        )
 
     summarize_payments(
         solver_payouts,
