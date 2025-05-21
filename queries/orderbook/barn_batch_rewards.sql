@@ -234,7 +234,7 @@ reward_per_auction as (
 
 dune_sync_batch_data_table as ( --noqa: ST03
     select --noqa: ST06
-        'prod' as environment,
+        'barn' as environment,
         auction_id,
         settlement_block as block_number,
         block_deadline,
