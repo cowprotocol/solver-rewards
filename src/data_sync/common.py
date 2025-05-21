@@ -19,6 +19,9 @@ def partition_time_range(
     Otherwise, the range is split into n pieces of the form [(start_time, start_of_month_2),
     (start_of_month_2, start_of_month_3),..., (start_of_month_n, end_time)].
     """
+    assert (
+        start_time.timetz().tzinfo == end_time.timetz().tzinfo
+    ), "Timezones need to be the same"
     assert start_time < end_time, "start_time must be strictly smaller than end_time"
 
     # if there is just one month to consider
