@@ -2,14 +2,17 @@
 
 from __future__ import annotations
 
+import os
 
 import pandas as pd
-from pandas import DataFrame, Series
+from pandas import DataFrame, Series, read_sql_query
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 from sqlalchemy import text
 
+from src.config import AccountingConfig
 from src.logger import set_log
+from src.models.accounting_period import AccountingPeriod
 from src.utils.query_file import open_query
 
 log = set_log(__name__)
@@ -166,6 +169,101 @@ class MultiInstanceDBFetcher:
             )
 
         return results_df
+
+    def get_data_per_solver(
+        self, accounting_period: AccountingPeriod, config: AccountingConfig
+    ) -> DataFrame:
+        """
+
+        Returns
+        -------
+        DataFrame
+        """
+        db_url = os.environ[
+            "ANALYTICS_DB_URL"
+        ]  # this is not compatible with the current format
+        network = "mainnet"  # this should not be hardcoded
+        schema = "felix"  # this should not be hardcoded
+        start_time_string = accounting_period.start.strftime("%Y-%m-%d %H:%M:%S")
+        end_time_string = accounting_period.end.strftime("%Y-%m-%d %H:%M:%S")
+        accounting_period_string = f"{start_time_string} - {end_time_string}"
+        query = f"""SELECT * FROM {schema}.fct_data_per_solver_and_accounting_period
+        where accounting_period = '{accounting_period_string}'"""
+        result_list = []
+        # for environment in ["prod"]:
+        for environment in ["prod", "staging"]:
+            pg_engine = create_engine(
+                f"postgresql+psycopg2://{db_url}/{environment}_{network}",
+                pool_pre_ping=True,
+                connect_args={
+                    "keepalives": 1,
+                    "keepalives_idle": 30,
+                    "keepalives_interval": 10,
+                    "keepalives_count": 5,
+                },
+            )
+            with pg_engine.connect() as conn:
+                result = read_sql_query(
+                    query,
+                    conn,
+                )
+                result_list.append(result)
+
+        results = pd.concat(result_list).reset_index(drop=True)
+
+        hex_columns = ["solver", "pool_address", "reward_target"]
+        for column in hex_columns:
+            results[column] = results[column].apply(lambda x: "0x" + x.hex())
+
+        return results
+
+    def get_partner_and_protocol_fees(
+        self, accounting_period: AccountingPeriod, config: AccountingConfig
+    ) -> DataFrame:
+        """
+
+        Returns
+        -------
+        DataFrame
+        """
+        db_url = os.environ[
+            "ANALYTICS_DB_URL"
+        ]  # this is not compatible with the current format
+        network = "mainnet"  # this should not be hardcoded
+        schema = "felix"  # this should not be hardcoded
+        start_time_string = accounting_period.start.strftime("%Y-%m-%d %H:%M:%S")
+        end_time_string = accounting_period.end.strftime("%Y-%m-%d %H:%M:%S")
+        accounting_period_string = f"{start_time_string} - {end_time_string}"
+        query = f"""SELECT * FROM {schema}.fct_partner_and_protocol_fees
+where accounting_period = '{accounting_period_string}'"""
+        result_list = []
+        for environment in ["prod", "staging"]:
+            pg_engine = create_engine(
+                f"postgresql+psycopg2://{db_url}/{environment}_{network}",
+                pool_pre_ping=True,
+                connect_args={
+                    "keepalives": 1,
+                    "keepalives_idle": 30,
+                    "keepalives_interval": 10,
+                    "keepalives_count": 5,
+                },
+            )
+            with pg_engine.connect() as conn:
+                result = read_sql_query(
+                    query,
+                    conn,
+                )
+                result_list.append(result)
+
+        results = pd.concat(result_list).reset_index(drop=True)
+
+        hex_columns = ["partner_fee_recipient"]
+        for column in hex_columns:
+            results[column] = results[column].apply(
+                lambda x: "0x" + x.hex() if x else x
+            )
+
+        return results
 
 
 def pg_hex2bytea(hex_address: str) -> str:
