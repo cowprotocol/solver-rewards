@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 from fractions import Fraction
 from functools import reduce
 
+import numpy as np
 import pandas as pd
 from dune_client.types import Address
 from pandas import DataFrame, Series
@@ -619,6 +620,125 @@ def compute_partner_payouts(partner_fees: DataFrame) -> DataFrame:
     return partner_payouts
 
 
+def compute_solver_payouts_new(
+    data_per_solver: DataFrame, config: AccountingConfig
+) -> DataFrame:
+    """Compute solver payouts.
+
+    Information on solvers is combined with data on rewards, protocol fees, and buffer accounting to
+    compute solver payouts.
+
+    Parameters
+    ----------
+    data_per_solver : DataFrame
+        Contains information about solver accounting.
+
+    Returns
+    -------
+    solver_payouts : DataFrame
+        A consolidated DataFrame with solver payout information, including rewards, fees, and other
+        accounting details. Merges and processes input DataFrames with applied default values and
+        normalized fields.
+        Missing values are set to zero or some other reasonable default value.
+        The columns are SOLVER_PAYOUTS_COLUMNS:
+        - solver : str
+            "0x"-prefixed hex representation of the submission address of a solver.
+        - solver_name : str
+            Name of a solver.
+        - primary_reward_eth : int
+            Reward for settling batches in wei.
+        - primary_reward_cow : int
+            Reward for settling batches in wei.
+        - quote_reward_cow : int
+            Reward for providing quotes in atoms of COW.
+        - protocol_fee_eth : int
+            Protocol fee of a solver for settling batches in wei.
+        - network_fee_eth : int
+            Network fees in wei of a solver for settling batches.
+        - slippage_eth : int
+            Slippage in wei accrued by a solver in settling batches.
+        - reward_target : str
+            "0x"-prefixed hex representation of the reward target of a solver. All
+            rewards are sent to this address.
+        - buffer_accounting_target : str
+            "0x"-prefixed hex representation of the buffer accounting target address of a solver.
+            Results of the buffer accounting are sent to this address. It is equal to `solver` or
+            `reward_target`.
+        - reward_token_address : str
+            "0x"-prefixed hex representation of the reward token contract address.
+        - service_fee : Fraction
+            The fraction of rewards which need to be paid to the CoW DAO.
+    """
+    solver_payouts = DataFrame(columns=SOLVER_PAYOUTS_COLUMNS, dtype=object)
+    solver_payouts["solver"] = data_per_solver["solver"]
+    solver_payouts["solver_name"] = data_per_solver["solver_name"]
+    solver_payouts["primary_reward_eth"] = (
+        data_per_solver["sum_batch_reward_native"].fillna(0).astype(object)
+    )
+    solver_payouts["primary_reward_cow"] = (
+        data_per_solver["sum_batch_reward_cow"].fillna(0).astype(object)
+    )
+    solver_payouts["quote_reward_cow"] = (
+        data_per_solver["sum_quote_reward_cow"].fillna(0).astype(object)
+    )
+    solver_payouts["protocol_fee_eth"] = (
+        data_per_solver["sum_protocol_fee_native"].fillna(0).astype(object)
+    )
+    solver_payouts["network_fee_eth"] = (
+        data_per_solver["sum_network_fee_native"].fillna(0).astype(object)
+    )
+    solver_payouts["slippage_eth"] = (
+        data_per_solver["sum_slippage_native"].fillna(0).astype(object)
+    )
+    solver_payouts["reward_target"] = data_per_solver["reward_target"]
+
+    send_buffers_to_rewards_address_pools_addresses = [
+        pool.address
+        for pool in config.buffer_accounting_config.send_buffers_to_rewards_address_pools
+    ]
+    solver_payouts["buffer_accounting_target"] = np.where(
+        data_per_solver["pool_address"].isin(
+            send_buffers_to_rewards_address_pools_addresses
+        ),
+        data_per_solver["reward_target"],
+        data_per_solver["solver"],
+    )
+    solver_payouts["reward_token_address"] = str(
+        config.reward_config.reward_token_address
+    )
+    solver_payouts["service_fee"] = (
+        data_per_solver["service_fee_enabled"] * config.reward_config.service_fee_factor
+    )
+
+    solver_payouts = solver_payouts.sort_values(by="solver")
+
+    assert set(solver_payouts.columns) == set(SOLVER_PAYOUTS_COLUMNS)
+
+    return solver_payouts
+
+
+def compute_partner_payouts_new(
+    partner_and_protocol_fees: DataFrame, config: AccountingConfig
+) -> DataFrame:
+    """Combine partner fee information into partner fee payouts.
+
+    Returns
+    -------
+    DataFrame
+    """
+
+    partner_payouts = DataFrame(columns=PARTNER_FEES_COLUMNS, dtype=object)
+    partner_payouts["partner"] = partner_and_protocol_fees["partner_fee_recipient"]
+    partner_payouts["partner_fee_eth"] = partner_and_protocol_fees[
+        "sum_partner_fee_native"
+    ]
+    partner_payouts["partner_fee_tax"] = partner_and_protocol_fees["partner_fee_cut"]
+
+    partner_payouts = partner_payouts[partner_payouts["partner"].notnull()]
+
+    return partner_payouts
+
+
 def summarize_payments(  # pylint: disable=too-many-locals
     solver_payouts: DataFrame,
     partner_payouts: DataFrame,
@@ -724,11 +844,18 @@ def construct_payouts(
 
     # fetch data
     if fetch_from_analytics_db:
-        solver_payouts = orderbook.get_solver_payouts()
-        partner_payouts = orderbook.get_solver_payouts()
-        exchange_rate_native_to_cow, exchange_rate_native_to_eth = (
-            orderbook.get_exchange_rates()
+        data_per_solver = orderbook.get_data_per_solver(
+            accounting_period=dune.period, config=config
         )
+        partner_and_protocol_fees = orderbook.get_partner_and_protocol_fees(
+            accounting_period=dune.period, config=config
+        )
+        solver_payouts = compute_solver_payouts_new(data_per_solver, config)
+        partner_payouts = compute_partner_payouts_new(partner_and_protocol_fees, config)
+        exchange_rate_native_to_cow = Fraction(
+            1 / data_per_solver.iloc[0]["conversion_rate_cow_to_native"]
+        )
+        _, exchange_rate_native_to_eth = fetch_exchange_rates(dune.period.end, config)
     else:
         quote_data = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
         batch_data = (  # TODO: use bare batch data before aggregation
