@@ -48,7 +48,8 @@ excluded_quotes as ( --noqa: PRS
             '\xfd8bc0330655ecf48a3f0695eb07b22416d185f2',
             '\x3bb5c8a00190da68059f0f66c24794584eb10d07',
             '\xa00a519d2fabdce7d30a1763ba76eea6ba062c86',
-            '\xba4fe6d43b45a531bdf1a6f0816314ad480c1c17'
+            '\xba4fe6d43b45a531bdf1a6f0816314ad480c1c17',
+            '\x1776807e5f319cd47723654ea874827d4a775ffe'
         )
         and
         (
@@ -168,7 +169,27 @@ excluded_quotes as ( --noqa: PRS
             '\x246a4f9e08523496963e17a39b15c81bf09a47d8',
             '\xb018492ca1da735692283d30c2dec3ad52c35f39',
             '\xe2950f766f9c9e157f876a5989ad1da5453842af',
-            '\xfc2060a817d0da52b70a00c016075153a46efdf5'
+            '\xfc2060a817d0da52b70a00c016075153a46efdf5',
+            '\x543e443ad39a1a5b05124e9adc80dc7defd607b6',
+            '\xcc539cb6a334b5bc90ee9c7a6ce4847cd3a2ae2b',
+            '\x94d94ddadab142a3fdd0302b3e28d3b85076a76c',
+            '\x691c915ce60db38df0fe54677269f2902823a2b4',
+            '\xbf87f95dcc98b8e667542a88a1089727c255fb9d',
+            '\x56ef793b5dbf1581a57f0a557ade1355f18bff9e',
+            '\xec6f9350bc29a0b7313dcde85de569770dcd2c94',
+            '\xde67abe92630a501a5e7f020dfd186b876d10733',
+            '\x3a846da52e8afd3ff1b582c21342d4871132f66d',
+            '\xad3de8a9c0be29fa40f91d60b1bd0490ce70e604',
+            '\x7477176d43fc1bac2d40efb8c535b32044d6c89a',
+            '\x8a1b153e42c96c2f538320350a69b178014fba96',
+            '\xe9d9f596019b6c6a41e1ad8c434ea63c587882ab',
+            '\x405ed7d80a9aca7a7de305856c1cd15965b268fe',
+            '\xf74b14945b866d8870339046181dca222157ca8f',
+            '\xc22b68d764623ae09169f4f30ae669ef9bdefbc9',
+            '\xf40bafc1014670711005457c952410710a0c6619',
+            '\x2bc3425a38a3cb33c094dd35fbb8050189ba6940',
+            '\xc67a78d0aba3ac6c1cf3c2ad3a144985142a7706',
+            '\x5aff182b505f52effcf1fb591f156b1da951b909'
         )
         and (
             -------------------------------------------------------- USDC/USDCE ---------------------------------------------------
@@ -183,10 +204,16 @@ excluded_quotes as ( --noqa: PRS
             (buy_token = '\xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9' and sell_token = '\xaf88d065e77c8cc2239327c5edb3a432268e5831')
             -----------------------------------------------------------------------------------------------------------------------
             or
-            -------------------------------------------------------- WETH/WSTETH --------------------------------------------------
-            (sell_token = '\x82af49447d8a07e3bd95bd0d56f35241523fbab1' and buy_token = '\x5979d7b546e38e414f7e9822514be443a4800529')
+            -------------------------------------------------------- USDC/USDS --------------------------------------------------
+            (sell_token = '\xaf88d065e77c8cc2239327c5edb3a432268e5831' and buy_token = '\x6491c05a82219b8d1479057361ff1654749b876b')
             or
-            (buy_token = '\x82af49447d8a07e3bd95bd0d56f35241523fbab1' and sell_token = '\x5979d7b546e38e414f7e9822514be443a4800529') 
+            (buy_token = '\xaf88d065e77c8cc2239327c5edb3a432268e5831' and sell_token = '\x6491c05a82219b8d1479057361ff1654749b876b') 
+            -----------------------------------------------------------------------------------------------------------------------
+            or
+            -------------------------------------------------------- USDT0/USDS --------------------------------------------------
+            (sell_token = '\xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9' and buy_token = '\x6491c05a82219b8d1479057361ff1654749b876b')
+            or
+            (buy_token = '\xfd086bc7cd5c481dcc9c85ebe478a1c0b69fcbb9' and sell_token = '\x6491c05a82219b8d1479057361ff1654749b876b') 
             -----------------------------------------------------------------------------------------------------------------------
         )
     )
@@ -214,7 +241,13 @@ excluded_quotes as ( --noqa: PRS
             '\xec6f9350bc29a0b7313dcde85de569770dcd2c94',
             '\xcc539cb6a334b5bc90ee9c7a6ce4847cd3a2ae2b',
             '\x3864fc758669e481e8f2bef458bd958ebbdbbdea',
-            '\xa9beedd6460fae841cfd146e27ec5881bc241303'
+            '\xa9beedd6460fae841cfd146e27ec5881bc241303',
+            '\x9d8a080da42af6e9a45c6cac89cb233d0c3ebdb9',
+            '\xbd42e0b011be5c7cbd771963b4bd75ca55d0d75c',
+            '\x9a646b7b96ce73e19fe28f2a18ee4dc865bb87c4',
+            '\x5fcc5422a2973329733f0ffbaac591c776158606',
+            '\xaf3f223e5327ec9fb12b927b62cdbf8bd8f7b3d1',
+            '\xd383228442ce6f5a5dc33452aa298f702db665ba'
         )
         and (
             --------------------------------------------------------- USDC/USDBC --------------------------------------------------
