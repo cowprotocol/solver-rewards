@@ -736,6 +736,8 @@ def compute_partner_payouts_new(
 
     partner_payouts = partner_payouts[partner_payouts["partner"].notnull()]
 
+    partner_payouts = partner_payouts.sort_values(by="partner")
+
     return partner_payouts
 
 
