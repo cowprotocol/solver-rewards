@@ -14,5 +14,5 @@ class SyncTable(Enum):
 
     @staticmethod
     def supported_tables() -> list[str]:
-        """Returns a list of supported tables (i.e. valid object contructors)."""
+        """Returns a list of supported tables (i.e. valid object constructors)."""
         return [str(t) for t in list(SyncTable)]
