@@ -632,6 +632,8 @@ def compute_solver_payouts_new(
     ----------
     data_per_solver : DataFrame
         Contains information about solver accounting.
+    config : AccountingConfig
+        Configuration object containing reward and payment settings, including token addresses.
 
     Returns
     -------
@@ -717,9 +719,7 @@ def compute_solver_payouts_new(
     return solver_payouts
 
 
-def compute_partner_payouts_new(
-    partner_and_protocol_fees: DataFrame, config: AccountingConfig
-) -> DataFrame:
+def compute_partner_payouts_new(partner_and_protocol_fees: DataFrame) -> DataFrame:
     """Combine partner fee information into partner fee payouts.
 
     Returns
@@ -853,7 +853,7 @@ def construct_payouts(
             accounting_period=dune.period, config=config
         )
         solver_payouts = compute_solver_payouts_new(data_per_solver, config)
-        partner_payouts = compute_partner_payouts_new(partner_and_protocol_fees, config)
+        partner_payouts = compute_partner_payouts_new(partner_and_protocol_fees)
         exchange_rate_native_to_cow = Fraction(
             1 / data_per_solver.iloc[0]["conversion_rate_cow_to_native"]
         )
