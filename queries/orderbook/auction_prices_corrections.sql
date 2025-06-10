@@ -657,15 +657,15 @@ auction_prices_corrections (blockchain, environment, auction_id, token, price) a
         -- and price >= 2685 and auction_id > 25033745;
         -- fixing 9 auctions in total
 
-        ('base', 'prod', 25033746::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 2684::numeric(78, 0)),
-        ('base', 'prod', 25033747::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 2684::numeric(78, 0)),
-        ('base', 'prod', 25033748::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 2684::numeric(78, 0)),
-        ('base', 'prod', 25033749::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 2684::numeric(78, 0)),
-        ('base', 'prod', 25033753::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 2684::numeric(78, 0)),
-        ('base', 'prod', 25033754::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 2684::numeric(78, 0)),
-        ('base', 'prod', 25033755::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 2684::numeric(78, 0)),
-        ('base', 'prod', 25033768::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 2684::numeric(78, 0)),
-        ('base', 'prod', 25033769::bigint, '\x6b175474e89094c44da98b954eedeac495271d0f', 2684::numeric(78, 0)),
+        ('base', 'prod', 25033746::bigint, '\xb505e3fe0c1ab6339f8e62ef8b4fe2f21cedbaa7', 2684::numeric(78, 0)),
+        ('base', 'prod', 25033747::bigint, '\xb505e3fe0c1ab6339f8e62ef8b4fe2f21cedbaa7', 2684::numeric(78, 0)),
+        ('base', 'prod', 25033748::bigint, '\xb505e3fe0c1ab6339f8e62ef8b4fe2f21cedbaa7', 2684::numeric(78, 0)),
+        ('base', 'prod', 25033749::bigint, '\xb505e3fe0c1ab6339f8e62ef8b4fe2f21cedbaa7', 2684::numeric(78, 0)),
+        ('base', 'prod', 25033753::bigint, '\xb505e3fe0c1ab6339f8e62ef8b4fe2f21cedbaa7', 2684::numeric(78, 0)),
+        ('base', 'prod', 25033754::bigint, '\xb505e3fe0c1ab6339f8e62ef8b4fe2f21cedbaa7', 2684::numeric(78, 0)),
+        ('base', 'prod', 25033755::bigint, '\xb505e3fe0c1ab6339f8e62ef8b4fe2f21cedbaa7', 2684::numeric(78, 0)),
+        ('base', 'prod', 25033768::bigint, '\xb505e3fe0c1ab6339f8e62ef8b4fe2f21cedbaa7', 2684::numeric(78, 0)),
+        ('base', 'prod', 25033769::bigint, '\xb505e3fe0c1ab6339f8e62ef8b4fe2f21cedbaa7', 2684::numeric(78, 0)),
         ----------- SPX6900 fix done ------------
 
 
