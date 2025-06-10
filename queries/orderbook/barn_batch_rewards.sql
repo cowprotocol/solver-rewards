@@ -1,17 +1,55 @@
-with observed_settlements as (
+with auction_info as materialized (
+    select
+        id as auction_id,
+        deadline as block_deadline
+    from competition_auctions
+    where deadline >= {{start_block}} and deadline <= {{end_block}}
+),
+
+new_settlement_scores_prelim as ( -- here we assume at most one winning solutions per solver
+    select
+        ai.auction_id,
+        ai.block_deadline,
+        ps.solver as winner,
+        ps.score as winning_score,
+        rs.reference_score
+    from auction_info as ai inner join proposed_solutions as ps
+        on ai.auction_id = ps.auction_id
+    inner join reference_scores as rs
+        on ai.auction_id = rs.auction_id and ps.solver = rs.solver
+    where ps.is_winner = true
+),
+
+auction_scores as (
+    select
+        auction_id,
+        sum(winning_score) as auction_score
+    from new_settlement_scores_prelim
+    group by auction_id
+
+),
+
+new_settlement_scores as materialized (
+    select
+        nssp.*,
+        aus.auction_score
+    from new_settlement_scores_prelim as nssp inner join auction_scores as aus
+        on nssp.auction_id = aus.auction_id
+),
+
+observed_settlements as (
     select --noqa: ST06
         -- settlement
-        tx_hash,
-        solver,
+        s.auction_id,
+        s.tx_hash,
+        s.solver,
         s.block_number,
         -- settlement_observations
         effective_gas_price * gas_used as execution_cost,
-        surplus,
-        s.auction_id
+        surplus
     from settlements as s inner join settlement_observations as so
         on s.block_number = so.block_number and s.log_index = so.log_index
-    inner join settlement_scores as ss on s.auction_id = ss.auction_id
-    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
+    inner join auction_info as ai on s.auction_id = ai.auction_id
 ),
 
 -- order data
@@ -39,17 +77,57 @@ order_data as (
     from jit_orders
 ),
 
+settlements_with_previous as (
+    -- for each settlement, calculate the previous settlement's log_index within the same block
+    select --noqa: ST06
+        s.tx_hash,
+        s.block_number,
+        s.log_index as settlement_log_index,
+        lag(s.log_index) over (
+            partition by block_number
+            order by log_index
+        ) as previous_settlement_log_index,
+        s.solver,
+        s.auction_id,
+        s.solution_uid
+    from settlements as s inner join auction_info as ai on
+        s.auction_id = ai.auction_id
+),
+
+trade_settlement_matching as (
+    -- match each trade to the settlement that happens immediately after it
+    select
+        t.block_number,
+        t.order_uid,
+        t.log_index as trade_log_index,
+        t.sell_amount,
+        t.buy_amount,
+        t.fee_amount,
+        s.tx_hash,
+        s.settlement_log_index,
+        s.solver,
+        s.auction_id,
+        s.solution_uid
+    from trades as t inner join settlements_with_previous as s
+        on t.block_number = s.block_number
+    where
+        -- the trade log_index must be greater than the previous settlement (or no previous settlement exists)
+        (t.log_index > coalesce(s.previous_settlement_log_index, -1))
+        -- the trade log_index must be less than or equal to the current settlement
+        and t.log_index <= s.settlement_log_index
+),
+
 -- unprocessed trade data
 trade_data_unprocessed as (
     select --noqa: ST06
-        ss.winner as solver,
-        s.auction_id,
-        s.tx_hash,
-        t.order_uid,
+        tsm.solver,
+        tsm.auction_id,
+        tsm.tx_hash,
+        tsm.order_uid,
         od.sell_token,
         od.buy_token,
-        t.sell_amount, -- the total amount the user sends
-        t.buy_amount, -- the total amount the user receives
+        tsm.sell_amount, -- the total amount the user sends
+        tsm.buy_amount, -- the total amount the user receives
         oe.executed_fee as observed_fee, -- the total discrepancy between what the user sends and what they would have send if they traded at clearing price
         od.kind,
         case
@@ -60,14 +138,12 @@ trade_data_unprocessed as (
         cast(convert_from(ad.full_app_data, 'UTF8') as jsonb) ->> 'appCode' as app_code,
         coalesce(oe.protocol_fee_amounts[1], 0) as first_protocol_fee_amount,
         coalesce(oe.protocol_fee_amounts[2], 0) as second_protocol_fee_amount
-    from settlements as s inner join settlement_scores as ss -- contains block_deadline
-        on s.auction_id = ss.auction_id
-    inner join trades as t -- contains traded amounts
-        on s.block_number = t.block_number -- given the join that follows with the order execution table, this works even when multiple txs appear in the same block
-    inner join order_data as od -- contains tokens and limit amounts
-        on t.order_uid = od.uid
+    from trade_settlement_matching as tsm inner join new_settlement_scores as ss -- contains block_deadline
+        on tsm.auction_id = ss.auction_id and tsm.solver = ss.winner
     inner join order_execution as oe -- contains executed fee
-        on t.order_uid = oe.order_uid and s.auction_id = oe.auction_id
+        on tsm.order_uid = oe.order_uid and tsm.auction_id = oe.auction_id
+    inner join order_data as od -- contains tokens and limit amounts
+        on oe.order_uid = od.uid
     left outer join app_data as ad -- contains full app data
         on od.app_data = ad.contract_app_data
     where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
@@ -102,7 +178,7 @@ trade_data_processed as (
 {{excluded_auctions}}
 
 auction_prices_processed as materialized (
-    select
+    select distinct on (ap.auction_id, ap.token) -- this is needed due to the inner join with the observed_settlements in case of multiple winners per auction_id
         ap.auction_id,
         ap.token,
         coalesce(apc.price, ap.price) as price
@@ -183,18 +259,20 @@ reward_data as (
         -- scores
         winning_score,
         case
-            when block_number is not null and block_number <= block_deadline then winning_score
-            else 0
+            when block_number is not null and block_number <= block_deadline then auction_score
+            else auction_score - winning_score
         end as observed_score,
         reference_score,
         -- protocol_fees
         coalesce(cast(protocol_fee as numeric(78, 0)), 0) as protocol_fee,
-        coalesce(cast(network_fee as numeric(78, 0)), 0) as network_fee
-    from settlement_scores as ss
+        coalesce(cast(network_fee as numeric(78, 0)), 0) as network_fee,
+        least(reference_score, auction_score) as reference_score_capped
+    from new_settlement_scores as ss
     -- outer joins made in order to capture non-existent settlements.
-    left outer join observed_settlements as os on ss.auction_id = os.auction_id
-    left outer join batch_protocol_fees as bpf on os.tx_hash = bpf.tx_hash
-    left outer join batch_network_fees as bnf on os.tx_hash = bnf.tx_hash
+    left outer join observed_settlements as os
+        on ss.auction_id = os.auction_id and ss.winner = os.solver
+    left outer join batch_protocol_fees as bpf on os.tx_hash = bpf.tx_hash and ss.winner = bpf.solver
+    left outer join batch_network_fees as bnf on os.tx_hash = bnf.tx_hash and ss.winner = bnf.solver
     where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
 ),
 
@@ -209,12 +287,12 @@ reward_per_auction as (
         surplus,
         protocol_fee, -- the protocol fee
         network_fee, -- the network fee
-        observed_score - reference_score as uncapped_payment,
+        observed_score - reference_score_capped as uncapped_payment,
         -- Capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
         least(
             greatest(
                 -{{EPSILON_LOWER}},
-                observed_score - reference_score
+                observed_score - reference_score_capped
             ),
             {{EPSILON_UPPER}}
         ) as capped_payment,
