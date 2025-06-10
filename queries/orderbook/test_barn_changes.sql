@@ -3,7 +3,7 @@ with auction_info as materialized (
         id as auction_id,
         deadline as block_deadline
     from competition_auctions
-    where deadline >= {{start_block}} and deadline <= {{end_block}}
+    where deadline >= 22620415 and deadline <= 22670450
 ),
 
 new_settlement_scores_prelim as ( -- here we assume at most one winning solutions per solver
@@ -146,7 +146,7 @@ trade_data_unprocessed as (
         on oe.order_uid = od.uid
     left outer join app_data as ad -- contains full app data
         on od.app_data = ad.contract_app_data
-    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
+    where ss.block_deadline >= 22620415 and ss.block_deadline <= 22670450
 ),
 
 -- processed trade data:
@@ -173,11 +173,25 @@ trade_data_processed as (
     from trade_data_unprocessed
 ),
 
-{{auction_prices_corrections}}
+----- the auction_prices_corrections and excluded_auctions tables are filled with dummy entries here
+auction_prices_corrections (blockchain, environment, auction_id, token, price) as (
+    select *
+    from (
+        values
+        ('ethereum', 'prod', 10105330::bigint, '\xad038eb671c44b853887a7e32528fab35dc5d710'::bytea, 43314929461672::numeric(78, 0))  --noqa: CV11
+    ) as temp (blockchain, environment, auction_id, token, price)  --noqa: RF04
+),
 
-{{excluded_auctions}}
+excluded_auctions (blockchain, environment, auction_id) as (
+    select
+        *,
+        0 as multiplier
+    from (
+        values ('base', 'prod', 24280706::bigint) --noqa: CV11
+    ) as temp (blockchain, environment, auction_id) --noqa: RF04
+),
 
-auction_prices_processed as materialized (
+auction_prices_processed as (
     select distinct on (ap.auction_id, ap.token) -- this is needed due to the inner join with the observed_settlements in case of multiple winners per auction_id
         ap.auction_id,
         ap.token,
@@ -187,10 +201,10 @@ auction_prices_processed as materialized (
         on ap.auction_id = apc.auction_id and ap.token = apc.token
 ),
 
-price_data as materialized (
+price_data as (
     select
-        tdp.auction_id,
         tdp.order_uid,
+        tdp.auction_id,
         ap_surplus.price / pow(10, 18) as surplus_token_native_price,
         ap_protocol.price / pow(10, 18) as protocol_fee_token_native_price,
         ap_sell.price / pow(10, 18) as network_fee_token_native_price
@@ -273,11 +287,11 @@ reward_data as (
         on ss.auction_id = os.auction_id and ss.winner = os.solver
     left outer join batch_protocol_fees as bpf on os.tx_hash = bpf.tx_hash and ss.winner = bpf.solver
     left outer join batch_network_fees as bnf on os.tx_hash = bnf.tx_hash and ss.winner = bnf.solver
-    where ss.block_deadline >= {{start_block}} and ss.block_deadline <= {{end_block}}
+    where ss.block_deadline >= 22620415 and ss.block_deadline <= 22670450
 ),
 
 reward_per_auction as (
-    select
+    select --noqa: ST06
         tx_hash,
         auction_id,
         settlement_block,
@@ -291,10 +305,10 @@ reward_per_auction as (
         -- Capped Reward = CLAMP_[-E, E + exec_cost](uncapped_reward_eth)
         least(
             greatest(
-                -{{EPSILON_LOWER}},
+                -10000000000000000,
                 observed_score - reference_score_capped
             ),
-            {{EPSILON_UPPER}}
+            12000000000000000
         ) as capped_payment,
         winning_score,
         reference_score
@@ -375,10 +389,10 @@ aggregate_results as (
     from primary_rewards as pr left outer join aggregate_partner_fees_per_solver as aif on pr.solver = aif.solver
 ),
 
-solver_rewards_script_table as (
+solver_rewards_script_table as ( --noqa: ST03
     select *
     from aggregate_results
     order by solver
 )
 
-select * from {{results}}
+select * from dune_sync_batch_data_table;
