@@ -568,7 +568,7 @@ def test_reward_datum_reward_reduces_slippage(common_reward_data):
 
 
 def test_performance_reward_service_fee(common_reward_data):
-    """Sevice fee reduces COW reward."""
+    """Service fee reduces COW reward."""
     primary_reward, num_quotes, service_fee = 100, 0, Fraction(15, 100)
     test_datum = sample_record(
         common_reward_data,
@@ -597,7 +597,7 @@ def test_performance_reward_service_fee(common_reward_data):
 
 
 def test_quote_reward_service_fee(common_reward_data):
-    """Sevice fee reduces COW reward."""
+    """Service fee reduces COW reward."""
     primary_reward, num_quotes, service_fee = 0, 100, Fraction(15, 100)
     reward_per_quote = 6 * 10**18
 
@@ -666,7 +666,7 @@ def test_positive_reward_service_fee(common_reward_data):
 
 
 def test_negative_reward_service_fee(common_reward_data):
-    """Sevice fee reduces COW quote reward but not reduce a negative batch reward."""
+    """Service fee reduces COW quote reward but not reduce a negative batch reward."""
     primary_reward = -(10**18)  # negative reward
     slippage = 2 * 10**18  # to avoid overdraft
     num_quotes = 100
