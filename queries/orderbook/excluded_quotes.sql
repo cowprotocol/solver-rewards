@@ -268,7 +268,6 @@ excluded_quotes as ( --noqa: PRS
             '\xcb269d886016cc0f2052dc6cb4190d135e16de02',
             '\xfb0962a4fe23ee70dcd746ed324edfcc39092f7e',
             '\x647f94c69e5504ad1c1441a0deb2647f88fd42cf',
-            '\x647f94c69e5504ad1c1441a0deb2647f88fd42cf',
             '\xff8b6a910cedede00c58782ccb4e8d70dac99ba4',
             '\xd91cf3448631a2b60c65763b1185b2f392d783df',
             '\x91af3ca6dddda7d08023f65ff648c9bebe77969b'
