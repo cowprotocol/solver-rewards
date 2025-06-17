@@ -49,7 +49,9 @@ excluded_quotes as ( --noqa: PRS
             '\x3bb5c8a00190da68059f0f66c24794584eb10d07',
             '\xa00a519d2fabdce7d30a1763ba76eea6ba062c86',
             '\xba4fe6d43b45a531bdf1a6f0816314ad480c1c17',
-            '\x1776807e5f319cd47723654ea874827d4a775ffe'
+            '\x1776807e5f319cd47723654ea874827d4a775ffe',
+            '\x1776807e5f319cd47723654ea874827d4a775ffe',
+            '\x0d19987a99ba9407045f937fc20ff20083662f36'
         )
         and
         (
@@ -191,7 +193,10 @@ excluded_quotes as ( --noqa: PRS
             '\xc67a78d0aba3ac6c1cf3c2ad3a144985142a7706',
             '\x5aff182b505f52effcf1fb591f156b1da951b909',
             '\x996d749a61c7f56f560f1abe1fc05ed64cc05f75',
-            '\x07ac216e0bdb3174d1bfeda1b1c43778bd6b175f'
+            '\x07ac216e0bdb3174d1bfeda1b1c43778bd6b175f',
+            '\x07ac216e0bdb3174d1bfeda1b1c43778bd6b175f',
+            '\xf47756a19dc9ac70010be5d1bb7d8648c1fd6a37',
+            '\xdddddddd28f2c9e3e47455af479ca815de9c2027'
         )
         and (
             -------------------------------------------------------- USDC/USDCE ---------------------------------------------------
@@ -264,7 +269,11 @@ excluded_quotes as ( --noqa: PRS
             '\x38f78e3845a5d4c6af889bd021ba875e04e7cd12',
             '\xcb269d886016cc0f2052dc6cb4190d135e16de02',
             '\xfb0962a4fe23ee70dcd746ed324edfcc39092f7e',
-            '\x647f94c69e5504ad1c1441a0deb2647f88fd42cf'
+            '\x647f94c69e5504ad1c1441a0deb2647f88fd42cf',
+            '\x647f94c69e5504ad1c1441a0deb2647f88fd42cf',
+            '\xff8b6a910cedede00c58782ccb4e8d70dac99ba4',
+            '\xd91cf3448631a2b60c65763b1185b2f392d783df',
+            '\x91af3ca6dddda7d08023f65ff648c9bebe77969b'
         )
         and (
             --------------------------------------------------------- USDC/USDBC --------------------------------------------------
