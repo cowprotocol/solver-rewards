@@ -233,6 +233,9 @@ class BufferAccountingConfig:
             Address(
                 "0x0deb0ae9c4399c51289adb1f3ed83557a56df657"
             ),  # Rizzolver bonding pool
+            Address(
+                "0x7719c9c0d35d460b00487a1744394e9525e8a42c"
+            ),  # Fractal bonding pool
         ]
         match network:
             case Network.MAINNET | Network.GNOSIS | Network.ARBITRUM_ONE | Network.BASE:
