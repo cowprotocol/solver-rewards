@@ -257,14 +257,38 @@ class OrderbookConfig:
 
     prod_db_url: str
     barn_db_url: str
+    analytics_db_url: str
+    network_db_name: str
+    schema: str
 
     @staticmethod
-    def from_env() -> OrderbookConfig:
+    def from_network(network: Network) -> OrderbookConfig:
         """Initialize orderbook config from environment variables."""
         prod_db_url = os.environ.get("PROD_DB_URL", "")
         barn_db_url = os.environ.get("BARN_DB_URL", "")
+        analytics_db_url = os.environ.get("ANALYTICS_DB_URL", "")
+        schema = "dbt"
+        match network:
+            case Network.MAINNET:
+                network_db_name = "mainnet"
+            case Network.GNOSIS:
+                network_db_name = "xdai"
+            case Network.ARBITRUM_ONE:
+                network_db_name = "arbitrum-one"
+            case Network.BASE:
+                network_db_name = "base"
+            case _:
+                raise ValueError(
+                    f"No orderbook data base config set up for network {network}."
+                )
 
-        return OrderbookConfig(prod_db_url=prod_db_url, barn_db_url=barn_db_url)
+        return OrderbookConfig(
+            prod_db_url=prod_db_url,
+            barn_db_url=barn_db_url,
+            analytics_db_url=analytics_db_url,
+            network_db_name=network_db_name,
+            schema=schema,
+        )
 
 
 @dataclass(frozen=True)
@@ -515,7 +539,7 @@ class AccountingConfig:
 
         return AccountingConfig(
             payment_config=PaymentConfig.from_network(network),
-            orderbook_config=OrderbookConfig.from_env(),
+            orderbook_config=OrderbookConfig.from_network(network),
             dune_config=DuneConfig.from_network(network),
             node_config=NodeConfig.from_env(),
             reward_config=RewardConfig.from_network(network),
