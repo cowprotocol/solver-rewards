@@ -59,6 +59,8 @@ def compute_partner_fees(batch_data: DataFrame, config: ProtocolFeeConfig) -> Da
 
     partner_fees = compute_partner_fees_per_partner(partner_fee_lists, config)
 
+    partner_fees = partner_fees.sort_values(by="partner", key=lambda x: x.str.lower())
+
     assert set(partner_fees.columns) == set(PARTNER_FEES_COLUMNS)
 
     return partner_fees
