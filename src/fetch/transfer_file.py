@@ -15,6 +15,7 @@ from dune_client.client import DuneClient
 from dune_client.file.interface import FileIO
 from eth_typing import URI
 from safe_eth.eth.ethereum_client import EthereumClient
+from safe_eth.eth.ethereum_network import EthereumNetwork
 from slack.web.client import WebClient
 
 from src.config import AccountingConfig, Network
@@ -164,9 +165,9 @@ def auto_propose(
         nonce_cow = post_multisend(
             safe_address=config.payment_config.payment_safe_address_cow,
             transactions=transactions_cow,
-            network=config.payment_config.network,
+            network=EthereumNetwork.MAINNET,
             signing_key=signing_key,
-            client=client,
+            client=client_mainnet,
         )
 
         nonce_native = post_multisend(
