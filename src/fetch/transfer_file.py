@@ -123,6 +123,7 @@ def auto_propose(
     signing_key = config.payment_config.signing_key
     assert signing_key is not None
 
+    client_mainnet = EthereumClient(URI(config.node_config.node_url_mainnet))
     client = EthereumClient(URI(config.node_config.node_url))
 
     log_saver_obj.print(
@@ -130,7 +131,7 @@ def auto_propose(
     )
 
     transactions_cow = prepend_unwrap_if_necessary(
-        client,
+        client_mainnet,
         config.payment_config.payment_safe_address_cow,
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
         transactions=[t.as_multisend_tx() for t in transfers_cow],

@@ -307,12 +307,14 @@ class NodeConfig:
     """Configuration for web3 node."""
 
     node_url: str
+    node_url_mainnet: str
 
     @staticmethod
     def from_env() -> NodeConfig:
         """Initialize node config from environment variables."""
         node_url = os.environ.get("NODE_URL", "")
-        return NodeConfig(node_url=node_url)
+        node_url_mainnet = os.environ.get("NODE_URL_MAINNET", "")
+        return NodeConfig(node_url=node_url, node_url_mainnet=node_url_mainnet)
 
 
 @dataclass(frozen=True)
@@ -415,7 +417,7 @@ class PaymentConfig:
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
-        safe_url_cow = f"https://app.safe.global/{short_name}:{payment_safe_address_cow}"
+        safe_url_cow = f"https://app.safe.global/eth:{payment_safe_address_cow}"
         safe_queue_url_cow = f"{safe_url_cow}/transactions/queue"
         safe_url_native = f"https://app.safe.global/{short_name}:{payment_safe_address_native}"
         safe_queue_url_native = f"{safe_url_native}/transactions/queue"
