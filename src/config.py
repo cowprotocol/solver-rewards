@@ -328,6 +328,7 @@ class PaymentConfig:
     payment_safe_address_cow: ChecksumAddress
     payment_safe_address_native: ChecksumAddress
     signing_key: str | None
+    nonce_modifier: int
     safe_queue_url_cow: str
     safe_queue_url_native: str
     verification_docs_url: str
@@ -357,6 +358,21 @@ class PaymentConfig:
             os.environ.get(
                 "PAYOUTS_SAFE_ADDRESS",
                 "",
+            )
+        )
+
+        # mainnet transaction nonces are increased by this modifier to allow for proposing
+        # multiple transactions on mainnet
+        nonce_modifier_dict = {
+            Network.MAINNET: 0,
+            Network.GNOSIS: 1,
+            Network.ARBITRUM_ONE: 2,
+            Network.BASE: 3,
+        }
+        nonce_modifier = int(
+            os.environ.get(
+                "NONCE_MODIFIER",
+                nonce_modifier_dict[network],
             )
         )
 
@@ -429,6 +445,7 @@ class PaymentConfig:
             payment_safe_address_cow=payment_safe_address_cow,
             payment_safe_address_native=payment_safe_address_native,
             signing_key=signing_key,
+            nonce_modifier=nonce_modifier,
             safe_queue_url_cow=safe_queue_url_cow,
             safe_queue_url_native=safe_queue_url_native,
             verification_docs_url=docs_url,

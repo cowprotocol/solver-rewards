@@ -168,6 +168,7 @@ def auto_propose(
             network=EthereumNetwork.MAINNET,
             signing_key=signing_key,
             client=client_mainnet,
+            nonce_modifier=config.payment_config.nonce_modifier,
         )
 
         nonce_native = post_multisend(
