@@ -41,53 +41,38 @@ class RewardConfig:
     def from_network(network: Network) -> RewardConfig:
         """Initialize reward config for a given network."""
         service_fee_factor = Fraction(15, 100)
+        reward_token_address = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
         match network:
             case Network.MAINNET:
-                return RewardConfig(
-                    reward_token_address=Address(
-                        "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
-                    ),
-                    batch_reward_cap_upper=12 * 10**15,
-                    batch_reward_cap_lower=10 * 10**15,
-                    quote_reward_cow=6 * 10**18,
-                    quote_reward_cap_native=6 * 10**14,
-                    service_fee_factor=service_fee_factor,
-                )
+                batch_reward_cap_upper = 12 * 10**15
+                batch_reward_cap_lower = 10 * 10**15
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 6 * 10**14
             case Network.GNOSIS:
-                return RewardConfig(
-                    reward_token_address=Address(
-                        "0x177127622c4a00f3d409b75571e12cb3c8973d3c"
-                    ),
-                    batch_reward_cap_upper=10 * 10**18,
-                    batch_reward_cap_lower=10 * 10**18,
-                    quote_reward_cow=6 * 10**18,
-                    quote_reward_cap_native=15 * 10**16,
-                    service_fee_factor=service_fee_factor,
-                )
+                batch_reward_cap_upper = 10 * 10**18
+                batch_reward_cap_lower = 10 * 10**18
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 15 * 10**16
             case Network.ARBITRUM_ONE:
-                return RewardConfig(
-                    reward_token_address=Address(
-                        "0xcb8b5cd20bdcaea9a010ac1f8d835824f5c87a04"
-                    ),
-                    batch_reward_cap_upper=12 * 10**15,
-                    batch_reward_cap_lower=10 * 10**15,
-                    quote_reward_cow=6 * 10**18,
-                    quote_reward_cap_native=2 * 10**14,
-                    service_fee_factor=service_fee_factor,
-                )
+                batch_reward_cap_upper = 12 * 10**15
+                batch_reward_cap_lower = 10 * 10**15
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 2 * 10**14
             case Network.BASE:
-                return RewardConfig(
-                    reward_token_address=Address(
-                        "0xc694a91e6b071bf030a18bd3053a7fe09b6dae69"
-                    ),
-                    batch_reward_cap_upper=12 * 10**15,
-                    batch_reward_cap_lower=10 * 10**15,
-                    quote_reward_cow=6 * 10**18,
-                    quote_reward_cap_native=2 * 10**14,
-                    service_fee_factor=service_fee_factor,
-                )
+                batch_reward_cap_upper = 12 * 10**15
+                batch_reward_cap_lower = 10 * 10**15
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 2 * 10**14
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
+        return RewardConfig(
+            reward_token_address=reward_token_address,
+            batch_reward_cap_upper=batch_reward_cap_upper,
+            batch_reward_cap_lower=batch_reward_cap_lower,
+            quote_reward_cow=quote_reward_cow,
+            quote_reward_cap_native=quote_reward_cap_native,
+            service_fee_factor=service_fee_factor,
+        )
 
 
 @dataclass(frozen=True)
@@ -338,9 +323,11 @@ class PaymentConfig:
 
     network: EthereumNetwork
     cow_token_address: Address
-    payment_safe_address: ChecksumAddress
+    payment_safe_address_cow: ChecksumAddress
+    payment_safe_address_native: ChecksumAddress
     signing_key: str | None
-    safe_queue_url: str
+    safe_queue_url_cow: str
+    safe_queue_url_native: str
     verification_docs_url: str
     wrapped_native_token_address: ChecksumAddress
     wrapped_eth_address: Address
@@ -356,7 +343,16 @@ class PaymentConfig:
 
         docs_url = "https://www.notion.so/cownation/Solver-Payouts-3dfee64eb3d449ed8157a652cc817a8c"
 
-        payment_safe_address = Web3.to_checksum_address(
+        cow_token_address = Address(
+            "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
+        )
+        payment_safe_address_cow = Web3.to_checksum_address(
+            os.environ.get(
+                "PAYOUTS_SAFE_ADDRESS_MAINNET",
+                "",
+            )
+        )
+        payment_safe_address_native = Web3.to_checksum_address(
             os.environ.get(
                 "PAYOUTS_SAFE_ADDRESS",
                 "",
@@ -368,9 +364,6 @@ class PaymentConfig:
                 payment_network = EthereumNetwork.MAINNET
                 short_name = "eth"
 
-                cow_token_address = Address(
-                    "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
-                )
                 wrapped_native_token_address = Web3.to_checksum_address(
                     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
                 )
@@ -384,9 +377,6 @@ class PaymentConfig:
                 payment_network = EthereumNetwork.GNOSIS
                 short_name = "gno"
 
-                cow_token_address = Address(
-                    "0x177127622c4a00f3d409b75571e12cb3c8973d3c"
-                )
                 wrapped_native_token_address = Web3.to_checksum_address(
                     "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d"
                 )
@@ -400,9 +390,6 @@ class PaymentConfig:
                 payment_network = EthereumNetwork.ARBITRUM_ONE
                 short_name = "arb1"
 
-                cow_token_address = Address(
-                    "0xcb8b5cd20bdcaea9a010ac1f8d835824f5c87a04"
-                )
                 wrapped_native_token_address = Web3.to_checksum_address(
                     "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
                 )
@@ -416,9 +403,6 @@ class PaymentConfig:
                 payment_network = EthereumNetwork.BASE
                 short_name = "base"
 
-                cow_token_address = Address(
-                    "0xc694a91e6b071bf030a18bd3053a7fe09b6dae69"
-                )
                 wrapped_native_token_address = Web3.to_checksum_address(
                     "0x4200000000000000000000000000000000000006"
                 )
@@ -431,15 +415,19 @@ class PaymentConfig:
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
-        safe_url = f"https://app.safe.global/{short_name}:{payment_safe_address}"
-        safe_queue_url = f"{safe_url}/transactions/queue"
+        safe_url_cow = f"https://app.safe.global/{short_name}:{payment_safe_address_cow}"
+        safe_queue_url_cow = f"{safe_url_cow}/transactions/queue"
+        safe_url_native = f"https://app.safe.global/{short_name}:{payment_safe_address_native}"
+        safe_queue_url_native = f"{safe_url_native}/transactions/queue"
 
         return PaymentConfig(
             network=payment_network,
             cow_token_address=cow_token_address,
-            payment_safe_address=payment_safe_address,
+            payment_safe_address_cow=payment_safe_address_cow,
+            payment_safe_address_native=payment_safe_address_native,
             signing_key=signing_key,
-            safe_queue_url=safe_queue_url,
+            safe_queue_url_cow=safe_queue_url_cow,
+            safe_queue_url_native=safe_queue_url_native,
             verification_docs_url=docs_url,
             wrapped_native_token_address=wrapped_native_token_address,
             wrapped_eth_address=wrapped_eth_address,
