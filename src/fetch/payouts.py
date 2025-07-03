@@ -172,7 +172,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         if quote_reward_cow > 0:
             result.append(
                 Transfer(
-                    token=Token(self.reward_token_address, 18), # remove magic constant
+                    token=Token(self.reward_token_address, 18),  # remove magic constant
                     recipient=self.reward_target,
                     amount_wei=quote_reward_cow,
                 )
@@ -224,7 +224,9 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             try:
                 result.append(
                     Transfer(
-                        token=Token(self.reward_token_address, 18), # remove magic constant
+                        token=Token(
+                            self.reward_token_address, 18
+                        ),  # remove magic constant
                         recipient=self.reward_target,
                         amount_wei=reimbursement_cow + total_cow_reward,
                     )
@@ -252,7 +254,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         try:
             result.append(
                 Transfer(
-                    token=Token(self.reward_token_address, 18), # remove magic constant
+                    token=Token(self.reward_token_address, 18),  # remove magic constant
                     recipient=self.reward_target,
                     amount_wei=total_cow_reward,
                 )

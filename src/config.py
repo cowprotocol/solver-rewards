@@ -339,15 +339,14 @@ class PaymentConfig:
     @staticmethod
     def from_network(network: Network) -> PaymentConfig:
         """Initialize payment config for a given network."""
+        # pylint: disable=too-many-locals
         signing_key = os.getenv("PROPOSER_PK")
         if signing_key == "":
             signing_key = None
 
         docs_url = "https://www.notion.so/cownation/Solver-Payouts-3dfee64eb3d449ed8157a652cc817a8c"
 
-        cow_token_address = Address(
-            "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
-        )
+        cow_token_address = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
         payment_safe_address_cow = Web3.to_checksum_address(
             os.environ.get(
                 "PAYOUTS_SAFE_ADDRESS_MAINNET",
@@ -419,7 +418,9 @@ class PaymentConfig:
 
         safe_url_cow = f"https://app.safe.global/eth:{payment_safe_address_cow}"
         safe_queue_url_cow = f"{safe_url_cow}/transactions/queue"
-        safe_url_native = f"https://app.safe.global/{short_name}:{payment_safe_address_native}"
+        safe_url_native = (
+            f"https://app.safe.global/{short_name}:{payment_safe_address_native}"
+        )
         safe_queue_url_native = f"{safe_url_native}/transactions/queue"
 
         return PaymentConfig(

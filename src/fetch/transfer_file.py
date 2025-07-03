@@ -118,6 +118,8 @@ def auto_propose(
     This function encodes the multisend of reward transfers and posts
     the transaction to the COW TEAM SAFE from the proposer account.
     """
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+
     # Check for required env vars early
     # so not to wait for query execution to realize it's not available.
     signing_key = config.payment_config.signing_key
@@ -179,14 +181,16 @@ def auto_propose(
             slack_client,
             channel=slack_channel,
             message=(
-                f"""Solver Rewards transactions for network {config.dune_config.dune_blockchain} pending signatures:\n
-                COW transfers on mainnet with nonce {nonce_cow}, see {config.payment_config.safe_queue_url_cow}.\n
-                Native transfers on {config.dune_config.dune_blockchain} with nonce {nonce_native}, see {config.payment_config.safe_queue_url_native}.\n
+                f"""Solver Rewards transactions for network {config.dune_config.dune_blockchain}
+                pending signatures:\n
+                COW transfers on mainnet with nonce {nonce_cow},
+                see {config.payment_config.safe_queue_url_cow}.\n
+                Native transfers on {config.dune_config.dune_blockchain} with nonce {nonce_native},
+                see {config.payment_config.safe_queue_url_native}.\n
                 More details in thread"""
             ),
             sub_messages=log_saver_obj.get_values(),
         )
-
 
 
 def main() -> None:
