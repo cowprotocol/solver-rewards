@@ -83,6 +83,7 @@ def post_multisend(
     nonce_modifier: int = 0,
 ) -> int:
     """Posts a MultiSend Transaction from a list of Transfers."""
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
 
     encoded_multisend = build_encoded_multisend(transactions, client=client)
     safe = Safe(  # type: ignore  # pylint: disable=abstract-class-instantiated
