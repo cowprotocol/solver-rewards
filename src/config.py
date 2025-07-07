@@ -187,9 +187,6 @@ class ProtocolFeeConfig:
                 }
             case Network.AVALANCHE:
                 # dummy values, will not be used
-                protocol_fee_safe = Address(
-                    "0x0000000000000000000000000000000000000000"
-                )
                 custom_partner_fee_dict = {}
             case _:
                 raise ValueError(
