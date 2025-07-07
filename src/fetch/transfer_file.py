@@ -15,6 +15,7 @@ from dune_client.client import DuneClient
 from dune_client.file.interface import FileIO
 from eth_typing import URI
 from safe_eth.eth.ethereum_client import EthereumClient
+from safe_eth.eth.ethereum_network import EthereumNetwork
 from slack.web.client import WebClient
 
 from src.config import AccountingConfig, Network
@@ -60,7 +61,8 @@ def dashboard_url(period: AccountingPeriod, config: AccountingConfig) -> str:
 
 
 def manual_propose(  # pylint: disable=too-many-arguments, too-many-positional-arguments
-    transfers: list[Transfer],
+    transfers_cow: list[Transfer],
+    transfers_native: list[Transfer],
     period: AccountingPeriod,
     config: AccountingConfig,
     send_to_slack: bool = False,
@@ -71,12 +73,22 @@ def manual_propose(  # pylint: disable=too-many-arguments, too-many-positional-a
     Entry point to manual creation of rewards payout transaction.
     This function generates the CSV transfer file to be pasted into the COW Safe app
     """
-    csv_transfers = [asdict(CSVTransfer.from_transfer(t)) for t in transfers]
+
+    csv_transfers_cow = [asdict(CSVTransfer.from_transfer(t)) for t in transfers_cow]
     FileIO(config.io_config.csv_output_dir).write_csv(
-        csv_transfers, f"transfers-{config.io_config.network.value}-{period}.csv"
+        csv_transfers_cow,
+        f"transfers-{config.io_config.network.value}-{period}-COW.csv",
     )
 
-    print(Transfer.summarize(transfers))
+    csv_transfers_native = [
+        asdict(CSVTransfer.from_transfer(t)) for t in transfers_native
+    ]
+    FileIO(config.io_config.csv_output_dir).write_csv(
+        csv_transfers_native,
+        f"transfers-{config.io_config.network.value}-{period}-NATIVE.csv",
+    )
+
+    print(Transfer.summarize(transfers_cow + transfers_native))
     print("Please cross check these results with the dashboard linked above.\n")
 
     if send_to_slack:
@@ -95,7 +107,8 @@ def manual_propose(  # pylint: disable=too-many-arguments, too-many-positional-a
 
 
 def auto_propose(
-    transfers: list[Transfer],
+    transfers_cow: list[Transfer],
+    transfers_native: list[Transfer],
     log_saver_obj: PrintStore,
     slack_client: WebClient,
     dry_run: bool,
@@ -106,22 +119,37 @@ def auto_propose(
     This function encodes the multisend of reward transfers and posts
     the transaction to the COW TEAM SAFE from the proposer account.
     """
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+
     # Check for required env vars early
     # so not to wait for query execution to realize it's not available.
     signing_key = config.payment_config.signing_key
     assert signing_key is not None
 
+    client_mainnet = EthereumClient(URI(config.node_config.node_url_mainnet))
     client = EthereumClient(URI(config.node_config.node_url))
 
-    log_saver_obj.print(Transfer.summarize(transfers), category=Category.TOTALS)
-    transactions = prepend_unwrap_if_necessary(
-        client,
-        config.payment_config.payment_safe_address,
+    log_saver_obj.print(
+        Transfer.summarize(transfers_cow + transfers_native), category=Category.TOTALS
+    )
+
+    transactions_cow = prepend_unwrap_if_necessary(
+        client_mainnet,
+        config.payment_config.payment_safe_address_cow,
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
-        transactions=[t.as_multisend_tx() for t in transfers],
+        transactions=[t.as_multisend_tx() for t in transfers_cow],
         skip_validation=True,
     )
-    if len(transactions) > len(transfers):
+
+    transactions_native = prepend_unwrap_if_necessary(
+        client,
+        config.payment_config.payment_safe_address_native,
+        wrapped_native_token=config.payment_config.wrapped_native_token_address,
+        transactions=[t.as_multisend_tx() for t in transfers_native],
+        skip_validation=True,
+    )
+
+    if len(transactions_native) > len(transfers_native):
         log_saver_obj.print("Prepended WETH unwrap", Category.GENERAL)
 
     log_saver_obj.print(
@@ -134,20 +162,33 @@ def auto_propose(
         slack_channel = config.io_config.slack_channel
         assert slack_channel is not None
 
-        nonce = post_multisend(
-            safe_address=config.payment_config.payment_safe_address,
-            transactions=transactions,
+        nonce_cow = post_multisend(
+            safe_address=config.payment_config.payment_safe_address_cow,
+            transactions=transactions_cow,
+            network=EthereumNetwork.MAINNET,
+            signing_key=signing_key,
+            client=client_mainnet,
+            nonce_modifier=config.payment_config.nonce_modifier,
+        )
+
+        nonce_native = post_multisend(
+            safe_address=config.payment_config.payment_safe_address_native,
+            transactions=transactions_native,
             network=config.payment_config.network,
             signing_key=signing_key,
             client=client,
         )
+
         post_to_slack(
             slack_client,
             channel=slack_channel,
             message=(
-                f"""Solver Rewards transaction for network {config.dune_config.dune_blockchain}
-                with nonce {nonce} pending signatures.
-                To sign and execute, visit:\n{config.payment_config.safe_queue_url}
+                f"""Solver Rewards transactions for network {config.dune_config.dune_blockchain}
+                pending signatures:\n
+                COW transfers on mainnet with nonce {nonce_cow},
+                see {config.payment_config.safe_queue_url_cow}.\n
+                Native transfers on {config.dune_config.dune_blockchain} with nonce {nonce_native},
+                see {config.payment_config.safe_queue_url_native}.\n
                 More details in thread"""
             ),
             sub_messages=log_saver_obj.get_values(),
@@ -190,14 +231,15 @@ def main() -> None:
         config=config,
     )
 
-    payout_transfers = []
+    payout_transfers_cow = []
+    payout_transfers_native = []
     for tr in payout_transfers_temp:
         if tr.token is None:
             if tr.amount_wei >= config.payment_config.min_native_token_transfer:
-                payout_transfers.append(tr)
+                payout_transfers_native.append(tr)
         else:
             if tr.amount_wei >= config.payment_config.min_cow_transfer:
-                payout_transfers.append(tr)
+                payout_transfers_cow.append(tr)
 
     if args.post_tx:
         ssl_context = ssl.create_default_context(cafile=certifi.where())
@@ -208,7 +250,8 @@ def main() -> None:
             ssl=ssl_context,
         )
         auto_propose(
-            transfers=payout_transfers,
+            transfers_cow=payout_transfers_cow,
+            transfers_native=payout_transfers_native,
             log_saver_obj=log_saver,
             slack_client=slack_client,
             dry_run=args.dry_run,
@@ -223,7 +266,8 @@ def main() -> None:
             ssl=ssl_context,
         )
         manual_propose(
-            transfers=payout_transfers,
+            transfers_cow=payout_transfers_cow,
+            transfers_native=payout_transfers_native,
             period=dune.period,
             config=config,
             send_to_slack=args.send_to_slack,
@@ -231,7 +275,12 @@ def main() -> None:
             log_saver_obj=log_saver,
         )
     else:
-        manual_propose(transfers=payout_transfers, period=dune.period, config=config)
+        manual_propose(
+            transfers_cow=payout_transfers_cow,
+            transfers_native=payout_transfers_native,
+            period=dune.period,
+            config=config,
+        )
 
 
 if __name__ == "__main__":

@@ -28,7 +28,9 @@ jobs:
           python -m pytest tests/unit
         env:
           NETWORK: 'mainnet'
+          NODE_URL_MAINNET: https://ethereum-rpc.publicnode.com
           NODE_URL: https://ethereum-rpc.publicnode.com
+          PAYOUTS_SAFE_ADDRESS_MAINNET: '0x0000000000000000000000000000000000000000'
           PAYOUTS_SAFE_ADDRESS: '0x0000000000000000000000000000000000000000'
 
   sqlfluff:

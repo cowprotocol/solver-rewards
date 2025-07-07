@@ -80,8 +80,10 @@ def post_multisend(
     transactions: list[MultiSendTx],
     client: EthereumClient,
     signing_key: str,
+    nonce_modifier: int = 0,
 ) -> int:
     """Posts a MultiSend Transaction from a list of Transfers."""
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
 
     encoded_multisend = build_encoded_multisend(transactions, client=client)
     safe = Safe(  # type: ignore  # pylint: disable=abstract-class-instantiated
@@ -92,6 +94,7 @@ def post_multisend(
         value=0,
         data=encoded_multisend,
         operation=MultiSendOperation.DELEGATE_CALL.value,
+        safe_nonce=safe.retrieve_nonce() + nonce_modifier,
     )
     # There is a deep warning being raised here:
     # Details in issue: https://github.com/safe-global/safe-eth-py/issues/294

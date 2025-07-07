@@ -19,7 +19,7 @@ class TestMultiSend(unittest.TestCase):
 
     def test_prepend_unwrap(self):
         many_eth = 99999999 * 10**18
-        safe_address = self.payment_config.payment_safe_address
+        safe_address = self.payment_config.payment_safe_address_native
         big_native_transfer = Transfer(
             token=None, recipient=Address.zero(), amount_wei=many_eth
         ).as_multisend_tx()
