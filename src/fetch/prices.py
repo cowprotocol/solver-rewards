@@ -32,6 +32,7 @@ class TokenId(Enum):
     XDAI = "dai-dai"
     COW = "cow-cow-protocol-token"
     USDC = "usdc-usd-coin"
+    AVAX = "avax-avalanche"
 
     def decimals(self) -> int:
         """Decimals for each of the token variants."""
@@ -55,6 +56,10 @@ TOKEN_ADDRESS_TO_ID = {
     # base tokens
     Address("0xc694a91e6b071bf030a18bd3053a7fe09b6dae69"): TokenId.COW,
     Address("0x4200000000000000000000000000000000000006"): TokenId.ETH,
+    # base avalanche
+    Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
+    Address("0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"): TokenId.AVAX,
+    Address("0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB"): TokenId.ETH,
 }
 
 
