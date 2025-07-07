@@ -97,11 +97,11 @@ class ProtocolFeeConfig:
     @staticmethod
     def from_network(network: Network) -> ProtocolFeeConfig:
         """Initialize protocol fee config for a given network."""
+        protocol_fee_safe = Address(
+            "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+        )
         match network:
             case Network.MAINNET:
-                protocol_fee_safe = Address(
-                    "0xB64963f95215FDe6510657e719bd832BB8bb941B"
-                )
                 custom_partner_fee_dict = {
                     (
                         "0x63695eee2c3141bde314c5a6f89b98e62808d716",
@@ -122,9 +122,6 @@ class ProtocolFeeConfig:
                     ("0xc542c2f197c4939154017c802b0583c596438380", ""): 0.125,
                 }
             case Network.GNOSIS:
-                protocol_fee_safe = Address(
-                    "0x6b3214fD11dc91De14718DeE98Ef59bCbFcfB432"
-                )
                 custom_partner_fee_dict = {
                     (
                         "0x63695eee2c3141bde314c5a6f89b98e62808d716",
@@ -145,9 +142,6 @@ class ProtocolFeeConfig:
                     ("0xc542c2f197c4939154017c802b0583c596438380", ""): 0.125,
                 }
             case Network.ARBITRUM_ONE:
-                protocol_fee_safe = Address(
-                    "0x451100Ffc88884bde4ce87adC8bB6c7Df7fACccd"
-                )
                 custom_partner_fee_dict = {
                     (
                         "0x63695eee2c3141bde314c5a6f89b98e62808d716",
@@ -168,9 +162,6 @@ class ProtocolFeeConfig:
                     ("0xc542c2f197c4939154017c802b0583c596438380", ""): 0.125,
                 }
             case Network.BASE:
-                protocol_fee_safe = Address(
-                    "0x3c4DBcCf8d80D3d92B0d82197aebf52574ED1F3B"
-                )
                 custom_partner_fee_dict = {
                     (
                         "0x63695eee2c3141bde314c5a6f89b98e62808d716",
