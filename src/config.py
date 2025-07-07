@@ -334,7 +334,7 @@ class NodeConfig:
     @staticmethod
     def from_env() -> NodeConfig:
         """Initialize node config from environment variables."""
-		# this might need changes for avalanche
+        # this might need changes for avalanche
         node_url = os.environ.get("NODE_URL", "")
         node_url_mainnet = os.environ.get("NODE_URL_MAINNET", "")
         return NodeConfig(node_url=node_url, node_url_mainnet=node_url_mainnet)
@@ -451,10 +451,10 @@ class PaymentConfig:
                 payment_network = EthereumNetwork.AVALANCHE_C_CHAIN
                 short_name = "avax"
 
-                cow_token_address = Address( # dummy address
+                cow_token_address = Address(  # dummy address
                     "0x0000000000000000000000000000000000000006"
                 )
-                wrapped_native_token_address = Web3.to_checksum_address( # wrapped AVAX
+                wrapped_native_token_address = Web3.to_checksum_address(  # wrapped AVAX
                     "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
                 )
                 wrapped_eth_address = Address(  # real address
@@ -549,7 +549,7 @@ class DataProcessingConfig:
             case Network.BASE:
                 bucket_size = 50000
             case Network.AVALANCHE:
-                bucket_size = 0 # dummy value
+                bucket_size = 0  # dummy value
             case _:
                 raise ValueError(
                     f"No buffer accounting config set up for network {network}."
