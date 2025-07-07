@@ -28,7 +28,9 @@ class TestPrices(unittest.TestCase):
         self.usdc_address = Address("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48")
 
     def test_usd_price_available(self):
-        yesterday = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0) - timedelta(days=1)
+        yesterday = datetime.utcnow().replace(
+            hour=0, minute=0, second=0, microsecond=0
+        ) - timedelta(days=1)
         for token in TokenId:
             usd_price(token, yesterday)
 
