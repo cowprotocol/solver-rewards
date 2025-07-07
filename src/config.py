@@ -24,6 +24,7 @@ class Network(Enum):
     GNOSIS = "gnosis"
     ARBITRUM_ONE = "arbitrum"
     BASE = "base"
+    AVALANCHE = "avalanche"
 
 
 @dataclass(frozen=True)
@@ -63,6 +64,11 @@ class RewardConfig:
                 batch_reward_cap_lower = 10 * 10**15
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 2 * 10**14
+            case Network.AVALANCHE:
+                batch_reward_cap_upper = 4 * 10**17
+                batch_reward_cap_lower = 3 * 10**17
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 5 * 10**15
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
@@ -179,6 +185,9 @@ class ProtocolFeeConfig:
                     ("0x1713b79e3dbb8a76d80e038ca701a4a781ac69eb", ""): 0.25,
                     ("0xc542c2f197c4939154017c802b0583c596438380", ""): 0.125,
                 }
+            case Network.AVALANCHE:
+                # dummy values, will not be used
+                custom_partner_fee_dict = {}
             case _:
                 raise ValueError(
                     f"No protocol fee config set up for network {network}."
@@ -212,7 +221,13 @@ class BufferAccountingConfig:
             ),  # Fractal bonding pool
         ]
         match network:
-            case Network.MAINNET | Network.GNOSIS | Network.ARBITRUM_ONE | Network.BASE:
+            case (
+                Network.MAINNET
+                | Network.GNOSIS
+                | Network.ARBITRUM_ONE
+                | Network.BASE
+                | Network.AVALANCHE
+            ):
                 include_slippage = True
             case _:
                 raise ValueError(
@@ -251,6 +266,8 @@ class OrderbookConfig:
                 network_db_name = "arbitrum-one"
             case Network.BASE:
                 network_db_name = "base"
+            case Network.AVALANCHE:
+                network_db_name = "avalanche"
             case _:
                 raise ValueError(
                     f"No orderbook data base config set up for network {network}."
@@ -285,6 +302,8 @@ class DuneConfig:
                 dune_blockchain = "arbitrum"
             case Network.BASE:
                 dune_blockchain = "base"
+            case Network.AVALANCHE:
+                dune_blockchain = "avalanche_c"
             case _:
                 raise ValueError(f"No dune config set up for network {network}.")
 
@@ -413,6 +432,21 @@ class PaymentConfig:
                 min_native_token_transfer = 10**14  # 0.0001 ETH
                 min_cow_transfer = 10**18  # 1 COW
 
+            case Network.AVALANCHE:
+                payment_network = EthereumNetwork.AVALANCHE_C_CHAIN
+                short_name = "avax"
+
+                cow_token_address = Address(  # dummy address
+                    "0x0000000000000000000000000000000000000006"
+                )
+                wrapped_native_token_address = Web3.to_checksum_address(  # wrapped AVAX
+                    "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
+                )
+                wrapped_eth_address = Address(  # real address
+                    "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB"
+                )
+                min_native_token_transfer = 10**14  # 0.0001 AVAX
+                min_cow_transfer = 10**18  # 1 COW
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
@@ -499,6 +533,8 @@ class DataProcessingConfig:
                 bucket_size = 1000000
             case Network.BASE:
                 bucket_size = 50000
+            case Network.AVALANCHE:
+                bucket_size = 0  # dummy value
             case _:
                 raise ValueError(
                     f"No buffer accounting config set up for network {network}."
