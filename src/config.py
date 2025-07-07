@@ -459,7 +459,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(  # real address
                     "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB"
                 )
-                min_native_token_transfer = 10**14  # 0.0001 ETH
+                min_native_token_transfer = 10**14  # 0.0001 AVAX
                 min_cow_transfer = 10**18  # 1 COW
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
