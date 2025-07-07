@@ -97,9 +97,7 @@ class ProtocolFeeConfig:
     @staticmethod
     def from_network(network: Network) -> ProtocolFeeConfig:
         """Initialize protocol fee config for a given network."""
-        protocol_fee_safe = Address(
-            "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
-        )
+        protocol_fee_safe = Address("0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76")
         match network:
             case Network.MAINNET:
                 custom_partner_fee_dict = {
