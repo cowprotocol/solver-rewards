@@ -65,10 +65,10 @@ class RewardConfig:
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 2 * 10**14
             case Network.AVALANCHE:
-                batch_reward_cap_upper = 0
-                batch_reward_cap_lower = 0
-                quote_reward_cow = 0
-                quote_reward_cap_native = 0
+                batch_reward_cap_upper = 4 * 10**17
+                batch_reward_cap_lower = 3 * 10**17
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 5 * 10**15
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
