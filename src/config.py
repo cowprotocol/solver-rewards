@@ -334,7 +334,6 @@ class NodeConfig:
     @staticmethod
     def from_env() -> NodeConfig:
         """Initialize node config from environment variables."""
-        # this might need changes for avalanche
         node_url = os.environ.get("NODE_URL", "")
         node_url_mainnet = os.environ.get("NODE_URL_MAINNET", "")
         return NodeConfig(node_url=node_url, node_url_mainnet=node_url_mainnet)
