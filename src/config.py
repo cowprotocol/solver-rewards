@@ -371,7 +371,9 @@ class PaymentConfig:
 
         # mainnet transaction nonces are increased by this modifier to allow for proposing
         # multiple transactions on mainnet
-        nonce_modifier_dict = {network: idx for idx, network in enumerate(Network)}
+        nonce_modifier_dict = {
+            network: idx for idx, network in enumerate(Network, start=1)
+        }
         nonce_modifier = int(
             os.environ.get(
                 "NONCE_MODIFIER",
