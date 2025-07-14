@@ -5,7 +5,7 @@ from web3 import Web3
 
 from src.utils.token_details import get_token_decimals
 
-W3 = Web3(Web3.HTTPProvider("https://rpc.ankr.com/eth_sepolia"))
+W3 = Web3(Web3.HTTPProvider("https://sepolia.drpc.org"))
 
 
 class TestTokenDecimals(unittest.TestCase):
