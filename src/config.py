@@ -362,7 +362,7 @@ class PaymentConfig:
     @staticmethod
     def from_network(network: Network) -> PaymentConfig:
         """Initialize payment config for a given network."""
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals,too-many-statements
         signing_key = os.getenv("PROPOSER_PK")
         if signing_key == "":
             signing_key = None
