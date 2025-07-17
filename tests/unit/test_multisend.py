@@ -27,7 +27,8 @@ class TestMultiSend(unittest.TestCase):
             Transfer(
                 token=None,
                 recipient=Address.zero(),
-                amount_wei=eth_balance + weth_unwrap_amount,  # More ETH than account has!
+                amount_wei=eth_balance
+                + weth_unwrap_amount,  # More ETH than account has!
             ).as_multisend_tx()
         ]
         transactions = prepend_unwrap_if_necessary(
