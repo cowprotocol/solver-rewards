@@ -33,6 +33,7 @@ class TokenId(Enum):
     COW = "cow-cow-protocol-token"
     USDC = "usdc-usd-coin"
     AVAX = "avax-avalanche"
+    POL = "pol-polygon-ecosystem-token"
 
     def decimals(self) -> int:
         """Decimals for each of the token variants."""
@@ -56,10 +57,14 @@ TOKEN_ADDRESS_TO_ID = {
     # base tokens
     Address("0xc694a91e6b071bf030a18bd3053a7fe09b6dae69"): TokenId.COW,
     Address("0x4200000000000000000000000000000000000006"): TokenId.ETH,
-    # base avalanche
+    # avalanche tokens
     Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
     Address("0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"): TokenId.AVAX,
     Address("0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB"): TokenId.ETH,
+    # polygon tokens
+    Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
+    Address("0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"): TokenId.POL,
+    Address("0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"): TokenId.ETH,
 }
 
 
