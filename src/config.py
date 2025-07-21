@@ -25,6 +25,7 @@ class Network(Enum):
     ARBITRUM_ONE = "arbitrum"
     BASE = "base"
     AVALANCHE = "avalanche"
+    POLYGON = "polygon"
 
 
 @dataclass(frozen=True)
@@ -69,6 +70,11 @@ class RewardConfig:
                 batch_reward_cap_lower = 3 * 10**17
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 5 * 10**15
+            case Network.POLYGON:
+                batch_reward_cap_upper = 40 * 10**18
+                batch_reward_cap_lower = 30 * 10**18
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 5 * 10**17
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
@@ -188,6 +194,9 @@ class ProtocolFeeConfig:
             case Network.AVALANCHE:
                 # dummy values, will not be used
                 custom_partner_fee_dict = {}
+            case Network.POLYGON:
+                # dummy values, will not be used
+                custom_partner_fee_dict = {}
             case _:
                 raise ValueError(
                     f"No protocol fee config set up for network {network}."
@@ -227,6 +236,7 @@ class BufferAccountingConfig:
                 | Network.ARBITRUM_ONE
                 | Network.BASE
                 | Network.AVALANCHE
+                | Network.POLYGON
             ):
                 include_slippage = True
             case _:
@@ -268,6 +278,8 @@ class OrderbookConfig:
                 network_db_name = "base"
             case Network.AVALANCHE:
                 network_db_name = "avalanche"
+            case Network.POLYGON:
+                network_db_name = "polygon"
             case _:
                 raise ValueError(
                     f"No orderbook data base config set up for network {network}."
@@ -304,6 +316,8 @@ class DuneConfig:
                 dune_blockchain = "base"
             case Network.AVALANCHE:
                 dune_blockchain = "avalanche_c"
+            case Network.POLYGON:
+                dune_blockchain = "polygon"
             case _:
                 raise ValueError(f"No dune config set up for network {network}.")
 
@@ -348,7 +362,7 @@ class PaymentConfig:
     @staticmethod
     def from_network(network: Network) -> PaymentConfig:
         """Initialize payment config for a given network."""
-        # pylint: disable=too-many-locals
+        # pylint: disable=too-many-locals,too-many-statements
         signing_key = os.getenv("PROPOSER_PK")
         if signing_key == "":
             signing_key = None
@@ -449,6 +463,22 @@ class PaymentConfig:
                 )
                 min_native_token_transfer = 10**14  # 0.0001 AVAX
                 min_cow_transfer = 10**18  # 1 COW
+
+            case Network.POLYGON:
+                payment_network = EthereumNetwork.POLYGON
+                short_name = "matic"
+
+                cow_token_address = Address(  # dummy address
+                    "0x0000000000000000000000000000000000000006"
+                )
+                wrapped_native_token_address = Web3.to_checksum_address(  # wrapped POL
+                    "0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"
+                )
+                wrapped_eth_address = Address(  # real address
+                    "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"
+                )
+                min_native_token_transfer = 10**14  # 0.0001 POL
+                min_cow_transfer = 10**18  # 1 COW
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
@@ -536,6 +566,8 @@ class DataProcessingConfig:
             case Network.BASE:
                 bucket_size = 50000
             case Network.AVALANCHE:
+                bucket_size = 0  # dummy value
+            case Network.POLYGON:
                 bucket_size = 0  # dummy value
             case _:
                 raise ValueError(
