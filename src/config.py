@@ -49,7 +49,7 @@ class RewardConfig:
                 batch_reward_cap_upper = 12 * 10**15
                 batch_reward_cap_lower = 10 * 10**15
                 quote_reward_cow = 6 * 10**18
-                quote_reward_cap_native = 6 * 10**14
+                quote_reward_cap_native = 7 * 10**14
             case Network.GNOSIS:
                 batch_reward_cap_upper = 10 * 10**18
                 batch_reward_cap_lower = 10 * 10**18
@@ -59,22 +59,22 @@ class RewardConfig:
                 batch_reward_cap_upper = 12 * 10**15
                 batch_reward_cap_lower = 10 * 10**15
                 quote_reward_cow = 6 * 10**18
-                quote_reward_cap_native = 2 * 10**14
+                quote_reward_cap_native = 24 * 10**13
             case Network.BASE:
                 batch_reward_cap_upper = 12 * 10**15
                 batch_reward_cap_lower = 10 * 10**15
                 quote_reward_cow = 6 * 10**18
-                quote_reward_cap_native = 2 * 10**14
+                quote_reward_cap_native = 24 * 10**13
             case Network.AVALANCHE:
                 batch_reward_cap_upper = 4 * 10**17
                 batch_reward_cap_lower = 3 * 10**17
                 quote_reward_cow = 6 * 10**18
-                quote_reward_cap_native = 5 * 10**15
+                quote_reward_cap_native = 6 * 10**15
             case Network.POLYGON:
                 batch_reward_cap_upper = 40 * 10**18
                 batch_reward_cap_lower = 30 * 10**18
                 quote_reward_cow = 6 * 10**18
-                quote_reward_cap_native = 5 * 10**17
+                quote_reward_cap_native = 6 * 10**17
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
