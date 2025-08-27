@@ -32,7 +32,7 @@ def test_compute_rewards():
         reward_config,
     )
 
-    reward_per_quote = 6 * 10**17  # capped via ETH
+    reward_per_quote = 7 * 10**17  # capped via ETH
     expected_rewards = DataFrame(
         {
             "solver": ["solver_1", "solver_2", "solver_3"],
