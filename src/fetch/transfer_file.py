@@ -177,6 +177,9 @@ def auto_propose(
             network=config.payment_config.network,
             signing_key=signing_key,
             client=client,
+            nonce_modifier=(
+                len(Network) if config.payment_config.network == Network.MAINNET else 0
+            ),
         )
 
         post_to_slack(
