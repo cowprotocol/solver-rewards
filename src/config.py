@@ -21,9 +21,9 @@ class Network(Enum):
     """Network class for networks supported by the accounting."""
 
     MAINNET = "mainnet"
-    GNOSIS = "gnosis"
-    ARBITRUM_ONE = "arbitrum"
     BASE = "base"
+    ARBITRUM_ONE = "arbitrum"
+    GNOSIS = "gnosis"
     AVALANCHE = "avalanche"
     POLYGON = "polygon"
 
