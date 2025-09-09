@@ -178,7 +178,9 @@ def auto_propose(
             signing_key=signing_key,
             client=client,
             nonce_modifier=(
-                len(Network) if config.payment_config.network == Network.MAINNET else 0
+                len(Network)
+                if config.payment_config.network == EthereumNetwork.MAINNET
+                else 0
             ),
         )
 
