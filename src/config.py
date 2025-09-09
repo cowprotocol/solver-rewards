@@ -21,9 +21,9 @@ class Network(Enum):
     """Network class for networks supported by the accounting."""
 
     MAINNET = "mainnet"
-    GNOSIS = "gnosis"
-    ARBITRUM_ONE = "arbitrum"
     BASE = "base"
+    ARBITRUM_ONE = "arbitrum"
+    GNOSIS = "gnosis"
     AVALANCHE = "avalanche"
     POLYGON = "polygon"
 
@@ -386,7 +386,7 @@ class PaymentConfig:
         # mainnet transaction nonces are increased by this modifier to allow for proposing
         # multiple transactions on mainnet
         nonce_modifier_dict = {
-            network: idx for idx, network in enumerate(Network, start=1)
+            network: idx for idx, network in enumerate(reversed(list(Network)), start=0)
         }
         nonce_modifier = int(
             os.environ.get(
