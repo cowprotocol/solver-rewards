@@ -23,6 +23,7 @@ class Network(Enum):
     MAINNET = "mainnet"
     BASE = "base"
     ARBITRUM_ONE = "arbitrum"
+    LENS = "lens"
     GNOSIS = "gnosis"
     AVALANCHE = "avalanche"
     POLYGON = "polygon"
@@ -75,6 +76,11 @@ class RewardConfig:
                 batch_reward_cap_lower = 30 * 10**18
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 6 * 10**17
+            case Network.LENS:
+                batch_reward_cap_upper = 10 * 10**18
+                batch_reward_cap_lower = 10 * 10**18
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 15 * 10**16                
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
@@ -197,6 +203,9 @@ class ProtocolFeeConfig:
             case Network.POLYGON:
                 # dummy values, will not be used
                 custom_partner_fee_dict = {}
+            case Network.LENS:
+                # dummy values, will not be used
+                custom_partner_fee_dict = {}
             case _:
                 raise ValueError(
                     f"No protocol fee config set up for network {network}."
@@ -237,6 +246,7 @@ class BufferAccountingConfig:
                 | Network.BASE
                 | Network.AVALANCHE
                 | Network.POLYGON
+                | Network.LENS
             ):
                 include_slippage = True
             case _:
@@ -280,6 +290,8 @@ class OrderbookConfig:
                 network_db_name = "avalanche"
             case Network.POLYGON:
                 network_db_name = "polygon"
+            case Network.LENS:
+                network_db_name = "lens"
             case _:
                 raise ValueError(
                     f"No orderbook data base config set up for network {network}."
@@ -318,6 +330,8 @@ class DuneConfig:
                 dune_blockchain = "avalanche_c"
             case Network.POLYGON:
                 dune_blockchain = "polygon"
+            case Network.LENS:
+                dune_blockchain = "lens"
             case _:
                 raise ValueError(f"No dune config set up for network {network}.")
 
@@ -479,6 +493,19 @@ class PaymentConfig:
                 )
                 min_native_token_transfer = 10**14  # 0.0001 POL
                 min_cow_transfer = 10**18  # 1 COW
+
+            case Network.LENS:
+                payment_network = EthereumNetwork.LENS
+                short_name = "gho"
+
+                wrapped_native_token_address = Web3.to_checksum_address(
+                    "0x6bDc36E20D267Ff0dd6097799f82e78907105e2F"
+                )
+                wrapped_eth_address = Address(
+                    "0xe5ecd226b3032910ceaa43ba92ee8232f8237553"
+                )
+                min_native_token_transfer = 10**16  # 0.01 GHO
+                min_cow_transfer = 10**18  # 1 COW
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
@@ -568,6 +595,8 @@ class DataProcessingConfig:
             case Network.AVALANCHE:
                 bucket_size = 0  # dummy value
             case Network.POLYGON:
+                bucket_size = 0  # dummy value
+            case Network.LENS:
                 bucket_size = 0  # dummy value
             case _:
                 raise ValueError(
