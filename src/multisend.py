@@ -72,7 +72,7 @@ def prepend_unwrap_if_necessary(
                 operation=MultiSendOperation.CALL,
                 to=weth.address,
                 value=0,
-                data = weth.functions.withdraw(weth_unwrap_amount).encodeABI(),
+                data=weth.functions.withdraw(weth_unwrap_amount).encodeABI(),
             ),
         )
     return transactions
