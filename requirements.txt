@@ -226,7 +226,7 @@ rpds-py==0.22.3
     # via
     #   jsonschema
     #   referencing
-safe-eth-py==6.2.0
+safe-eth-py==7.12.0
     # via -r requirements.in
 safe-pysha3==1.0.4
     # via safe-eth-py
