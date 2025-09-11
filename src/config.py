@@ -80,7 +80,7 @@ class RewardConfig:
                 batch_reward_cap_upper = 10 * 10**18
                 batch_reward_cap_lower = 10 * 10**18
                 quote_reward_cow = 6 * 10**18
-                quote_reward_cap_native = 15 * 10**16                
+                quote_reward_cap_native = 15 * 10**16
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
