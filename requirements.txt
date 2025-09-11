@@ -287,3 +287,4 @@ wrapt==1.17.1
     # via deprecated
 yarl==1.18.3
     # via aiohttp
+eth-rlp>=2.1.0
