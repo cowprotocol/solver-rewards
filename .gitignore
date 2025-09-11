@@ -8,3 +8,5 @@ env/
 
 out/
 venv/
+
+**/*.swp
