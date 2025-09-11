@@ -109,6 +109,7 @@ def manual_propose(  # pylint: disable=too-many-arguments, too-many-positional-a
 def auto_propose(
     transfers_cow: list[Transfer],
     transfers_native: list[Transfer],
+    overdrafts: list[Overdraft],
     log_saver_obj: PrintStore,
     slack_client: WebClient,
     dry_run: bool,
@@ -145,7 +146,7 @@ def auto_propose(
         client,
         config.payment_config.payment_safe_address_native,
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
-        transactions=[t.as_multisend_tx() for t in transfers_native],
+        transactions=[t.as_multisend_tx() for t in transfers_native + overdrafts],
         skip_validation=True,
     )
 
@@ -238,7 +239,10 @@ def main() -> None:
 
     payout_transfers_cow = []
     payout_transfers_native = []
+    payout_overdrafs = []
     for tr in payout_transfers_temp:
+        if tr.is_overdraft():
+            payout_overdrafts.append(tr)
         if tr.token is None:
             if tr.amount_wei >= config.payment_config.min_native_token_transfer:
                 payout_transfers_native.append(tr)
@@ -257,6 +261,7 @@ def main() -> None:
         auto_propose(
             transfers_cow=payout_transfers_cow,
             transfers_native=payout_transfers_native,
+            overdrafts=payout_overdrafts,
             log_saver_obj=log_saver,
             slack_client=slack_client,
             dry_run=args.dry_run,

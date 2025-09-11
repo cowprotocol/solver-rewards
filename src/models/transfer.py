@@ -114,6 +114,9 @@ class Transfer:
             )
         raise ValueError(f"Unsupported type {self.token_type}")
 
+    def is_overdraft():
+        return False
+
     def __str__(self) -> str:
         if self.token_type == TokenType.NATIVE:
             return f"TransferETH(receiver={self.recipient}, amount={self.amount})"
