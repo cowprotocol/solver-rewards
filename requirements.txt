@@ -80,7 +80,7 @@ eth-keys==0.6.0
     #   py-evm
 eth-rlp>=2.1.0
     # via eth-account
-eth-typing==4.4.0
+eth-typing>=5.0.0
     # via
     #   eth-abi
     #   eth-keys
