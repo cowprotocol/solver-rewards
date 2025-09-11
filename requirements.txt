@@ -78,7 +78,7 @@ eth-keys==0.6.0
     #   eth-account
     #   eth-keyfile
     #   py-evm
-eth-rlp==1.0.1
+eth-rlp>=2.1.0
     # via eth-account
 eth-typing==4.4.0
     # via
@@ -287,4 +287,3 @@ wrapt==1.17.1
     # via deprecated
 yarl==1.18.3
     # via aiohttp
-eth-rlp>=2.1.0
