@@ -88,7 +88,7 @@ eth-typing>=5.0.0
     #   py-ecc
     #   py-evm
     #   web3
-eth-utils==4.1.1
+eth-utils>=5.0.0
     # via
     #   eth-abi
     #   eth-account
