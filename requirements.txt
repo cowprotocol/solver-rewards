@@ -61,7 +61,7 @@ eth-abi==5.1.0
     # via
     #   eth-account
     #   web3
-eth-account==0.11.3
+eth-account>=0.13.1
     # via web3
 eth-bloom==3.1.0
     # via py-evm
