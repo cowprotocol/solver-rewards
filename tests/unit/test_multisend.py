@@ -48,7 +48,7 @@ class TestMultiSend(unittest.TestCase):
         hex_weth_unwrap_amount = hex(weth_unwrap_amount)[2:].rjust(64, "0")
         self.assertEqual(
             f"{unwrap_method_id.lstrip('0x')}{hex_weth_unwrap_amount}",
-            unwrap.data.hex().lstrip("0x"),  # normalize actual
+            unwrap.data.hex().lstrip("0x"),
         )
 
     def test_prepend_unwrap_error(self):
