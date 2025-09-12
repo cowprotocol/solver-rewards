@@ -107,8 +107,9 @@ class Transfer:
                 operation=MultiSendOperation.CALL,
                 to=Web3.to_checksum_address(str(self.token.address)),
                 value=0,
-                data=ERC20_CONTRACT.encodeABI(
-                    fn_name="transfer", args=[receiver, self.amount_wei]
+                data=ERC20_CONTRACT.encode_abi(
+                    abi_element_identifier="transfer",
+                    args=[receiver, self.amount_wei],
                 ),
             )
         raise ValueError(f"Unsupported type {self.token_type}")
