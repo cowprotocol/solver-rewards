@@ -47,8 +47,8 @@ class TestMultiSend(unittest.TestCase):
         # 32-byte hex encoding of weth balance
         hex_weth_unwrap_amount = hex(weth_unwrap_amount)[2:].rjust(64, "0")
         self.assertEqual(
-            f"{unwrap_method_id}{hex_weth_unwrap_amount}",
-            unwrap.data.hex(),
+            f"{unwrap_method_id.lstrip('0x')}{hex_weth_unwrap_amount}",
+            unwrap.data.hex().lstrip("0x"),
         )
 
     def test_prepend_unwrap_error(self):
