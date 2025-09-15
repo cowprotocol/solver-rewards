@@ -498,7 +498,7 @@ class PaymentConfig:
                 payment_network = EthereumNetwork.LENS
                 short_name = "gho"
 
-                cow_token_address = Address( # dummy address
+                cow_token_address = Address(  # dummy address
                     "0x0000000000000000000000000000000000000006"
                 )
                 wrapped_native_token_address = Web3.to_checksum_address(
