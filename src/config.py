@@ -499,7 +499,7 @@ class PaymentConfig:
                 short_name = "gho"
 
                 cow_token_address = Address( # dummy address
-                        "0x0000000000000000000000000000000000000006"
+                     "0x0000000000000000000000000000000000000006"
                 )
                 wrapped_native_token_address = Web3.to_checksum_address(
                     "0x6bDc36E20D267Ff0dd6097799f82e78907105e2F"
