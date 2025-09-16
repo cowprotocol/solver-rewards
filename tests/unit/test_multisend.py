@@ -18,30 +18,17 @@ class TestMultiSend(unittest.TestCase):
         self.payment_config = PaymentConfig.from_network(Network.MAINNET)
 
     def test_prepend_unwrap(self):
-        many_eth = 99999999 * 10**18
         safe_address = self.payment_config.payment_safe_address_native
-        big_native_transfer = Transfer(
-            token=None, recipient=Address.zero(), amount_wei=many_eth
-        ).as_multisend_tx()
-
-        with self.assertRaises(ValueError):
-            # Nobody has that much ETH!
-            prepend_unwrap_if_necessary(
-                client=self.client,
-                safe_address=safe_address,
-                transactions=[big_native_transfer],
-                wrapped_native_token=self.payment_config.wrapped_native_token_address,
-            )
-
         eth_balance = self.client.get_balance(safe_address)
         weth = weth9(self.client.w3, self.payment_config.wrapped_native_token_address)
-        weth_balance = weth.functions.balanceOf(safe_address).call()
 
+        weth_unwrap_amount = 1
         transactions = [
             Transfer(
                 token=None,
                 recipient=Address.zero(),
-                amount_wei=eth_balance + 1,  # More ETH than account has!
+                amount_wei=eth_balance
+                + weth_unwrap_amount,  # More ETH than account has!
             ).as_multisend_tx()
         ]
         transactions = prepend_unwrap_if_necessary(
@@ -58,11 +45,27 @@ class TestMultiSend(unittest.TestCase):
 
         unwrap_method_id = "0x2e1a7d4d"
         # 32-byte hex encoding of weth balance
-        hex_weth_balance = hex(weth_balance)[2:].rjust(64, "0")
+        hex_weth_unwrap_amount = hex(weth_unwrap_amount)[2:].rjust(64, "0")
         self.assertEqual(
-            f"{unwrap_method_id}{hex_weth_balance}",
-            unwrap.data.hex(),
+            f"{unwrap_method_id.lstrip('0x')}{hex_weth_unwrap_amount}",
+            unwrap.data.hex().lstrip("0x"),
         )
+
+    def test_prepend_unwrap_error(self):
+        many_eth = 99999999 * 10**18
+        safe_address = self.payment_config.payment_safe_address_native
+        big_native_transfer = Transfer(
+            token=None, recipient=Address.zero(), amount_wei=many_eth
+        ).as_multisend_tx()
+
+        with self.assertRaises(ValueError):
+            # Nobody has that much ETH!
+            prepend_unwrap_if_necessary(
+                client=self.client,
+                safe_address=safe_address,
+                transactions=[big_native_transfer],
+                wrapped_native_token=self.payment_config.wrapped_native_token_address,
+            )
 
     def test_multisend_encoding(self):
         receiver = Address("0xde786877a10dbb7eba25a4da65aecf47654f08ab")
