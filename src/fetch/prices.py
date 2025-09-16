@@ -34,6 +34,7 @@ class TokenId(Enum):
     USDC = "usdc-usd-coin"
     AVAX = "avax-avalanche"
     POL = "pol-polygon-ecosystem-token"
+    GHO = "gho-gho"
 
     def decimals(self) -> int:
         """Decimals for each of the token variants."""
@@ -65,6 +66,10 @@ TOKEN_ADDRESS_TO_ID = {
     Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
     Address("0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"): TokenId.POL,
     Address("0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"): TokenId.ETH,
+    # lens tokens
+    Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
+    Address("0x6bDc36E20D267Ff0dd6097799f82e78907105e2F"): TokenId.GHO,
+    Address("0xe5ecd226b3032910ceaa43ba92ee8232f8237553"): TokenId.ETH,
 }
 
 

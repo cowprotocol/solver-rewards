@@ -1,4 +1,4 @@
-"""Easy universal log configuration """
+"""Easy universal log configuration"""
 
 import logging.config
 from logging import Logger

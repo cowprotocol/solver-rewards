@@ -23,6 +23,7 @@ class TestTransfer(unittest.TestCase):
         self.token_2 = Token(Address.from_int(2), 18)
 
     def test_basic_as_multisend_tx(self):
+        erc20_contract = erc20()  # returns a Contract instance
         receiver = Web3.to_checksum_address(
             "0x90F8bf6A479f320ead074411a4B0e7944Ea8c9C1"
         )
@@ -51,13 +52,17 @@ class TestTransfer(unittest.TestCase):
                     self.payment_config.cow_token_address.address
                 ),
                 value=0,
-                data=erc20().encodeABI(fn_name="transfer", args=[receiver, 15]),
+                data=erc20_contract.encode_abi(
+                    abi_element_identifier="transfer",
+                    args=[receiver, 15],
+                ),
             ),
         )
 
     def test_as_multisend_tx_with_redirects(self):
         receiver = Address.from_int(1)
         redirect = Address.from_int(2)
+        erc20_contract = erc20()
         native_transfer = redirected_transfer(
             token=None, recipient=receiver, amount_wei=16, redirect=redirect
         )
@@ -84,7 +89,10 @@ class TestTransfer(unittest.TestCase):
                 operation=MultiSendOperation.CALL,
                 to=token_address.address,
                 value=0,
-                data=erc20().encodeABI(fn_name="transfer", args=[redirect.address, 15]),
+                data=erc20_contract.encode_abi(
+                    abi_element_identifier="transfer",
+                    args=[redirect.address, 15],
+                ),
             ),
         )
 
