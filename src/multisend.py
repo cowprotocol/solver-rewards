@@ -53,22 +53,28 @@ def prepend_unwrap_if_necessary(
     if eth_balance < eth_needed:
         weth = weth9(client.w3, wrapped_native_token)
         weth_balance = weth.functions.balanceOf(safe_address).call()
+        weth_unwrap_amount = eth_needed - eth_balance
+
         if weth_balance + eth_balance < eth_needed:
             message = (
                 f"{safe_address} has insufficient WETH + ETH balance for transaction!"
+                f"Additional {(weth_unwrap_amount - weth_balance) / 10**18} WETH required to "
+                "execute."
             )
             if not skip_validation:
                 raise ValueError(message)
             log.warning(f"{message} - proceeding to build transaction anyway")
 
-        log.info(f"prepending unwrap of {weth_balance/10**18}")
+        log.info(f"prepending unwrap of {weth_unwrap_amount / 10**18}")
         transactions.insert(
             0,
             MultiSendTx(
                 operation=MultiSendOperation.CALL,
                 to=weth.address,
                 value=0,
-                data=weth.encodeABI(fn_name="withdraw", args=[weth_balance]),
+                data=weth.encode_abi(
+                    abi_element_identifier="withdraw", args=[weth_unwrap_amount]
+                ),
             ),
         )
     return transactions
