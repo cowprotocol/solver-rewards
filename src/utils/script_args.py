@@ -12,7 +12,6 @@ class ScriptArgs:
     start: str
     post_tx: bool
     dry_run: bool
-    ignore_slippage: bool
     send_to_slack: bool
     fetch_from_analytics_db: bool
 
@@ -62,7 +61,6 @@ def generic_script_init(description: str) -> ScriptArgs:
         start=args.start,
         post_tx=args.post_tx,
         dry_run=args.dry_run,
-        ignore_slippage=args.ignore_slippage,
         send_to_slack=args.send_to_slack,
         fetch_from_analytics_db=args.fetch_from_analytics_db,
     )

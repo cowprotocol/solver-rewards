@@ -15,13 +15,8 @@ from pandas import DataFrame, Series
 from src.config import AccountingConfig
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import exchange_rate_atoms
-from src.fetch.solver_info import SOLVER_INFO_COLUMNS, compute_solver_info
-from src.fetch.rewards import REWARDS_COLUMNS, compute_rewards
-from src.fetch.protocol_fees import PROTOCOL_FEES_COLUMNS, compute_protocol_fees
-from src.fetch.partner_fees import PARTNER_FEES_COLUMNS, compute_partner_fees
 from src.fetch.buffer_accounting import (
     BUFFER_ACCOUNTING_COLUMNS,
-    compute_buffer_accounting,
 )
 from src.logger import log_saver, set_log
 from src.models.accounting_period import AccountingPeriod
@@ -609,19 +604,6 @@ def compute_solver_payouts(
     return solver_payouts
 
 
-def compute_partner_payouts(partner_fees: DataFrame) -> DataFrame:
-    """Combine partner fee information into partner fee payouts.
-
-    At the moment, this function only copies the partner fee data frame.
-    """
-    assert set(PARTNER_FEES_COLUMNS).issubset(set(partner_fees.columns))
-
-    partner_payouts = partner_fees[PARTNER_FEES_COLUMNS]
-
-    assert set(partner_payouts.columns) == set(PARTNER_PAYOUTS_COLUMNS)
-    return partner_payouts
-
-
 def compute_solver_payouts_new(
     data_per_solver: DataFrame, config: AccountingConfig
 ) -> DataFrame:
@@ -728,7 +710,7 @@ def compute_partner_payouts_new(partner_and_protocol_fees: DataFrame) -> DataFra
     -------
     DataFrame
     """
-
+    PARTNER_FEES_COLUMNS = ["partner", "partner_fee_eth", "partner_fee_tax"]
     partner_payouts = DataFrame(columns=PARTNER_FEES_COLUMNS, dtype=object)
     partner_payouts["partner"] = partner_and_protocol_fees["partner_fee_recipient"]
     partner_payouts["partner_fee_eth"] = partner_and_protocol_fees[
@@ -818,8 +800,6 @@ def summarize_payments(  # pylint: disable=too-many-locals
 def construct_payouts(
     orderbook: MultiInstanceDBFetcher,
     dune: DuneFetcher,
-    ignore_slippage_flag: bool,
-    fetch_from_analytics_db: bool,
     config: AccountingConfig,
 ) -> list[Transfer]:
     """Construct payouts by combining data from multiple sources.
@@ -830,8 +810,6 @@ def construct_payouts(
         Fetcher for databases providing batch and quote data.
     dune : DuneFetcher
         Fetcher for querying Dune to retrieve various metrics.
-    ignore_slippage_flag : bool
-        Flag to skip fetching slippage data if set to True.
     config : AccountingConfig
         Configuration object containing all settings relevant to accounting.
 
@@ -846,81 +824,18 @@ def construct_payouts(
     """
     # pylint: disable=too-many-locals
 
-    # fetch data
-    if fetch_from_analytics_db:
-        data_per_solver = orderbook.get_data_per_solver(
-            accounting_period=dune.period, config=config
-        )
-        partner_and_protocol_fees = orderbook.get_partner_and_protocol_fees(
-            accounting_period=dune.period, config=config
-        )
-        solver_payouts = compute_solver_payouts_new(data_per_solver, config)
-        partner_payouts = compute_partner_payouts_new(partner_and_protocol_fees)
-        exchange_rate_native_to_cow = Fraction(
-            1 / data_per_solver.iloc[0]["conversion_rate_cow_to_native"]
-        )
-        _, exchange_rate_native_to_eth = fetch_exchange_rates(dune.period.end, config)
-    else:
-        quote_data = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
-        batch_data = (  # TODO: use bare batch data before aggregation
-            orderbook.get_solver_rewards(
-                dune.start_block,
-                dune.end_block,
-                config.reward_config.batch_reward_cap_upper,
-                config.reward_config.batch_reward_cap_lower,
-                config.dune_config.dune_blockchain,
-            )
-        )
-        service_fee_df = DataFrame(dune.get_service_fee_status())
-
-        vouches = dune.get_vouches()
-        if vouches:
-            reward_target_df = DataFrame(vouches)
-        else:
-            log.warning("No results for vouch query.")
-            reward_target_df = DataFrame(
-                columns=["solver", "solver_name", "reward_target", "pool_address"]
-            )
-        # fetch slippage only if configured to do so
-        # otherwise set to an empty dataframe
-        if (
-            config.buffer_accounting_config.include_slippage
-            and not ignore_slippage_flag
-        ):
-            slippage_df = DataFrame(dune.get_period_slippage())
-            # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
-            slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
-        else:
-            slippage_df = DataFrame(columns=["solver", "eth_slippage_wei"])
-
-        # fetch conversion price
-        exchange_rate_native_to_cow, exchange_rate_native_to_eth = fetch_exchange_rates(
-            dune.period.end, config
-        )
-
-        # compute individual components of payments
-        solver_info = compute_solver_info(
-            reward_target_df,
-            service_fee_df,
-            config,
-        )
-        rewards = compute_rewards(
-            batch_data,
-            quote_data,
-            exchange_rate_native_to_cow,
-            config.reward_config,
-        )
-        protocol_fees = compute_protocol_fees(batch_data)
-        partner_fees = compute_partner_fees(batch_data, config.protocol_fee_config)
-        buffer_accounting = compute_buffer_accounting(batch_data, slippage_df)
-
-        # combine into solver payouts and partner payouts
-        solver_payouts = compute_solver_payouts(
-            solver_info, rewards, protocol_fees, buffer_accounting
-        )
-        partner_payouts = (
-            partner_fees  # no additional computation required here at the moment
-        )
+    data_per_solver = orderbook.get_data_per_solver(
+        accounting_period=dune.period, config=config
+    )
+    partner_and_protocol_fees = orderbook.get_partner_and_protocol_fees(
+        accounting_period=dune.period, config=config
+    )
+    solver_payouts = compute_solver_payouts_new(data_per_solver, config)
+    partner_payouts = compute_partner_payouts_new(partner_and_protocol_fees)
+    exchange_rate_native_to_cow = Fraction(
+        1 / data_per_solver.iloc[0]["conversion_rate_cow_to_native"]
+    )
+    _, exchange_rate_native_to_eth = fetch_exchange_rates(dune.period.end, config)
 
     summarize_payments(
         solver_payouts,

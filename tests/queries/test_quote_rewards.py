@@ -18,25 +18,6 @@ class TestQuoteRewards(unittest.TestCase):
                 with connection.begin():
                     connection.execute(text(file.read()))
 
-    def test_get_quote_rewards(self):
-        start_block, end_block = "0", "100"
-        quote_rewards = self.fetcher.get_quote_rewards(start_block, end_block)
-        expected = DataFrame(
-            {
-                "solver": [
-                    "0x01",
-                    "0x02",
-                    "0x03",
-                ],
-                "num_quotes": [
-                    1,
-                    1,
-                    2,
-                ],
-            }
-        )
-        self.assertIsNone(pandas.testing.assert_frame_equal(expected, quote_rewards))
-
 
 if __name__ == "__main__":
     unittest.main()
