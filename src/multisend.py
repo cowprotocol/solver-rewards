@@ -3,6 +3,7 @@ All the tools necessary to compose and encode a
 Safe Multisend transaction consisting of Transfers
 """
 
+import os
 from eth_typing.evm import ChecksumAddress
 from safe_eth.eth.ethereum_client import EthereumClient
 from safe_eth.eth.ethereum_network import EthereumNetwork
@@ -23,6 +24,7 @@ MULTISEND_CONTRACT = web3.to_checksum_address(
     "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
 )
 
+api_key = os.getenv("SAFE_API_KEY")
 
 def build_encoded_multisend(
     transactions: list[MultiSendTx], client: EthereumClient
@@ -105,7 +107,7 @@ def post_multisend(
     # There is a deep warning being raised here:
     # Details in issue: https://github.com/safe-global/safe-eth-py/issues/294
     safe_tx.sign(signing_key)
-    tx_service = TransactionServiceApi(network, client)
+    tx_service = TransactionServiceApi(network, client, api_key=api_key)
     print(
         f"Posting transaction with hash"
         f" {safe_tx.safe_tx_hash.hex()} to {safe.address}"
