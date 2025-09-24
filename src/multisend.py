@@ -26,6 +26,7 @@ MULTISEND_CONTRACT = web3.to_checksum_address(
 
 api_key = os.getenv("SAFE_API_KEY")
 
+
 def build_encoded_multisend(
     transactions: list[MultiSendTx], client: EthereumClient
 ) -> bytes:
