@@ -13,7 +13,6 @@ class ScriptArgs:
     post_tx: bool
     dry_run: bool
     send_to_slack: bool
-    fetch_from_analytics_db: bool
 
 
 def generic_script_init(description: str) -> ScriptArgs:
@@ -41,20 +40,9 @@ def generic_script_init(description: str) -> ScriptArgs:
         help="Flag indicating whether script should not post alerts or transactions. ",
     )
     parser.add_argument(
-        "--ignore-slippage",
-        action="store_true",
-        help="Flag for ignoring slippage computations",
-    )
-    parser.add_argument(
         "--send-to-slack",
         action="store_true",
         help="Flag indicating whether or not the script should send the results to a slack channel",
-    )
-    parser.add_argument(
-        "--fetch-from-analytics-db",
-        action="store_true",
-        help="Flag indicating whether or not the script should fetch data from the analytics DB."
-        "With this flag set, --ignore-slippage is ignored.",
     )
     args = parser.parse_args()
     return ScriptArgs(
@@ -62,5 +50,4 @@ def generic_script_init(description: str) -> ScriptArgs:
         post_tx=args.post_tx,
         dry_run=args.dry_run,
         send_to_slack=args.send_to_slack,
-        fetch_from_analytics_db=args.fetch_from_analytics_db,
     )

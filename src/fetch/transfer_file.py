@@ -231,7 +231,6 @@ def main() -> None:
     payout_transfers_temp = construct_payouts(
         orderbook=orderbook,
         dune=dune,
-        fetch_from_analytics_db=args.fetch_from_analytics_db,
         config=config,
     )
 
