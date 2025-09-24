@@ -6,12 +6,16 @@ from web3.middleware import ExtraDataToPOAMiddleware
 # === CONFIGURE ===
 NODE_URL = "https://avalanche-mainnet.infura.io/v3/66a67d6489254f9bb99743600b06d6e7"  # Replace with your Ethereum RPC URL
 
+
 def datetime_to_unix(dt: datetime) -> int:
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=timezone.utc)
     return int(dt.timestamp())
 
-def binary_search_block(w3, target_ts: int, low: int, high: int, search_start=True) -> int:
+
+def binary_search_block(
+    w3, target_ts: int, low: int, high: int, search_start=True
+) -> int:
     result = None
     while low <= high:
         mid = (low + high) // 2
@@ -31,7 +35,10 @@ def binary_search_block(w3, target_ts: int, low: int, high: int, search_start=Tr
                 high = mid - 1
     return result
 
-def time_to_block(start_time: datetime, end_time: datetime, node_url: str) -> [int, int]:
+
+def time_to_block(
+    start_time: datetime, end_time: datetime, node_url: str
+) -> [int, int]:
     w3 = Web3(Web3.HTTPProvider(node_url))
     w3.middleware_onion.inject(ExtraDataToPOAMiddleware, layer=0)
 
@@ -47,10 +54,12 @@ def time_to_block(start_time: datetime, end_time: datetime, node_url: str) -> [i
 
     return [first_block, last_block]
 
+
 def print_block_info(w3, block_number: int, label: str):
     block = w3.eth.get_block(block_number)
     dt = datetime.utcfromtimestamp(block.timestamp).replace(tzinfo=timezone.utc)
     print(f"{label} block: #{block_number} at {dt.isoformat()}")
+
 
 if __name__ == "__main__":
     # Sample UTC time range

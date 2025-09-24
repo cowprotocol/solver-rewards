@@ -6,12 +6,10 @@ import pandas as pd
 from pandas import DataFrame, Series, read_sql_query
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
-from sqlalchemy import text
 
 from src.config import AccountingConfig
 from src.logger import set_log
 from src.models.accounting_period import AccountingPeriod
-from src.utils.query_file import open_query
 
 log = set_log(__name__)
 

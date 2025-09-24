@@ -4,11 +4,11 @@ from typing import Optional
 
 from dune_client.client import DuneClient
 from dune_client.query import QueryBase
-from dune_client.types import QueryParameter, DuneRecord
+from dune_client.types import QueryParameter
 
 from src.logger import set_log, log_saver
 from src.models.accounting_period import AccountingPeriod
-from src.queries import QUERIES, QueryData
+from src.queries import QueryData
 from src.utils.print_store import Category
 
 log = set_log(__name__)
@@ -76,4 +76,3 @@ class DuneFetcher:
         else:
             log.warning(f"No execution results found for {exec_result.execution_id}")
         return exec_result.get_rows()
-
