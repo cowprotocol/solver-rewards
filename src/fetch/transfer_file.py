@@ -214,7 +214,7 @@ def auto_propose(
                 Native transfers on {config.dune_config.dune_blockchain} with nonce {nonce_native},
                 see {config.payment_config.safe_queue_url_native}.\n
                 Overdrafts on {config.dune_config.dune_blockchain} with nonce {nonce_overdrafts},
-                see {config.payment_config.safe_queue_url_native}.\n                
+                see {config.payment_config.safe_queue_url_native}.\n
                 More details in thread"""
             ),
             sub_messages=log_saver_obj.get_values(),

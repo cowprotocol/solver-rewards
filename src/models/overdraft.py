@@ -9,6 +9,8 @@ from safe_eth.safe.multi_send import MultiSendOperation, MultiSendTx
 from src.abis.load import overdraftsmanager
 from src.models.accounting_period import AccountingPeriod
 
+OVERDRAFTS_CONTRACT = overdraftsmanager()
+
 
 @dataclass
 class Overdraft:
@@ -33,7 +35,7 @@ class Overdraft:
             operation=MultiSendOperation.CALL,
             to=Address("0x2BB7c386D36F5080D17eD08AB8Ea8B2899cE81C5"),
             value=0,
-            data=overdraftsmanager.encodeABI(
+            data=OVERDRAFTS_CONTRACT.encode_abi(
                 fn_name="addOverdraft", args=[self.account, self.wei]
             ),
         )
