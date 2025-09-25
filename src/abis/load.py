@@ -26,6 +26,7 @@ class IndexedContract(Enum):
 
     ERC20 = "erc20"
     WETH9 = "weth9"
+    OVERDRAFTSMANAGER = "overdraftsmanager"
 
     def filename(self) -> str:
         """The abi filename"""
@@ -75,3 +76,12 @@ def erc20(
     Generic ERC20Interface otherwise.
     """
     return IndexedContract.ERC20.get_contract(web3, address)
+
+
+def overdraftsmanager(
+    web3: Optional[Web3] = None, address: Optional[ChecksumAddress] = None
+) -> Contract | Type[Contract]:
+    """
+    Returns an instance of the overdraftsmanager contract.
+    """
+    return IndexedContract.OVERDRAFTSMANAGER.get_contract(web3, address)

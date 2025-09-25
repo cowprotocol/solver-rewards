@@ -5,8 +5,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from dune_client.types import Address
-
+from safe_eth.safe.multi_send import MultiSendOperation, MultiSendTx
+from web3 import Web3
+from src.abis.load import overdraftsmanager
 from src.models.accounting_period import AccountingPeriod
+
+OVERDRAFTS_CONTRACT = overdraftsmanager()
 
 
 @dataclass
@@ -25,6 +29,18 @@ class Overdraft:
     def eth(self) -> float:
         """Returns amount in units"""
         return self.wei / 10**18
+
+    def as_multisend_tx(self) -> MultiSendTx:
+        """Converts Overdraft into encoded MultiSendTx bytes"""
+        return MultiSendTx(
+            operation=MultiSendOperation.CALL,
+            to=Web3.to_checksum_address("0x2BB7c386D36F5080D17eD08AB8Ea8B2899cE81C5"),
+            value=0,
+            data=OVERDRAFTS_CONTRACT.encode_abi(
+                abi_element_identifier="addOverdraft",
+                args=[Web3.to_checksum_address(self.account.address), self.wei],
+            ),
+        )
 
     def __str__(self) -> str:
         return (
