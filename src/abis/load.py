@@ -79,6 +79,7 @@ def erc20(
 
 def overdraftsmanager(
     web3: Optional[Web3] = None, address: Optional[ChecksumAddress] = None
+) -> Contract | Type[Contract]:
     """
     Returns an instance of the overdraftsmanager contract.
     """
