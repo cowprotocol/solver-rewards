@@ -153,6 +153,8 @@ def auto_propose(
         skip_validation=True,
     )
 
+    ovedrafts_txs = [ov.as_multisend_tx() for ov in overdrafts]
+
     if len(transactions_native) > len(transfers_native):
         log_saver_obj.print("Prepended WETH unwrap", Category.GENERAL)
 
@@ -188,6 +190,19 @@ def auto_propose(
             ),
         )
 
+        nonce_overdrafts = post_multisend(
+            safe_address=config.payment_config.payment_safe_address_native,
+            transactions=ovedrafts_txs,
+            network=config.payment_config.network,
+            signing_key=signing_key,
+            client=client,
+            nonce_modifier=(
+                len(Network) + 1
+                if config.payment_config.network == EthereumNetwork.MAINNET
+                else 1
+            ),
+        )
+
         post_to_slack(
             slack_client,
             channel=slack_channel,
@@ -198,6 +213,8 @@ def auto_propose(
                 see {config.payment_config.safe_queue_url_cow}.\n
                 Native transfers on {config.dune_config.dune_blockchain} with nonce {nonce_native},
                 see {config.payment_config.safe_queue_url_native}.\n
+                Overdrafts on {config.dune_config.dune_blockchain} with nonce {nonce_overdrafts},
+                see {config.payment_config.safe_queue_url_native}.\n                
                 More details in thread"""
             ),
             sub_messages=log_saver_obj.get_values(),
