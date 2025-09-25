@@ -14,7 +14,7 @@ from src.utils.print_store import Category
 log = set_log(__name__)
 
 
-class DuneFetcher:
+class DuneFetcher:  # pylint: disable=too-few-public-methods
     """
     Class Contains DuneAPI Instance and Accounting Period along with several get methods
     for various Dune Queries.
