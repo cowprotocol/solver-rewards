@@ -116,6 +116,7 @@ def auto_propose(
     dry_run: bool,
     config: AccountingConfig,
 ) -> None:
+    # pylint: disable=too-many-locals
     """
     Entry point auto creation of rewards payout transaction.
     This function encodes the multisend of reward transfers and posts
