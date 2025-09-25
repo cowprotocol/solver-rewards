@@ -229,20 +229,20 @@ def main() -> None:
         category=Category.GENERAL,
     )
 
-    payout_transfers_temp = construct_payouts(
+    payout_temp = construct_payouts(
         orderbook=orderbook,
         dune=dune,
         ignore_slippage_flag=args.ignore_slippage,
         fetch_from_analytics_db=args.fetch_from_analytics_db,
         config=config,
-    )
+    )  # this is a PeriodPayouts object now
+
+    payout_transfers_temp = payout_temp.transfers
+    payout_ovedrafts_temp = payout_temp.overdrafts
 
     payout_transfers_cow = []
     payout_transfers_native = []
-    payout_overdrafs = []
     for tr in payout_transfers_temp:
-        if tr.is_overdraft():
-            payout_overdrafts.append(tr)
         if tr.token is None:
             if tr.amount_wei >= config.payment_config.min_native_token_transfer:
                 payout_transfers_native.append(tr)

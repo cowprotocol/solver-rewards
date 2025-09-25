@@ -821,7 +821,7 @@ def construct_payouts(
     ignore_slippage_flag: bool,
     fetch_from_analytics_db: bool,
     config: AccountingConfig,
-) -> list[Transfer]:
+) -> PeriodPayouts:
     """Construct payouts by combining data from multiple sources.
 
     Parameters
@@ -935,4 +935,4 @@ def construct_payouts(
 
     for overdraft in payouts.overdrafts:
         log_saver.print(str(overdraft), Category.OVERDRAFT)
-    return payouts.transfers + payouts.overdrafts
+    return payouts
