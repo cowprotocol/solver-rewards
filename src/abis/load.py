@@ -77,6 +77,7 @@ def erc20(
     """
     return IndexedContract.ERC20.get_contract(web3, address)
 
+
 def overdraftsmanager(
     web3: Optional[Web3] = None, address: Optional[ChecksumAddress] = None
 ) -> Contract | Type[Contract]:
