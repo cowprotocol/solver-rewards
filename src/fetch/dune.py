@@ -8,7 +8,7 @@ from dune_client.types import QueryParameter
 
 from src.logger import set_log, log_saver
 from src.models.accounting_period import AccountingPeriod
-from src.queries import QueryData
+from src.queries import QUERIES, QueryData
 from src.utils.print_store import Category
 
 log = set_log(__name__)
@@ -76,3 +76,13 @@ class DuneFetcher:
         else:
             log.warning(f"No execution results found for {exec_result.execution_id}")
         return exec_result.get_rows()
+
+    def get_block_interval(self) -> tuple[str, str]:
+        """Returns block numbers corresponding to date interval"""
+        results = self._get_query_results(
+            self._parameterized_query(
+                QUERIES["PERIOD_BLOCK_INTERVAL"], self._network_and_period_params()
+            )
+        )
+        assert len(results) == 1, "Block Interval Query should return only 1 result!"
+        return str(results[0]["start_block"]), str(results[0]["end_block"])
