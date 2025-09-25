@@ -31,7 +31,7 @@ class Overdraft:
         """Converts Overdraft into encoded MultiSendTx bytes"""
         return MultiSendTx(
             operation=MultiSendOperation.CALL,
-            to=Address("0x3feF04803F5F86CB750DDa8283846B48644D0C8a"),
+            to=Address("0x2BB7c386D36F5080D17eD08AB8Ea8B2899cE81C5"),
             value=0,
             data=overdraftsmanager.encodeABI(
                 fn_name="addOverdraft", args=[self.account, self.wei]
