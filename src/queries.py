@@ -34,18 +34,6 @@ QUERIES = {
         name="Block Interval for Accounting Period",
         q_id=3333356,
     ),
-    "VOUCH_REGISTRY": QueryData(
-        name="Vouch Registry",
-        q_id=1541516,
-    ),
-    "SERVICE_FEE_STATUS": QueryData(
-        name="CIP-48 Service fee status",
-        q_id=4298142,
-    ),
-    "PERIOD_SLIPPAGE": QueryData(
-        name="Solver Slippage for Period",
-        q_id=3427730,
-    ),
     "DASHBOARD_SLIPPAGE": QueryData(
         name="Period Solver Rewards",
         q_id=2510345,
