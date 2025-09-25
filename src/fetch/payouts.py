@@ -400,7 +400,7 @@ def fetch_exchange_rates(
     return exchange_rate_native_to_cow, exchange_rate_native_to_eth
 
 
-def compute_solver_payouts_new(
+def compute_solver_payouts(
     data_per_solver: DataFrame, config: AccountingConfig
 ) -> DataFrame:
     """Compute solver payouts.
@@ -499,7 +499,7 @@ def compute_solver_payouts_new(
     return solver_payouts
 
 
-def compute_partner_payouts_new(partner_and_protocol_fees: DataFrame) -> DataFrame:
+def compute_partner_payouts(partner_and_protocol_fees: DataFrame) -> DataFrame:
     """Combine partner fee information into partner fee payouts.
 
     Returns
@@ -625,8 +625,8 @@ def construct_payouts(
     partner_and_protocol_fees = orderbook.get_partner_and_protocol_fees(
         accounting_period=dune.period, config=config
     )
-    solver_payouts = compute_solver_payouts_new(data_per_solver, config)
-    partner_payouts = compute_partner_payouts_new(partner_and_protocol_fees)
+    solver_payouts = compute_solver_payouts(data_per_solver, config)
+    partner_payouts = compute_partner_payouts(partner_and_protocol_fees)
     exchange_rate_native_to_cow = Fraction(
         1 / data_per_solver.iloc[0]["conversion_rate_cow_to_native"]
     )
