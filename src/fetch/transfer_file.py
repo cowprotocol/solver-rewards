@@ -24,6 +24,7 @@ from src.fetch.payouts import construct_payouts
 from src.logger import log_saver, set_log
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
+from src.models.overdraft import Overdraft
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
 from src.pg_client import MultiInstanceDBFetcher
 from src.slack_utils import post_to_slack
@@ -119,6 +120,8 @@ def auto_propose(
     Entry point auto creation of rewards payout transaction.
     This function encodes the multisend of reward transfers and posts
     the transaction to the COW TEAM SAFE from the proposer account.
+    It also posts a separate transaction in the overdrafts contract
+    that updates the relevant entries by adding this week's overdrafts.
     """
     # pylint: disable=too-many-arguments,too-many-positional-arguments
 
@@ -146,7 +149,7 @@ def auto_propose(
         client,
         config.payment_config.payment_safe_address_native,
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
-        transactions=[t.as_multisend_tx() for t in transfers_native + overdrafts],
+        transactions=[t.as_multisend_tx() for t in transfers_native],
         skip_validation=True,
     )
 
