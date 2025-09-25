@@ -238,7 +238,7 @@ def main() -> None:
     )  # this is a PeriodPayouts object now
 
     payout_transfers_temp = payout_temp.transfers
-    payout_ovedrafts_temp = payout_temp.overdrafts
+    payout_overdrafts = payout_temp.overdrafts
 
     payout_transfers_cow = []
     payout_transfers_native = []
