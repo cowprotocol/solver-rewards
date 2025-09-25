@@ -506,8 +506,7 @@ def compute_partner_payouts_new(partner_and_protocol_fees: DataFrame) -> DataFra
     -------
     DataFrame
     """
-    PARTNER_FEES_COLUMNS = ["partner", "partner_fee_eth", "partner_fee_tax"]
-    partner_payouts = DataFrame(columns=PARTNER_FEES_COLUMNS, dtype=object)
+    partner_payouts = DataFrame(columns=PARTNER_PAYOUTS_COLUMNS, dtype=object)
     partner_payouts["partner"] = partner_and_protocol_fees["partner_fee_recipient"]
     partner_payouts["partner_fee_eth"] = partner_and_protocol_fees[
         "sum_partner_fee_native"
