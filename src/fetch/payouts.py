@@ -5,7 +5,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from fractions import Fraction
-from functools import reduce
 
 import numpy as np
 import pandas as pd
@@ -15,14 +14,6 @@ from pandas import DataFrame, Series
 from src.config import AccountingConfig
 from src.fetch.dune import DuneFetcher
 from src.fetch.prices import exchange_rate_atoms
-from src.fetch.solver_info import SOLVER_INFO_COLUMNS, compute_solver_info
-from src.fetch.rewards import REWARDS_COLUMNS, compute_rewards
-from src.fetch.protocol_fees import PROTOCOL_FEES_COLUMNS, compute_protocol_fees
-from src.fetch.partner_fees import PARTNER_FEES_COLUMNS, compute_partner_fees
-from src.fetch.buffer_accounting import (
-    BUFFER_ACCOUNTING_COLUMNS,
-    compute_buffer_accounting,
-)
 from src.logger import log_saver, set_log
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
@@ -409,220 +400,7 @@ def fetch_exchange_rates(
     return exchange_rate_native_to_cow, exchange_rate_native_to_eth
 
 
-def validate_df_columns(
-    solver_info: DataFrame,
-    rewards: DataFrame,
-    protocol_fees: DataFrame,
-    buffer_accounting: DataFrame,
-) -> None:
-    """Validate data frame columns.
-    Since we are working with dataframes rather than concrete objects,
-    we validate that the expected columns/fields are available within our datasets.
-
-    Raises
-    ------
-    AssertionError
-        If the columns of input dataframes are not equal to expected columns.
-    """
-    assert set(solver_info.columns) == set(
-        SOLVER_INFO_COLUMNS
-    ), f"Solver info validation failed with columns: {set(solver_info.columns)}"
-    assert set(rewards.columns) == set(
-        REWARDS_COLUMNS
-    ), f"Rewards validation failed with columns: {set(rewards.columns)}"
-    assert set(protocol_fees.columns) == set(
-        PROTOCOL_FEES_COLUMNS
-    ), f"Protocol fee validation failed with columns: {set(protocol_fees.columns)}"
-    assert set(buffer_accounting.columns) == set(
-        BUFFER_ACCOUNTING_COLUMNS
-    ), f"Buffer accounting validation failed with columns: {set(buffer_accounting.columns)}"
-
-
-def normalize_address_field(frame: DataFrame, column_name: str) -> None:
-    """Lower-cases column_name field
-
-    This function changes the input dataframe in place.
-
-    This operation is required in cases where a join is executed on a column which contains
-    non-unique string representations of addresses.
-    """
-    if len(frame[column_name]) > 0:  # necessary for the case of having zero rows
-        frame.loc[:, column_name] = frame[column_name].str.lower()
-
-
 def compute_solver_payouts(
-    solver_info: DataFrame,
-    rewards: DataFrame,
-    protocol_fees: DataFrame,
-    buffer_accounting: DataFrame,
-) -> DataFrame:
-    """Compute solver payouts.
-
-    Information on solvers is combined with data on rewards, protocol fees, and buffer accounting to
-    compute solver payouts.
-
-    Parameters
-    ----------
-    solver_info : DataFrame
-        Data containing information about solvers.
-        The columns are SOLVER_INFO_COLUMNS:
-        - solver : str
-            "0x"-prefixed hex representation of the submission address of a solver.
-        - solver_name : str
-            Name of a solver.
-        - reward_target : str
-            "0x"-prefixed hex representation of the reward target of a solver. All
-            rewards are sent to this address.
-        - buffer_accounting_target : str
-            "0x"-prefixed hex representation of the buffer accounting target address of a solver.
-            Results of the buffer accounting are sent to this address. It is equal to `solver` or
-            `reward_target`.
-        - service_fee : Fraction
-            The fraction of rewards which need to be paid to the CoW DAO.
-
-
-    rewards : DataFrame
-        Data containing reward-related information for solvers, such as batch and quote rewards.
-        The columns are REWARDS_COLUMNS:
-        - solver : str
-            "0x"-prefixed hex representation of the submission address of a solver.
-        - primary_reward_eth : int
-            Reward for settling batches in wei.
-        - primary_reward_cow : int
-            Reward for settling batches in atoms of COW.
-        - quote_reward_cow : int
-            Reward for providing quotes in atoms of COW.
-        - reward_token_address : str
-            "0x"-prefixed hex representation of the reward token contract address.
-
-    protocol_fees : DataFrame
-        Data containing protocol fee information associated with solvers.
-        The columns are PROTOCOL_FEES_COLUMNS:
-        - solver : str
-            "0x"-prefixed hex representation of the submission address of a solver.
-        - protocol_fee_eth : int
-            Protocol fee of a solver for settling batches in wei.
-
-    buffer_accounting : DataFrame
-        Data containing buffer accounting information related to solvers.
-        The columns are REWARDS_COLUMNS:
-        - solver : str
-            "0x"-prefixed hex representation of the submission address of a solver.
-        - network_fee_eth : int
-            Network fees in wei of a solver for settling batches.
-        - slippage_eth : int
-            Slippage in wei accrued by a solver in settling batches.
-
-    Returns
-    -------
-    solver_payouts : DataFrame
-        A consolidated DataFrame with solver payout information, including rewards, fees, and other
-        accounting details. Merges and processes input DataFrames with applied default values and
-        normalized fields.
-        Missing values are set to zero or some other reasonable default value.
-        The columns are SOLVER_PAYOUTS_COLUMNS:
-        - solver : str
-            "0x"-prefixed hex representation of the submission address of a solver.
-        - solver_name : str
-            Name of a solver.
-        - primary_reward_eth : int
-            Reward for settling batches in wei.
-        - primary_reward_cow : int
-            Reward for settling batches in wei.
-        - quote_reward_cow : int
-            Reward for providing quotes in atoms of COW.
-        - protocol_fee_eth : int
-            Protocol fee of a solver for settling batches in wei.
-        - network_fee_eth : int
-            Network fees in wei of a solver for settling batches.
-        - slippage_eth : int
-            Slippage in wei accrued by a solver in settling batches.
-        - reward_target : str
-            "0x"-prefixed hex representation of the reward target of a solver. All
-            rewards are sent to this address.
-        - buffer_accounting_target : str
-            "0x"-prefixed hex representation of the buffer accounting target address of a solver.
-            Results of the buffer accounting are sent to this address. It is equal to `solver` or
-            `reward_target`.
-        - reward_token_address : str
-            "0x"-prefixed hex representation of the reward token contract address.
-        - service_fee : Fraction
-            The fraction of rewards which need to be paid to the CoW DAO.
-
-    Raises
-    ------
-    AssertionError
-        If columns of input or output data frames are not equal to what is expected.
-    """
-    # 1. Validate data
-    validate_df_columns(solver_info, rewards, protocol_fees, buffer_accounting)
-
-    # 2. Normalize Join Column (and Ethereum Address Field)
-    join_column = "solver"
-    normalize_address_field(solver_info, join_column)
-    normalize_address_field(rewards, join_column)
-    normalize_address_field(protocol_fees, join_column)
-    normalize_address_field(buffer_accounting, join_column)
-
-    # 3. Merge data
-    solver_payouts = reduce(
-        lambda left, right: left.merge(
-            right,
-            how="outer",
-            on="solver",
-            validate="one_to_one",
-            sort=True,
-        ),
-        [rewards, protocol_fees, buffer_accounting],
-    ).merge(solver_info, how="left", on="solver")
-
-    # 4. Set default values
-    with pd.option_context(
-        "future.no_silent_downcasting", True
-    ):  # remove this after Future warning disappears. We do not depend on down-casting,
-        # as we will work with object and int explicitly.
-        solver_payouts["primary_reward_eth"] = (
-            solver_payouts["primary_reward_eth"].fillna(0).astype(object)
-        )
-        solver_payouts["primary_reward_cow"] = (
-            solver_payouts["primary_reward_cow"].fillna(0).astype(object)
-        )
-        solver_payouts["quote_reward_cow"] = (
-            solver_payouts["quote_reward_cow"].fillna(0).astype(object)
-        )
-        solver_payouts["slippage_eth"] = (
-            solver_payouts["slippage_eth"].fillna(0).astype(object)
-        )
-        solver_payouts["protocol_fee_eth"] = (
-            solver_payouts["protocol_fee_eth"].fillna(0).astype(object)
-        )
-        solver_payouts["network_fee_eth"] = (
-            solver_payouts["network_fee_eth"].fillna(0).astype(object)
-        )
-        solver_payouts["service_fee"] = (
-            solver_payouts["service_fee"].fillna(Fraction(0, 1)).astype(object)
-        )
-
-    solver_payouts = solver_payouts[SOLVER_PAYOUTS_COLUMNS]
-
-    assert set(solver_payouts.columns) == set(SOLVER_PAYOUTS_COLUMNS)
-    return solver_payouts
-
-
-def compute_partner_payouts(partner_fees: DataFrame) -> DataFrame:
-    """Combine partner fee information into partner fee payouts.
-
-    At the moment, this function only copies the partner fee data frame.
-    """
-    assert set(PARTNER_FEES_COLUMNS).issubset(set(partner_fees.columns))
-
-    partner_payouts = partner_fees[PARTNER_FEES_COLUMNS]
-
-    assert set(partner_payouts.columns) == set(PARTNER_PAYOUTS_COLUMNS)
-    return partner_payouts
-
-
-def compute_solver_payouts_new(
     data_per_solver: DataFrame, config: AccountingConfig
 ) -> DataFrame:
     """Compute solver payouts.
@@ -721,15 +499,14 @@ def compute_solver_payouts_new(
     return solver_payouts
 
 
-def compute_partner_payouts_new(partner_and_protocol_fees: DataFrame) -> DataFrame:
+def compute_partner_payouts(partner_and_protocol_fees: DataFrame) -> DataFrame:
     """Combine partner fee information into partner fee payouts.
 
     Returns
     -------
     DataFrame
     """
-
-    partner_payouts = DataFrame(columns=PARTNER_FEES_COLUMNS, dtype=object)
+    partner_payouts = DataFrame(columns=PARTNER_PAYOUTS_COLUMNS, dtype=object)
     partner_payouts["partner"] = partner_and_protocol_fees["partner_fee_recipient"]
     partner_payouts["partner_fee_eth"] = partner_and_protocol_fees[
         "sum_partner_fee_native"
@@ -818,8 +595,6 @@ def summarize_payments(  # pylint: disable=too-many-locals
 def construct_payouts(
     orderbook: MultiInstanceDBFetcher,
     dune: DuneFetcher,
-    ignore_slippage_flag: bool,
-    fetch_from_analytics_db: bool,
     config: AccountingConfig,
 ) -> list[Transfer]:
     """Construct payouts by combining data from multiple sources.
@@ -830,8 +605,6 @@ def construct_payouts(
         Fetcher for databases providing batch and quote data.
     dune : DuneFetcher
         Fetcher for querying Dune to retrieve various metrics.
-    ignore_slippage_flag : bool
-        Flag to skip fetching slippage data if set to True.
     config : AccountingConfig
         Configuration object containing all settings relevant to accounting.
 
@@ -846,81 +619,18 @@ def construct_payouts(
     """
     # pylint: disable=too-many-locals
 
-    # fetch data
-    if fetch_from_analytics_db:
-        data_per_solver = orderbook.get_data_per_solver(
-            accounting_period=dune.period, config=config
-        )
-        partner_and_protocol_fees = orderbook.get_partner_and_protocol_fees(
-            accounting_period=dune.period, config=config
-        )
-        solver_payouts = compute_solver_payouts_new(data_per_solver, config)
-        partner_payouts = compute_partner_payouts_new(partner_and_protocol_fees)
-        exchange_rate_native_to_cow = Fraction(
-            1 / data_per_solver.iloc[0]["conversion_rate_cow_to_native"]
-        )
-        _, exchange_rate_native_to_eth = fetch_exchange_rates(dune.period.end, config)
-    else:
-        quote_data = orderbook.get_quote_rewards(dune.start_block, dune.end_block)
-        batch_data = (  # TODO: use bare batch data before aggregation
-            orderbook.get_solver_rewards(
-                dune.start_block,
-                dune.end_block,
-                config.reward_config.batch_reward_cap_upper,
-                config.reward_config.batch_reward_cap_lower,
-                config.dune_config.dune_blockchain,
-            )
-        )
-        service_fee_df = DataFrame(dune.get_service_fee_status())
-
-        vouches = dune.get_vouches()
-        if vouches:
-            reward_target_df = DataFrame(vouches)
-        else:
-            log.warning("No results for vouch query.")
-            reward_target_df = DataFrame(
-                columns=["solver", "solver_name", "reward_target", "pool_address"]
-            )
-        # fetch slippage only if configured to do so
-        # otherwise set to an empty dataframe
-        if (
-            config.buffer_accounting_config.include_slippage
-            and not ignore_slippage_flag
-        ):
-            slippage_df = DataFrame(dune.get_period_slippage())
-            # TODO - After CIP-20 phased in, adapt query to return `solver` like all the others
-            slippage_df = slippage_df.rename(columns={"solver_address": "solver"})
-        else:
-            slippage_df = DataFrame(columns=["solver", "eth_slippage_wei"])
-
-        # fetch conversion price
-        exchange_rate_native_to_cow, exchange_rate_native_to_eth = fetch_exchange_rates(
-            dune.period.end, config
-        )
-
-        # compute individual components of payments
-        solver_info = compute_solver_info(
-            reward_target_df,
-            service_fee_df,
-            config,
-        )
-        rewards = compute_rewards(
-            batch_data,
-            quote_data,
-            exchange_rate_native_to_cow,
-            config.reward_config,
-        )
-        protocol_fees = compute_protocol_fees(batch_data)
-        partner_fees = compute_partner_fees(batch_data, config.protocol_fee_config)
-        buffer_accounting = compute_buffer_accounting(batch_data, slippage_df)
-
-        # combine into solver payouts and partner payouts
-        solver_payouts = compute_solver_payouts(
-            solver_info, rewards, protocol_fees, buffer_accounting
-        )
-        partner_payouts = (
-            partner_fees  # no additional computation required here at the moment
-        )
+    data_per_solver = orderbook.get_data_per_solver(
+        accounting_period=dune.period, config=config
+    )
+    partner_and_protocol_fees = orderbook.get_partner_and_protocol_fees(
+        accounting_period=dune.period, config=config
+    )
+    solver_payouts = compute_solver_payouts(data_per_solver, config)
+    partner_payouts = compute_partner_payouts(partner_and_protocol_fees)
+    exchange_rate_native_to_cow = Fraction(
+        1 / data_per_solver.iloc[0]["conversion_rate_cow_to_native"]
+    )
+    _, exchange_rate_native_to_eth = fetch_exchange_rates(dune.period.end, config)
 
     summarize_payments(
         solver_payouts,

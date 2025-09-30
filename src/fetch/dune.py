@@ -4,7 +4,7 @@ from typing import Optional
 
 from dune_client.client import DuneClient
 from dune_client.query import QueryBase
-from dune_client.types import QueryParameter, DuneRecord
+from dune_client.types import QueryParameter
 
 from src.logger import set_log, log_saver
 from src.models.accounting_period import AccountingPeriod
@@ -14,7 +14,7 @@ from src.utils.print_store import Category
 log = set_log(__name__)
 
 
-class DuneFetcher:
+class DuneFetcher:  # pylint: disable=too-few-public-methods
     """
     Class Contains DuneAPI Instance and Accounting Period along with several get methods
     for various Dune Queries.
@@ -86,45 +86,3 @@ class DuneFetcher:
         )
         assert len(results) == 1, "Block Interval Query should return only 1 result!"
         return str(results[0]["start_block"]), str(results[0]["end_block"])
-
-    def get_vouches(self) -> list[DuneRecord]:
-        """
-        Fetches & Returns Parsed Results for VouchRegistry query.
-        """
-        return self._get_query_results(
-            query=self._parameterized_query(
-                query_data=QUERIES["VOUCH_REGISTRY"],
-                params=[
-                    QueryParameter.date_type("end_time", self.period.end),
-                    QueryParameter.enum_type("vouch_cte_name", "named_results"),
-                    QueryParameter.text_type("blockchain", self.blockchain),
-                ],
-            )
-        )
-
-    def get_period_slippage(self, job_id: Optional[str] = None) -> list[DuneRecord]:
-        """
-        Executes & Fetches results of slippage query per solver for specified accounting period.
-        Returns a class representation of the results as two lists (positive & negative).
-        """
-        params = self._network_and_period_params()
-        # trigger dashboard update
-        self.dune.execute(
-            self._parameterized_query(QUERIES["DASHBOARD_SLIPPAGE"], params=params)
-        )
-
-        return self._get_query_results(
-            self._parameterized_query(QUERIES["PERIOD_SLIPPAGE"], params=params),
-            job_id,
-        )
-
-    def get_service_fee_status(self) -> list[DuneRecord]:
-        """
-        Fetches & Returns Parsed Results for VouchRegistry query.
-        """
-        return self._get_query_results(
-            query=self._parameterized_query(
-                query_data=QUERIES["SERVICE_FEE_STATUS"],
-                params=self._network_and_period_params(),
-            )
-        )
