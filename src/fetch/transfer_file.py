@@ -24,6 +24,7 @@ from src.fetch.payouts import construct_payouts
 from src.logger import log_saver, set_log
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
+from src.models.overdraft import Overdraft
 from src.multisend import post_multisend, prepend_unwrap_if_necessary
 from src.pg_client import MultiInstanceDBFetcher
 from src.slack_utils import post_to_slack
@@ -109,15 +110,19 @@ def manual_propose(  # pylint: disable=too-many-arguments, too-many-positional-a
 def auto_propose(
     transfers_cow: list[Transfer],
     transfers_native: list[Transfer],
+    overdrafts: list[Overdraft],
     log_saver_obj: PrintStore,
     slack_client: WebClient,
     dry_run: bool,
     config: AccountingConfig,
 ) -> None:
+    # pylint: disable=too-many-locals
     """
     Entry point auto creation of rewards payout transaction.
     This function encodes the multisend of reward transfers and posts
     the transaction to the COW TEAM SAFE from the proposer account.
+    It also posts a separate transaction in the overdrafts contract
+    that updates the relevant entries by adding this week's overdrafts.
     """
     # pylint: disable=too-many-arguments,too-many-positional-arguments
 
@@ -148,6 +153,8 @@ def auto_propose(
         transactions=[t.as_multisend_tx() for t in transfers_native],
         skip_validation=True,
     )
+
+    ovedrafts_txs = [ov.as_multisend_tx() for ov in overdrafts]
 
     if len(transactions_native) > len(transfers_native):
         log_saver_obj.print("Prepended WETH unwrap", Category.GENERAL)
@@ -184,6 +191,19 @@ def auto_propose(
             ),
         )
 
+        nonce_overdrafts = post_multisend(
+            safe_address=config.payment_config.payment_safe_address_native,
+            transactions=ovedrafts_txs,
+            network=config.payment_config.network,
+            signing_key=signing_key,
+            client=client,
+            nonce_modifier=(
+                len(Network) + 1
+                if config.payment_config.network == EthereumNetwork.MAINNET
+                else 1
+            ),
+        )
+
         post_to_slack(
             slack_client,
             channel=slack_channel,
@@ -193,6 +213,8 @@ def auto_propose(
                 COW transfers on mainnet with nonce {nonce_cow},
                 see {config.payment_config.safe_queue_url_cow}.\n
                 Native transfers on {config.dune_config.dune_blockchain} with nonce {nonce_native},
+                see {config.payment_config.safe_queue_url_native}.\n
+                Overdrafts on {config.dune_config.dune_blockchain} with nonce {nonce_overdrafts},
                 see {config.payment_config.safe_queue_url_native}.\n
                 More details in thread"""
             ),
@@ -228,11 +250,14 @@ def main() -> None:
         category=Category.GENERAL,
     )
 
-    payout_transfers_temp = construct_payouts(
+    payout_temp = construct_payouts(
         orderbook=orderbook,
         dune=dune,
         config=config,
-    )
+    )  # this is a PeriodPayouts object now
+
+    payout_transfers_temp = payout_temp.transfers
+    payout_overdrafts = payout_temp.overdrafts
 
     payout_transfers_cow = []
     payout_transfers_native = []
@@ -255,6 +280,7 @@ def main() -> None:
         auto_propose(
             transfers_cow=payout_transfers_cow,
             transfers_native=payout_transfers_native,
+            overdrafts=payout_overdrafts,
             log_saver_obj=log_saver,
             slack_client=slack_client,
             dry_run=args.dry_run,
