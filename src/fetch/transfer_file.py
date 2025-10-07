@@ -180,7 +180,6 @@ def auto_propose(
         )
         time.sleep(2)  # attempt to avoid Safe API's rate limits
 
-
         if len(transactions_native) > 0:
             nonce_native = post_multisend(
                 safe_address=config.payment_config.payment_safe_address_native,
