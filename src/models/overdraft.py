@@ -34,7 +34,7 @@ class Overdraft:
         """Converts Overdraft into encoded MultiSendTx bytes"""
         return MultiSendTx(
             operation=MultiSendOperation.CALL,
-            to=Web3.to_checksum_address("0x2BB7c386D36F5080D17eD08AB8Ea8B2899cE81C5"),
+            to=Web3.to_checksum_address("0x8Fd67Ea651329fD142D7Cfd8e90406F133F26E8a"),
             value=0,
             data=OVERDRAFTS_CONTRACT.encode_abi(
                 abi_element_identifier="addOverdraft",
