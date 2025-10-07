@@ -5,6 +5,7 @@ Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Pe
 from __future__ import annotations
 
 import os
+import time
 import ssl
 from dataclasses import asdict
 from fractions import Fraction
@@ -177,7 +178,7 @@ def auto_propose(
             client=client_mainnet,
             nonce_modifier=config.payment_config.nonce_modifier,
         )
-
+        time.sleep(2)  # attempt to avoid Safe API's rate limits
         nonce_native = post_multisend(
             safe_address=config.payment_config.payment_safe_address_native,
             transactions=transactions_native,
@@ -190,7 +191,7 @@ def auto_propose(
                 else 0
             ),
         )
-
+        time.sleep(2)  # attempt to avoid Safe API's rate limits
         nonce_overdrafts = post_multisend(
             safe_address=config.payment_config.payment_safe_address_native,
             transactions=ovedrafts_txs,
@@ -203,7 +204,7 @@ def auto_propose(
                 else 1
             ),
         )
-
+        time.sleep(2)  # attempt to avoid Safe API's rate limits
         post_to_slack(
             slack_client,
             channel=slack_channel,
