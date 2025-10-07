@@ -170,18 +170,16 @@ def auto_propose(
         slack_channel = config.io_config.slack_channel
         assert slack_channel is not None
 
-        if len(transactions_cow) > 0:
-            nonce_cow = post_multisend(
-                safe_address=config.payment_config.payment_safe_address_cow,
-                transactions=transactions_cow,
-                network=EthereumNetwork.MAINNET,
-                signing_key=signing_key,
-                client=client_mainnet,
-                nonce_modifier=config.payment_config.nonce_modifier,
-            )
-            time.sleep(2)  # attempt to avoid Safe API's rate limits
-        else:
-            nonce_cow = None
+        nonce_cow = post_multisend(
+            safe_address=config.payment_config.payment_safe_address_cow,
+            transactions=transactions_cow,
+            network=EthereumNetwork.MAINNET,
+            signing_key=signing_key,
+            client=client_mainnet,
+            nonce_modifier=config.payment_config.nonce_modifier,
+        )
+        time.sleep(2)  # attempt to avoid Safe API's rate limits
+
 
         if len(transactions_native) > 0:
             nonce_native = post_multisend(
