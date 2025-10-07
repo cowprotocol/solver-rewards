@@ -596,7 +596,7 @@ def construct_payouts(
     orderbook: MultiInstanceDBFetcher,
     dune: DuneFetcher,
     config: AccountingConfig,
-) -> list[Transfer]:
+) -> PeriodPayouts:
     """Construct payouts by combining data from multiple sources.
 
     Parameters
@@ -615,7 +615,7 @@ def construct_payouts(
 
     Notes
     -----
-    Overdrafts are computed and printed, but not returned by the function.
+    Overdrafts are set and managed by an external contract.
     """
     # pylint: disable=too-many-locals
 
@@ -645,4 +645,4 @@ def construct_payouts(
 
     for overdraft in payouts.overdrafts:
         log_saver.print(str(overdraft), Category.OVERDRAFT)
-    return payouts.transfers
+    return payouts
