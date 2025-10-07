@@ -191,7 +191,7 @@ def auto_propose(
                 nonce_modifier=(
                     len(Network)
                     if config.payment_config.network == EthereumNetwork.MAINNET
-                    else 0
+                    else (1 if nonce_native is not None else 0)
                 ),
             )
             time.sleep(2)  # attempt to avoid Safe API's rate limits
