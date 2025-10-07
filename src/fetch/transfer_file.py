@@ -180,6 +180,7 @@ def auto_propose(
         )
         time.sleep(2)  # attempt to avoid Safe API's rate limits
 
+        nonce_native: int | None = None
         if len(transactions_native) > 0:
             nonce_native = post_multisend(
                 safe_address=config.payment_config.payment_safe_address_native,
@@ -194,9 +195,8 @@ def auto_propose(
                 ),
             )
             time.sleep(2)  # attempt to avoid Safe API's rate limits
-        else:
-            nonce_native = None
 
+        nonce_overdrafts: int | None = None
         if len(ovedrafts_txs) > 0:
             nonce_overdrafts = post_multisend(
                 safe_address=config.payment_config.payment_safe_address_native,
@@ -207,12 +207,11 @@ def auto_propose(
                 nonce_modifier=(
                     len(Network) + 1
                     if config.payment_config.network == EthereumNetwork.MAINNET
-                    else 1
+                    else (1 if nonce_native is not None else 0)
                 ),
             )
             time.sleep(2)  # attempt to avoid Safe API's rate limits
-        else:
-            nonce_overdrafts = None
+
         post_to_slack(
             slack_client,
             channel=slack_channel,
