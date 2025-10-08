@@ -496,7 +496,7 @@ class PaymentConfig:
 
             case Network.LENS:
                 payment_network = EthereumNetwork.LENS
-                short_name = "gho"
+                short_name = "lens"
 
                 cow_token_address = Address(  # dummy address
                     "0x0000000000000000000000000000000000000006"
