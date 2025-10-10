@@ -179,32 +179,39 @@ def auto_propose(
             nonce_modifier=config.payment_config.nonce_modifier,
         )
         time.sleep(2)  # attempt to avoid Safe API's rate limits
-        nonce_native = post_multisend(
-            safe_address=config.payment_config.payment_safe_address_native,
-            transactions=transactions_native,
-            network=config.payment_config.network,
-            signing_key=signing_key,
-            client=client,
-            nonce_modifier=(
-                len(Network)
-                if config.payment_config.network == EthereumNetwork.MAINNET
-                else 0
-            ),
-        )
-        time.sleep(2)  # attempt to avoid Safe API's rate limits
-        nonce_overdrafts = post_multisend(
-            safe_address=config.payment_config.payment_safe_address_native,
-            transactions=ovedrafts_txs,
-            network=config.payment_config.network,
-            signing_key=signing_key,
-            client=client,
-            nonce_modifier=(
-                len(Network) + 1
-                if config.payment_config.network == EthereumNetwork.MAINNET
-                else 1
-            ),
-        )
-        time.sleep(2)  # attempt to avoid Safe API's rate limits
+
+        nonce_native: int | None = None
+        if len(transactions_native) > 0:
+            nonce_native = post_multisend(
+                safe_address=config.payment_config.payment_safe_address_native,
+                transactions=transactions_native,
+                network=config.payment_config.network,
+                signing_key=signing_key,
+                client=client,
+                nonce_modifier=(
+                    len(Network)
+                    if config.payment_config.network == EthereumNetwork.MAINNET
+                    else (1 if nonce_native is not None else 0)
+                ),
+            )
+            time.sleep(2)  # attempt to avoid Safe API's rate limits
+
+        nonce_overdrafts: int | None = None
+        if len(ovedrafts_txs) > 0:
+            nonce_overdrafts = post_multisend(
+                safe_address=config.payment_config.payment_safe_address_native,
+                transactions=ovedrafts_txs,
+                network=config.payment_config.network,
+                signing_key=signing_key,
+                client=client,
+                nonce_modifier=(
+                    len(Network) + 1
+                    if config.payment_config.network == EthereumNetwork.MAINNET
+                    else (1 if nonce_native is not None else 0)
+                ),
+            )
+            time.sleep(2)  # attempt to avoid Safe API's rate limits
+
         post_to_slack(
             slack_client,
             channel=slack_channel,
