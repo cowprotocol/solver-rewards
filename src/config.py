@@ -20,9 +20,10 @@ load_dotenv()
 class Network(Enum):
     """Network class for networks supported by the accounting."""
 
-    # As the script is proposing COW transfers for all chains on mainnet based on a nonce shift that is chain-dependent,
-    # we would like, for convenience, to have Lens last, as it is the chain most likely to have zero transfers (and thus produce a nonce gap).
-    # Nothing breaks if this order is not maintained but nonce gaps will be more likely to occur
+    # As the script is proposing COW transfers for all chains on mainnet based on a nonce shift
+    # that is chain-dependent, we would like, for convenience, to have Lens last, as it is the
+    # chain most likely to have zero transfers (and thus produce a nonce gap).
+    # Nothing breaks if this order is not maintained but nonce gaps will be more likely to occur.
     LENS = "lens"
     MAINNET = "mainnet"
     BASE = "base"
