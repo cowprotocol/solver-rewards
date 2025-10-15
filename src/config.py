@@ -20,10 +20,10 @@ load_dotenv()
 class Network(Enum):
     """Network class for networks supported by the accounting."""
 
+    LENS = "lens"
     MAINNET = "mainnet"
     BASE = "base"
     ARBITRUM_ONE = "arbitrum"
-    LENS = "lens"
     GNOSIS = "gnosis"
     AVALANCHE = "avalanche"
     POLYGON = "polygon"
