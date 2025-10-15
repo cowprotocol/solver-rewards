@@ -170,6 +170,7 @@ def auto_propose(
         slack_channel = config.io_config.slack_channel
         assert slack_channel is not None
 
+        nonce_cow: int | None = None
         if len(transactions_cow) > 0:
             nonce_cow = post_multisend(
                 safe_address=config.payment_config.payment_safe_address_cow,
