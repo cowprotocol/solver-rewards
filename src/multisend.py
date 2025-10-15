@@ -4,6 +4,7 @@ Safe Multisend transaction consisting of Transfers
 """
 
 import os
+import time
 from eth_typing.evm import ChecksumAddress
 from safe_eth.eth.ethereum_client import EthereumClient
 from safe_eth.eth.ethereum_network import EthereumNetwork
@@ -90,10 +91,12 @@ def post_multisend(
     client: EthereumClient,
     signing_key: str,
     nonce_modifier: int = 0,
-) -> int:
+) -> int | None:
     """Posts a MultiSend Transaction from a list of Transfers."""
     # pylint: disable=too-many-arguments,too-many-positional-arguments
 
+    if len(transactions) == 0:
+        return None
     encoded_multisend = build_encoded_multisend(transactions, client=client)
     safe = Safe(  # type: ignore  # pylint: disable=abstract-class-instantiated
         address=safe_address, ethereum_client=client
@@ -114,4 +117,5 @@ def post_multisend(
         f" {safe_tx.safe_tx_hash.hex()} to {safe.address}"
     )
     tx_service.post_transaction(safe_tx=safe_tx)
+    time.sleep(2)  # attempt to avoid Safe API's rate limits
     return int(safe_tx.safe_nonce)

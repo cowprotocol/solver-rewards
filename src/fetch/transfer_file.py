@@ -5,7 +5,6 @@ Script to generate the CSV Airdrop file for Solver Rewards over an Accounting Pe
 from __future__ import annotations
 
 import os
-import time
 import ssl
 from dataclasses import asdict
 from fractions import Fraction
@@ -170,49 +169,40 @@ def auto_propose(
         slack_channel = config.io_config.slack_channel
         assert slack_channel is not None
 
-        nonce_cow: int | None = None
-        if len(transactions_cow) > 0:
-            nonce_cow = post_multisend(
-                safe_address=config.payment_config.payment_safe_address_cow,
-                transactions=transactions_cow,
-                network=EthereumNetwork.MAINNET,
-                signing_key=signing_key,
-                client=client_mainnet,
-                nonce_modifier=config.payment_config.nonce_modifier,
-            )
-            time.sleep(2)  # attempt to avoid Safe API's rate limits
+        nonce_cow = post_multisend(
+            safe_address=config.payment_config.payment_safe_address_cow,
+            transactions=transactions_cow,
+            network=EthereumNetwork.MAINNET,
+            signing_key=signing_key,
+            client=client_mainnet,
+            nonce_modifier=config.payment_config.nonce_modifier,
+        )
 
-        nonce_native: int | None = None
-        if len(transactions_native) > 0:
-            nonce_native = post_multisend(
-                safe_address=config.payment_config.payment_safe_address_native,
-                transactions=transactions_native,
-                network=config.payment_config.network,
-                signing_key=signing_key,
-                client=client,
-                nonce_modifier=(
-                    len(Network)
-                    if config.payment_config.network == EthereumNetwork.MAINNET
-                    else (1 if nonce_native is not None else 0)
-                ),
-            )
-            time.sleep(2)  # attempt to avoid Safe API's rate limits
+        nonce_native = post_multisend(
+            safe_address=config.payment_config.payment_safe_address_native,
+            transactions=transactions_native,
+            network=config.payment_config.network,
+            signing_key=signing_key,
+            client=client,
+            nonce_modifier=(
+                len(Network)
+                if config.payment_config.network == EthereumNetwork.MAINNET
+                else (1 if nonce_native is not None else 0)
+            ),
+        )
 
-        nonce_overdrafts: int | None = None
-        if len(ovedrafts_txs) > 0:
-            nonce_overdrafts = post_multisend(
-                safe_address=config.payment_config.payment_safe_address_native,
-                transactions=ovedrafts_txs,
-                network=config.payment_config.network,
-                signing_key=signing_key,
-                client=client,
-                nonce_modifier=(
-                    len(Network) + 1
-                    if config.payment_config.network == EthereumNetwork.MAINNET
-                    else (1 if nonce_native is not None else 0)
-                ),
-            )
-            time.sleep(2)  # attempt to avoid Safe API's rate limits
+        nonce_overdrafts = post_multisend(
+            safe_address=config.payment_config.payment_safe_address_native,
+            transactions=ovedrafts_txs,
+            network=config.payment_config.network,
+            signing_key=signing_key,
+            client=client,
+            nonce_modifier=(
+                len(Network) + 1
+                if config.payment_config.network == EthereumNetwork.MAINNET
+                else (1 if nonce_native is not None else 0)
+            ),
+        )
 
         post_to_slack(
             slack_client,
