@@ -169,7 +169,7 @@ def auto_propose(
         slack_channel = config.io_config.slack_channel
         assert slack_channel is not None
 
-        nonce_cow = post_multisend(
+        nonce_cow: int | None = post_multisend(
             safe_address=config.payment_config.payment_safe_address_cow,
             transactions=transactions_cow,
             network=EthereumNetwork.MAINNET,
@@ -178,7 +178,7 @@ def auto_propose(
             nonce_modifier=config.payment_config.nonce_modifier,
         )
 
-        nonce_native = post_multisend(
+        nonce_native: int | None = post_multisend(
             safe_address=config.payment_config.payment_safe_address_native,
             transactions=transactions_native,
             network=config.payment_config.network,
@@ -191,7 +191,7 @@ def auto_propose(
             ),
         )
 
-        nonce_overdrafts = post_multisend(
+        nonce_overdrafts: int | None = post_multisend(
             safe_address=config.payment_config.payment_safe_address_native,
             transactions=ovedrafts_txs,
             network=config.payment_config.network,
