@@ -209,6 +209,9 @@ class ProtocolFeeConfig:
                 custom_partner_fee_dict = {}
             case Network.LENS:
                 # dummy values, will not be used
+                protocol_fee_safe = Address(
+                    "0x07e5292b5aac443B2C9473Ab51B53ce8BDC3317B"
+                )
                 custom_partner_fee_dict = {}
             case _:
                 raise ValueError(
