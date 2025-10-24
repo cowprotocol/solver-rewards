@@ -33,4 +33,3 @@ def test_config_serializes(_network, monkeypatch):
             )
         case Network.LENS:
             assert overdraft_config.contract_address == OVERDRAFTS_CONTRACT_ADDRESS_LENS
-

@@ -55,4 +55,3 @@ def test_multisend_tx(_network, monkeypatch):
                     assert multisendtx.to == Web3.to_checksum_address(
                         OVERDRAFTS_CONTRACT_ADDRESS_LENS
                     )
-
