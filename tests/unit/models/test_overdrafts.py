@@ -56,6 +56,3 @@ def test_multisend_tx(_network, monkeypatch):
                         OVERDRAFTS_CONTRACT_ADDRESS_LENS
                     )
 
-
-if __name__ == "__main__":
-    unittest.main()

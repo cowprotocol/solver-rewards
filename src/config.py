@@ -675,7 +675,7 @@ class OverdraftConfig:
             case Network.LENS:
                 contract_address = "0x16B89D024132b3dEB42bE0bc085F7Ba056745605"
             case _:
-                raise ValueError(f"No reward config set up for network {network}.")
+                raise ValueError(f"No overdraft config set up for network {network}.")
 
         return OverdraftConfig(
             contract_address=contract_address,
