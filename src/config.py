@@ -651,4 +651,35 @@ class AccountingConfig:
         )
 
 
+@dataclass(frozen=True)
+class OverdraftConfig:
+    """Full configuration for the overdrafts management contract"""
+
+    contract_address: str
+
+    @staticmethod
+    def from_env() -> OverdraftConfig:
+        """Initialize overdraft config from environment variables."""
+        network = Network(os.getenv("NETWORK"))
+
+        match network:
+            case (
+                Network.MAINNET
+                | Network.GNOSIS
+                | Network.ARBITRUM_ONE
+                | Network.BASE
+                | Network.AVALANCHE
+                | Network.POLYGON
+            ):
+                contract_address = "0x8Fd67Ea651329fD142D7Cfd8e90406F133F26E8a"
+            case Network.LENS:
+                contract_address = "0x16B89D024132b3dEB42bE0bc085F7Ba056745605"
+            case _:
+                raise ValueError(f"No reward config set up for network {network}.")
+
+        return OverdraftConfig(
+            contract_address=contract_address,
+        )
+
+
 web3 = Web3(Web3.HTTPProvider(NodeConfig.from_env().node_url))
