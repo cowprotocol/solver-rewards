@@ -619,6 +619,35 @@ class DataProcessingConfig:
 
 
 @dataclass(frozen=True)
+class OverdraftConfig:
+    """Configuration for the overdrafts management contract."""
+
+    contract_address: Address
+
+    @staticmethod
+    def from_network(network: Network) -> OverdraftConfig:
+        """Initialize overdraft config from environment variables."""
+        match network:
+            case (
+                Network.MAINNET
+                | Network.GNOSIS
+                | Network.ARBITRUM_ONE
+                | Network.BASE
+                | Network.AVALANCHE
+                | Network.POLYGON
+            ):
+                contract_address = Address("0x8Fd67Ea651329fD142D7Cfd8e90406F133F26E8a")
+            case Network.LENS:
+                contract_address = Address("0x16B89D024132b3dEB42bE0bc085F7Ba056745605")
+            case _:
+                raise ValueError(f"No overdraft config set up for network {network}.")
+
+        return OverdraftConfig(
+            contract_address=contract_address,
+        )
+
+
+@dataclass(frozen=True)
 class AccountingConfig:
     """Full configuration for solver accounting."""
 
@@ -633,6 +662,7 @@ class AccountingConfig:
     buffer_accounting_config: BufferAccountingConfig
     io_config: IOConfig
     data_processing_config: DataProcessingConfig
+    overdraft_config: OverdraftConfig
 
     @staticmethod
     def from_network(network: Network) -> AccountingConfig:
@@ -648,37 +678,7 @@ class AccountingConfig:
             buffer_accounting_config=BufferAccountingConfig.from_network(network),
             io_config=IOConfig.from_env(),
             data_processing_config=DataProcessingConfig.from_network(network),
-        )
-
-
-@dataclass(frozen=True)
-class OverdraftConfig:
-    """Configuration for the overdrafts management contract."""
-
-    contract_address: str
-
-    @staticmethod
-    def from_env() -> OverdraftConfig:
-        """Initialize overdraft config from environment variables."""
-        network = Network(os.getenv("NETWORK"))
-
-        match network:
-            case (
-                Network.MAINNET
-                | Network.GNOSIS
-                | Network.ARBITRUM_ONE
-                | Network.BASE
-                | Network.AVALANCHE
-                | Network.POLYGON
-            ):
-                contract_address = "0x8Fd67Ea651329fD142D7Cfd8e90406F133F26E8a"
-            case Network.LENS:
-                contract_address = "0x16B89D024132b3dEB42bE0bc085F7Ba056745605"
-            case _:
-                raise ValueError(f"No overdraft config set up for network {network}.")
-
-        return OverdraftConfig(
-            contract_address=contract_address,
+            overdraft_config=OverdraftConfig.from_network(network),
         )
 
 

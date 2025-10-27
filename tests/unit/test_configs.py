@@ -14,11 +14,11 @@ from tests.constants import (
 )
 
 
-@pytest.mark.parametrize("_network", ALL_NETWORKS)
-def test_config_serializes(_network, monkeypatch):
-    monkeypatch.setenv("NETWORK", _network)
-    overdraft_config = OverdraftConfig.from_env()
-    match _network:
+@pytest.mark.parametrize("network", ALL_NETWORKS)
+def test_config_serializes(network, monkeypatch):
+    network = Network(network)
+    overdraft_config = OverdraftConfig.from_network(network)
+    match network:
         case (
             Network.MAINNET
             | Network.GNOSIS
@@ -27,9 +27,10 @@ def test_config_serializes(_network, monkeypatch):
             | Network.AVALANCHE
             | Network.POLYGON
         ):
-            assert (
-                overdraft_config.contract_address
-                == OVERDRAFTS_CONTRACT_ADDRESS_NOT_LENS
+            assert overdraft_config.contract_address == Address(
+                OVERDRAFTS_CONTRACT_ADDRESS_NOT_LENS
             )
         case Network.LENS:
-            assert overdraft_config.contract_address == OVERDRAFTS_CONTRACT_ADDRESS_LENS
+            assert overdraft_config.contract_address == Address(
+                OVERDRAFTS_CONTRACT_ADDRESS_LENS
+            )
