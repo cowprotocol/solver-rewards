@@ -653,7 +653,7 @@ class AccountingConfig:
 
 @dataclass(frozen=True)
 class OverdraftConfig:
-    """Full configuration for the overdrafts management contract"""
+    """Configuration for the overdrafts management contract."""
 
     contract_address: str
 
