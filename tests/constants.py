@@ -1,4 +1,13 @@
-ALL_NETWORKS = ["lens", "mainnet", "base", "arbitrum", "gnosis", "avalanche", "polygon"]
+ALL_NETWORKS = [
+    "lens",
+    "mainnet",
+    "base",
+    "arbitrum",
+    "gnosis",
+    "avalanche",
+    "polygon",
+    "bnb",
+]
 
 # Contract Addresses
 OVERDRAFTS_CONTRACT_ADDRESS_NOT_LENS = "0x8Fd67Ea651329fD142D7Cfd8e90406F133F26E8a"

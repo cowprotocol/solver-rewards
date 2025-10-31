@@ -31,6 +31,7 @@ class Network(Enum):
     GNOSIS = "gnosis"
     AVALANCHE = "avalanche"
     POLYGON = "polygon"
+    BNB = "bnb"
 
 
 @dataclass(frozen=True)
@@ -85,6 +86,11 @@ class RewardConfig:
                 batch_reward_cap_lower = 10 * 10**18
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 15 * 10**16
+            case Network.BNB:
+                batch_reward_cap_upper = 48 * 10**15
+                batch_reward_cap_lower = 40 * 10**15
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 1 * 10**15
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
@@ -213,6 +219,8 @@ class ProtocolFeeConfig:
                     "0x07e5292b5aac443B2C9473Ab51B53ce8BDC3317B"
                 )
                 custom_partner_fee_dict = {}
+            case Network.BNB:
+                custom_partner_fee_dict = {}
             case _:
                 raise ValueError(
                     f"No protocol fee config set up for network {network}."
@@ -254,6 +262,7 @@ class BufferAccountingConfig:
                 | Network.AVALANCHE
                 | Network.POLYGON
                 | Network.LENS
+                | Network.BNB
             ):
                 include_slippage = True
             case _:
@@ -299,6 +308,8 @@ class OrderbookConfig:
                 network_db_name = "polygon"
             case Network.LENS:
                 network_db_name = "lens"
+            case Network.BNB:
+                network_db_name = "bnb"
             case _:
                 raise ValueError(
                     f"No orderbook data base config set up for network {network}."
@@ -339,6 +350,8 @@ class DuneConfig:
                 dune_blockchain = "polygon"
             case Network.LENS:
                 dune_blockchain = "lens"
+            case Network.BNB:
+                dune_blockchain = "bnb"
             case _:
                 raise ValueError(f"No dune config set up for network {network}.")
 
@@ -516,6 +529,22 @@ class PaymentConfig:
                 )
                 min_native_token_transfer = 10**16  # 0.01 GHO
                 min_cow_transfer = 10**18  # 1 COW
+
+            case Network.BNB:
+                payment_network = EthereumNetwork.BNB_SMART_CHAIN_MAINNET
+                short_name = "bnb"
+
+                cow_token_address = Address(  # dummy address
+                    "0x0000000000000000000000000000000000000006"
+                )
+                wrapped_native_token_address = Web3.to_checksum_address(  # wrapped BNB
+                    "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"
+                )
+                wrapped_eth_address = Address(  # real address
+                    "0x4db5a66e937a9f4473fa95b1caf1d1e1d62e29ea"
+                )
+                min_native_token_transfer = 10**14  # 0.0001 BNB
+                min_cow_transfer = 10**18  # 1 COW
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
@@ -608,6 +637,8 @@ class DataProcessingConfig:
                 bucket_size = 0  # dummy value
             case Network.LENS:
                 bucket_size = 0  # dummy value
+            case Network.BNB:
+                bucket_size = 0  # dummy value
             case _:
                 raise ValueError(
                     f"No buffer accounting config set up for network {network}."
@@ -635,6 +666,7 @@ class OverdraftConfig:
                 | Network.BASE
                 | Network.AVALANCHE
                 | Network.POLYGON
+                | Network.BNB
             ):
                 contract_address = Address("0x8Fd67Ea651329fD142D7Cfd8e90406F133F26E8a")
             case Network.LENS:

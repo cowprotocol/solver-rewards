@@ -26,6 +26,7 @@ def test_config_serializes(network, monkeypatch):
             | Network.BASE
             | Network.AVALANCHE
             | Network.POLYGON
+            | Network.BNB
         ):
             assert overdraft_config.contract_address == Address(
                 OVERDRAFTS_CONTRACT_ADDRESS_NOT_LENS
