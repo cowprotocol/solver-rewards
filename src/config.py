@@ -90,7 +90,7 @@ class RewardConfig:
                 batch_reward_cap_upper = 48 * 10**15
                 batch_reward_cap_lower = 40 * 10**15
                 quote_reward_cow = 6 * 10**18
-                quote_reward_cap_native = 1 * 10**15                
+                quote_reward_cap_native = 1 * 10**15
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
@@ -529,9 +529,9 @@ class PaymentConfig:
                 )
                 min_native_token_transfer = 10**16  # 0.01 GHO
                 min_cow_transfer = 10**18  # 1 COW
-            
+
             case Network.BNB:
-                payment_network = EthereumNetwork.BNB
+                payment_network = EthereumNetwork.BNB_SMART_CHAIN_MAINNET
                 short_name = "bnb"
 
                 cow_token_address = Address(  # dummy address
