@@ -666,6 +666,7 @@ class OverdraftConfig:
                 | Network.BASE
                 | Network.AVALANCHE
                 | Network.POLYGON
+                | Network.BNB
             ):
                 contract_address = Address("0x8Fd67Ea651329fD142D7Cfd8e90406F133F26E8a")
             case Network.LENS:
