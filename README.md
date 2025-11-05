@@ -148,18 +148,6 @@ docker run --pull=always -it --rm \
 
 and (usually after about 30 seconds) find the transfer file written to your current working directory.
 
-# Creating payment data for syncing
-
-The script `src/data_sync/sync_data.py` creates tables for syncing to dune. The scripts can be called with a table to sync, start and end times, and a flag for dropping old data.
-
-To create order rewards tables with data from `2024-12-30` to `2025-01-02` use
-```shell
-python -m src.data_sync.sync_data --sync_table order_data --start-time 2024-12-30 --end-time 2025-01-02
-```
-This will update (or create, if they do not exist yet) the tables `order_data_{NETWORK}_2024_12` and `order_data_{NETWORK}_2025_01`.
-
-The script requires the additional environment variable `ANALYTICS_DB_URL`.
-
 # Managing Dependencies
 Python libraries can be added to the `requirements.in` file. After this `pip-compile` or `python -m pip-compile` will update the `requirements.txt` for you (you may have to install the libry manually first). 
 Warning: this might take a long time for large changes or when you run pip-compile for the first time. Running the command with the `-v` flag can help keep track of what's happening.
