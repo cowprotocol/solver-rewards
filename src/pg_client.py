@@ -20,7 +20,7 @@ class MultiInstanceDBFetcher:
     Currently very specific to the CoW Protocol Orderbook DB.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         log.info("Initializing MultiInstanceDBFetcher")
 
     @classmethod
