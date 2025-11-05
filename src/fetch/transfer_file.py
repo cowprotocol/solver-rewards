@@ -41,12 +41,6 @@ def dashboard_url(period: AccountingPeriod, config: AccountingConfig) -> str:
     # reward parameters
     decimals_native_token = 18  # this could be fetched from a node
     decimals_cow = 18  # this could be fetched from a node
-    upper_cap = Fraction(
-        config.reward_config.batch_reward_cap_upper, 10**decimals_native_token
-    )
-    lower_cap = -Fraction(
-        config.reward_config.batch_reward_cap_lower, 10**decimals_native_token
-    )
     quote_reward = Fraction(config.reward_config.quote_reward_cow, 10**decimals_cow)
     quote_cap_native_token = Fraction(
         config.reward_config.quote_reward_cap_native, 10**decimals_native_token
@@ -54,7 +48,6 @@ def dashboard_url(period: AccountingPeriod, config: AccountingConfig) -> str:
     query = (
         f"?start_time={period.start}&end_time={period.end}"
         f"&blockchain={config.dune_config.dune_blockchain}"
-        f"&upper_cap={upper_cap:g}&lower_cap={lower_cap:g}"
         f"&quote_reward={quote_reward:g}"
         f"&quote_cap_native_token={quote_cap_native_token:g}"
     )
@@ -231,9 +224,7 @@ def main() -> None:
 
     accounting_period = AccountingPeriod(args.start)
 
-    orderbook = MultiInstanceDBFetcher(
-        [config.orderbook_config.prod_db_url, config.orderbook_config.barn_db_url]
-    )
+    orderbook = MultiInstanceDBFetcher()
     dune = DuneFetcher(
         dune=DuneClient(config.dune_config.dune_api_key),
         blockchain=config.dune_config.dune_blockchain,

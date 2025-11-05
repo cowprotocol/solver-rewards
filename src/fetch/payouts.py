@@ -602,7 +602,7 @@ def construct_payouts(
     Parameters
     ----------
     orderbook : MultiInstanceDBFetcher
-        Fetcher for databases providing batch and quote data.
+        Fetcher for analytics database providing batch and quote data.
     dune : DuneFetcher
         Fetcher for querying Dune to retrieve various metrics.
     config : AccountingConfig

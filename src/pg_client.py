@@ -20,21 +20,8 @@ class MultiInstanceDBFetcher:
     Currently very specific to the CoW Protocol Orderbook DB.
     """
 
-    def __init__(self, db_urls: list[str]):
+    def __init__(self):
         log.info("Initializing MultiInstanceDBFetcher")
-        self.connections = [
-            create_engine(
-                f"postgresql+psycopg2://{url}",
-                pool_pre_ping=True,
-                connect_args={
-                    "keepalives": 1,
-                    "keepalives_idle": 30,
-                    "keepalives_interval": 10,
-                    "keepalives_count": 5,
-                },
-            )
-            for url in db_urls
-        ]
 
     @classmethod
     def exec_query(cls, query: str, engine: Engine) -> DataFrame:
