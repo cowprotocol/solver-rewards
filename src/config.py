@@ -96,10 +96,44 @@ class ProtocolFeeConfig:
     @staticmethod
     def from_network(network: Network) -> ProtocolFeeConfig:
         """Initialize protocol fee config for a given network."""
-        if network == Network.LENS:
-            protocol_fee_safe = Address("0x07e5292b5aac443B2C9473Ab51B53ce8BDC3317B")
-        else:
-            protocol_fee_safe = Address("0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76")
+
+        match network:
+            case Network.MAINNET:
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
+            case Network.GNOSIS:
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
+            case Network.ARBITRUM_ONE:
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
+            case Network.BASE:
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
+            case Network.AVALANCHE:
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
+            case Network.POLYGON:
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
+            case Network.BNB:
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
+            case Network.LENS:
+                protocol_fee_safe = Address(
+                    "0x07e5292b5aac443B2C9473Ab51B53ce8BDC3317B"
+                )
+            case _:
+                raise ValueError(
+                    f"No protocol fee safe config set up for network {network}."
+                )
 
         return ProtocolFeeConfig(
             protocol_fee_safe=protocol_fee_safe,
