@@ -39,8 +39,6 @@ class RewardConfig:
     """Configuration for reward mechanism."""
 
     reward_token_address: Address
-    batch_reward_cap_upper: int
-    batch_reward_cap_lower: int
     quote_reward_cow: int
     quote_reward_cap_native: int
     service_fee_factor: Fraction
@@ -52,51 +50,33 @@ class RewardConfig:
         reward_token_address = Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB")
         match network:
             case Network.MAINNET:
-                batch_reward_cap_upper = 12 * 10**15
-                batch_reward_cap_lower = 10 * 10**15
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 7 * 10**14
             case Network.GNOSIS:
-                batch_reward_cap_upper = 10 * 10**18
-                batch_reward_cap_lower = 10 * 10**18
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 15 * 10**16
             case Network.ARBITRUM_ONE:
-                batch_reward_cap_upper = 12 * 10**15
-                batch_reward_cap_lower = 10 * 10**15
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 24 * 10**13
             case Network.BASE:
-                batch_reward_cap_upper = 12 * 10**15
-                batch_reward_cap_lower = 10 * 10**15
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 24 * 10**13
             case Network.AVALANCHE:
-                batch_reward_cap_upper = 4 * 10**17
-                batch_reward_cap_lower = 3 * 10**17
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 6 * 10**15
             case Network.POLYGON:
-                batch_reward_cap_upper = 40 * 10**18
-                batch_reward_cap_lower = 30 * 10**18
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 6 * 10**17
             case Network.LENS:
-                batch_reward_cap_upper = 10 * 10**18
-                batch_reward_cap_lower = 10 * 10**18
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 15 * 10**16
             case Network.BNB:
-                batch_reward_cap_upper = 48 * 10**15
-                batch_reward_cap_lower = 40 * 10**15
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 1 * 10**15
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
             reward_token_address=reward_token_address,
-            batch_reward_cap_upper=batch_reward_cap_upper,
-            batch_reward_cap_lower=batch_reward_cap_lower,
             quote_reward_cow=quote_reward_cow,
             quote_reward_cap_native=quote_reward_cap_native,
             service_fee_factor=service_fee_factor,
@@ -109,126 +89,54 @@ class ProtocolFeeConfig:
 
     Attributes:
     protocol_fee_safe -- address to forward protocol fees to
-    default_partner_fee_cut -- default fraction of partner fees withheld from integration partners
-    custom_partner_fee_dict -- dictionary of partner_fee_recipients/app_code pairs and
-        corresponding fractions. here, we use the convention that if there is an explicit
-        recipient+app_code match, the corresponding fraction applies, while if there is no
-        such match but there is still a recipient match with the custom (recipient, "") entry
-        in the dictionary, that entry is matched. In other words, the empty string "" serves
-        as placeholder here.
     """
 
     protocol_fee_safe: Address
-    default_partner_fee_cut: float
-    custom_partner_fee_dict: dict[tuple[str, str], float]
 
     @staticmethod
     def from_network(network: Network) -> ProtocolFeeConfig:
         """Initialize protocol fee config for a given network."""
-        protocol_fee_safe = Address("0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76")
+
         match network:
             case Network.MAINNET:
-                custom_partner_fee_dict = {
-                    (
-                        "0x63695eee2c3141bde314c5a6f89b98e62808d716",
-                        "CoW Swap-SafeApp",
-                    ): 0.50,
-                    ("0x63695eee2c3141bde314c5a6f89b98e62808d716", ""): 0.10,
-                    (
-                        "0x8025bacf968aa82bdfe51b513123b55bfb0060d3",
-                        "CoW Swap-SafeApp",
-                    ): 0.55,
-                    ("0xe344241493d573428076c022835856a221db3e26", ""): 0.15,
-                    ("0x352a3666b27bb09aca7b4a71ed624429b7549551", ""): 0.15,
-                    ("0xe37da2d07e769b7fcb808bdeaeffb84561ff4eca", ""): 0.15,
-                    ("0x90a48d5cf7343b08da12e067680b4c6dbfe551be", ""): 0.15,
-                    ("0xcd777a10502256db93c2b0a8e8f64a5174c6cbda", ""): 0.15,
-                    ("0xe423c63e8a25811c9cbe71c8585c4505117397c6", ""): 0.25,
-                    ("0x1713b79e3dbb8a76d80e038ca701a4a781ac69eb", ""): 0.25,
-                    ("0xc542c2f197c4939154017c802b0583c596438380", ""): 0.125,
-                }
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
             case Network.GNOSIS:
-                custom_partner_fee_dict = {
-                    (
-                        "0x63695eee2c3141bde314c5a6f89b98e62808d716",
-                        "CoW Swap-SafeApp",
-                    ): 0.50,
-                    ("0x63695eee2c3141bde314c5a6f89b98e62808d716", ""): 0.10,
-                    (
-                        "0x8025bacf968aa82bdfe51b513123b55bfb0060d3",
-                        "CoW Swap-SafeApp",
-                    ): 0.55,
-                    ("0xe344241493d573428076c022835856a221db3e26", ""): 0.15,
-                    ("0x352a3666b27bb09aca7b4a71ed624429b7549551", ""): 0.15,
-                    ("0x8387fae9951724c00c753797b22b897111750673", ""): 0.15,
-                    ("0xb0E3175341794D1dc8E5F02a02F9D26989EbedB3", ""): 0.15,
-                    ("0xcd777a10502256db93c2b0a8e8f64a5174c6cbda", ""): 0.15,
-                    ("0xe423c63e8a25811c9cbe71c8585c4505117397c6", ""): 0.25,
-                    ("0x1713b79e3dbb8a76d80e038ca701a4a781ac69eb", ""): 0.25,
-                    ("0xc542c2f197c4939154017c802b0583c596438380", ""): 0.125,
-                }
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
             case Network.ARBITRUM_ONE:
-                custom_partner_fee_dict = {
-                    (
-                        "0x63695eee2c3141bde314c5a6f89b98e62808d716",
-                        "CoW Swap-SafeApp",
-                    ): 0.50,
-                    ("0x63695eee2c3141bde314c5a6f89b98e62808d716", ""): 0.10,
-                    (
-                        "0x8025bacf968aa82bdfe51b513123b55bfb0060d3",
-                        "CoW Swap-SafeApp",
-                    ): 0.55,
-                    ("0xe344241493d573428076c022835856a221db3e26", ""): 0.15,
-                    ("0x352a3666b27bb09aca7b4a71ed624429b7549551", ""): 0.15,
-                    ("0x86cd2bBC859E797B75D86E6eEEC1a726A9284c23", ""): 0.15,
-                    ("0x38276553F8fbf2A027D901F8be45f00373d8Dd48", ""): 0.15,
-                    ("0xcd777a10502256db93c2b0a8e8f64a5174c6cbda", ""): 0.15,
-                    ("0xe423c63e8a25811c9cbe71c8585c4505117397c6", ""): 0.25,
-                    ("0x1713b79e3dbb8a76d80e038ca701a4a781ac69eb", ""): 0.25,
-                    ("0xc542c2f197c4939154017c802b0583c596438380", ""): 0.125,
-                }
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
             case Network.BASE:
-                custom_partner_fee_dict = {
-                    (
-                        "0x63695eee2c3141bde314c5a6f89b98e62808d716",
-                        "CoW Swap-SafeApp",
-                    ): 0.50,
-                    ("0x63695eee2c3141bde314c5a6f89b98e62808d716", ""): 0.10,
-                    (
-                        "0x8025bacf968aa82bdfe51b513123b55bfb0060d3",
-                        "CoW Swap-SafeApp",
-                    ): 0.55,
-                    ("0xe344241493d573428076c022835856a221db3e26", ""): 0.15,
-                    ("0x352a3666b27bb09aca7b4a71ed624429b7549551", ""): 0.15,
-                    ("0xAf1c727B605530AcDb00906a158E817f41aFD778", ""): 0.15,
-                    ("0x9c9aA90363630d4ab1D9dbF416cc3BBC8d3Ed502", ""): 0.15,
-                    ("0xcd777a10502256db93c2b0a8e8f64a5174c6cbda", ""): 0.15,
-                    ("0xe423c63e8a25811c9cbe71c8585c4505117397c6", ""): 0.25,
-                    ("0x1713b79e3dbb8a76d80e038ca701a4a781ac69eb", ""): 0.25,
-                    ("0xc542c2f197c4939154017c802b0583c596438380", ""): 0.125,
-                }
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
             case Network.AVALANCHE:
-                # dummy values, will not be used
-                custom_partner_fee_dict = {}
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
             case Network.POLYGON:
-                # dummy values, will not be used
-                custom_partner_fee_dict = {}
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
+            case Network.BNB:
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
             case Network.LENS:
-                # dummy values, will not be used
                 protocol_fee_safe = Address(
                     "0x07e5292b5aac443B2C9473Ab51B53ce8BDC3317B"
                 )
-                custom_partner_fee_dict = {}
-            case Network.BNB:
-                custom_partner_fee_dict = {}
             case _:
                 raise ValueError(
-                    f"No protocol fee config set up for network {network}."
+                    f"No protocol fee safe config set up for network {network}."
                 )
+
         return ProtocolFeeConfig(
             protocol_fee_safe=protocol_fee_safe,
-            default_partner_fee_cut=0.5,
-            custom_partner_fee_dict=custom_partner_fee_dict,
         )
 
 
@@ -236,11 +144,10 @@ class ProtocolFeeConfig:
 class BufferAccountingConfig:
     """Configuration for buffer accounting."""
 
-    include_slippage: bool
     send_buffers_to_rewards_address_pools: list[Address]
 
     @staticmethod
-    def from_network(network: Network) -> BufferAccountingConfig:
+    def from_network() -> BufferAccountingConfig:
         """Initialize buffer accounting config for a given network."""
         send_buffers_to_rewards_address_pools = [
             Address(
@@ -253,25 +160,8 @@ class BufferAccountingConfig:
                 "0x7719c9c0d35d460b00487a1744394e9525e8a42c"
             ),  # Fractal bonding pool
         ]
-        match network:
-            case (
-                Network.MAINNET
-                | Network.GNOSIS
-                | Network.ARBITRUM_ONE
-                | Network.BASE
-                | Network.AVALANCHE
-                | Network.POLYGON
-                | Network.LENS
-                | Network.BNB
-            ):
-                include_slippage = True
-            case _:
-                raise ValueError(
-                    f"No buffer accounting config set up for network {network}."
-                )
 
         return BufferAccountingConfig(
-            include_slippage=include_slippage,
             send_buffers_to_rewards_address_pools=send_buffers_to_rewards_address_pools,
         )
 
@@ -280,8 +170,6 @@ class BufferAccountingConfig:
 class OrderbookConfig:
     """Configuration for orderbook fetcher"""
 
-    prod_db_url: str
-    barn_db_url: str
     analytics_db_url: str
     network_db_name: str
     schema: str
@@ -289,8 +177,6 @@ class OrderbookConfig:
     @staticmethod
     def from_network(network: Network) -> OrderbookConfig:
         """Initialize orderbook config from environment variables."""
-        prod_db_url = os.environ.get("PROD_DB_URL", "")
-        barn_db_url = os.environ.get("BARN_DB_URL", "")
         analytics_db_url = os.environ.get("ANALYTICS_DB_URL", "")
         schema = "dbt"
         match network:
@@ -316,8 +202,6 @@ class OrderbookConfig:
                 )
 
         return OrderbookConfig(
-            prod_db_url=prod_db_url,
-            barn_db_url=barn_db_url,
             analytics_db_url=analytics_db_url,
             network_db_name=network_db_name,
             schema=schema,
@@ -613,43 +497,6 @@ class IOConfig:
 
 
 @dataclass(frozen=True)
-class DataProcessingConfig:
-    """Configuration of data processing component."""
-
-    # pylint: disable=too-many-instance-attributes
-    bucket_size: int
-
-    @staticmethod
-    def from_network(network: Network) -> DataProcessingConfig:
-        """Initialize data processing config for a given network."""
-        match network:
-            case Network.MAINNET:
-                bucket_size = 10000
-            case Network.GNOSIS:
-                bucket_size = 30000
-            case Network.ARBITRUM_ONE:
-                bucket_size = 1000000
-            case Network.BASE:
-                bucket_size = 50000
-            case Network.AVALANCHE:
-                bucket_size = 0  # dummy value
-            case Network.POLYGON:
-                bucket_size = 0  # dummy value
-            case Network.LENS:
-                bucket_size = 0  # dummy value
-            case Network.BNB:
-                bucket_size = 0  # dummy value
-            case _:
-                raise ValueError(
-                    f"No buffer accounting config set up for network {network}."
-                )
-
-        return DataProcessingConfig(
-            bucket_size=bucket_size,
-        )
-
-
-@dataclass(frozen=True)
 class OverdraftConfig:
     """Configuration for the overdrafts management contract."""
 
@@ -693,7 +540,6 @@ class AccountingConfig:
     protocol_fee_config: ProtocolFeeConfig
     buffer_accounting_config: BufferAccountingConfig
     io_config: IOConfig
-    data_processing_config: DataProcessingConfig
     overdraft_config: OverdraftConfig
 
     @staticmethod
@@ -707,9 +553,8 @@ class AccountingConfig:
             node_config=NodeConfig.from_env(),
             reward_config=RewardConfig.from_network(network),
             protocol_fee_config=ProtocolFeeConfig.from_network(network),
-            buffer_accounting_config=BufferAccountingConfig.from_network(network),
+            buffer_accounting_config=BufferAccountingConfig.from_network(),
             io_config=IOConfig.from_env(),
-            data_processing_config=DataProcessingConfig.from_network(network),
             overdraft_config=OverdraftConfig.from_network(network),
         )
 
