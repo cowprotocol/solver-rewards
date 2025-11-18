@@ -100,16 +100,16 @@ def post_multisend(
     # https://github.com/safe-global/safe-eth-py/issues/283
     # We just need to figuer out how to properly call build_multisig_tx()
     if network == EthereumNetwork.LENS:
-        MULTISEND_CONTRACT = web3.to_checksum_address(
+        multisend_contract = web3.to_checksum_address(
             "0xf220D3b4DFb23C4ade8C88E526C1353AbAcbC38F"
         )
     else:
-        MULTISEND_CONTRACT = web3.to_checksum_address(
+        multisend_contract = web3.to_checksum_address(
             "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
         )
 
     safe_tx = safe.build_multisig_tx(
-        to=MULTISEND_CONTRACT,
+        to=multisend_contract,
         value=0,
         data=encoded_multisend,
         operation=MultiSendOperation.DELEGATE_CALL.value,
