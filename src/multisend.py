@@ -19,12 +19,6 @@ from src.logger import set_log
 
 log = set_log(__name__)
 
-# This contract address can be removed once this issue is resolved:
-# https://github.com/safe-global/safe-eth-py/issues/283
-MULTISEND_CONTRACT = web3.to_checksum_address(
-    "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
-)
-
 api_key = os.getenv("SAFE_API_KEY")
 
 
@@ -33,7 +27,7 @@ def build_encoded_multisend(
 ) -> bytes:
     """ "Encodes a list of transfers into Multisend Transaction"""
     # TODO - This doesn't appear to require a real Ethereum Client instance...
-    multisend = MultiSend(address=MULTISEND_CONTRACT, ethereum_client=client)
+    multisend = MultiSend(ethereum_client=client)
     log.info(f"Packing {len(transactions)} transfers into MultiSend")
     tx_bytes: bytes = multisend.build_tx_data(transactions)
     return tx_bytes
@@ -101,8 +95,21 @@ def post_multisend(
     safe = Safe(  # type: ignore  # pylint: disable=abstract-class-instantiated
         address=safe_address, ethereum_client=client
     )
+    # This case analysis with the MULTISEND_CONTRACT address should be removed
+    # as the following issue has been resolved
+    # https://github.com/safe-global/safe-eth-py/issues/283
+    # We just need to figuer out how to properly call build_multisig_tx()
+    if network == EthereumNetwork.LENS:
+        multisend_contract = web3.to_checksum_address(
+            "0xf220D3b4DFb23C4ade8C88E526C1353AbAcbC38F"
+        )
+    else:
+        multisend_contract = web3.to_checksum_address(
+            "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
+        )
+
     safe_tx = safe.build_multisig_tx(
-        to=MULTISEND_CONTRACT,
+        to=multisend_contract,
         value=0,
         data=encoded_multisend,
         operation=MultiSendOperation.DELEGATE_CALL.value,
