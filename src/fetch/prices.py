@@ -75,6 +75,9 @@ TOKEN_ADDRESS_TO_ID = {
     Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
     Address("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"): TokenId.BNB,
     Address("0x4db5a66e937a9f4473fa95b1caf1d1e1d62e29ea"): TokenId.ETH,
+    # linea tokens
+    Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
+    Address("0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f"): TokenId.ETH,
 }
 
 

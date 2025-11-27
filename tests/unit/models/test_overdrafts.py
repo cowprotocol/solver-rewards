@@ -48,6 +48,8 @@ def test_multisend_tx(_network, monkeypatch):
                     | Network.AVALANCHE
                     | Network.POLYGON
                     | Network.BNB
+                    | Network.LENS
+                    | Network.LINEA
                 ):
                     assert multisendtx.to == Web3.to_checksum_address(
                         OVERDRAFTS_CONTRACT_ADDRESS_NOT_LENS
