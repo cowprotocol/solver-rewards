@@ -7,6 +7,7 @@ ALL_NETWORKS = [
     "avalanche",
     "polygon",
     "bnb",
+    "linea",
 ]
 
 # Contract Addresses
