@@ -45,38 +45,31 @@ class TokenId(Enum):
 
 
 TOKEN_ADDRESS_TO_ID = {
-    # mainnet tokens
+    # mainnet COW address
     Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
+    # mainnet tokens
     Address("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"): TokenId.ETH,
     Address("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"): TokenId.USDC,
     # gnosis tokens
-    Address("0x177127622c4a00f3d409b75571e12cb3c8973d3c"): TokenId.COW,
     Address("0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1"): TokenId.ETH,
     Address("0xe91d153e0b41518a2ce8dd3d7944fa863463a97d"): TokenId.XDAI,
     # arbitrum tokens
-    Address("0xcb8b5cd20bdcaea9a010ac1f8d835824f5c87a04"): TokenId.COW,
     Address("0x82af49447d8a07e3bd95bd0d56f35241523fbab1"): TokenId.ETH,
     # base tokens
-    Address("0xc694a91e6b071bf030a18bd3053a7fe09b6dae69"): TokenId.COW,
     Address("0x4200000000000000000000000000000000000006"): TokenId.ETH,
     # avalanche tokens
-    Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
     Address("0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"): TokenId.AVAX,
     Address("0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB"): TokenId.ETH,
     # polygon tokens
-    Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
     Address("0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"): TokenId.POL,
     Address("0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"): TokenId.ETH,
     # lens tokens
-    Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
     Address("0x6bDc36E20D267Ff0dd6097799f82e78907105e2F"): TokenId.GHO,
     Address("0xe5ecd226b3032910ceaa43ba92ee8232f8237553"): TokenId.ETH,
     # bnb tokens
-    Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
     Address("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"): TokenId.BNB,
     Address("0x4db5a66e937a9f4473fa95b1caf1d1e1d62e29ea"): TokenId.ETH,
     # linea tokens
-    Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"): TokenId.COW,
     Address("0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f"): TokenId.ETH,
 }
 
