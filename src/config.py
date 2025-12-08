@@ -460,12 +460,9 @@ class PaymentConfig:
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
-        safe_url_cow = f"https://app.safe.global/eth:{payment_safe_address_cow}"
-        safe_queue_url_cow = f"{safe_url_cow}/transactions/queue"
-        safe_url_native = (
-            f"https://app.safe.global/{short_name}:{payment_safe_address_native}"
-        )
-        safe_queue_url_native = f"{safe_url_native}/transactions/queue"
+        safe_queue_url_cow = f"https://app.safe.global/transactions/queue?safe=eth:{payment_safe_address_cow}"
+
+        safe_queue_url_native = f"https://app.safe.global/transactions/queue?safe={short_name}:{payment_safe_address_native}"
 
         return PaymentConfig(
             network=payment_network,
