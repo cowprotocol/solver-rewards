@@ -80,7 +80,7 @@ class RewardConfig:
                 quote_reward_cap_native = 3 * 10**13
             case Network.PLASMA:
                 quote_reward_cow = 6 * 10**18
-                quote_reward_cap_native = 6 * 10**17                
+                quote_reward_cap_native = 6 * 10**17
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
@@ -145,7 +145,7 @@ class ProtocolFeeConfig:
             case Network.PLASMA:
                 protocol_fee_safe = Address(
                     "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
-                )                
+                )
             case _:
                 raise ValueError(
                     f"No protocol fee safe config set up for network {network}."
