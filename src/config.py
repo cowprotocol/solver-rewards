@@ -33,6 +33,7 @@ class Network(Enum):
     POLYGON = "polygon"
     GNOSIS = "gnosis"
     LINEA = "linea"
+    PLASMA = "plasma"
 
 
 @dataclass(frozen=True)
@@ -77,6 +78,9 @@ class RewardConfig:
             case Network.LINEA:
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 3 * 10**13
+            case Network.PLASMA:
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 6 * 10**17
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
@@ -135,6 +139,10 @@ class ProtocolFeeConfig:
                     "0x07e5292b5aac443B2C9473Ab51B53ce8BDC3317B"
                 )
             case Network.LINEA:
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
+            case Network.PLASMA:
                 protocol_fee_safe = Address(
                     "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
                 )
@@ -206,6 +214,8 @@ class OrderbookConfig:
                 network_db_name = "bnb"
             case Network.LINEA:
                 network_db_name = "linea"
+            case Network.PLASMA:
+                network_db_name = "plasma"
             case _:
                 raise ValueError(
                     f"No orderbook data base config set up for network {network}."
@@ -248,6 +258,8 @@ class DuneConfig:
                 dune_blockchain = "bnb"
             case Network.LINEA:
                 dune_blockchain = "linea"
+            case Network.PLASMA:
+                dune_blockchain = "plasma"
             case _:
                 raise ValueError(f"No dune config set up for network {network}.")
 
@@ -457,6 +469,22 @@ class PaymentConfig:
                 )
                 min_native_token_transfer = 10**14  # 0.0001 ETH
                 min_cow_transfer = 10**18  # 1 COW
+
+            case Network.PLASMA:
+                payment_network = EthereumNetwork.PLASMA_MAINNET
+                short_name = "plasma"
+
+                cow_token_address = Address(  # dummy address
+                    "0x0000000000000000000000000000000000000006"
+                )
+                wrapped_native_token_address = Web3.to_checksum_address(  # wrapped XPL
+                    "0x6100e367285b01f48d07953803a2d8dca5d19873"
+                )
+                wrapped_eth_address = Address(  # real address
+                    "0x9895d81bb462a195b4922ed7de0e3acd007c32cb"
+                )
+                min_native_token_transfer = 10**14  # 0.0001 XPL
+                min_cow_transfer = 10**18  # 1 COW
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
@@ -546,6 +574,7 @@ class OverdraftConfig:
                 | Network.POLYGON
                 | Network.BNB
                 | Network.LINEA
+                | Network.PLASMA
             ):
                 contract_address = Address("0x8Fd67Ea651329fD142D7Cfd8e90406F133F26E8a")
             case Network.LENS:

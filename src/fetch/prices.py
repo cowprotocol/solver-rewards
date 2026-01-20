@@ -36,6 +36,7 @@ class TokenId(Enum):
     POL = "pol-polygon-ecosystem-token"
     GHO = "gho-gho"
     BNB = "bnb-bnb"
+    XPL = "xpl-plasma"
 
     def decimals(self) -> int:
         """Decimals for each of the token variants."""
@@ -71,6 +72,9 @@ TOKEN_ADDRESS_TO_ID = {
     Address("0x4db5a66e937a9f4473fa95b1caf1d1e1d62e29ea"): TokenId.ETH,
     # linea tokens
     Address("0xe5D7C2a44FfDDf6b295A15c148167daaAf5Cf34f"): TokenId.ETH,
+    # plasma tokens
+    Address("0x6100e367285b01f48d07953803a2d8dca5d19873"): TokenId.XPL,
+    Address("0x9895d81bb462a195b4922ed7de0e3acd007c32cb"): TokenId.ETH,
 }
 
 
