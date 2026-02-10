@@ -95,18 +95,10 @@ def post_multisend(
     safe = Safe(  # type: ignore  # pylint: disable=abstract-class-instantiated
         address=safe_address, ethereum_client=client
     )
-    # This case analysis with the MULTISEND_CONTRACT address should be removed
-    # as the following issue has been resolved
-    # https://github.com/safe-global/safe-eth-py/issues/283
-    # We just need to figuer out how to properly call build_multisig_tx()
-    if network == EthereumNetwork.LENS:
-        multisend_contract = web3.to_checksum_address(
-            "0xf220D3b4DFb23C4ade8C88E526C1353AbAcbC38F"
-        )
-    else:
-        multisend_contract = web3.to_checksum_address(
-            "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
-        )
+
+    multisend_contract = web3.to_checksum_address(
+        "0x40A2aCCbd92BCA938b02010E17A5b8929b49130D"
+    )
 
     safe_tx = safe.build_multisig_tx(
         to=multisend_contract,

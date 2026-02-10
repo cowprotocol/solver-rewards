@@ -64,9 +64,6 @@ TOKEN_ADDRESS_TO_ID = {
     # polygon tokens
     Address("0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270"): TokenId.POL,
     Address("0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"): TokenId.ETH,
-    # lens tokens
-    Address("0x6bDc36E20D267Ff0dd6097799f82e78907105e2F"): TokenId.GHO,
-    Address("0xe5ecd226b3032910ceaa43ba92ee8232f8237553"): TokenId.ETH,
     # bnb tokens
     Address("0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c"): TokenId.BNB,
     Address("0x4db5a66e937a9f4473fa95b1caf1d1e1d62e29ea"): TokenId.ETH,

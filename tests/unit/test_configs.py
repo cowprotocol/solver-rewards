@@ -9,8 +9,7 @@ from web3 import Web3
 from src.config import OverdraftConfig, Network
 from tests.constants import (
     ALL_NETWORKS,
-    OVERDRAFTS_CONTRACT_ADDRESS_LENS,
-    OVERDRAFTS_CONTRACT_ADDRESS_NOT_LENS,
+    OVERDRAFTS_CONTRACT_ADDRESS,
 )
 
 
@@ -31,9 +30,5 @@ def test_config_serializes(network, monkeypatch):
             | Network.PLASMA
         ):
             assert overdraft_config.contract_address == Address(
-                OVERDRAFTS_CONTRACT_ADDRESS_NOT_LENS
-            )
-        case Network.LENS:
-            assert overdraft_config.contract_address == Address(
-                OVERDRAFTS_CONTRACT_ADDRESS_LENS
+                OVERDRAFTS_CONTRACT_ADDRESS
             )

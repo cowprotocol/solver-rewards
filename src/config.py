@@ -21,10 +21,7 @@ class Network(Enum):
     """Network class for networks supported by the accounting."""
 
     # As the script is proposing COW transfers for all chains on mainnet based on a nonce shift
-    # that is chain-dependent, we would like, for convenience, to have Lens last, as it is the
-    # chain most likely to have zero transfers (and thus produce a nonce gap).
-    # Nothing breaks if this order is not maintained but nonce gaps will be more likely to occur.
-    LENS = "lens"
+    # that is chain-dependent
     MAINNET = "mainnet"
     BASE = "base"
     ARBITRUM_ONE = "arbitrum"
@@ -69,9 +66,6 @@ class RewardConfig:
             case Network.POLYGON:
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 6 * 10**17
-            case Network.LENS:
-                quote_reward_cow = 6 * 10**18
-                quote_reward_cap_native = 15 * 10**16
             case Network.BNB:
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 1 * 10**15
@@ -133,10 +127,6 @@ class ProtocolFeeConfig:
             case Network.BNB:
                 protocol_fee_safe = Address(
                     "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
-                )
-            case Network.LENS:
-                protocol_fee_safe = Address(
-                    "0x07e5292b5aac443B2C9473Ab51B53ce8BDC3317B"
                 )
             case Network.LINEA:
                 protocol_fee_safe = Address(
@@ -208,8 +198,6 @@ class OrderbookConfig:
                 network_db_name = "avalanche"
             case Network.POLYGON:
                 network_db_name = "polygon"
-            case Network.LENS:
-                network_db_name = "lens"
             case Network.BNB:
                 network_db_name = "bnb"
             case Network.LINEA:
@@ -252,8 +240,6 @@ class DuneConfig:
                 dune_blockchain = "avalanche_c"
             case Network.POLYGON:
                 dune_blockchain = "polygon"
-            case Network.LENS:
-                dune_blockchain = "lens"
             case Network.BNB:
                 dune_blockchain = "bnb"
             case Network.LINEA:
@@ -422,22 +408,6 @@ class PaymentConfig:
                 min_native_token_transfer = 10**14  # 0.0001 POL
                 min_cow_transfer = 10**18  # 1 COW
 
-            case Network.LENS:
-                payment_network = EthereumNetwork.LENS
-                short_name = "lens"
-
-                cow_token_address = Address(  # dummy address
-                    "0x0000000000000000000000000000000000000006"
-                )
-                wrapped_native_token_address = Web3.to_checksum_address(
-                    "0x6bDc36E20D267Ff0dd6097799f82e78907105e2F"
-                )
-                wrapped_eth_address = Address(
-                    "0xe5ecd226b3032910ceaa43ba92ee8232f8237553"
-                )
-                min_native_token_transfer = 10**16  # 0.01 GHO
-                min_cow_transfer = 10**18  # 1 COW
-
             case Network.BNB:
                 payment_network = EthereumNetwork.BNB_SMART_CHAIN_MAINNET
                 short_name = "bnb"
@@ -577,8 +547,6 @@ class OverdraftConfig:
                 | Network.PLASMA
             ):
                 contract_address = Address("0x8Fd67Ea651329fD142D7Cfd8e90406F133F26E8a")
-            case Network.LENS:
-                contract_address = Address("0x16B89D024132b3dEB42bE0bc085F7Ba056745605")
             case _:
                 raise ValueError(f"No overdraft config set up for network {network}.")
 
