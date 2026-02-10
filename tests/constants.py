@@ -1,5 +1,4 @@
 ALL_NETWORKS = [
-    "lens",
     "mainnet",
     "base",
     "arbitrum",
