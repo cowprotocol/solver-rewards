@@ -11,8 +11,7 @@ from src.models.accounting_period import AccountingPeriod
 from src.abis.load import overdraftsmanager
 from tests.constants import (
     ALL_NETWORKS,
-    OVERDRAFTS_CONTRACT_ADDRESS_LENS,
-    OVERDRAFTS_CONTRACT_ADDRESS_NOT_LENS,
+    OVERDRAFTS_CONTRACT_ADDRESS,
     DUMMY_REWARDS_ADDRESS_1,
     DUMMY_SOLVER_NAME_1,
 )
@@ -51,9 +50,5 @@ def test_multisend_tx(_network, monkeypatch):
                     | Network.LINEA
                 ):
                     assert multisendtx.to == Web3.to_checksum_address(
-                        OVERDRAFTS_CONTRACT_ADDRESS_NOT_LENS
-                    )
-                case Network.LENS:
-                    assert multisendtx.to == Web3.to_checksum_address(
-                        OVERDRAFTS_CONTRACT_ADDRESS_LENS
+                        OVERDRAFTS_CONTRACT_ADDRESS
                     )
