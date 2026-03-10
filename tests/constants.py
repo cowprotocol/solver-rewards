@@ -8,6 +8,7 @@ ALL_NETWORKS = [
     "bnb",
     "linea",
     "plasma",
+    "ink",
 ]
 
 # Contract Addresses

@@ -72,6 +72,8 @@ TOKEN_ADDRESS_TO_ID = {
     # plasma tokens
     Address("0x6100e367285b01f48d07953803a2d8dca5d19873"): TokenId.XPL,
     Address("0x9895d81bb462a195b4922ed7de0e3acd007c32cb"): TokenId.ETH,
+    # ink tokens
+    Address("0x4200000000000000000000000000000000000006"): TokenId.ETH,
 }
 
 
