@@ -31,6 +31,7 @@ class Network(Enum):
     GNOSIS = "gnosis"
     LINEA = "linea"
     PLASMA = "plasma"
+    INK = "ink"
 
 
 @dataclass(frozen=True)
@@ -75,6 +76,9 @@ class RewardConfig:
             case Network.PLASMA:
                 quote_reward_cow = 6 * 10**18
                 quote_reward_cap_native = 6 * 10**17
+            case Network.INK:
+                quote_reward_cow = 6 * 10**18
+                quote_reward_cap_native = 3 * 10**13
             case _:
                 raise ValueError(f"No reward config set up for network {network}.")
         return RewardConfig(
@@ -133,6 +137,10 @@ class ProtocolFeeConfig:
                     "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
                 )
             case Network.PLASMA:
+                protocol_fee_safe = Address(
+                    "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
+                )
+            case Network.INK:
                 protocol_fee_safe = Address(
                     "0x22af3D38E50ddedeb7C47f36faB321eC3Bb72A76"
                 )
@@ -204,6 +212,8 @@ class OrderbookConfig:
                 network_db_name = "linea"
             case Network.PLASMA:
                 network_db_name = "plasma"
+            case Network.INK:
+                network_db_name = "ink"
             case _:
                 raise ValueError(
                     f"No orderbook data base config set up for network {network}."
@@ -246,6 +256,8 @@ class DuneConfig:
                 dune_blockchain = "linea"
             case Network.PLASMA:
                 dune_blockchain = "plasma"
+            case Network.INK:
+                dune_blockchain = "ink"
             case _:
                 raise ValueError(f"No dune config set up for network {network}.")
 
@@ -455,6 +467,22 @@ class PaymentConfig:
                 )
                 min_native_token_transfer = 10**14  # 0.0001 XPL
                 min_cow_transfer = 10**18  # 1 COW
+
+            case Network.INK:
+                payment_network = EthereumNetwork.INK
+                short_name = "ink"
+
+                cow_token_address = Address(  # dummy address
+                    "0x0000000000000000000000000000000000000006"
+                )
+                wrapped_native_token_address = Web3.to_checksum_address(  # wrapped ETH
+                    "0x4200000000000000000000000000000000000006"
+                )
+                wrapped_eth_address = Address(  # real address
+                    "0x4200000000000000000000000000000000000006"
+                )
+                min_native_token_transfer = 10**14  # 0.0001 ETH
+                min_cow_transfer = 10**18  # 1 COW
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
 
@@ -545,6 +573,7 @@ class OverdraftConfig:
                 | Network.BNB
                 | Network.LINEA
                 | Network.PLASMA
+                | Network.INK
             ):
                 contract_address = Address("0x8Fd67Ea651329fD142D7Cfd8e90406F133F26E8a")
             case _:
