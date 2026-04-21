@@ -29,6 +29,8 @@ SOLVER_PAYOUTS_COLUMNS = [
     "solver_name",
     "primary_reward_eth",
     "primary_reward_cow",
+    "consistency_reward_eth",
+    "consistency_reward_cow",
     "quote_reward_cow",
     "protocol_fee_eth",
     "network_fee_eth",
@@ -62,8 +64,10 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         reward_target: Address,  # recipient address of rewards
         buffer_accounting_target: Address,  # recipient address of net buffer changes
         primary_reward_eth: int,
+        consistency_reward_eth: int,
         slippage_eth: int,
         primary_reward_cow: int,
+        consistency_reward_cow: int,
         quote_reward_cow: int,
         service_fee: Fraction,
         reward_token_address: Address,
@@ -78,6 +82,8 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         self.slippage_eth = slippage_eth
         self.primary_reward_eth = primary_reward_eth
         self.primary_reward_cow = primary_reward_cow
+        self.consistency_reward_eth = consistency_reward_eth
+        self.consistency_reward_cow = consistency_reward_cow
         self.quote_reward_cow = quote_reward_cow
         self.service_fee = service_fee
         self.reward_token_address = reward_token_address
@@ -111,6 +117,8 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
             slippage_eth=slippage,
             primary_reward_eth=int(frame["primary_reward_eth"]),
             primary_reward_cow=int(frame["primary_reward_cow"]),
+            consistency_reward_eth=int(frame["consistency_reward_eth"]),
+            consistency_reward_cow=int(frame["consistency_reward_cow"]),
             quote_reward_cow=int(frame["quote_reward_cow"]),
             service_fee=Fraction(frame["service_fee"]),
             reward_token_address=Address(frame["reward_token_address"]),
@@ -122,18 +130,24 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
 
     def total_cow_reward(self) -> int:
         """Total outgoing COW token reward"""
+        raw_solver_competition_cow_reward = (
+            self.primary_reward_cow + self.consistency_reward_cow
+        )
         return (
-            int(self.reward_scaling() * self.primary_reward_cow)
-            if self.primary_reward_cow > 0
-            else self.primary_reward_cow
+            int(self.reward_scaling() * raw_solver_competition_cow_reward)
+            if raw_solver_competition_cow_reward > 0
+            else raw_solver_competition_cow_reward
         )
 
     def total_eth_reward(self) -> int:
         """Total outgoing ETH reward"""
+        raw_solver_competition_eth_reward = (
+            self.primary_reward_eth + self.consistency_reward_eth
+        )
         return (
-            int(self.reward_scaling() * self.primary_reward_eth)
-            if self.primary_reward_eth > 0
-            else self.primary_reward_eth
+            int(self.reward_scaling() * raw_solver_competition_eth_reward)
+            if raw_solver_competition_eth_reward > 0
+            else raw_solver_competition_eth_reward
         )
 
     def reward_scaling(self) -> Fraction:
@@ -144,7 +158,8 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
     def total_service_fee(self) -> Fraction:
         """Total service fee charged from rewards"""
         return self.service_fee * (
-            max(self.primary_reward_cow, 0) + self.quote_reward_cow
+            max(self.primary_reward_cow + self.consistency_reward_cow, 0)
+            + self.quote_reward_cow
         )
 
     def is_overdraft(self) -> bool:
@@ -431,6 +446,10 @@ def compute_solver_payouts(
             Reward for settling batches in wei.
         - primary_reward_cow : int
             Reward for settling batches in wei.
+        - consistency_reward_eth: int
+            Reward for being consistent throughout the week in wei
+        - consistency_reward_cow: int
+            Reward for being consistent throughout the week in atoms of COW
         - quote_reward_cow : int
             Reward for providing quotes in atoms of COW.
         - protocol_fee_eth : int
@@ -459,6 +478,12 @@ def compute_solver_payouts(
     )
     solver_payouts["primary_reward_cow"] = (
         data_per_solver["sum_batch_reward_cow"].fillna(0).astype(object)
+    )
+    solver_payouts["consistency_reward_eth"] = (
+        data_per_solver["consistency_reward_native"].fillna(0).astype(object)
+    )
+    solver_payouts["consistency_reward_cow"] = (
+        data_per_solver["consistency_reward_cow"].fillna(0).astype(object)
     )
     solver_payouts["quote_reward_cow"] = (
         data_per_solver["sum_quote_reward_cow"].fillna(0).astype(object)
@@ -556,11 +581,16 @@ def summarize_payments(  # pylint: disable=too-many-locals
         transfer and COW transfer thresholds.
     """
     performance_reward = solver_payouts["primary_reward_cow"].sum()
+    consistency_reward = solver_payouts["consistency_reward_cow"].sum()
     quote_reward = solver_payouts["quote_reward_cow"].sum()
     protocol_fee = solver_payouts["protocol_fee_eth"].sum()
     service_fee = sum(
         solver_payouts["service_fee"]
-        * (solver_payouts["primary_reward_cow"] + solver_payouts["quote_reward_cow"])
+        * (
+            solver_payouts["primary_reward_cow"]
+            + solver_payouts["consistency_reward_cow"]
+            + solver_payouts["quote_reward_cow"]
+        )
     )
     partner_fee = partner_payouts["partner_fee_eth"].sum()
     partner_fee_taxed = sum(
@@ -577,6 +607,7 @@ def summarize_payments(  # pylint: disable=too-many-locals
     log_saver.print(
         "Payment breakdown:\n"
         f"Performance Reward (before fee): {performance_reward / 10 ** 18:.4f}\n"
+        f"Consistency Reward (before fee): {consistency_reward / 10 ** 18:.4f}\n"
         f"Quote Reward (before fee): {quote_reward / 10 ** 18:.4f}\n"
         f"CoW DAO Service Fees: {service_fee / 10 ** 18:.4f}\n"
         f"Protocol Fees (excluding partner fees): {(protocol_fee - partner_fee) / 10 ** 18:.4f}\n"
