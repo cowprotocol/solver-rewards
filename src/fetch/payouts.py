@@ -449,7 +449,7 @@ def compute_solver_payouts(
         - consistency_reward_eth: int
             Reward for being consistent throughout the week in wei
         - consistency_reward_cow: int
-            Reward for being consistent throughout the week in COW
+            Reward for being consistent throughout the week in atoms of COW
         - quote_reward_cow : int
             Reward for providing quotes in atoms of COW.
         - protocol_fee_eth : int
