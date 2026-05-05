@@ -372,8 +372,6 @@ def prepare_payouts(  # pylint: disable=too-many-locals
             and Address(partner)
             != Address("0x147cf09e7373b8fda6f12021f1b0f98d6da1a566")
             and Address(partner)
-            != Address("0x22af3d38e50ddedeb7c47f36fab321ec3bb72a76")
-            and Address(partner)
             != Address("0xc9058119f716b256b00e034dfb9cc68e6613fc33")
         ):
             transfers.append(
