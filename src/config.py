@@ -346,7 +346,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(
                     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
                 )
-                min_native_token_transfer = 10**15  # 0.001 ETH
+                min_native_token_transfer = 10**6
                 min_cow_transfer = 10 * 10**18  # 10 COW
 
             case Network.GNOSIS:
@@ -359,7 +359,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(
                     "0x6a023ccd1ff6f2045c3309768ead9e68f978f6e1"
                 )
-                min_native_token_transfer = 10**16  # 0.01 xDAI
+                min_native_token_transfer = 10**6
                 min_cow_transfer = 10**18  # 1 COW
 
             case Network.ARBITRUM_ONE:
@@ -372,7 +372,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(
                     "0x82af49447d8a07e3bd95bd0d56f35241523fbab1"
                 )
-                min_native_token_transfer = 10**14  # 0.0001 ETH
+                min_native_token_transfer = 10**6
                 min_cow_transfer = 10**18  # 1 COW
 
             case Network.BASE:
@@ -385,7 +385,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(
                     "0x4200000000000000000000000000000000000006"
                 )
-                min_native_token_transfer = 10**14  # 0.0001 ETH
+                min_native_token_transfer = 10**6
                 min_cow_transfer = 10**18  # 1 COW
 
             case Network.AVALANCHE:
@@ -401,7 +401,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(  # real address
                     "0x49D5c2BdFfac6CE2BFdB6640F4F80f226bc10bAB"
                 )
-                min_native_token_transfer = 10**14  # 0.0001 AVAX
+                min_native_token_transfer = 10**6
                 min_cow_transfer = 10**18  # 1 COW
 
             case Network.POLYGON:
@@ -417,7 +417,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(  # real address
                     "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619"
                 )
-                min_native_token_transfer = 10**14  # 0.0001 POL
+                min_native_token_transfer = 10**6
                 min_cow_transfer = 10**18  # 1 COW
 
             case Network.BNB:
@@ -433,7 +433,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(  # real address
                     "0x4db5a66e937a9f4473fa95b1caf1d1e1d62e29ea"
                 )
-                min_native_token_transfer = 10**14  # 0.0001 BNB
+                min_native_token_transfer = 10**6
                 min_cow_transfer = 10**18  # 1 COW
 
             case Network.LINEA:
@@ -449,7 +449,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(  # real address
                     "0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f"
                 )
-                min_native_token_transfer = 10**14  # 0.0001 ETH
+                min_native_token_transfer = 10**6
                 min_cow_transfer = 10**18  # 1 COW
 
             case Network.PLASMA:
@@ -465,7 +465,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(  # real address
                     "0x9895d81bb462a195b4922ed7de0e3acd007c32cb"
                 )
-                min_native_token_transfer = 10**14  # 0.0001 XPL
+                min_native_token_transfer = 10**6
                 min_cow_transfer = 10**18  # 1 COW
 
             case Network.INK:
@@ -481,7 +481,7 @@ class PaymentConfig:
                 wrapped_eth_address = Address(  # real address
                     "0x4200000000000000000000000000000000000006"
                 )
-                min_native_token_transfer = 10**14  # 0.0001 ETH
+                min_native_token_transfer = 10**6
                 min_cow_transfer = 10**18  # 1 COW
             case _:
                 raise ValueError(f"No payment config set up for network {network}.")
