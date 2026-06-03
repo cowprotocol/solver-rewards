@@ -367,10 +367,8 @@ def prepare_payouts(  # pylint: disable=too-many-locals
         partner = row["partner"]
         partner_fee = int(row["partner_fee_eth"] * (1 - row["partner_fee_tax"]))
         assert partner_fee >= 0, f"Can't construct negative transfer of {partner_fee}"
-        if (
-            partner_fee > 0
-            and Address(partner)
-            != Address("0x81BA8A2b895D30280bca199C2Ff75f3F058d4C6c")
+        if partner_fee > 0 and Address(partner) != Address(
+            "0x81BA8A2b895D30280bca199C2Ff75f3F058d4C6c"
         ):
             transfers.append(
                 Transfer(
