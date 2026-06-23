@@ -54,8 +54,12 @@ COW_TOKEN_ADDRESSES = {
 }
 
 DEFAULT_COW_THRESHOLD = 1.0  # Don't expect a transfer for COW rewards below this.
-DEFAULT_NATIVE_THRESHOLD = 0.001  # Don't expect a transfer for native rewards below this.
-DEFAULT_TOLERANCE = 0.0001  # Max relative difference allowed between Dune and transfer amounts.
+DEFAULT_NATIVE_THRESHOLD = (
+    0.001  # Don't expect a transfer for native rewards below this.
+)
+DEFAULT_TOLERANCE = (
+    0.0001  # Max relative difference allowed between Dune and transfer amounts.
+)
 
 
 @dataclass(frozen=True)
@@ -78,6 +82,7 @@ class DuneReward:
     @classmethod
     def from_csv_row(cls, row: dict) -> "DuneReward":
         """Parse a DuneReward from a CSV DictReader row."""
+
         def amount(key: str) -> float:
             value = row[key].strip()
             return float(value) if value else 0.0
@@ -114,7 +119,9 @@ class Transfer:
     def __str__(self) -> str:
         if self.token_type == "native":
             return f"native transfer of {self.amount} to {self.receiver}"
-        return f"erc20 transfer of {self.amount} ({self.token_address}) to {self.receiver}"
+        return (
+            f"erc20 transfer of {self.amount} ({self.token_address}) to {self.receiver}"
+        )
 
 
 def load_dune_rewards(path: str) -> list[DuneReward]:
@@ -348,8 +355,13 @@ def compare(  # pylint: disable=too-many-arguments,too-many-branches
                 )
             else:
                 _check_cow_reward(
-                    report, reward, transfer, reward.quote_reward, "quote reward",
-                    cow_token_address=cow_token_address, tolerance=tolerance,
+                    report,
+                    reward,
+                    transfer,
+                    reward.quote_reward,
+                    "quote reward",
+                    cow_token_address=cow_token_address,
+                    tolerance=tolerance,
                 )
                 totals.quote += transfer.amount
                 report.totals.quote += transfer.amount
@@ -362,7 +374,9 @@ def compare(  # pylint: disable=too-many-arguments,too-many-branches
             and reward.native_token_transfer
         ):
             transfer = take()
-            if not amounts_match(transfer.amount, reward.native_token_transfer, tolerance):
+            if not amounts_match(
+                transfer.amount, reward.native_token_transfer, tolerance
+            ):
                 report.error(
                     f"{reward.name}: native transfer amount {transfer.amount} does not "
                     f"match Dune-reported {reward.native_token_transfer} "
@@ -398,8 +412,13 @@ def compare(  # pylint: disable=too-many-arguments,too-many-branches
                 )
             else:
                 _check_cow_reward(
-                    report, reward, transfer, reward.cow_transfer, "solve reward",
-                    cow_token_address=cow_token_address, tolerance=tolerance,
+                    report,
+                    reward,
+                    transfer,
+                    reward.cow_transfer,
+                    "solve reward",
+                    cow_token_address=cow_token_address,
+                    tolerance=tolerance,
                 )
                 totals.solve += transfer.amount
                 report.totals.solve += transfer.amount
@@ -407,13 +426,18 @@ def compare(  # pylint: disable=too-many-arguments,too-many-branches
     # Anything left over wasn't matched against a Dune reward at all.
     report.unmatched_transfers = transfers[index:]
     for transfer in report.unmatched_transfers:
-        if transfer.token_type == "erc20" and transfer.token_address != cow_token_address:
+        if (
+            transfer.token_type == "erc20"
+            and transfer.token_address != cow_token_address
+        ):
             report.error(
                 f"Unmatched transfer uses token {transfer.token_address}, expected "
                 f"the COW token {cow_token_address}: {transfer}"
             )
         else:
-            report.warning(f"Unmatched transfer, not verified against Dune data: {transfer}")
+            report.warning(
+                f"Unmatched transfer, not verified against Dune data: {transfer}"
+            )
 
     return report
 
@@ -466,7 +490,9 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
 
         # 1. Quote reward (COW).
         if reward.quote_reward > cow_threshold:
-            t = find_and_remove(remaining_cow, reward.reward_target, reward.quote_reward)
+            t = find_and_remove(
+                remaining_cow, reward.reward_target, reward.quote_reward
+            )
             if t is None:
                 report.error(
                     f"{reward.name}: missing quote reward transfer of "
@@ -489,7 +515,9 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
             sent_to_solver = False
             if t is None:
                 t = find_and_remove(
-                    remaining_native, reward.solver_address, reward.native_token_transfer
+                    remaining_native,
+                    reward.solver_address,
+                    reward.native_token_transfer,
                 )
                 if t is not None:
                     sent_to_solver = True
@@ -509,7 +537,9 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
 
         # 3. Solve reward (COW).
         if reward.cow_transfer > cow_threshold:
-            t = find_and_remove(remaining_cow, reward.reward_target, reward.cow_transfer)
+            t = find_and_remove(
+                remaining_cow, reward.reward_target, reward.cow_transfer
+            )
             if t is None:
                 report.error(
                     f"{reward.name}: missing solve reward transfer of "
@@ -537,7 +567,10 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
     # Any transfers not matched to a Dune entry or protocol fee.
     report.unmatched_transfers = remaining_cow + remaining_native
     for transfer in report.unmatched_transfers:
-        if transfer.token_type == "erc20" and transfer.token_address != cow_token_address:
+        if (
+            transfer.token_type == "erc20"
+            and transfer.token_address != cow_token_address
+        ):
             report.error(
                 f"Unmatched transfer uses token {transfer.token_address}, expected "
                 f"the COW token {cow_token_address}: {transfer}"
