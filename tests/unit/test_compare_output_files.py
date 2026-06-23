@@ -1,4 +1,5 @@
 """Tests for src/verification/compare_output_files.py."""
+
 import os
 import textwrap
 import unittest
@@ -209,7 +210,9 @@ class TestCompareSafeExports(unittest.TestCase):
         self.assertIn("missing native transfer", report.errors[0].message)
 
     def test_native_below_threshold_is_not_required(self):
-        rewards = [_reward("prod-A", "0xAA", "0xTA", native=DEFAULT_NATIVE_THRESHOLD * 0.5)]
+        rewards = [
+            _reward("prod-A", "0xAA", "0xTA", native=DEFAULT_NATIVE_THRESHOLD * 0.5)
+        ]
         report = compare_safe_exports(rewards, [], [], _COW)
         self.assertEqual(report.errors, [])
 

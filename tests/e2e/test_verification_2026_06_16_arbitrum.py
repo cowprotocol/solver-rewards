@@ -15,6 +15,7 @@ native transfer in the Arbitrum Safe (a real discrepancy in the provided data).
     1 partner fee tax (second transfer to DAO safe)
     5 partner fee transfers (to partner addresses)
 """
+
 import os
 import unittest
 
@@ -124,7 +125,9 @@ class TestArbitrum20260616E2E(unittest.TestCase):
 
     def test_three_missing_native_errors(self):
         """prod-Sector, prod-Rizzolver, prod-Kaisersolver have native in Dune but not in the Safe."""
-        missing = [e for e in self.report.errors if "missing native transfer" in e.message]
+        missing = [
+            e for e in self.report.errors if "missing native transfer" in e.message
+        ]
         self.assertEqual(len(missing), 3)
         names = {e.message.split(":")[0] for e in missing}
         self.assertEqual(names, {"prod-Sector", "prod-Rizzolver", "prod-Kaisersolver"})
@@ -162,7 +165,9 @@ class TestArbitrum20260616E2E(unittest.TestCase):
 
     def test_five_generic_unmatched_warnings(self):
         generic = [
-            w for w in self.report.warnings if "not verified against Dune data" in w.message
+            w
+            for w in self.report.warnings
+            if "not verified against Dune data" in w.message
         ]
         self.assertEqual(len(generic), 5)
 
