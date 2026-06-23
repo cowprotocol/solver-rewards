@@ -113,6 +113,52 @@ In particular
 see [Validation by Example](https://www.notion.so/cownation/Solver-Payouts-3dfee64eb3d449ed8157a652cc817a8c?pvs=4#5a99004c03714f939cd80ef41a3d9590)
 section.
 
+## Payout Verification
+
+### Manual verification against Safe transaction exports
+
+After the transactions are proposed on-chain, you can cross-check them against
+the Dune query output using `src/verification/compare_output_files.py`.
+
+**Inputs required:**
+
+| File                    | Description |
+|-------------------------|-------------|
+| Dune Rewards Export     | Dune solver-rewards export (per-solver row with `name`, `solver_address`, `reward_target`, `quote_reward`, `native_token_transfer`, `cow_transfer`, …) |
+| Mainnet COW Safe CSV    | Transaction export from the COW Safe (mainnet). Download from the Safe UI → Transactions → Export. |
+| Network native Safe CSV | Transaction export from the native Safe (e.g. Arbitrum). Same export procedure. |
+
+**Running the script:**
+
+```shell
+python3 src/verification/compare_output_files.py <dune-solver-rewards>.csv \
+    --cow-safe-csv  "<mainnet-txs-file>.csv" \
+    --native-safe-csv "<network-txs-file>.csv" \
+    --fees-csv      "<fees-dune>.csv" \
+    --protocol-fee-safe <dao-safe-address> \
+    --network <network-name>
+```
+
+The script uses *set-based* matching: every Safe transaction row must either
+match a Dune entry (by recipient address and amount, within a 0.01 % tolerance)
+or be flagged as an unmatched transfer warning. Every Dune entry with a reward
+above the threshold must have a corresponding Safe row, or an error is raised.
+
+Exit status is `0` when no errors are found (warnings are still printed).
+
+**What the script checks:**
+
+- Every solver with `quote_reward > 1 COW` has a matching COW transfer to its `reward_target`.
+- Every solver with `native_token_transfer > 0.001 ETH` has a matching native transfer.
+- Every solver with `cow_transfer > 1 COW` has a matching COW transfer to its `reward_target`.
+- The net protocol fee transfer (`protocol_fee_in_native_token` from the fees CSV) to the DAO safe matches.
+- Remaining transfers to the DAO safe are labelled as partner fee tax (warning).
+- Any other Safe transaction row not matched to a solver or fee is flagged as unmatched (partner fee warning).
+- Amounts match within 0.01 % relative tolerance.
+- Native transfers sent to the solver address (rather than the reward target) produce a warning.
+
+`--fees-csv` and `--protocol-fee-safe` are optional but both must be provided together to enable protocol fee verification.
+
 ### Additional Notes
 
 Also, it might happen that the slippage of a solver is bigger than the ETH payout. In this case, please do not proceed
