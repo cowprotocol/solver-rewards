@@ -60,6 +60,8 @@ DEFAULT_TOLERANCE = 0.0001  # Max relative difference allowed between Dune and t
 
 @dataclass(frozen=True)
 class DuneReward:
+    """A single solver's reward data from the Dune export."""
+
     name: str
     solver_address: str
     reward_target: str
@@ -75,6 +77,7 @@ class DuneReward:
 
     @classmethod
     def from_csv_row(cls, row: dict) -> "DuneReward":
+        """Parse a DuneReward from a CSV DictReader row."""
         def amount(key: str) -> float:
             value = row[key].strip()
             return float(value) if value else 0.0
@@ -91,6 +94,8 @@ class DuneReward:
 
 @dataclass(frozen=True)
 class Transfer:
+    """A single token transfer (ERC-20 or native)."""
+
     token_type: str
     token_address: str
     receiver: str
@@ -98,6 +103,7 @@ class Transfer:
 
     @classmethod
     def from_csv_row(cls, row: dict) -> "Transfer":
+        """Parse a Transfer from a CSV DictReader row."""
         return cls(
             token_type=row["token_type"].strip().lower(),
             token_address=row["token_address"].strip().lower(),
@@ -112,14 +118,16 @@ class Transfer:
 
 
 def load_dune_rewards(path: str) -> list[DuneReward]:
-    with open(path, newline="") as f:
+    """Load and sort Dune rewards from a CSV file."""
+    with open(path, newline="", encoding="utf-8") as f:
         rewards = [DuneReward.from_csv_row(row) for row in csv.DictReader(f)]
     # The rewards script processes solvers sorted by address.
     return sorted(rewards, key=lambda r: r.solver_address)
 
 
 def load_transfers(path: str) -> list[Transfer]:
-    with open(path, newline="") as f:
+    """Load transfers from a combined transfers CSV."""
+    with open(path, newline="", encoding="utf-8") as f:
         return [Transfer.from_csv_row(row) for row in csv.DictReader(f)]
 
 
@@ -193,7 +201,7 @@ def load_fee_summary(path: str) -> FeeSummary:
     which is the net native-token amount the protocol retains after subtracting
     partner-fee payouts.
     """
-    with open(path, newline="") as f:
+    with open(path, newline="", encoding="utf-8") as f:
         rows = list(csv.DictReader(f))
     if not rows:
         raise ValueError(f"No data rows in {path}")
@@ -214,6 +222,8 @@ def amounts_match(actual: float, expected: float, tolerance: float) -> bool:
 
 @dataclass
 class Issue:
+    """A single verification finding (error or warning)."""
+
     severity: str  # "error" or "warning"
     message: str
 
@@ -224,6 +234,8 @@ class Issue:
 
 @dataclass
 class SolverTotals:
+    """Accumulated transfer totals for a single solver."""
+
     quote: float = 0.0
     native: float = 0.0
     solve: float = 0.0
@@ -231,39 +243,48 @@ class SolverTotals:
 
 @dataclass
 class ComparisonReport:
+    """Collects issues and totals produced by a comparison run."""
+
     issues: list[Issue] = field(default_factory=list)
     solver_totals: dict[str, SolverTotals] = field(default_factory=dict)
     totals: SolverTotals = field(default_factory=SolverTotals)
     unmatched_transfers: list[Transfer] = field(default_factory=list)
 
     def error(self, message: str) -> None:
+        """Record an error-level issue."""
         self.issues.append(Issue("error", message))
 
     def warning(self, message: str) -> None:
+        """Record a warning-level issue."""
         self.issues.append(Issue("warning", message))
 
     @property
     def errors(self) -> list[Issue]:
+        """All error-level issues."""
         return [issue for issue in self.issues if issue.severity == "error"]
 
     @property
     def warnings(self) -> list[Issue]:
+        """All warning-level issues."""
         return [issue for issue in self.issues if issue.severity == "warning"]
 
     @property
     def is_valid(self) -> bool:
+        """True when no errors have been recorded."""
         return not self.errors
 
 
-def _check_cow_reward(
+def _check_cow_reward(  # pylint: disable=too-many-arguments
     report: ComparisonReport,
     reward: DuneReward,
     transfer: Transfer,
     expected_amount: float,
     label: str,
+    *,
     cow_token_address: str,
     tolerance: float,
 ) -> None:
+    """Validate a single COW reward transfer against the Dune expectation."""
     if transfer.token_type != "erc20":
         report.error(
             f"{reward.name}: expected a {label} transfer of {expected_amount} COW "
@@ -290,14 +311,16 @@ def _check_cow_reward(
         )
 
 
-def compare(
+def compare(  # pylint: disable=too-many-arguments,too-many-branches
     dune_rewards: list[DuneReward],
     transfers: list[Transfer],
     cow_token_address: str,
+    *,
     cow_threshold: float = DEFAULT_COW_THRESHOLD,
     native_threshold: float = DEFAULT_NATIVE_THRESHOLD,
     tolerance: float = DEFAULT_TOLERANCE,
 ) -> ComparisonReport:
+    """Order-dependent comparison of Dune rewards against a combined transfers list."""
     report = ComparisonReport()
 
     index = 0
@@ -326,14 +349,18 @@ def compare(
             else:
                 _check_cow_reward(
                     report, reward, transfer, reward.quote_reward, "quote reward",
-                    cow_token_address, tolerance,
+                    cow_token_address=cow_token_address, tolerance=tolerance,
                 )
                 totals.quote += transfer.amount
                 report.totals.quote += transfer.amount
 
         # 2. Native token transfer.
         next_transfer = peek()
-        if next_transfer is not None and next_transfer.token_type == "native" and reward.native_token_transfer:
+        if (
+            next_transfer is not None
+            and next_transfer.token_type == "native"
+            and reward.native_token_transfer
+        ):
             transfer = take()
             if not amounts_match(transfer.amount, reward.native_token_transfer, tolerance):
                 report.error(
@@ -372,7 +399,7 @@ def compare(
             else:
                 _check_cow_reward(
                     report, reward, transfer, reward.cow_transfer, "solve reward",
-                    cow_token_address, tolerance,
+                    cow_token_address=cow_token_address, tolerance=tolerance,
                 )
                 totals.solve += transfer.amount
                 report.totals.solve += transfer.amount
@@ -391,11 +418,12 @@ def compare(
     return report
 
 
-def compare_safe_exports(
+def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
     dune_rewards: list[DuneReward],
     cow_transfers: list[Transfer],
     native_transfers: list[Transfer],
     cow_token_address: str,
+    *,
     cow_threshold: float = DEFAULT_COW_THRESHOLD,
     native_threshold: float = DEFAULT_NATIVE_THRESHOLD,
     tolerance: float = DEFAULT_TOLERANCE,
@@ -528,6 +556,7 @@ def compare_safe_exports(
 
 
 def print_report(report: ComparisonReport) -> None:
+    """Print issues and per-solver totals to stdout."""
     for issue in report.issues:
         print(issue)
 
@@ -554,6 +583,7 @@ def print_report(report: ComparisonReport) -> None:
 
 
 def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
+    """Parse CLI arguments."""
     parser = argparse.ArgumentParser(
         description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
     )
@@ -605,7 +635,10 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         "--tolerance",
         type=float,
         default=DEFAULT_TOLERANCE,
-        help="Max relative difference allowed between Dune and transfer amounts (default: %(default)s)",
+        help=(
+            "Max relative difference allowed between Dune and "
+            "transfer amounts (default: %(default)s)"
+        ),
     )
     parser.add_argument(
         "--fees-csv",
@@ -629,16 +662,17 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
 
 
 def main(argv: Optional[list[str]] = None) -> int:
+    """Entry point: parse args, run comparison, print report."""
     args = parse_args(argv)
 
     dune_rewards = load_dune_rewards(args.dune_csv)
     cow_token_address = COW_TOKEN_ADDRESSES[args.network]
-    kwargs = dict(
-        cow_token_address=cow_token_address,
-        cow_threshold=args.cow_threshold,
-        native_threshold=args.native_threshold,
-        tolerance=args.tolerance,
-    )
+    kwargs = {
+        "cow_token_address": cow_token_address,
+        "cow_threshold": args.cow_threshold,
+        "native_threshold": args.native_threshold,
+        "tolerance": args.tolerance,
+    }
 
     if args.cow_safe_csv:
         if not args.native_safe_csv:
@@ -657,10 +691,10 @@ def main(argv: Optional[list[str]] = None) -> int:
                 )
                 return 2
             fee_summary = load_fee_summary(args.fees_csv)
-            fee_kwargs = dict(
-                protocol_fee=fee_summary.protocol_fee,
-                protocol_fee_safe=args.protocol_fee_safe,
-            )
+            fee_kwargs = {
+                "protocol_fee": fee_summary.protocol_fee,
+                "protocol_fee_safe": args.protocol_fee_safe,
+            }
 
         cow_transfers = load_safe_transfers(args.cow_safe_csv, cow_token_address)
         native_transfers = load_safe_transfers(args.native_safe_csv, cow_token_address)
