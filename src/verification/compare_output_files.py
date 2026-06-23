@@ -374,6 +374,7 @@ def compare(  # pylint: disable=too-many-arguments,too-many-branches
             and reward.native_token_transfer
         ):
             transfer = take()
+            assert transfer is not None
             if not amounts_match(
                 transfer.amount, reward.native_token_transfer, tolerance
             ):
