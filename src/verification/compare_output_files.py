@@ -44,12 +44,8 @@ import sys
 from dataclasses import dataclass, field
 from typing import Optional
 
-# COW token contract address per network (all lower-case).
-# TODO: add rest of the networks
+# COW token contract address (lower case)
 COW_TOKEN_ADDRESSES = {
-    "arbitrum": "0xcb8b5cd20bdcaea9a010ac1f8d835824f5c87a04",
-    "base": "0xc694a91e6b071bf030a18bd3053a7fe09b6dae69",
-    "gnosis": "0x177127622c4a00f3d409773c674621c441bc8b35",
     "mainnet": "0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab",
 }
 
