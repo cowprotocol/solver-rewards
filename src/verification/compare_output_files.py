@@ -5,7 +5,7 @@ Two comparison modes are available:
 
 MODE 1 — Combined transfers CSV (original format):
     Accepts a single transfers CSV with columns: token_type, token_address,
-    receiver, amount.  Rows must appear in the same order the rewards script
+    receiver, amount.  Rows are processed in the same order the rewards script
     emits them (quote COW → native → solve COW, sorted by solver address).
 
     Usage:
