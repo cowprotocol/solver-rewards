@@ -646,7 +646,8 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         "-n",
         "--network",
         choices=sorted(COW_TOKEN_ADDRESSES),
-        required=True,
+        required=False,
+        default="mainnet",
         help="Network the rewards are for, used to look up the expected COW token address",
     )
     parser.add_argument(
