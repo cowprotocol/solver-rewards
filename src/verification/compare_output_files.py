@@ -5,8 +5,8 @@ Two comparison modes are available:
 
 MODE 1 — Combined transfers CSV (original format):
     Accepts a single transfers CSV with columns: token_type, token_address,
-    receiver, amount.  Rows are processed in the same order the rewards script
-    emits them (quote COW → native → solve COW, sorted by solver address).
+    receiver, amount.  Order does not matter; each expected transfer is
+    located by (receiver, amount) across the whole file, same as Mode 2.
 
     Usage:
         python3 compare_output_files.py DUNE_CSV TRANSFERS_CSV --network arbitrum
@@ -277,44 +277,7 @@ class ComparisonReport:
         return not self.errors
 
 
-def _check_cow_reward(  # pylint: disable=too-many-arguments
-    report: ComparisonReport,
-    reward: DuneReward,
-    transfer: Transfer,
-    expected_amount: float,
-    label: str,
-    *,
-    cow_token_address: str,
-    tolerance: float,
-) -> None:
-    """Validate a single COW reward transfer against the Dune expectation."""
-    if transfer.token_type != "erc20":
-        report.error(
-            f"{reward.name}: expected a {label} transfer of {expected_amount} COW "
-            f"but found a {transfer.token_type} transfer instead ({transfer})"
-        )
-        return
-
-    if transfer.token_address != cow_token_address:
-        report.error(
-            f"{reward.name}: {label} transfer uses token {transfer.token_address}, "
-            f"expected the COW token {cow_token_address}"
-        )
-
-    if transfer.receiver != reward.reward_target:
-        report.error(
-            f"{reward.name}: {label} receiver {transfer.receiver} does not match "
-            f"reward target {reward.reward_target}"
-        )
-
-    if not amounts_match(transfer.amount, expected_amount, tolerance):
-        report.error(
-            f"{reward.name}: {label} amount {transfer.amount} does not match "
-            f"Dune-reported {expected_amount} (tolerance {tolerance:.4%})"
-        )
-
-
-def compare(  # pylint: disable=too-many-arguments,too-many-branches
+def compare(
     dune_rewards: list[DuneReward],
     transfers: list[Transfer],
     cow_token_address: str,
@@ -323,120 +286,22 @@ def compare(  # pylint: disable=too-many-arguments,too-many-branches
     native_threshold: float = DEFAULT_NATIVE_THRESHOLD,
     tolerance: float = DEFAULT_TOLERANCE,
 ) -> ComparisonReport:
-    """Order-dependent comparison of Dune rewards against a combined transfers list."""
-    report = ComparisonReport()
+    """Order-independent comparison of Dune rewards against a combined transfers list.
 
-    index = 0
-
-    def peek() -> Optional[Transfer]:
-        return transfers[index] if index < len(transfers) else None
-
-    def take() -> Optional[Transfer]:
-        nonlocal index
-        transfer = peek()
-        if transfer is not None:
-            index += 1
-        return transfer
-
-    for reward in dune_rewards:
-        totals = report.solver_totals.setdefault(reward.solver_name, SolverTotals())
-
-        # 1. Quote reward, paid in COW.
-        if reward.quote_reward > cow_threshold:
-            transfer = take()
-            if transfer is None:
-                report.error(
-                    f"{reward.name}: missing quote reward transfer of "
-                    f"{reward.quote_reward} COW"
-                )
-            else:
-                _check_cow_reward(
-                    report,
-                    reward,
-                    transfer,
-                    reward.quote_reward,
-                    "quote reward",
-                    cow_token_address=cow_token_address,
-                    tolerance=tolerance,
-                )
-                totals.quote += transfer.amount
-                report.totals.quote += transfer.amount
-
-        # 2. Native token transfer.
-        next_transfer = peek()
-        if (
-            next_transfer is not None
-            and next_transfer.token_type == "native"
-            and reward.native_token_transfer
-        ):
-            transfer = take()
-            assert transfer is not None
-            if not amounts_match(
-                transfer.amount, reward.native_token_transfer, tolerance
-            ):
-                report.error(
-                    f"{reward.name}: native transfer amount {transfer.amount} does not "
-                    f"match Dune-reported {reward.native_token_transfer} "
-                    f"(tolerance {tolerance:.4%})"
-                )
-            if transfer.receiver != reward.reward_target:
-                if transfer.receiver != reward.solver_address:
-                    report.error(
-                        f"{reward.name}: native transfer sent to unexpected address "
-                        f"{transfer.receiver} (expected reward target "
-                        f"{reward.reward_target})"
-                    )
-                else:
-                    report.warning(
-                        f"{reward.name}: native transfer sent to solver address "
-                        f"{transfer.receiver}, not reward target {reward.reward_target}"
-                    )
-            totals.native += transfer.amount
-            report.totals.native += transfer.amount
-        elif reward.native_token_transfer > native_threshold:
-            report.error(
-                f"{reward.name}: missing native transfer of "
-                f"{reward.native_token_transfer} (threshold {native_threshold})"
-            )
-
-        # 3. Solve reward, paid in COW.
-        if reward.cow_transfer > cow_threshold:
-            transfer = take()
-            if transfer is None:
-                report.error(
-                    f"{reward.name}: missing solve reward transfer of "
-                    f"{reward.cow_transfer} COW"
-                )
-            else:
-                _check_cow_reward(
-                    report,
-                    reward,
-                    transfer,
-                    reward.cow_transfer,
-                    "solve reward",
-                    cow_token_address=cow_token_address,
-                    tolerance=tolerance,
-                )
-                totals.solve += transfer.amount
-                report.totals.solve += transfer.amount
-
-    # Anything left over wasn't matched against a Dune reward at all.
-    report.unmatched_transfers = transfers[index:]
-    for transfer in report.unmatched_transfers:
-        if (
-            transfer.token_type == "erc20"
-            and transfer.token_address != cow_token_address
-        ):
-            report.error(
-                f"Unmatched transfer uses token {transfer.token_address}, expected "
-                f"the COW token {cow_token_address}: {transfer}"
-            )
-        else:
-            report.warning(
-                f"Unmatched transfer, not verified against Dune data: {transfer}"
-            )
-
-    return report
+    Splits `transfers` by token_type and delegates to `compare_safe_exports`, which
+    locates each expected transfer by (receiver, amount) rather than by position.
+    """
+    cow_transfers = [t for t in transfers if t.token_type == "erc20"]
+    native_transfers = [t for t in transfers if t.token_type == "native"]
+    return compare_safe_exports(
+        dune_rewards,
+        cow_transfers,
+        native_transfers,
+        cow_token_address,
+        cow_threshold=cow_threshold,
+        native_threshold=native_threshold,
+        tolerance=tolerance,
+    )
 
 
 def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,too-many-branches
@@ -453,8 +318,10 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
 ) -> ComparisonReport:
     """Set-based comparison using separate COW and native transfer lists.
 
-    Unlike ``compare()``, transfers may appear in any order.  Each expected
-    solver transfer is located by (receiver, amount) in the respective list.
+    Transfers may appear in any order. Each expected solver transfer is
+    located by (receiver, amount) in the respective list. ``compare()`` is a
+    thin wrapper that splits a single combined transfers list into these two
+    pools and delegates here.
 
     Protocol fee verification (optional):
         If both ``protocol_fee`` and ``protocol_fee_safe`` are provided, the
