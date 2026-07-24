@@ -277,7 +277,7 @@ class ComparisonReport:
         return not self.errors
 
 
-def compare(
+def compare(  # pylint: disable=too-many-arguments
     dune_rewards: list[DuneReward],
     transfers: list[Transfer],
     cow_token_address: str,
