@@ -213,7 +213,7 @@ def auto_propose(
             network=config.payment_config.network,
             signing_key=signing_key,
             client=client,
-            nonce_modifier=nonce_modifier_overdrafts
+            nonce_modifier=nonce_modifier_overdrafts,
         )
 
         post_to_slack(
