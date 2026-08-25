@@ -175,10 +175,7 @@ def auto_propose(
             nonce_modifier=config.payment_config.nonce_modifier,
         )
 
-        # Proposing an empty transfer in the native safe, as a placeholder in case
-        # wrapping/unwrapping of native token or other operation is needed
-        # before native payments
-        nonce_modifier_empty = ( # Adds empty nonce to allow for wrapping/unwrapping
+        nonce_modifier_empty = (  # Adds empty nonce to allow for wrapping/unwrapping
             len(Network)
             if config.payment_config.network == EthereumNetwork.MAINNET
             else 0
