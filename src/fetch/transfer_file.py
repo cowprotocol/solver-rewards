@@ -175,9 +175,9 @@ def auto_propose(
             nonce_modifier=config.payment_config.nonce_modifier,
         )
 
-        # Base (unshifted) nonce offset for the native safe: reserved for an empty
-        # transaction, so the team can wrap/unwrap the native token on this nonce
-        # whenever needed, without having to repropose the native transfers/overdrafts.
+        # Proposing an empty transfer in the native safe, as a placeholder in case
+        # wrapping/unwrapping of native token or other operation is needed
+        # before native payments
         nonce_modifier_empty = (
             len(Network)
             if config.payment_config.network == EthereumNetwork.MAINNET
@@ -192,13 +192,19 @@ def auto_propose(
             nonce_modifier=nonce_modifier_empty,
         )
 
+        nonce_modifier_native_transfer = nonce_modifier_empty + 1
+
         nonce_native = post_multisend(
             safe_address=config.payment_config.payment_safe_address_native,
             transactions=transactions_native,
             network=config.payment_config.network,
             signing_key=signing_key,
             client=client,
-            nonce_modifier=nonce_modifier_empty + 1,
+            nonce_modifier=nonce_modifier_native_transfer,
+        )
+
+        nonce_modifier_overdrafts = nonce_modifier_empty + (
+            2 if nonce_native is not None else 1
         )
 
         nonce_overdrafts = post_multisend(
@@ -207,11 +213,7 @@ def auto_propose(
             network=config.payment_config.network,
             signing_key=signing_key,
             client=client,
-            nonce_modifier=(
-                nonce_modifier_empty + 2
-                if config.payment_config.network == EthereumNetwork.MAINNET
-                else (2 if nonce_native is not None else 1)
-            ),
+            nonce_modifier=nonce_modifier_overdrafts
         )
 
         post_to_slack(
@@ -223,7 +225,7 @@ def auto_propose(
                 COW transfers on mainnet with nonce {nonce_cow},
                 see {config.payment_config.safe_queue_url_cow}.\n
                 Empty tx reserved on {config.dune_config.dune_blockchain} with nonce
-                {nonce_empty} for wrapping/unwrapping the native token if needed,
+                {nonce_empty},
                 see {config.payment_config.safe_queue_url_native}.\n
                 Native transfers on {config.dune_config.dune_blockchain} with nonce {nonce_native},
                 see {config.payment_config.safe_queue_url_native}.\n
