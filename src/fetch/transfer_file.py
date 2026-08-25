@@ -25,7 +25,11 @@ from src.logger import log_saver, set_log
 from src.models.accounting_period import AccountingPeriod
 from src.models.transfer import Transfer, CSVTransfer
 from src.models.overdraft import Overdraft
-from src.multisend import post_multisend, prepend_unwrap_if_necessary
+from src.multisend import (
+    post_empty_transaction,
+    post_multisend,
+    prepend_unwrap_if_necessary,
+)
 from src.pg_client import MultiInstanceDBFetcher
 from src.slack_utils import post_to_slack
 from src.utils.print_store import Category, PrintStore
@@ -171,17 +175,33 @@ def auto_propose(
             nonce_modifier=config.payment_config.nonce_modifier,
         )
 
+        nonce_modifier_empty = (  # Adds empty nonce to allow for wrapping/unwrapping
+            len(Network)
+            if config.payment_config.network == EthereumNetwork.MAINNET
+            else 0
+        )
+
+        nonce_empty = post_empty_transaction(
+            safe_address=config.payment_config.payment_safe_address_native,
+            network=config.payment_config.network,
+            signing_key=signing_key,
+            client=client,
+            nonce_modifier=nonce_modifier_empty,
+        )
+
+        nonce_modifier_native_transfer = nonce_modifier_empty + 1
+
         nonce_native = post_multisend(
             safe_address=config.payment_config.payment_safe_address_native,
             transactions=transactions_native,
             network=config.payment_config.network,
             signing_key=signing_key,
             client=client,
-            nonce_modifier=(
-                len(Network)
-                if config.payment_config.network == EthereumNetwork.MAINNET
-                else 0
-            ),
+            nonce_modifier=nonce_modifier_native_transfer,
+        )
+
+        nonce_modifier_overdrafts = nonce_modifier_empty + (
+            2 if nonce_native is not None else 1
         )
 
         nonce_overdrafts = post_multisend(
@@ -190,11 +210,7 @@ def auto_propose(
             network=config.payment_config.network,
             signing_key=signing_key,
             client=client,
-            nonce_modifier=(
-                len(Network) + 1
-                if config.payment_config.network == EthereumNetwork.MAINNET
-                else (1 if nonce_native is not None else 0)
-            ),
+            nonce_modifier=nonce_modifier_overdrafts,
         )
 
         post_to_slack(
@@ -205,6 +221,9 @@ def auto_propose(
                 pending signatures:\n
                 COW transfers on mainnet with nonce {nonce_cow},
                 see {config.payment_config.safe_queue_url_cow}.\n
+                Empty tx reserved on {config.dune_config.dune_blockchain} with nonce
+                {nonce_empty},
+                see {config.payment_config.safe_queue_url_native}.\n
                 Native transfers on {config.dune_config.dune_blockchain} with nonce {nonce_native},
                 see {config.payment_config.safe_queue_url_native}.\n
                 Overdrafts on {config.dune_config.dune_blockchain} with nonce {nonce_overdrafts},

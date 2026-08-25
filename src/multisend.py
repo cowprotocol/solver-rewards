@@ -118,3 +118,33 @@ def post_multisend(
     tx_service.post_transaction(safe_tx=safe_tx)
     time.sleep(2)  # attempt to avoid Safe API's rate limits
     return int(safe_tx.safe_nonce)
+
+
+def post_empty_transaction(
+    safe_address: ChecksumAddress,
+    network: EthereumNetwork,
+    client: EthereumClient,
+    signing_key: str,
+    nonce_modifier: int = 0,
+) -> int:
+    """Posts a no-op Safe transaction, reserving a nonce for manual use
+    (e.g. wrapping/unwrapping the native token before executing subsequent payouts)."""
+    # pylint: disable=too-many-arguments,too-many-positional-arguments
+    safe = Safe(  # type: ignore  # pylint: disable=abstract-class-instantiated
+        address=safe_address, ethereum_client=client
+    )
+    safe_tx = safe.build_multisig_tx(
+        to=safe_address,
+        value=0,
+        data=b"",
+        safe_nonce=safe.retrieve_nonce() + nonce_modifier,
+    )
+    safe_tx.sign(signing_key)
+    tx_service = TransactionServiceApi(network, client, api_key=api_key)
+    print(
+        f"Posting empty transaction with hash"
+        f" {safe_tx.safe_tx_hash.hex()} to {safe.address}"
+    )
+    tx_service.post_transaction(safe_tx=safe_tx)
+    time.sleep(2)  # attempt to avoid Safe API's rate limits
+    return int(safe_tx.safe_nonce)
