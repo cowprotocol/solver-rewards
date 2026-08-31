@@ -176,7 +176,7 @@ def auto_propose(
         )
 
         nonce_modifier_empty = (  # Adds empty nonce to allow for wrapping/unwrapping
-            len(Network)
+            config.payment_config.nonce_modifier + 1
             if config.payment_config.network == EthereumNetwork.MAINNET
             else 0
         )
