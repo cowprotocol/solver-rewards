@@ -173,6 +173,9 @@ class BufferAccountingConfig:
             Address(
                 "0x7719c9c0d35d460b00487a1744394e9525e8a42c"
             ),  # Fractal bonding pool
+            Address(
+                "0x8d2c1d5c0df456bb12d097facae4aefce2faa0cd"
+            ),  # Orbt bonding pool
         ]
 
         return BufferAccountingConfig(
