@@ -370,9 +370,13 @@ def prepare_payouts(  # pylint: disable=too-many-locals
         if partner_fee > 0 and Address(partner) != Address(
             "0x81BA8A2b895D30280bca199C2Ff75f3F058d4C6c"
         ):
+            if Address(partner) in config.protocol_fee_config.partners_with_wrapped_native_transfers:
+                target_token = Token(config.payment_config.wrapped_native_token_address, 18)
+            else:
+                target_token = None
             transfers.append(
                 Transfer(
-                    token=None,
+                    token=target_token,
                     recipient=Address(partner),
                     amount_wei=partner_fee,
                 )

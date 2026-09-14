@@ -30,6 +30,7 @@ from src.multisend import (
     post_multisend,
     prepend_unwrap_if_necessary,
 )
+from src.models.token import Token
 from src.pg_client import MultiInstanceDBFetcher
 from src.slack_utils import post_to_slack
 from src.utils.print_store import Category, PrintStore
@@ -271,8 +272,9 @@ def main() -> None:
 
     payout_transfers_cow = []
     payout_transfers_native = []
+    wrapped_native_token = Token(config.payment_config.wrapped_native_token_address, 18)
     for tr in payout_transfers_temp:
-        if tr.token is None:
+        if tr.token is None or tr.token == wrapped_native_token:
             if tr.amount_wei >= config.payment_config.min_native_token_transfer:
                 payout_transfers_native.append(tr)
         else:
