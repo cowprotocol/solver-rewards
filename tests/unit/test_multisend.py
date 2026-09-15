@@ -37,6 +37,7 @@ class TestMultiSend(unittest.TestCase):
             transactions,
             self.payment_config.wrapped_native_token_address,
             skip_validation=True,
+            wrapped_amount=0
         )
 
         self.assertEqual(2, len(transactions))
@@ -65,6 +66,7 @@ class TestMultiSend(unittest.TestCase):
                 safe_address=safe_address,
                 transactions=[big_native_transfer],
                 wrapped_native_token=self.payment_config.wrapped_native_token_address,
+                wrapped_amount=0,
             )
 
     def test_multisend_encoding(self):
