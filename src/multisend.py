@@ -55,7 +55,7 @@ def prepend_unwrap_if_necessary(
 
     eth_balance = client.get_balance(web3.to_checksum_address(safe_address))
     # Amount of outgoing ETH from transfer
-    eth_needed = sum(t.value for t in transactions) - wrapped_amount
+    eth_needed = sum(t.value for t in transactions)
     weth_needed = wrapped_amount
     if eth_balance < eth_needed:
         weth = weth9(client.w3, wrapped_native_token)
