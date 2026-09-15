@@ -152,7 +152,7 @@ class ProtocolFeeConfig:
 
         return ProtocolFeeConfig(
             protocol_fee_safe=protocol_fee_safe,
-            partners_with_wrapped_native_transfers=partners_with_wrapped_native_transfers
+            partners_with_wrapped_native_transfers=partners_with_wrapped_native_transfers,
         )
 
 

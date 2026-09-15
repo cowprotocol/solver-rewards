@@ -37,7 +37,7 @@ class TestMultiSend(unittest.TestCase):
             transactions,
             self.payment_config.wrapped_native_token_address,
             skip_validation=True,
-            wrapped_amount=0
+            wrapped_amount=0,
         )
 
         self.assertEqual(2, len(transactions))
