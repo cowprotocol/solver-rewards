@@ -33,6 +33,8 @@ def build_encoded_multisend(
     return tx_bytes
 
 
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 def prepend_unwrap_if_necessary(
     client: EthereumClient,
     safe_address: ChecksumAddress,
