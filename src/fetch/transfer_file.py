@@ -142,7 +142,15 @@ def auto_propose(
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
         transactions=[t.as_multisend_tx() for t in transfers_cow],
         skip_validation=True,
+        is_native=False,
+        wrapped_amount=0,
     )
+
+    wrapped_native_token = Token(config.payment_config.wrapped_native_token_address, 18)
+    wrapped_amount = 0
+    for t in transfers_native:
+        if t.token == wrapped_native_token:
+            wrapped_amount += t.amount_wei
 
     transactions_native = prepend_unwrap_if_necessary(
         client,
@@ -150,6 +158,8 @@ def auto_propose(
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
         transactions=[t.as_multisend_tx() for t in transfers_native],
         skip_validation=True,
+        is_native=True,
+        wrapped_amount=wrapped_amount,
     )
 
     ovedrafts_txs = [ov.as_multisend_tx() for ov in overdrafts]

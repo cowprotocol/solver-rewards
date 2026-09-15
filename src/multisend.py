@@ -39,21 +39,27 @@ def prepend_unwrap_if_necessary(
     transactions: list[MultiSendTx],
     wrapped_native_token: ChecksumAddress,
     skip_validation: bool = False,
+    is_native: bool = False,
+    wrapped_amount: int = 0,
 ) -> list[MultiSendTx]:
     """
     Given a list of multisend transactions, this checks that
     the total outgoing ETH is sufficient and unwraps entire WETH balance when it isn't.
     Raises if the ETH + WETH balance is still insufficient.
     """
+    if not is_native:
+        return transactions
+
     eth_balance = client.get_balance(web3.to_checksum_address(safe_address))
     # Amount of outgoing ETH from transfer
-    eth_needed = sum(t.value for t in transactions)
+    eth_needed = sum(t.value for t in transactions) - wrapped_amount
+    weth_needed = wrapped_amount
     if eth_balance < eth_needed:
         weth = weth9(client.w3, wrapped_native_token)
         weth_balance = weth.functions.balanceOf(safe_address).call()
         weth_unwrap_amount = eth_needed - eth_balance
 
-        if weth_balance + eth_balance < eth_needed:
+        if weth_balance + eth_balance < eth_needed + weth_needed:
             message = (
                 f"{safe_address} has insufficient WETH + ETH balance for transaction!"
                 f"Additional {(weth_unwrap_amount - weth_balance) / 10**18} WETH required to "
