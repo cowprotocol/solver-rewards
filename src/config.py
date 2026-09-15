@@ -103,7 +103,7 @@ class ProtocolFeeConfig:
     @staticmethod
     def from_network(network: Network) -> ProtocolFeeConfig:
         """Initialize protocol fee config for a given network."""
-        partners_with_wrapped_native_transfers = []
+        partners_with_wrapped_native_transfers: list[Address] = []
         match network:
             case Network.MAINNET:
                 protocol_fee_safe = Address(
