@@ -142,8 +142,7 @@ def auto_propose(
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
         transactions=[t.as_multisend_tx() for t in transfers_cow],
         skip_validation=True,
-        is_native=False,
-        wrapped_amount=0,
+        wrapped_amount=None,
     )
 
     wrapped_native_token = Token(config.payment_config.wrapped_native_token_address, 18)
@@ -158,7 +157,6 @@ def auto_propose(
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
         transactions=[t.as_multisend_tx() for t in transfers_native],
         skip_validation=True,
-        is_native=True,
         wrapped_amount=wrapped_amount,
     )
 

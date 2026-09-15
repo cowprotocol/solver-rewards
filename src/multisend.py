@@ -39,15 +39,16 @@ def prepend_unwrap_if_necessary(
     transactions: list[MultiSendTx],
     wrapped_native_token: ChecksumAddress,
     skip_validation: bool = False,
-    is_native: bool = False,
-    wrapped_amount: int = 0,
+    wrapped_amount: int | None = None,
 ) -> list[MultiSendTx]:
     """
-    Given a list of multisend transactions, this checks that
-    the total outgoing ETH is sufficient and unwraps entire WETH balance when it isn't.
+    Given a list of multisend transactions, this checks
+    if these are COW or native transfers. If they
+    are native transfers it checks if the total outgoing ETH is sufficient
+    and unwraps entire WETH balance when it isn't.
     Raises if the ETH + WETH balance is still insufficient.
     """
-    if not is_native:
+    if wrapped_amount is None:
         return transactions
 
     eth_balance = client.get_balance(web3.to_checksum_address(safe_address))
