@@ -363,6 +363,7 @@ def prepare_payouts(  # pylint: disable=too-many-locals
                 amount_wei=total_partner_fee_tax,
             )
         )
+    wrapped_native_token = Token(config.payment_config.wrapped_native_token_address, 18)
     for _, row in partner_payouts.iterrows():
         partner = row["partner"]
         partner_fee = int(row["partner_fee_eth"] * (1 - row["partner_fee_tax"]))
@@ -370,9 +371,16 @@ def prepare_payouts(  # pylint: disable=too-many-locals
         if partner_fee > 0 and Address(partner) != Address(
             "0x81BA8A2b895D30280bca199C2Ff75f3F058d4C6c"
         ):
+            if (
+                Address(partner)
+                in config.protocol_fee_config.partners_with_wrapped_native_transfers
+            ):
+                target_token = wrapped_native_token
+            else:
+                target_token = None
             transfers.append(
                 Transfer(
-                    token=None,
+                    token=target_token,
                     recipient=Address(partner),
                     amount_wei=partner_fee,
                 )
