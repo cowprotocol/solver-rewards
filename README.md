@@ -115,49 +115,68 @@ section.
 
 ## Payout Verification
 
-### Manual verification against Safe transaction exports
+After the transactions are proposed on-chain, cross-check them against the Dune query
+output using `src/verification/compare_output_files.py`. Two ways to feed it data:
 
-After the transactions are proposed on-chain, you can cross-check them against
-the Dune query output using `src/verification/compare_output_files.py`.
+### Quickstart: `scripts/verify_payout.sh`
 
-**Inputs required:**
-
-| File                    | Description |
-|-------------------------|-------------|
-| Dune Rewards Export     | Dune solver-rewards export (per-solver row with `name`, `solver_address`, `reward_target`, `quote_reward`, `native_token_transfer`, `cow_transfer`, …) |
-| Mainnet COW Safe CSV    | Transaction export from the COW Safe (mainnet). Download from the Safe UI → Transactions → Export. |
-| Network native Safe CSV | Transaction export from the native Safe (e.g. Arbitrum). Same export procedure. |
-
-**Running the script:**
+This fetches the solver-rewards, protocol-fee, and partner-fees data directly from Dune,
+and collects the Safe multisend calldata for the three proposed transactions (COW
+transfers, native transfers, overdrafts) via your clipboard instead of requiring a Safe UI
+CSV export:
 
 ```shell
-python3 src/verification/compare_output_files.py <dune-solver-rewards>.csv \
-    --cow-safe-csv  "<mainnet-txs-file>.csv" \
-    --native-safe-csv "<network-txs-file>.csv" \
-    --fees-csv      "<fees-dune>.csv" \
-    --protocol-fee-safe <dao-safe-address> \
+scripts/verify_payout.sh --start 2026-09-08 --network bnb
+```
+
+At each prompt, copy the relevant calldata - either the bare `0x...` hex string, or the
+full transaction JSON, copied from the Safe UI - to your clipboard, then press Enter
+(answer `N` when asked about overdrafts if there were none that period). The script reads
+your clipboard directly (via `pbpaste`/`xclip`/`wl-paste`) rather than having you paste
+into the terminal, since these calldata blobs are single "lines" of hex that are easily
+tens of thousands of characters long - most terminals silently truncate a pasted/typed
+line past ~1024 bytes, so a direct paste into the prompt will cut it off. If no clipboard
+tool is available, you'll be asked for a file path instead. Requires `DUNE_API_KEY` to be
+set (e.g. via `.env`).
+
+### Manual CSV / calldata inputs
+
+The underlying script also accepts manually-downloaded CSVs, or calldata passed directly
+as flags, instead of the `--start` auto-fetch:
+
+```shell
+python3 -m src.verification.compare_output_files \
+    [<dune-solver-rewards>.csv | --start <period-start>] \
+    --cow-safe-csv "<mainnet-txs-file>.csv" | --cow-transfers-calldata-file <path> \
+    --native-safe-csv "<network-txs-file>.csv" | --native-transfers-calldata-file <path> \
+    [--overdraft-calldata-file <path>] \
+    [--fees-csv "<fees-dune>.csv"] \
+    [--partner-fees-csv "<partner-fees-dune>.csv"] \
     --network <network-name>
 ```
 
-The script uses *set-based* matching: every Safe transaction row must either
-match a Dune entry (by recipient address and amount, within a 0.01 % tolerance)
-or be flagged as an unmatched transfer warning. Every Dune entry with a reward
-above the threshold must have a corresponding Safe row, or an error is raised.
-
-Exit status is `0` when no errors are found (warnings are still printed).
+Run `python3 -m src.verification.compare_output_files --help` for the full set of options
+(thresholds, tolerance, output directory for calldata decoded to CSV, etc).
 
 **What the script checks:**
 
 - Every solver with `quote_reward > 1 COW` has a matching COW transfer to its `reward_target`.
 - Every solver with `native_token_transfer > 0.001 ETH` has a matching native transfer.
 - Every solver with `cow_transfer > 1 COW` has a matching COW transfer to its `reward_target`.
-- The net protocol fee transfer (`protocol_fee_in_native_token` from the fees CSV) to the DAO safe matches.
-- Remaining transfers to the DAO safe are labelled as partner fee tax (warning).
-- Any other Safe transaction row not matched to a solver or fee is flagged as unmatched (partner fee warning).
+- Every solver with a negative `overdraft` has a matching `addOverdraft` call (only checked
+  when overdraft calldata is provided).
+- The net protocol fee transfer (`protocol_fee_in_native_token`) to the DAO safe matches.
+- Each partner's fee transfer, and the aggregate partner-fee-tax transfer to the DAO safe,
+  match the partner-fees data (only checked when partner-fees data is provided).
+- Any Safe transaction row not matched to a solver, protocol fee, or partner fee is flagged
+  as unmatched: an **error** if its amount is above the native/COW threshold, a **warning**
+  otherwise (dust-sized stray transfers don't block signing; anything larger does).
 - Amounts match within 0.01 % relative tolerance.
 - Native transfers sent to the solver address (rather than the reward target) produce a warning.
 
-`--fees-csv` and `--protocol-fee-safe` are optional but both must be provided together to enable protocol fee verification.
+The script uses *set-based* matching: every Safe transaction row must either match a Dune
+entry (by recipient address and amount, within tolerance) or fall into the unmatched
+bucket above. Exit status is `0` when no errors are found (warnings are still printed).
 
 ### Additional Notes
 

@@ -8,12 +8,16 @@ Expected outcome
 All 31 COW transfers in the mainnet Safe match Dune entries.
 The protocol fee transfer (2.038… ETH to the DAO safe) is verified against
 V3_Weekly_Cost_Coverage_Fees_-_Reimbursement.csv.
-3 errors are expected: prod-Sector, prod-Rizzolver, and prod-Kaisersolver each
-have a non-zero native_token_transfer in the Dune export but no corresponding
-native transfer in the Arbitrum Safe (a real discrepancy in the provided data).
-6 unmatched transfers remain after protocol-fee matching:
-    1 partner fee tax (second transfer to DAO safe)
-    5 partner fee transfers (to partner addresses)
+No partner-fees data is available for this historical period, so the 6
+unmatched transfers remaining after protocol-fee matching (1 partner fee tax
+to the DAO safe + 5 partner fee transfers to partner addresses) cannot be
+individually verified; since all 6 are above the native-transfer threshold,
+they are now reported as errors rather than warnings. Combined with the 3
+"missing native transfer" errors (prod-Sector, prod-Rizzolver, and
+prod-Kaisersolver each have a non-zero native_token_transfer in the Dune
+export but no corresponding native transfer in the Arbitrum Safe - a real
+discrepancy in the provided data), this gives 8 errors total. The one
+remaining dust-sized unmatched transfer stays a warning.
 """
 
 import os
@@ -132,6 +136,11 @@ class TestArbitrum20260616E2E(unittest.TestCase):
         names = {e.message.split(":")[0] for e in missing}
         self.assertEqual(names, {"prod-Sector", "prod-Rizzolver", "prod-Kaisersolver"})
 
+    def test_partner_tax_transfer_over_threshold_is_error(self):
+        """No partner-fees data for this period, so the large tax transfer is an error."""
+        tax_errors = [e for e in self.report.errors if "partner fee tax" in e.message]
+        self.assertEqual(len(tax_errors), 1)
+
     # --- Protocol fee verification ---
 
     def test_protocol_fee_is_verified(self):
@@ -157,26 +166,23 @@ class TestArbitrum20260616E2E(unittest.TestCase):
         """1 partner fee tax + 5 partner fee transfers = 6 unmatched."""
         self.assertEqual(len(self.report.unmatched_transfers), 6)
 
-    def test_one_partner_fee_tax_warning(self):
-        partner_tax = [
-            w for w in self.report.warnings if "partner fee tax" in w.message
-        ]
-        self.assertEqual(len(partner_tax), 1)
-
-    def test_five_generic_unmatched_warnings(self):
+    def test_one_dust_generic_unmatched_warning(self):
+        """4 of the 5 generic partner transfers are above threshold and thus errors;
+        only the dust-sized one remains a warning."""
         generic = [
             w
             for w in self.report.warnings
             if "not verified against Dune data" in w.message
         ]
-        self.assertEqual(len(generic), 5)
+        self.assertEqual(len(generic), 1)
 
     def test_total_warning_count(self):
-        self.assertEqual(len(self.report.warnings), 6)
+        self.assertEqual(len(self.report.warnings), 1)
 
     def test_total_error_count(self):
-        """3 missing native errors only; no COW or protocol-fee errors."""
-        self.assertEqual(len(self.report.errors), 3)
+        """3 missing-native errors + 5 unmatched transfers above threshold
+        (4 generic partner transfers + 1 partner fee tax); no COW errors."""
+        self.assertEqual(len(self.report.errors), 8)
 
     def test_all_unmatched_are_native(self):
         for t in self.report.unmatched_transfers:
@@ -229,29 +235,28 @@ class TestArbitrum20260616CLIMode(unittest.TestCase):
             )
         self.assertEqual(exit_code, 2)
 
-    def test_main_requires_protocol_fee_safe_with_fees_csv(self):
+    def test_protocol_fee_safe_defaults_to_dao_safe(self):
+        """--protocol-fee-safe now defaults to the well-known DAO safe address,
+        so omitting it still runs the full comparison (same result as passing it
+        explicitly)."""
         _require_files(_DUNE_CSV, _ARB_NATIVE_CSV, _MAINNET_COW_CSV, _FEES_CSV)
 
         from src.verification.compare_output_files import main
-        import io
-        import contextlib
 
-        buf = io.StringIO()
-        with contextlib.redirect_stderr(buf):
-            exit_code = main(
-                [
-                    _DUNE_CSV,
-                    "--cow-safe-csv",
-                    _MAINNET_COW_CSV,
-                    "--native-safe-csv",
-                    _ARB_NATIVE_CSV,
-                    "--fees-csv",
-                    _FEES_CSV,
-                    "--network",
-                    "mainnet",
-                ]
-            )
-        self.assertEqual(exit_code, 2)
+        exit_code = main(
+            [
+                _DUNE_CSV,
+                "--cow-safe-csv",
+                _MAINNET_COW_CSV,
+                "--native-safe-csv",
+                _ARB_NATIVE_CSV,
+                "--fees-csv",
+                _FEES_CSV,
+                "--network",
+                "mainnet",
+            ]
+        )
+        self.assertEqual(exit_code, 1)
 
 
 if __name__ == "__main__":
