@@ -9,10 +9,13 @@ from src.verification.compare_output_files import (
     DEFAULT_NATIVE_THRESHOLD,
     DuneReward,
     FeeSummary,
+    PartnerFee,
     Transfer,
     load_fee_summary,
+    load_partner_fees,
     load_safe_transfers,
     compare_safe_exports,
+    parse_amount,
 )
 
 _COW = "0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab"
@@ -45,6 +48,7 @@ def _reward(
     quote: float = 0.0,
     native: float = 0.0,
     cow: float = 0.0,
+    overdraft: float = 0.0,
 ) -> DuneReward:
     return DuneReward(
         name=name,
@@ -53,7 +57,16 @@ def _reward(
         quote_reward=quote,
         native_token_transfer=native,
         cow_transfer=cow,
+        overdraft=overdraft,
     )
+
+
+class _OverdraftEntry:
+    """Minimal stand-in for decode_calldata.OverdraftEntry (duck-typed by compare_safe_exports)."""
+
+    def __init__(self, account: str, amount: float):
+        self.account = account.lower()
+        self.amount = amount
 
 
 def _cow_t(receiver: str, amount: float) -> Transfer:
@@ -221,16 +234,28 @@ class TestCompareSafeExports(unittest.TestCase):
         report = compare_safe_exports(rewards, [], [], _COW)
         self.assertEqual(report.errors, [])
 
-    def test_unmatched_native_transfer_is_warning(self):
-        """A native transfer with no matching Dune entry → unmatched warning."""
+    def test_unmatched_native_transfer_below_threshold_is_warning(self):
+        """A small native transfer with no matching Dune entry → unmatched warning."""
         rewards = [_reward("prod-A", "0xAA", "0xTA")]
-        native_transfers = [_native_t("0xFEE", 1.5)]
+        native_transfers = [_native_t("0xFEE", DEFAULT_NATIVE_THRESHOLD * 0.5)]
 
         report = compare_safe_exports(rewards, [], native_transfers, _COW)
 
         self.assertEqual(report.errors, [])
         self.assertEqual(len(report.warnings), 1)
         self.assertIn("Unmatched transfer", report.warnings[0].message)
+        self.assertEqual(report.unmatched_transfers, native_transfers)
+
+    def test_unmatched_native_transfer_over_threshold_is_error(self):
+        """A large native transfer with no matching Dune entry → unmatched error."""
+        rewards = [_reward("prod-A", "0xAA", "0xTA")]
+        native_transfers = [_native_t("0xFEE", 1.5)]
+
+        report = compare_safe_exports(rewards, [], native_transfers, _COW)
+
+        self.assertEqual(report.warnings, [])
+        self.assertEqual(len(report.errors), 1)
+        self.assertIn("Unmatched transfer", report.errors[0].message)
         self.assertEqual(report.unmatched_transfers, native_transfers)
 
     def test_wrong_token_address_is_error(self):
@@ -342,7 +367,7 @@ class TestCompareSafeExportsWithFees(unittest.TestCase):
         rewards = [_reward("prod-A", "0xAA", "0xTA")]
         native_transfers = [
             _native_t(protocol_safe, 2.038),
-            _native_t("0xpartner", 0.5),
+            _native_t("0xpartner", DEFAULT_NATIVE_THRESHOLD * 0.5),
         ]
         report = compare_safe_exports(
             rewards,
@@ -377,7 +402,7 @@ class TestCompareSafeExportsWithFees(unittest.TestCase):
         rewards = [_reward("prod-A", "0xAA", "0xTA")]
         native_transfers = [
             _native_t(protocol_safe, 2.038),  # protocol fee
-            _native_t(protocol_safe, 0.648),  # partner fee tax
+            _native_t(protocol_safe, DEFAULT_NATIVE_THRESHOLD * 0.5),  # partner fee tax
         ]
         report = compare_safe_exports(
             rewards,
@@ -392,10 +417,30 @@ class TestCompareSafeExportsWithFees(unittest.TestCase):
         self.assertEqual(len(report.warnings), 1)
         self.assertIn("partner fee tax", report.warnings[0].message)
 
+    def test_large_remaining_transfer_to_protocol_safe_is_error(self):
+        """A large second transfer to the DAO safe is an error, still labelled partner fee tax."""
+        protocol_safe = "0xdaosafe"
+        rewards = [_reward("prod-A", "0xAA", "0xTA")]
+        native_transfers = [
+            _native_t(protocol_safe, 2.038),  # protocol fee
+            _native_t(protocol_safe, 0.648),  # partner fee tax
+        ]
+        report = compare_safe_exports(
+            rewards,
+            [],
+            native_transfers,
+            _COW,
+            protocol_fee=2.038,
+            protocol_fee_safe=protocol_safe,
+        )
+        self.assertEqual(report.warnings, [])
+        self.assertEqual(len(report.errors), 1)
+        self.assertIn("partner fee tax", report.errors[0].message)
+
     def test_without_fee_params_all_unmatched_are_generic_warnings(self):
         protocol_safe = "0xdaosafe"
         rewards = [_reward("prod-A", "0xAA", "0xTA")]
-        native_transfers = [_native_t(protocol_safe, 2.038)]
+        native_transfers = [_native_t(protocol_safe, DEFAULT_NATIVE_THRESHOLD * 0.5)]
         report = compare_safe_exports(rewards, [], native_transfers, _COW)
         self.assertEqual(len(report.warnings), 1)
         self.assertIn("Unmatched transfer", report.warnings[0].message)
@@ -415,8 +460,10 @@ class TestArbitrum20260616Integration(unittest.TestCase):
     - 3 "missing native transfer" errors for prod-Sector, prod-Rizzolver, and
       prod-Kaisersolver (these solvers have native_token_transfer > threshold in
       Dune but no corresponding row in the Arbitrum Safe export).
-    - Several unmatched-transfer warnings for fee/partner transfers that are not
-      part of the Dune solver-rewards data.
+    - 7 unmatched fee/partner transfers that are not part of the Dune
+      solver-rewards data; no partner-fees data is available for this historical
+      period, so 6 of them (all above the native threshold) are errors, and only
+      the one dust-sized transfer remains a warning.
     """
 
     @classmethod
@@ -464,7 +511,8 @@ class TestArbitrum20260616Integration(unittest.TestCase):
         self.assertEqual(names, {"prod-Sector", "prod-Rizzolver", "prod-Kaisersolver"})
 
     def test_total_error_count(self):
-        self.assertEqual(len(self.report.errors), 3)
+        """3 missing-native errors + 6 unmatched transfers above the native threshold."""
+        self.assertEqual(len(self.report.errors), 9)
 
     def test_unmatched_transfers_are_fee_and_partner_transfers(self):
         """The 7 unmatched native transfers are DAO-safe and partner fee transfers."""
@@ -472,11 +520,19 @@ class TestArbitrum20260616Integration(unittest.TestCase):
         for t in self.report.unmatched_transfers:
             self.assertEqual(t.token_type, "native")
 
-    def test_all_unmatched_produce_warnings(self):
+    def test_only_dust_unmatched_transfer_is_a_warning(self):
+        """Without partner-fees data, only the sub-threshold dust transfer stays a warning."""
         unmatched_warnings = [
             w for w in self.report.warnings if "Unmatched transfer" in w.message
         ]
-        self.assertEqual(len(unmatched_warnings), 7)
+        self.assertEqual(len(unmatched_warnings), 1)
+
+    def test_six_unmatched_transfers_are_errors(self):
+        """The 6 unmatched transfers above the native threshold are errors."""
+        unmatched_errors = [
+            e for e in self.report.errors if "Unmatched transfer" in e.message
+        ]
+        self.assertEqual(len(unmatched_errors), 6)
 
     def test_all_cow_transfers_accounted_for(self):
         """After matching, no COW transfers should remain unmatched."""
@@ -492,6 +548,187 @@ class TestArbitrum20260616Integration(unittest.TestCase):
     def test_native_solver_transfers_matched(self):
         """OKX and BitgetWallet native transfers should be matched (native total > 0)."""
         self.assertGreater(self.report.totals.native, 0)
+
+
+# ---------------------------------------------------------------------------
+# load_partner_fees
+# ---------------------------------------------------------------------------
+
+
+class TestLoadPartnerFees(unittest.TestCase):
+    def _write_csv(self, content: str) -> str:
+        import tempfile
+
+        path = tempfile.mktemp(suffix=".csv")
+        with open(path, "w") as f:
+            f.write(textwrap.dedent(content))
+        return path
+
+    def test_parses_partner_fees(self):
+        path = self._write_csv(
+            """\
+            partner_recipient,app_code,widget_app_code,partner_fee_part,cow_dao_partner_fee_part
+            0x8025BAcF968aa82BDfE51B513123b55BFb0060D3,CoW Swap-SafeApp,,0.0791004198,0.0966782909
+            0x942f9CE5D9a33a82F88D233AEb3292E680230348,Ambire,,0.0000134890,0.0000044963
+            """
+        )
+        fees = load_partner_fees(path)
+        self.assertEqual(len(fees), 2)
+        self.assertEqual(
+            fees[0].recipient, "0x8025bacf968aa82bdfe51b513123b55bfb0060d3"
+        )
+        self.assertEqual(fees[0].app_code, "CoW Swap-SafeApp")
+        self.assertAlmostEqual(fees[0].partner_fee_part, 0.0791004198)
+        self.assertAlmostEqual(fees[0].cow_dao_partner_fee_part, 0.0966782909)
+
+
+# ---------------------------------------------------------------------------
+# parse_amount / typed Dune API rows (not just CSV strings)
+# ---------------------------------------------------------------------------
+
+
+class TestParseAmount(unittest.TestCase):
+    def test_parses_string(self):
+        self.assertAlmostEqual(parse_amount("1.5"), 1.5)
+
+    def test_parses_float(self):
+        """Rows fetched directly from the Dune API come back with native JSON types,
+        not strings the way csv.DictReader rows do."""
+        self.assertAlmostEqual(parse_amount(1.5), 1.5)
+
+    def test_parses_int(self):
+        self.assertAlmostEqual(parse_amount(3), 3.0)
+
+    def test_none_and_empty_string_are_zero(self):
+        self.assertEqual(parse_amount(None), 0.0)
+        self.assertEqual(parse_amount(""), 0.0)
+        self.assertEqual(parse_amount("  "), 0.0)
+
+
+class TestFromCsvRowWithTypedValues(unittest.TestCase):
+    """DuneReward/PartnerFee.from_csv_row must also accept Dune-API-shaped rows,
+    whose numeric fields are already float/int rather than str."""
+
+    def test_dune_reward_from_typed_row(self):
+        reward = DuneReward.from_csv_row(
+            {
+                "name": "prod-A",
+                "solver_address": "0xAA",
+                "reward_target": "0xTA",
+                "quote_reward": 10.0,
+                "native_token_transfer": 0.5,
+                "cow_transfer": 100,
+                "overdraft": -0.2,
+            }
+        )
+        self.assertAlmostEqual(reward.quote_reward, 10.0)
+        self.assertAlmostEqual(reward.native_token_transfer, 0.5)
+        self.assertAlmostEqual(reward.cow_transfer, 100.0)
+        self.assertAlmostEqual(reward.overdraft, -0.2)
+
+    def test_partner_fee_from_typed_row(self):
+        fee = PartnerFee.from_csv_row(
+            {
+                "partner_recipient": "0xPartner",
+                "app_code": "App1",
+                "partner_fee_part": 0.1,
+                "cow_dao_partner_fee_part": 0.02,
+            }
+        )
+        self.assertAlmostEqual(fee.partner_fee_part, 0.1)
+        self.assertAlmostEqual(fee.cow_dao_partner_fee_part, 0.02)
+
+
+# ---------------------------------------------------------------------------
+# compare_safe_exports — partner fee verification
+# ---------------------------------------------------------------------------
+
+
+class TestCompareSafeExportsWithPartnerFees(unittest.TestCase):
+    def test_partner_fee_and_tax_verified_and_removed_from_unmatched(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA")]
+        partner_fees = [
+            PartnerFee("0xpartner1", "App1", 0.1, 0.02),
+            PartnerFee("0xpartner2", "App2", 0.2, 0.03),
+        ]
+        native_transfers = [
+            _native_t("0xpartner1", 0.1),
+            _native_t("0xpartner2", 0.2),
+            _native_t("0xdaosafe", 0.05),  # aggregate tax: 0.02 + 0.03
+        ]
+        report = compare_safe_exports(
+            rewards,
+            [],
+            native_transfers,
+            _COW,
+            protocol_fee_safe="0xdaosafe",
+            partner_fees=partner_fees,
+        )
+        self.assertEqual(report.errors, [])
+        self.assertEqual(report.unmatched_transfers, [])
+
+    def test_missing_partner_fee_transfer_is_error(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA")]
+        partner_fees = [PartnerFee("0xpartner1", "App1", 0.1, 0.02)]
+        report = compare_safe_exports(
+            rewards,
+            [],
+            [],
+            _COW,
+            protocol_fee_safe="0xdaosafe",
+            partner_fees=partner_fees,
+        )
+        errors = [e.message for e in report.errors]
+        self.assertTrue(any("Missing partner fee transfer" in m for m in errors))
+        self.assertTrue(any("partner fee tax" in m for m in errors))
+
+    def test_partner_fee_below_threshold_not_required(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA")]
+        partner_fees = [
+            PartnerFee("0xpartner1", "App1", DEFAULT_NATIVE_THRESHOLD * 0.5, 0.0)
+        ]
+        report = compare_safe_exports(
+            rewards,
+            [],
+            [],
+            _COW,
+            protocol_fee_safe="0xdaosafe",
+            partner_fees=partner_fees,
+        )
+        self.assertEqual(report.errors, [])
+
+
+# ---------------------------------------------------------------------------
+# compare_safe_exports — overdraft verification
+# ---------------------------------------------------------------------------
+
+
+class TestCompareSafeExportsWithOverdrafts(unittest.TestCase):
+    def test_overdraft_matched_removes_from_unmatched_and_adds_to_totals(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA", overdraft=-0.5)]
+        entries = [_OverdraftEntry("0xAA", 0.5)]
+        report = compare_safe_exports(rewards, [], [], _COW, overdraft_entries=entries)
+        self.assertEqual(report.errors, [])
+        self.assertAlmostEqual(report.totals.overdraft, 0.5)
+
+    def test_missing_overdraft_is_error(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA", overdraft=-0.5)]
+        report = compare_safe_exports(rewards, [], [], _COW, overdraft_entries=[])
+        errors = [e.message for e in report.errors]
+        self.assertTrue(any("missing overdraft transaction" in m for m in errors))
+
+    def test_unmatched_overdraft_over_threshold_is_error(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA")]
+        entries = [_OverdraftEntry("0xunexpected", 0.5)]
+        report = compare_safe_exports(rewards, [], [], _COW, overdraft_entries=entries)
+        errors = [e.message for e in report.errors]
+        self.assertTrue(any("Unmatched overdraft transaction" in m for m in errors))
+
+    def test_overdraft_entries_none_disables_overdraft_checks(self):
+        """Without overdraft_entries, a reward's overdraft field is simply ignored."""
+        rewards = [_reward("prod-A", "0xAA", "0xTA", overdraft=-0.5)]
+        report = compare_safe_exports(rewards, [], [], _COW)
+        self.assertEqual(report.errors, [])
 
 
 if __name__ == "__main__":
