@@ -445,7 +445,7 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
         list(overdraft_entries) if overdraft_entries is not None else None
     )
 
-    def find_and_remove_overdraft(account: str, amount: float):
+    def find_and_remove_overdraft(account: str, amount: float) -> None:
         if remaining_overdrafts is None:
             return None
         for i, entry in enumerate(remaining_overdrafts):
