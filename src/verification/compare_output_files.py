@@ -46,7 +46,7 @@ import csv
 import os
 import sys
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Any, Optional
 
 # COW is deployed at the same address on every supported network.
 COW_TOKEN_ADDRESS = "0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab"
@@ -445,7 +445,11 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
         list(overdraft_entries) if overdraft_entries is not None else None
     )
 
-    def find_and_remove_overdraft(account: str, amount: float) -> None:
+    def find_and_remove_overdraft(account: str, amount: float) -> Any:
+        # Overdraft entries are duck-typed (an object with .account/.amount) rather
+        # than a concrete type, to avoid compare_output_files.py depending on
+        # decode_calldata.py's OverdraftEntry at module level (see overdraft_entries
+        # on compare_safe_exports below).
         if remaining_overdrafts is None:
             return None
         for i, entry in enumerate(remaining_overdrafts):
