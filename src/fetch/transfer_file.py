@@ -30,6 +30,7 @@ from src.multisend import (
     post_multisend,
     prepend_unwrap_if_necessary,
 )
+from src.models.token import Token
 from src.pg_client import MultiInstanceDBFetcher
 from src.slack_utils import post_to_slack
 from src.utils.print_store import Category, PrintStore
@@ -141,7 +142,14 @@ def auto_propose(
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
         transactions=[t.as_multisend_tx() for t in transfers_cow],
         skip_validation=True,
+        wrapped_amount=None,
     )
+
+    wrapped_native_token = Token(config.payment_config.wrapped_native_token_address, 18)
+    wrapped_amount = 0
+    for t in transfers_native:
+        if t.token == wrapped_native_token:
+            wrapped_amount += t.amount_wei
 
     transactions_native = prepend_unwrap_if_necessary(
         client,
@@ -149,6 +157,7 @@ def auto_propose(
         wrapped_native_token=config.payment_config.wrapped_native_token_address,
         transactions=[t.as_multisend_tx() for t in transfers_native],
         skip_validation=True,
+        wrapped_amount=wrapped_amount,
     )
 
     ovedrafts_txs = [ov.as_multisend_tx() for ov in overdrafts]
@@ -271,8 +280,9 @@ def main() -> None:
 
     payout_transfers_cow = []
     payout_transfers_native = []
+    wrapped_native_token = Token(config.payment_config.wrapped_native_token_address, 18)
     for tr in payout_transfers_temp:
-        if tr.token is None:
+        if tr.token is None or tr.token == wrapped_native_token:
             if tr.amount_wei >= config.payment_config.min_native_token_transfer:
                 payout_transfers_native.append(tr)
         else:
