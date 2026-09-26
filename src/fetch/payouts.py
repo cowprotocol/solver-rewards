@@ -155,7 +155,6 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         The reward is multiplied by this factor"""
         return 1 - self.service_fee
 
-
     def is_overdraft(self) -> bool:
         """
         True if the solver's complete combined data results in a net negative
