@@ -37,8 +37,6 @@ ckzg==2.1.2
     #   py-evm
 click==8.2.1
     # via black
-coinpaprika==0.1.0
-    # via -r requirements.in
 cytoolz==1.0.1
     # via eth-utils
 dataclasses-json==0.6.7
@@ -206,7 +204,6 @@ regex==2025.9.1
 requests==2.32.5
     # via
     #   -r requirements.in
-    #   coinpaprika
     #   dune-client
     #   duneapi
     #   safe-eth-py
