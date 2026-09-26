@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import pandas as pd
-from pandas import DataFrame, Series, read_sql_query
+from pandas import DataFrame, read_sql_query
 from sqlalchemy import create_engine
 from sqlalchemy.engine import Engine
 
