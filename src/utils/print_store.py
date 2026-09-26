@@ -12,9 +12,6 @@ class Category(Enum):
     GENERAL = "Overview"
     TOTALS = "Totals"
     OVERDRAFT = "Overdraft"
-    COW_REDIRECT = "COW Redirects"
-    ETH_REDIRECT = "ETH Redirects (Positive Slippage)"
-    SLIPPAGE = "Negative Slippage"
     EXECUTION = "Execution Details"
 
 

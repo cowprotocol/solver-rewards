@@ -193,31 +193,3 @@ def pg_hex2bytea(hex_address: str) -> str:
     compatible bytea by replacing `0x` with `\\x`.
     """
     return hex_address.replace("0x", "\\x")
-
-
-def log_duplicate_rows(df: DataFrame) -> None:
-    """Log rows with duplicate solvers entries.
-    Printing defaults are changed to show all column entries."""
-    duplicated_entries = df[df["solver"].duplicated(keep=False)]
-    with pd.option_context(
-        "display.max_columns",
-        None,
-        "display.width",
-        None,
-        "display.max_colwidth",
-        None,
-    ):
-        log.warning(
-            f"Solvers found in both environments:\n {duplicated_entries}.\n"
-            "Merging results."
-        )
-
-
-def merge_lists(series: Series) -> list | None:
-    """Merges series containing lists into large list.
-    Returns None if the result would be an empty list."""
-    merged = []
-    for lst in series:
-        if lst is not None:
-            merged.extend(lst)
-    return merged if merged else None

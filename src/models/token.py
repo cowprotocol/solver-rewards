@@ -22,14 +22,6 @@ class TokenType(Enum):
     # Technically the app also supports NFT transfers, but this is irrelevant here
     # NFT = 'nft'
 
-    @classmethod
-    def from_str(cls, type_str: str) -> TokenType:
-        """Constructs Enum variant from string (case-insensitive)"""
-        try:
-            return cls[type_str.upper()]
-        except KeyError as err:
-            raise ValueError(f"No TokenType {type_str}!") from err
-
     def __str__(self) -> str:
         return str(self.value)
 
