@@ -153,13 +153,6 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         The reward is multiplied by this factor"""
         return 1 - self.service_fee
 
-    def total_service_fee(self) -> Fraction:
-        """Total service fee charged from rewards"""
-        return self.service_fee * (
-            max(self.primary_reward_cow + self.consistency_reward_cow, 0)
-            + self.quote_reward_cow
-        )
-
     def is_overdraft(self) -> bool:
         """
         True if the solver's complete combined data results in a net negative
