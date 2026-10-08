@@ -351,7 +351,7 @@ class PaymentConfig:
                     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
                 )
                 min_native_token_transfer = 10**6
-                min_cow_transfer = 10 * 10**18  # 10 COW
+                min_cow_transfer = 10 * 10**18  # 1 COW
 
             case Network.GNOSIS:
                 payment_network = EthereumNetwork.GNOSIS
