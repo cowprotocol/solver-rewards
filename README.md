@@ -17,14 +17,6 @@ Generate the solver-payouts with for the accounting period 7 days (with today as
 python -m src.fetch.transfer_file
 ```
 
-To generate order data for the current month to upload to Dune run the following command.
-
-```shell
-python -m src.data_sync.sync_data --sync-table order_data
-```
-
-For more advanced usage of these scripts see below.
-
 # Summary of Accounting Procedure
 
 In what follows **Accounting Periods** are defined in intervals of 1 week and accounting

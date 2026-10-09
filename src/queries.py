@@ -34,8 +34,4 @@ QUERIES = {
         name="Block Interval for Accounting Period",
         q_id=3333356,
     ),
-    "DASHBOARD_SLIPPAGE": QueryData(
-        name="Period Solver Rewards",
-        q_id=2510345,
-    ),
 }

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta
 from fractions import Fraction
 
 import numpy as np
@@ -13,7 +12,6 @@ from pandas import DataFrame, Series
 
 from src.config import AccountingConfig
 from src.fetch.dune import DuneFetcher
-from src.fetch.prices import exchange_rate_atoms
 from src.logger import log_saver, set_log
 from src.models.accounting_period import AccountingPeriod
 from src.models.overdraft import Overdraft
@@ -154,13 +152,6 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
         """Scaling factor for service fee
         The reward is multiplied by this factor"""
         return 1 - self.service_fee
-
-    def total_service_fee(self) -> Fraction:
-        """Total service fee charged from rewards"""
-        return self.service_fee * (
-            max(self.primary_reward_cow + self.consistency_reward_cow, 0)
-            + self.quote_reward_cow
-        )
 
     def is_overdraft(self) -> bool:
         """
@@ -363,6 +354,7 @@ def prepare_payouts(  # pylint: disable=too-many-locals
                 amount_wei=total_partner_fee_tax,
             )
         )
+    wrapped_native_token = Token(config.payment_config.wrapped_native_token_address, 18)
     for _, row in partner_payouts.iterrows():
         partner = row["partner"]
         partner_fee = int(row["partner_fee_eth"] * (1 - row["partner_fee_tax"]))
@@ -370,51 +362,22 @@ def prepare_payouts(  # pylint: disable=too-many-locals
         if partner_fee > 0 and Address(partner) != Address(
             "0x81BA8A2b895D30280bca199C2Ff75f3F058d4C6c"
         ):
+            if (
+                Address(partner)
+                in config.protocol_fee_config.partners_with_wrapped_native_transfers
+            ):
+                target_token = wrapped_native_token
+            else:
+                target_token = None
             transfers.append(
                 Transfer(
-                    token=None,
+                    token=target_token,
                     recipient=Address(partner),
                     amount_wei=partner_fee,
                 )
             )
 
     return PeriodPayouts(overdrafts, transfers)
-
-
-def fetch_exchange_rates(
-    period_end: datetime, config: AccountingConfig
-) -> tuple[Fraction, Fraction]:
-    """Fetch exchange rates.
-
-    Fetches exchange rates for converting COW to native tokens and ETH to native tokens. The
-    exchange rate is an average rate from the day before the end of the accounting period.
-
-    Parameters
-    ----------
-    period_end : datetime
-        The end of the accounting period for which the exchange rates are being fetched.
-
-    config : AccountingConfig
-        Configuration object containing reward and payment settings, including token addresses.
-
-    Returns
-    -------
-    exchange_rate_native_to_cow : Fraction
-        The rate of exchange from the native token to COW.
-    exchange_rate_native_to_eth: Fraction
-        The rate of exchange from the native token to ETH.
-    """
-    reward_token = config.reward_config.reward_token_address
-    native_token = Address(config.payment_config.wrapped_native_token_address)
-    wrapped_eth = config.payment_config.wrapped_eth_address
-    price_day = period_end - timedelta(days=1)
-    exchange_rate_native_to_cow = exchange_rate_atoms(
-        native_token, reward_token, price_day
-    )
-    exchange_rate_native_to_eth = exchange_rate_atoms(
-        native_token, wrapped_eth, price_day
-    )
-    return exchange_rate_native_to_cow, exchange_rate_native_to_eth
 
 
 def compute_solver_payouts(
@@ -551,7 +514,6 @@ def summarize_payments(  # pylint: disable=too-many-locals
     solver_payouts: DataFrame,
     partner_payouts: DataFrame,
     exchange_rate_native_to_cow: Fraction,
-    exchange_rate_native_to_eth: Fraction,
     config: AccountingConfig,
 ) -> None:
     """Summarize payment information.
@@ -618,7 +580,6 @@ def summarize_payments(  # pylint: disable=too-many-locals
         f"Network Fees: {network_fee / 10**18:.4f}\n"
         f"Slippage: {slippage / 10**18:.4f}\n\n"
         f"Exchange rate native token to COW: {exchange_rate_native_to_cow:.4f} COW/native token\n"
-        f"Exchange rate native token to ETH: {exchange_rate_native_to_eth:.4f} ETH/native token\n\n"
         f"Minimum native token transfer: {min_native_token_transfer / 10**18} units\n"
         f"Minimum COW transfer: {min_cow_transfer / 10**18} units\n",
         category=Category.TOTALS,
@@ -663,13 +624,11 @@ def construct_payouts(
     exchange_rate_native_to_cow = Fraction(
         1 / data_per_solver.iloc[0]["conversion_rate_cow_to_native"]
     )
-    _, exchange_rate_native_to_eth = fetch_exchange_rates(dune.period.end, config)
 
     summarize_payments(
         solver_payouts,
         partner_payouts,
         exchange_rate_native_to_cow,
-        exchange_rate_native_to_eth,
         config,
     )
 

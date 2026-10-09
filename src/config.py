@@ -98,11 +98,14 @@ class ProtocolFeeConfig:
     """
 
     protocol_fee_safe: Address
+    partners_with_wrapped_native_transfers: list[Address]
 
     @staticmethod
     def from_network(network: Network) -> ProtocolFeeConfig:
         """Initialize protocol fee config for a given network."""
-
+        partners_with_wrapped_native_transfers: list[Address] = [
+            Address("0x0A61B9F341a3ec8a8112D7dD6FBBC62B7FDF437e")
+        ]
         match network:
             case Network.MAINNET:
                 protocol_fee_safe = Address(
@@ -151,6 +154,7 @@ class ProtocolFeeConfig:
 
         return ProtocolFeeConfig(
             protocol_fee_safe=protocol_fee_safe,
+            partners_with_wrapped_native_transfers=partners_with_wrapped_native_transfers,
         )
 
 
@@ -347,7 +351,7 @@ class PaymentConfig:
                     "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
                 )
                 min_native_token_transfer = 10**6
-                min_cow_transfer = 10 * 10**18  # 10 COW
+                min_cow_transfer = 1 * 10**18  # 1 COW
 
             case Network.GNOSIS:
                 payment_network = EthereumNetwork.GNOSIS
