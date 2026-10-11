@@ -117,23 +117,23 @@ def check_row(
 
     block_number = int(row["block_number"])
     moralis_response = moralis.price_at(chain, token, block_number)
-    price = round(moralis_response.native_per_atom * PRICE_SCALE)
-
-    # The fee value already uses the native price, so comparing USD
-    # per atom is equivalent to comparing native prices.
-    # To avoid division by zero, we first ensure that if the Moralis price is zero,
-    # then we will always pick it.
-    if moralis_response.usd_per_atom == 0:
-        deviation = thresholds.tolerance
+    price = max(round(moralis_response.native_per_atom * PRICE_SCALE), 0)
+    if price == 0 or moralis_response.usd_per_atom == 0:
+        # Moralis says the token is worthless: always correct to 0 (our fee
+        # value is above min_fee_usd, so ours is strictly higher).
+        price = 0
     else:
+        if moralis_response.usd_per_atom is None or moralis_response.usd_per_atom < 0:
+            # native price but no USD price: nothing to compare against
+            return "NO_REFERENCE_PRICE", None
+        # Our fee value already uses our (suspect) native price, so comparing
+        # USD per atom is equivalent to comparing native prices.
         deviation = (
             fee_usd / fee_atoms - moralis_response.usd_per_atom
         ) / moralis_response.usd_per_atom
-    if deviation < thresholds.tolerance:
-        # check if native price is within 50% either way away
-        # from Moralis
-        within = deviation >= -thresholds.tolerance
-        return ("OK" if within else "KEPT_OURS_MORALIS_HIGHER"), None
+        if deviation < thresholds.tolerance:
+            within = deviation >= -thresholds.tolerance
+            return ("OK" if within else "KEPT_OURS_MORALIS_HIGHER"), None
 
     return "CORRECTED", Correction(
         network=chain.network.value,
