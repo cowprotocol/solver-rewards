@@ -155,7 +155,7 @@ def run(
     dune, moralis = clients
     corrections: dict[tuple[str, str, int, str], Correction] = {}
     for chain in chains:
-        for row in fetch_null_price_fees_from_dune (dune, chain, period):
+        for row in fetch_null_price_fees_from_dune(dune, chain, period):
             try:
                 _, correction = check_row(row, chain, moralis, thresholds)
             except Exception as err:  # pylint: disable=broad-exception-caught

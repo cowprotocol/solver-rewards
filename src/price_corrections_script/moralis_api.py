@@ -181,7 +181,9 @@ class MoralisClient:
             delay *= 2
         raise RuntimeError(f"Gave up on {path}")
 
-    def price_at(self, chain: ChainConfig, token: str, block_number: int) -> MoralisPrice:
+    def price_at(
+        self, chain: ChainConfig, token: str, block_number: int
+    ) -> MoralisPrice:
         """Price of `token` at `block_number`."""
         key = (chain.moralis_chain, token, block_number)
         if key not in self._prices:
