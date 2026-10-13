@@ -62,7 +62,9 @@ class Transfer:
         eth_total = 0
         cow_total = 0
         for t in transfers:
-            if t.token_type == TokenType.ERC20 and t.token.address == Address("0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"):
+            if t.token_type == TokenType.ERC20 and t.token.address == Address(
+                "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
+            ):
                 cow_total += t.amount_wei
             else:
                 eth_total += t.amount_wei
