@@ -59,14 +59,20 @@ class Transfer:
     @staticmethod
     def summarize(transfers: list[Transfer]) -> str:
         """Summarizes transfers with totals"""
-        eth_total = sum(
-            t.amount_wei for t in transfers if t.token_type == TokenType.NATIVE
-        )
-        cow_total = sum(
-            t.amount_wei for t in transfers if t.token_type == TokenType.ERC20
-        )
+        eth_total = 0
+        cow_total = 0
+        for t in transfers:
+            if t.token is None:
+                eth_total += t.amount_wei
+            else:
+                if t.token_type == TokenType.ERC20 and t.token.address == Address(
+                    "0xDEf1CA1fb7FBcDC777520aa7f396b4E015F497aB"
+                ):
+                    cow_total += t.amount_wei
+                else:
+                    eth_total += t.amount_wei
         return (
-            f"Total Native Token Funds needed: {eth_total / 10 ** 18:.4f}\n"
+            f"Total (Wrapped) Native Token Funds needed: {eth_total / 10 ** 18:.4f}\n"
             f"Total COW Funds needed: {cow_total / 10 ** 18:.4f}\n"
         )
 
