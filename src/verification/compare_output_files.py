@@ -35,9 +35,13 @@ The Dune CSV must contain at minimum:
     native_token_transfer, cow_transfer, overdraft
 
 Exit status is 0 if no errors were found (warnings are still reported), and 1
-otherwise. An unmatched Safe transfer above the native/COW threshold is an
-error; below it, a warning.
+otherwise. A missing or unmatched transfer above the native/COW threshold is
+an error; below it, a warning.
 """
+
+# The whole verification flow - parsing, comparison, reporting, CLI - deliberately
+# lives in this one module so it can be read top-to-bottom before signing a payout.
+# pylint: disable=too-many-lines
 
 from __future__ import annotations
 
@@ -67,10 +71,9 @@ NETWORKS = (
     "ink",
 )
 
-DEFAULT_COW_THRESHOLD = 1.0  # Don't expect a transfer for COW rewards below this.
-DEFAULT_NATIVE_THRESHOLD = (
-    0.001  # Don't expect a transfer for native rewards below this.
-)
+# A missing or unmatched transfer above these amounts is an error; below, a warning.
+DEFAULT_COW_THRESHOLD = 1.0
+DEFAULT_NATIVE_THRESHOLD = 0.001
 DEFAULT_TOLERANCE = (
     0.0001  # Max relative difference allowed between Dune and transfer amounts.
 )
@@ -320,6 +323,19 @@ class ComparisonReport:
     solver_totals: dict[str, SolverTotals] = field(default_factory=dict)
     totals: SolverTotals = field(default_factory=SolverTotals)
     unmatched_transfers: list[Transfer] = field(default_factory=list)
+    # Fee amounts confirmed against a transfer. None means the check didn't run
+    # because no Dune fee data was supplied; 0.0 means it ran and found nothing
+    # (which, for a fee that was expected, also records an error).
+    protocol_fee: Optional[float] = None
+    partner_fees: Optional[float] = None
+    partner_fee_tax: Optional[float] = None
+
+    def issue(self, message: str, amount: float, threshold: float) -> None:
+        """Record an error if ``amount`` exceeds ``threshold``, else a warning."""
+        if amount > threshold:
+            self.error(message)
+        else:
+            self.warning(message)
 
     def error(self, message: str) -> None:
         """Record an error-level issue."""
@@ -405,20 +421,24 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
         If both ``protocol_fee`` and ``protocol_fee_safe`` are provided, the
         function looks for a native transfer to ``protocol_fee_safe`` with
         amount ≈ ``protocol_fee`` (from the Dune Fees
-        export) and verifies it.  A missing match is an error.
+        export) and verifies it.
 
     Partner fee verification (optional):
         If ``partner_fees`` is provided, each partner's ``partner_fee_part`` is
         matched against a native transfer to its ``recipient``, and the sum of
         every partner's ``cow_dao_partner_fee_part`` is matched against a
         single aggregate native transfer to ``protocol_fee_safe`` (the
-        "partner fee tax"). A missing match for either is an error.
+        "partner fee tax").
 
     Overdraft verification (optional):
         If ``overdraft_entries`` (decoded `addOverdraft(account, amount)` calls)
         is provided, each Dune reward with a negative ``overdraft`` (i.e. the
         solver owes the protocol) is matched against an entry for its
-        ``solver_address``. A missing match is an error.
+        ``solver_address``.
+
+    Every expected transfer with a positive amount is looked for, however
+    small. A missing one is an error if its amount exceeds the relevant
+    threshold (``native_threshold`` or ``cow_threshold``), else a warning.
 
     Unmatched transfers:
         After all of the above matching, remaining transfers land in
@@ -463,14 +483,16 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
         totals = report.solver_totals.setdefault(reward.solver_name, SolverTotals())
 
         # 1. Quote reward (COW).
-        if reward.quote_reward > cow_threshold:
+        if reward.quote_reward > 0:
             t = find_and_remove(
                 remaining_cow, reward.reward_target, reward.quote_reward
             )
             if t is None:
-                report.error(
+                report.issue(
                     f"{reward.name}: missing quote reward transfer of "
-                    f"{reward.quote_reward} COW to {reward.reward_target}"
+                    f"{reward.quote_reward} COW to {reward.reward_target}",
+                    reward.quote_reward,
+                    cow_threshold,
                 )
             else:
                 if t.token_address != cow_token_address:
@@ -482,7 +504,7 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
                 report.totals.quote += t.amount
 
         # 2. Native transfer.
-        if reward.native_token_transfer > native_threshold:
+        if reward.native_token_transfer > 0:
             t = find_and_remove(
                 remaining_native, reward.reward_target, reward.native_token_transfer
             )
@@ -496,9 +518,11 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
                 if t is not None:
                     sent_to_solver = True
             if t is None:
-                report.error(
+                report.issue(
                     f"{reward.name}: missing native transfer of "
-                    f"{reward.native_token_transfer} (threshold {native_threshold})"
+                    f"{reward.native_token_transfer} to {reward.reward_target}",
+                    reward.native_token_transfer,
+                    native_threshold,
                 )
             else:
                 if sent_to_solver:
@@ -510,14 +534,16 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
                 report.totals.native += t.amount
 
         # 3. Solve reward (COW).
-        if reward.cow_transfer > cow_threshold:
+        if reward.cow_transfer > 0:
             t = find_and_remove(
                 remaining_cow, reward.reward_target, reward.cow_transfer
             )
             if t is None:
-                report.error(
+                report.issue(
                     f"{reward.name}: missing solve reward transfer of "
-                    f"{reward.cow_transfer} COW to {reward.reward_target}"
+                    f"{reward.cow_transfer} COW to {reward.reward_target}",
+                    reward.cow_transfer,
+                    cow_threshold,
                 )
             else:
                 if t.token_address != cow_token_address:
@@ -529,13 +555,15 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
                 report.totals.solve += t.amount
 
         # 4. Overdraft (solver owes the protocol; reward.overdraft is negative).
-        if remaining_overdrafts is not None and reward.overdraft < -native_threshold:
+        if remaining_overdrafts is not None and reward.overdraft < 0:
             expected_amount = -reward.overdraft
             entry = find_and_remove_overdraft(reward.solver_address, expected_amount)
             if entry is None:
-                report.error(
+                report.issue(
                     f"{reward.name}: missing overdraft transaction of "
-                    f"{expected_amount} for {reward.solver_address}"
+                    f"{expected_amount} for {reward.solver_address}",
+                    expected_amount,
+                    native_threshold,
                 )
             else:
                 totals.overdraft += entry.amount
@@ -543,45 +571,58 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
 
     if remaining_overdrafts:
         for entry in remaining_overdrafts:
-            message = (
-                f"Unmatched overdraft transaction of {entry.amount} for {entry.account}"
+            report.issue(
+                f"Unmatched overdraft transaction of {entry.amount} for {entry.account}",
+                entry.amount,
+                native_threshold,
             )
-            if entry.amount > native_threshold:
-                report.error(message)
-            else:
-                report.warning(message)
 
     # Protocol fee verification (optional).
     protocol_fee_safe_lower = protocol_fee_safe.lower() if protocol_fee_safe else None
     if protocol_fee is not None and protocol_fee_safe_lower:
+        report.protocol_fee = 0.0
         t = find_and_remove(remaining_native, protocol_fee_safe_lower, protocol_fee)
         if t is None:
-            report.error(
+            report.issue(
                 f"Missing protocol fee transfer of {protocol_fee} native to "
-                f"{protocol_fee_safe_lower}"
+                f"{protocol_fee_safe_lower}",
+                protocol_fee,
+                native_threshold,
             )
+        else:
+            report.protocol_fee = t.amount
 
     # Partner fee verification (optional).
     if partner_fees:
+        report.partner_fees = 0.0
+        report.partner_fee_tax = 0.0
         for pf in partner_fees:
-            if pf.partner_fee_part > native_threshold:
+            if pf.partner_fee_part > 0:
                 t = find_and_remove(remaining_native, pf.recipient, pf.partner_fee_part)
                 if t is None:
-                    report.error(
+                    report.issue(
                         f"Missing partner fee transfer of {pf.partner_fee_part} native "
-                        f"to {pf.recipient} ({pf.app_code})"
+                        f"to {pf.recipient} ({pf.app_code})",
+                        pf.partner_fee_part,
+                        native_threshold,
                     )
+                else:
+                    report.partner_fees += t.amount
 
         total_partner_tax = sum(pf.cow_dao_partner_fee_part for pf in partner_fees)
-        if protocol_fee_safe_lower and total_partner_tax > native_threshold:
+        if protocol_fee_safe_lower and total_partner_tax > 0:
             t = find_and_remove(
                 remaining_native, protocol_fee_safe_lower, total_partner_tax
             )
             if t is None:
-                report.error(
+                report.issue(
                     f"Missing aggregate partner fee tax transfer of {total_partner_tax} "
-                    f"native to {protocol_fee_safe_lower}"
+                    f"native to {protocol_fee_safe_lower}",
+                    total_partner_tax,
+                    native_threshold,
                 )
+            else:
+                report.partner_fee_tax = t.amount
 
     # Any transfers not matched to a Dune entry, protocol fee, or partner fee.
     report.unmatched_transfers = remaining_cow + remaining_native
@@ -599,7 +640,6 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
         threshold = (
             cow_threshold if transfer.token_type == "erc20" else native_threshold
         )
-        is_error = transfer.amount > threshold
 
         if protocol_fee_safe_lower and transfer.receiver == protocol_fee_safe_lower:
             message = (
@@ -609,12 +649,31 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
         else:
             message = f"Unmatched transfer, not verified against Dune data: {transfer}"
 
-        if is_error:
-            report.error(message)
-        else:
-            report.warning(message)
+        report.issue(message, transfer.amount, threshold)
 
     return report
+
+
+def print_fee_confirmation(report: ComparisonReport) -> None:
+    """Print the fee transfers that were confirmed against the Dune fee data.
+
+    Each line mirrors one of the "Payment breakdown" fee lines the payouts script
+    posts to Slack when it proposes the transactions, so the two can be read
+    side by side. A fee whose check didn't run is reported as such rather than
+    silently omitted - an unchecked fee is not a verified one.
+    """
+    labelled = (
+        ("Protocol fees (excl. partner)", report.protocol_fee),
+        ("Partner fees (after tax)", report.partner_fees),
+        ("Partner fees tax", report.partner_fee_tax),
+    )
+    print("\U0001f9fe Fee transfers confirmed against Dune:")
+    for label, amount in labelled:
+        if amount is None:
+            print(f"   {label + ':':<31} not checked (no Dune fee data)")
+        else:
+            print(f"   {label + ':':<31} {amount:,.4f} ETH \u2713")
+    print()
 
 
 def print_report(report: ComparisonReport) -> None:
@@ -639,6 +698,7 @@ def print_report(report: ComparisonReport) -> None:
     if report.totals.overdraft:
         print(f"   Total overdraft:       {report.totals.overdraft:,.4f} ETH")
     print()
+    print_fee_confirmation(report)
 
     if report.is_valid:
         print("✅ Transaction is valid: ok to sign")
@@ -756,16 +816,18 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         "--cow-threshold",
         type=float,
         default=DEFAULT_COW_THRESHOLD,
-        help="Minimum COW reward that must be reflected as a transfer (default: %(default)s)",
+        help=(
+            "COW amount above which a missing or unmatched transfer is an error "
+            "rather than a warning (default: %(default)s)"
+        ),
     )
     parser.add_argument(
         "--native-threshold",
         type=float,
         default=DEFAULT_NATIVE_THRESHOLD,
         help=(
-            "Minimum native amount that must be reflected as a transfer, and the "
-            "cutoff above which an unmatched transfer is an error rather than a "
-            "warning (default: %(default)s)"
+            "Native amount above which a missing or unmatched transfer is an "
+            "error rather than a warning (default: %(default)s)"
         ),
     )
     parser.add_argument(
@@ -781,18 +843,19 @@ def parse_args(argv: Optional[list[str]] = None) -> argparse.Namespace:
         "--fees-csv",
         metavar="PATH",
         help=(
-            "Dune Fees CSV export. When provided (or fetched via --start), the "
-            "protocol_fee_in_native_token value is matched against a transfer "
-            "to --protocol-fee-safe and verified."
+            "Dune weekly cost-coverage CSV export, whose protocol_fee_in_native_token "
+            "value is matched against a transfer to --protocol-fee-safe and verified. "
+            "--start fetches this automatically; pass this to override it."
         ),
     )
     parser.add_argument(
         "--partner-fees-csv",
         metavar="PATH",
         help=(
-            "Dune partner-fees CSV export. When provided (or fetched via --start), "
-            "each partner's fee and its share of the partner fee tax are verified "
-            "against transfers to the partner and to --protocol-fee-safe."
+            "Dune partner-fees CSV export: each partner's fee and its share of the "
+            "partner fee tax are verified against transfers to the partner and to "
+            "--protocol-fee-safe. --start fetches this automatically; pass this to "
+            "override it."
         ),
     )
     parser.add_argument(
@@ -890,6 +953,15 @@ def main(  # pylint: disable=too-many-branches,too-many-locals,cyclic-import
     args = parse_args(argv)
     cow_token_address = COW_TOKEN_ADDRESS
 
+    # Decode pasted calldata before the (slow) Dune fetch, so bad input fails fast.
+    try:
+        cow_transfers = _resolve_cow_transfers(args, cow_token_address)
+        native_transfers = _resolve_native_transfers(args, cow_token_address)
+        overdraft_entries = _resolve_overdraft_entries(args)
+    except ValueError as err:
+        print(f"error: {err}", file=sys.stderr)
+        return 2
+
     if args.start:
         if args.dune_csv:
             print("error: dune_csv and --start are mutually exclusive", file=sys.stderr)
@@ -900,15 +972,17 @@ def main(  # pylint: disable=too-many-branches,too-many-locals,cyclic-import
             AccountingPeriod,
         )
         from src.verification.dune_fetch import (  # pylint: disable=import-outside-toplevel
+            fetch_fee_summary,
             fetch_partner_fees,
-            fetch_solver_rewards_and_fees,
+            fetch_solver_rewards,
             make_dune_client,
         )
 
         period = AccountingPeriod(args.start)
         network = Network(args.network)
         dune = make_dune_client()
-        dune_rewards, fee_summary = fetch_solver_rewards_and_fees(dune, network, period)
+        dune_rewards = fetch_solver_rewards(dune, network, period)
+        fee_summary: Optional[FeeSummary] = fetch_fee_summary(dune, network, period)
         partner_fees: Optional[list[PartnerFee]] = fetch_partner_fees(
             dune, network, period
         )
@@ -938,9 +1012,6 @@ def main(  # pylint: disable=too-many-branches,too-many-locals,cyclic-import
         kwargs["protocol_fee"] = fee_summary.protocol_fee
         kwargs["protocol_fee_safe"] = args.protocol_fee_safe
 
-    cow_transfers = _resolve_cow_transfers(args, cow_token_address)
-    native_transfers = _resolve_native_transfers(args, cow_token_address)
-
     if args.transfers_csv:
         if cow_transfers is not None or native_transfers is not None:
             print(
@@ -960,7 +1031,6 @@ def main(  # pylint: disable=too-many-branches,too-many-locals,cyclic-import
                 file=sys.stderr,
             )
             return 2
-        overdraft_entries = _resolve_overdraft_entries(args)
         report = compare_safe_exports(
             dune_rewards,
             cow_transfers,

@@ -4,13 +4,17 @@ Given an accounting period start date and a target network, this replaces the ne
 manually download the solver-rewards and partner-fees CSVs from the Dune UI before
 running the verification script.
 
-Relevant Dune queries:
-    - Solver rewards (public): dune.com/cowprotocol/cow-solver-rewards
+Relevant Dune queries, all parameterised by the same (blockchain, start_time,
+end_time) accounting period:
+    - Solver rewards (public): dune.com/queries/2510345, the "Period Solver Rewards"
+      table of the cow-solver-rewards dashboard.
+    - Protocol fees (public): dune.com/queries/2601653, the "V3: Weekly Cost Coverage
+      (Fees - Reimbursement)" table of the same dashboard. Its
+      protocol_fee_in_native_token column is the protocol fee net of partner fees -
+      i.e. the "Protocol Fees (excluding partner fees)" line of the payment breakdown
+      the payouts script posts to Slack, and the amount transferred to the protocol
+      fee safe.
     - Partner fees (private): dune.com/queries/3602560
-
-Note: the solver-rewards query does NOT include a protocol_fee_in_native_token column
-(confirmed against a live fetch), so protocol-fee verification is not auto-fetchable
-today - pass --fees-csv alongside --start if you also want that check.
 
 Note: compare_output_files.py only imports this module lazily, inside main(), so this
 never actually cycles at runtime; the module-level import back into it below is still
@@ -22,7 +26,6 @@ flagged statically.
 from __future__ import annotations
 
 import os
-from typing import Optional
 
 from dune_client.client import DuneClient
 from dune_client.models import DuneError, ExecutionState
@@ -40,6 +43,9 @@ from src.verification.compare_output_files import (
 
 SOLVER_REWARDS_QUERY_ID = (
     2510345  # cow-solver-rewards dashboard, "Period Solver Rewards"
+)
+COST_COVERAGE_QUERY_ID = (
+    2601653  # cow-solver-rewards dashboard, "V3: Weekly Cost Coverage"
 )
 PARTNER_FEES_QUERY_ID = 3602560  # private
 
@@ -100,13 +106,10 @@ def _period_and_network_params(
     ]
 
 
-def fetch_solver_rewards_and_fees(
+def fetch_solver_rewards(
     dune: DuneClient, network: Network, period: AccountingPeriod
-) -> tuple[list[DuneReward], Optional[FeeSummary]]:
-    """Fetches solver rewards, and the protocol fee summary if the query happens to
-    include a protocol_fee_in_native_token column (it doesn't, as of this writing -
-    pass --fees-csv for protocol-fee verification instead).
-    """
+) -> list[DuneReward]:
+    """Fetches the per-solver rewards/transfers table for the accounting period."""
     reward_config = RewardConfig.from_network(network)
     params = _period_and_network_params(network, period) + [
         QueryParameter.number_type(
@@ -120,24 +123,36 @@ def fetch_solver_rewards_and_fees(
     rows = _fetch_rows(
         dune, QueryBase(SOLVER_REWARDS_QUERY_ID, "Period Solver Rewards", params)
     )
-    rewards = [DuneReward.from_csv_row(row) for row in rows]
+    return [DuneReward.from_csv_row(row) for row in rows]
 
-    protocol_fee: float | None = None
-    for row in rows:
-        raw_value = row.get("protocol_fee_in_native_token")
-        if raw_value is None or raw_value == "":
-            continue
-        fee = parse_amount(raw_value)
-        if protocol_fee is not None and abs(fee - protocol_fee) > 1e-9:
-            raise ValueError(
-                "Conflicting 'protocol_fee_in_native_token' values in the solver "
-                "rewards query result"
-            )
-        protocol_fee = fee
-    fee_summary = (
-        FeeSummary(protocol_fee=protocol_fee) if protocol_fee is not None else None
+
+def fetch_fee_summary(
+    dune: DuneClient, network: Network, period: AccountingPeriod
+) -> FeeSummary:
+    """Fetches the net protocol fee for the accounting period.
+
+    This is the ``protocol_fee_in_native_token`` column of the weekly cost-coverage
+    table, which already nets out partner fees, and so is exactly the amount expected
+    to be transferred to the protocol fee safe. The partner-fee *tax* going to the
+    same safe is a separate transfer, verified from the partner-fees data.
+    """
+    params = _period_and_network_params(network, period)
+    rows = _fetch_rows(
+        dune, QueryBase(COST_COVERAGE_QUERY_ID, "V3: Weekly Cost Coverage", params)
     )
-    return rewards, fee_summary
+    if not rows:
+        raise ValueError(
+            f"Dune query {COST_COVERAGE_QUERY_ID} returned no rows for {period} on "
+            f"{network.value}; pass --fees-csv to supply the protocol fee manually."
+        )
+    raw_value = rows[0].get("protocol_fee_in_native_token")
+    if raw_value is None or raw_value == "":
+        raise ValueError(
+            f"Dune query {COST_COVERAGE_QUERY_ID} returned no "
+            "'protocol_fee_in_native_token' value; pass --fees-csv to supply the "
+            "protocol fee manually."
+        )
+    return FeeSummary(protocol_fee=parse_amount(raw_value))
 
 
 def fetch_partner_fees(

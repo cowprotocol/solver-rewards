@@ -152,17 +152,22 @@ Run `python3 -m src.verification.compare_output_files --help` for the full set o
 
 **What the script checks:**
 
-- Every solver with `quote_reward > 1 COW` has a matching COW transfer to its `reward_target`.
-- Every solver with `native_token_transfer > 0.001 ETH` has a matching native transfer.
-- Every solver with `cow_transfer > 1 COW` has a matching COW transfer to its `reward_target`.
+- Every solver with a positive `quote_reward` has a matching COW transfer to its `reward_target`.
+- Every solver with a positive `native_token_transfer` has a matching native transfer.
+- Every solver with a positive `cow_transfer` has a matching COW transfer to its `reward_target`.
 - Every solver with a negative `overdraft` has a matching `addOverdraft` call (only checked
   when overdraft calldata is provided).
-- The net protocol fee transfer (`protocol_fee_in_native_token`) to the DAO safe matches.
+- The net protocol fee transfer to the DAO safe matches `protocol_fee_in_native_token`
+  from the weekly cost-coverage table of the same Dune dashboard (that column is already
+  net of partner fees, i.e. the "Protocol Fees (excluding partner fees)" line of the
+  payment breakdown posted to Slack when the transactions are proposed).
 - Each partner's fee transfer, and the aggregate partner-fee-tax transfer to the DAO safe,
   match the partner-fees data (only checked when partner-fees data is provided).
 - Any Safe transaction row not matched to a solver, protocol fee, or partner fee is flagged
   as unmatched: an **error** if its amount is above the native/COW threshold, a **warning**
   otherwise (dust-sized stray transfers don't block signing; anything larger does).
+- Every expected transfer is looked for, however small. A missing one is an **error** if
+  its amount is above the native/COW threshold (0.001 ETH / 1 COW), a **warning** otherwise.
 - Amounts match within 0.01 % relative tolerance.
 - Native transfers sent to the solver address (rather than the reward target) produce a warning.
 

@@ -87,8 +87,19 @@ class TestExtractCalldata(unittest.TestCase):
             extract_calldata("   ")
 
     def test_json_without_data_field_raises(self):
-        with self.assertRaises(KeyError):
+        with self.assertRaises(ValueError):
             extract_calldata(json.dumps({"to": "0xsafe"}))
+
+    def test_bare_hex_without_prefix_gets_prefixed(self):
+        self.assertEqual(extract_calldata(" 8d80ff0a\n"), "0x8d80ff0a")
+
+    def test_non_hex_non_json_raises_value_error_naming_input(self):
+        with self.assertRaisesRegex(ValueError, "overdrafts input .* starts with"):
+            extract_calldata("Copy the overdrafts calldata", "overdrafts")
+
+    def test_json_non_object_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            extract_calldata("[1, 2]")
 
 
 class TestDecodeTransfers(unittest.TestCase):

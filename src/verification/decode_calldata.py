@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import csv
 import json
+import re
 from dataclasses import dataclass
 
 from safe_eth.safe.multi_send import MultiSend
@@ -29,6 +30,8 @@ from src.verification.compare_output_files import Transfer
 
 _ERC20 = erc20()
 _OVERDRAFTS = overdraftsmanager()
+
+_HEX = re.compile(r"(0[xX])?[0-9a-fA-F]+")
 
 
 @dataclass(frozen=True)
@@ -44,22 +47,30 @@ class OverdraftEntry:
         return self.wei / 10**18
 
 
-def extract_calldata(raw: str) -> str:
+def extract_calldata(raw: str, label: str = "pasted") -> str:
     """Returns the multisend calldata hex string from pasted user input.
 
-    Accepts either a bare "0x..." calldata string, or the full Safe transaction
-    JSON object (as copied from the Safe UI / tx-service), from which the "data"
-    field is extracted.
+    Accepts either a bare hex calldata string (with or without "0x"), or the full
+    Safe transaction JSON object (as copied from the Safe UI / tx-service), from
+    which the "data" field is extracted. ``label`` names the input in errors.
     """
     raw = raw.strip()
     if not raw:
-        raise ValueError("No calldata provided")
-    if raw.startswith("0x") or raw.startswith("0X"):
-        return raw
-    payload = json.loads(raw)
-    data = payload["data"]
+        raise ValueError(f"No {label} calldata provided")
+    if _HEX.fullmatch(raw):
+        return raw if raw[:2] in ("0x", "0X") else "0x" + raw
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        payload = None
+    if not isinstance(payload, dict):
+        raise ValueError(
+            f"The {label} input is neither hex calldata nor a Safe transaction JSON "
+            f"object; it starts with: {raw[:80]!r}"
+        )
+    data = payload.get("data")
     if not isinstance(data, str):
-        raise ValueError("Pasted JSON has no string 'data' field")
+        raise ValueError(f"The {label} JSON has no string 'data' field")
     return data
 
 
@@ -76,8 +87,9 @@ def decode_transfers(
     if token_type not in ("erc20", "native"):
         raise ValueError(f"Unsupported token_type {token_type!r}")
 
+    label = "COW-transfers" if token_type == "erc20" else "native-transfers"
     transfers = []
-    for tx in MultiSend.from_transaction_data(extract_calldata(raw)):
+    for tx in MultiSend.from_transaction_data(extract_calldata(raw, label)):
         if token_type == "native":
             if len(tx.data) == 0 and tx.value > 0:
                 transfers.append(
@@ -108,7 +120,7 @@ def decode_transfers(
 def decode_overdrafts(raw: str) -> list[OverdraftEntry]:
     """Decodes a pasted overdrafts multisend into a list of OverdraftEntry."""
     entries = []
-    for tx in MultiSend.from_transaction_data(extract_calldata(raw)):
+    for tx in MultiSend.from_transaction_data(extract_calldata(raw, "overdrafts")):
         try:
             _, params = _OVERDRAFTS.decode_function_input(tx.data)
         except ValueError:
