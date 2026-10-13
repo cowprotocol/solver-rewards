@@ -338,10 +338,11 @@ def prepare_payouts(  # pylint: disable=too-many-locals
 
     net_protocol_fee = total_protocol_fee - total_partner_fee
 
+    wrapped_native_token = Token(config.payment_config.wrapped_native_token_address, 18)
     if net_protocol_fee > 0:
         transfers.append(
             Transfer(
-                token=None,
+                token=wrapped_native_token,
                 recipient=config.protocol_fee_config.protocol_fee_safe,
                 amount_wei=net_protocol_fee,
             )
@@ -349,12 +350,11 @@ def prepare_payouts(  # pylint: disable=too-many-locals
     if total_partner_fee_tax > 0:
         transfers.append(
             Transfer(
-                token=None,
+                token=wrapped_native_token,
                 recipient=config.protocol_fee_config.protocol_fee_safe,
                 amount_wei=total_partner_fee_tax,
             )
         )
-    wrapped_native_token = Token(config.payment_config.wrapped_native_token_address, 18)
     for _, row in partner_payouts.iterrows():
         partner = row["partner"]
         partner_fee = int(row["partner_fee_eth"] * (1 - row["partner_fee_tax"]))
