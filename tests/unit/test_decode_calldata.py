@@ -1,0 +1,235 @@
+"""Tests for src/verification/decode_calldata.py."""
+
+import csv
+import json
+import os
+import tempfile
+import unittest
+
+from eth_abi import encode
+from safe_eth.safe.multi_send import MultiSendOperation, MultiSendTx
+
+from src.abis.load import erc20, overdraftsmanager
+from src.verification.decode_calldata import (
+    decode_overdrafts,
+    decode_transfers,
+    extract_calldata,
+    write_overdrafts_csv,
+    write_transfers_csv,
+)
+
+_ERC20 = erc20()
+_OVERDRAFTS = overdraftsmanager()
+_COW = "0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab"
+
+
+def _build_multisend(txs: list[MultiSendTx]) -> str:
+    """Builds multisend calldata (with selector) without needing a live RPC client."""
+    packed = b"".join(bytes(t.encoded_data) for t in txs)
+    return "0x" + (bytes.fromhex("8d80ff0a") + encode(["bytes"], [packed])).hex()
+
+
+def _erc20_transfer_tx(
+    to: str,
+    amount_wei: int,
+    token: str = "0x0000000000000000000000000000000000000009",
+) -> MultiSendTx:
+    data = _ERC20.encode_abi(abi_element_identifier="transfer", args=[to, amount_wei])
+    return MultiSendTx(
+        operation=MultiSendOperation.CALL,
+        to=token,
+        value=0,
+        data=data,
+    )
+
+
+def _native_tx(to: str, amount_wei: int) -> MultiSendTx:
+    return MultiSendTx(
+        operation=MultiSendOperation.CALL, to=to, value=amount_wei, data="0x"
+    )
+
+
+def _weth_withdraw_tx(amount_wei: int) -> MultiSendTx:
+    from src.abis.load import weth9
+
+    weth = weth9()
+    data = weth.encode_abi(abi_element_identifier="withdraw", args=[amount_wei])
+    return MultiSendTx(
+        operation=MultiSendOperation.CALL,
+        to="0x000000000000000000000000000000000000dead",
+        value=0,
+        data=data,
+    )
+
+
+def _overdraft_tx(account: str, amount_wei: int) -> MultiSendTx:
+    data = _OVERDRAFTS.encode_abi(
+        abi_element_identifier="addOverdraft", args=[account, amount_wei]
+    )
+    return MultiSendTx(
+        operation=MultiSendOperation.CALL,
+        to="0x0000000000000000000000000000000000000abc",
+        value=0,
+        data=data,
+    )
+
+
+_RECEIVER_1 = "0x0000000000000000000000000000000000000001"
+_RECEIVER_2 = "0x0000000000000000000000000000000000000002"
+# WAVAX, the wrapped native token on avalanche (checksummed, as in a Safe multisend)
+_WRAPPED = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
+
+
+class TestExtractCalldata(unittest.TestCase):
+    def test_bare_hex_passthrough(self):
+        self.assertEqual(extract_calldata(" 0xabc123 "), "0xabc123")
+
+    def test_json_extracts_data_field(self):
+        raw = json.dumps({"to": "0xsafe", "data": "0xdeadbeef", "nonce": 5})
+        self.assertEqual(extract_calldata(raw), "0xdeadbeef")
+
+    def test_empty_raises(self):
+        with self.assertRaises(ValueError):
+            extract_calldata("   ")
+
+    def test_json_without_data_field_raises(self):
+        with self.assertRaises(ValueError):
+            extract_calldata(json.dumps({"to": "0xsafe"}))
+
+    def test_bare_hex_without_prefix_gets_prefixed(self):
+        self.assertEqual(extract_calldata(" 8d80ff0a\n"), "0x8d80ff0a")
+
+    def test_non_hex_non_json_raises_value_error_naming_input(self):
+        with self.assertRaisesRegex(ValueError, "overdrafts input .* starts with"):
+            extract_calldata("Copy the overdrafts calldata", "overdrafts")
+
+    def test_json_non_object_raises_value_error(self):
+        with self.assertRaises(ValueError):
+            extract_calldata("[1, 2]")
+
+
+class TestDecodeTransfers(unittest.TestCase):
+    def test_native_transfers_decoded(self):
+        calldata = _build_multisend(
+            [_native_tx(_RECEIVER_1, 10**18), _native_tx(_RECEIVER_2, 5 * 10**17)]
+        )
+        transfers = decode_transfers(calldata, "native", _COW)
+        self.assertEqual(len(transfers), 2)
+        self.assertEqual(transfers[0].receiver, _RECEIVER_1.lower())
+        self.assertAlmostEqual(transfers[0].amount, 1.0)
+        self.assertAlmostEqual(transfers[1].amount, 0.5)
+        self.assertTrue(all(t.token_type == "native" for t in transfers))
+
+    def test_weth_unwrap_is_skipped(self):
+        calldata = _build_multisend(
+            [_weth_withdraw_tx(10**18), _native_tx(_RECEIVER_1, 10**18)]
+        )
+        transfers = decode_transfers(calldata, "native", _COW)
+        self.assertEqual(len(transfers), 1)
+        self.assertEqual(transfers[0].receiver, _RECEIVER_1.lower())
+
+    def test_wrapped_native_transfers_decoded_as_native(self):
+        """Fees paid in the wrapped native token are ERC-20 transfers in the native
+        multisend; they are kept (as native-value transfers), the unwrap is skipped."""
+        calldata = _build_multisend(
+            [
+                _weth_withdraw_tx(10**18),
+                _native_tx(_RECEIVER_1, 10**18),
+                _erc20_transfer_tx(_RECEIVER_2, 3 * 10**17, token=_WRAPPED),
+            ]
+        )
+        transfers = decode_transfers(calldata, "native", _COW, _WRAPPED)
+        self.assertEqual(len(transfers), 2)
+        self.assertFalse(transfers[0].is_wrapped_native)
+        wrapped = transfers[1]
+        self.assertEqual(wrapped.token_type, "native")
+        self.assertTrue(wrapped.is_wrapped_native)
+        self.assertEqual(wrapped.token_address, _WRAPPED.lower())
+        self.assertEqual(wrapped.receiver, _RECEIVER_2.lower())
+        self.assertAlmostEqual(wrapped.amount, 0.3)
+
+    def test_other_erc20_in_native_multisend_is_kept_as_erc20(self):
+        """An ERC-20 transfer of any other token is kept so that it surfaces as
+        unmatched, instead of being dropped."""
+        other = "0x0000000000000000000000000000000000000077"
+        calldata = _build_multisend([_erc20_transfer_tx(_RECEIVER_1, 10**18, other)])
+        [transfer] = decode_transfers(calldata, "native", _COW, _WRAPPED)
+        self.assertEqual(transfer.token_type, "erc20")
+        self.assertEqual(transfer.token_address, other)
+
+    def test_erc20_transfers_decoded(self):
+        calldata = _build_multisend(
+            [
+                _erc20_transfer_tx(_RECEIVER_1, 100 * 10**18),
+                _erc20_transfer_tx(_RECEIVER_2, 42 * 10**18),
+            ]
+        )
+        transfers = decode_transfers(calldata, "erc20", _COW)
+        self.assertEqual(len(transfers), 2)
+        self.assertTrue(all(t.token_type == "erc20" for t in transfers))
+        self.assertTrue(all(t.token_address == _COW for t in transfers))
+        self.assertAlmostEqual(transfers[0].amount, 100.0)
+        self.assertAlmostEqual(transfers[1].amount, 42.0)
+
+    def test_accepts_full_safe_tx_json(self):
+        calldata = _build_multisend([_native_tx(_RECEIVER_1, 10**18)])
+        raw = json.dumps({"to": "0xsafe", "data": calldata, "nonce": 1})
+        transfers = decode_transfers(raw, "native", _COW)
+        self.assertEqual(len(transfers), 1)
+
+    def test_invalid_token_type_raises(self):
+        with self.assertRaises(ValueError):
+            decode_transfers("0x", "cow", _COW)
+
+
+class TestDecodeOverdrafts(unittest.TestCase):
+    def test_overdrafts_decoded(self):
+        calldata = _build_multisend(
+            [
+                _overdraft_tx(_RECEIVER_1, 10**17),
+                _native_tx(_RECEIVER_2, 10**18),  # unrelated tx, should be ignored
+                _overdraft_tx(_RECEIVER_2, 3 * 10**17),
+            ]
+        )
+        entries = decode_overdrafts(calldata)
+        self.assertEqual(len(entries), 2)
+        self.assertEqual(entries[0].account, _RECEIVER_1.lower())
+        self.assertAlmostEqual(entries[0].amount, 0.1)
+        self.assertAlmostEqual(entries[1].amount, 0.3)
+
+
+class TestWriteCsvHelpers(unittest.TestCase):
+    def test_write_transfers_csv_roundtrips(self):
+        calldata = _build_multisend([_native_tx(_RECEIVER_1, 10**18)])
+        transfers = decode_transfers(calldata, "native", _COW)
+        path = tempfile.mktemp(suffix=".csv")
+        try:
+            write_transfers_csv(transfers, path)
+            with open(path, newline="", encoding="utf-8") as f:
+                rows = list(csv.DictReader(f))
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["token_type"], "native")
+            self.assertEqual(rows[0]["receiver"], _RECEIVER_1.lower())
+            self.assertAlmostEqual(float(rows[0]["amount"]), 1.0)
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
+
+    def test_write_overdrafts_csv(self):
+        calldata = _build_multisend([_overdraft_tx(_RECEIVER_1, 10**17)])
+        entries = decode_overdrafts(calldata)
+        path = tempfile.mktemp(suffix=".csv")
+        try:
+            write_overdrafts_csv(entries, path)
+            with open(path, newline="", encoding="utf-8") as f:
+                rows = list(csv.DictReader(f))
+            self.assertEqual(len(rows), 1)
+            self.assertEqual(rows[0]["account"], _RECEIVER_1.lower())
+            self.assertAlmostEqual(float(rows[0]["amount"]), 0.1)
+        finally:
+            if os.path.exists(path):
+                os.remove(path)
+
+
+if __name__ == "__main__":
+    unittest.main()
