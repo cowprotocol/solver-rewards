@@ -29,11 +29,15 @@ def _build_multisend(txs: list[MultiSendTx]) -> str:
     return "0x" + (bytes.fromhex("8d80ff0a") + encode(["bytes"], [packed])).hex()
 
 
-def _erc20_transfer_tx(to: str, amount_wei: int) -> MultiSendTx:
+def _erc20_transfer_tx(
+    to: str,
+    amount_wei: int,
+    token: str = "0x0000000000000000000000000000000000000009",
+) -> MultiSendTx:
     data = _ERC20.encode_abi(abi_element_identifier="transfer", args=[to, amount_wei])
     return MultiSendTx(
         operation=MultiSendOperation.CALL,
-        to="0x0000000000000000000000000000000000000009",
+        to=token,
         value=0,
         data=data,
     )
@@ -72,6 +76,8 @@ def _overdraft_tx(account: str, amount_wei: int) -> MultiSendTx:
 
 _RECEIVER_1 = "0x0000000000000000000000000000000000000001"
 _RECEIVER_2 = "0x0000000000000000000000000000000000000002"
+# WAVAX, the wrapped native token on avalanche (checksummed, as in a Safe multisend)
+_WRAPPED = "0xB31f66AA3C1e785363F0875A1B74E27b85FD66c7"
 
 
 class TestExtractCalldata(unittest.TestCase):
@@ -121,6 +127,35 @@ class TestDecodeTransfers(unittest.TestCase):
         transfers = decode_transfers(calldata, "native", _COW)
         self.assertEqual(len(transfers), 1)
         self.assertEqual(transfers[0].receiver, _RECEIVER_1.lower())
+
+    def test_wrapped_native_transfers_decoded_as_native(self):
+        """Fees paid in the wrapped native token are ERC-20 transfers in the native
+        multisend; they are kept (as native-value transfers), the unwrap is skipped."""
+        calldata = _build_multisend(
+            [
+                _weth_withdraw_tx(10**18),
+                _native_tx(_RECEIVER_1, 10**18),
+                _erc20_transfer_tx(_RECEIVER_2, 3 * 10**17, token=_WRAPPED),
+            ]
+        )
+        transfers = decode_transfers(calldata, "native", _COW, _WRAPPED)
+        self.assertEqual(len(transfers), 2)
+        self.assertFalse(transfers[0].is_wrapped_native)
+        wrapped = transfers[1]
+        self.assertEqual(wrapped.token_type, "native")
+        self.assertTrue(wrapped.is_wrapped_native)
+        self.assertEqual(wrapped.token_address, _WRAPPED.lower())
+        self.assertEqual(wrapped.receiver, _RECEIVER_2.lower())
+        self.assertAlmostEqual(wrapped.amount, 0.3)
+
+    def test_other_erc20_in_native_multisend_is_kept_as_erc20(self):
+        """An ERC-20 transfer of any other token is kept so that it surfaces as
+        unmatched, instead of being dropped."""
+        other = "0x0000000000000000000000000000000000000077"
+        calldata = _build_multisend([_erc20_transfer_tx(_RECEIVER_1, 10**18, other)])
+        [transfer] = decode_transfers(calldata, "native", _COW, _WRAPPED)
+        self.assertEqual(transfer.token_type, "erc20")
+        self.assertEqual(transfer.token_address, other)
 
     def test_erc20_transfers_decoded(self):
         calldata = _build_multisend(

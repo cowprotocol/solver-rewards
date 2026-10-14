@@ -50,7 +50,7 @@ import csv
 import os
 import sys
 from dataclasses import dataclass, field
-from typing import Any, Optional
+from typing import Any, Callable, Optional, TypeVar
 
 # COW is deployed at the same address on every supported network.
 COW_TOKEN_ADDRESS = "0xdef1ca1fb7fbcdc777520aa7f396b4e015f497ab"
@@ -70,6 +70,30 @@ NETWORKS = (
     "plasma",
     "ink",
 )
+
+# Wrapped native token per network (kept in sync with
+# src.config.PaymentConfig.wrapped_native_token_address, duplicated for the same reason as
+# NETWORKS). The payout script sends the protocol fee, the partner fee tax and the fees of
+# partners in ProtocolFeeConfig.partners_with_wrapped_native_transfers in this token, as
+# ERC-20 transfers inside the native-transfer multisend.
+WRAPPED_NATIVE_TOKEN_ADDRESSES = {
+    "mainnet": "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+    "gnosis": "0xe91d153e0b41518a2ce8dd3d7944fa863463a97d",
+    "arbitrum": "0x82af49447d8a07e3bd95bd0d56f35241523fbab1",
+    "base": "0x4200000000000000000000000000000000000006",
+    "avalanche": "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7",
+    "polygon": "0x0d500b1d8e8ef31e21c99d1db9a6444d3adf1270",
+    "bnb": "0xbb4cdb9cbd36b01bd1cbaebf2de08d9173bc095c",
+    "linea": "0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f",
+    "plasma": "0x6100e367285b01f48d07953803a2d8dca5d19873",
+    "ink": "0x4200000000000000000000000000000000000006",
+}
+
+# The payout script drops transfers below these amounts instead of sending them (kept in
+# sync with src.config.PaymentConfig.min_cow_transfer / min_native_token_transfer). An
+# expected transfer below them that is missing is therefore skipped, not reported.
+MIN_COW_TRANSFER = 1.0
+MIN_NATIVE_TRANSFER = 10**6 / 10**18
 
 # A missing or unmatched transfer above these amounts is an error; below, a warning.
 DEFAULT_COW_THRESHOLD = 1.0
@@ -150,7 +174,21 @@ class Transfer:
             amount=float(row["amount"]),
         )
 
+    @property
+    def is_wrapped_native(self) -> bool:
+        """True for a native-value transfer made in the wrapped native token (e.g. WETH).
+
+        Such transfers have token_type "native" and the wrapped token as token_address;
+        plain native transfers have an empty token_address.
+        """
+        return self.token_type == "native" and bool(self.token_address)
+
     def __str__(self) -> str:
+        if self.is_wrapped_native:
+            return (
+                f"wrapped native transfer of {self.amount} ({self.token_address}) "
+                f"to {self.receiver}"
+            )
         if self.token_type == "native":
             return f"native transfer of {self.amount} to {self.receiver}"
         return (
@@ -284,6 +322,14 @@ def load_partner_fees(path: str) -> list[PartnerFee]:
         return [PartnerFee.from_csv_row(row) for row in csv.DictReader(f)]
 
 
+_T = TypeVar("_T")
+
+
+def _closest(items: list[_T], amount: float) -> _T:
+    """The item (a Transfer or an overdraft entry) whose amount is closest to `amount`."""
+    return min(items, key=lambda item: abs(getattr(item, "amount") - amount))
+
+
 def amounts_match(actual: float, expected: float, tolerance: float) -> bool:
     """True if `actual` and `expected` differ by no more than `tolerance` (relative)."""
     diff = abs(actual - expected)
@@ -316,10 +362,13 @@ class SolverTotals:
 
 
 @dataclass
-class ComparisonReport:
+class ComparisonReport:  # pylint: disable=too-many-instance-attributes
     """Collects issues and totals produced by a comparison run."""
 
     issues: list[Issue] = field(default_factory=list)
+    # Expected transfers that are missing because they are below the payout script's
+    # minimum transfer amount (MIN_COW_TRANSFER / MIN_NATIVE_TRANSFER), so never sent.
+    skipped_below_minimum: list[str] = field(default_factory=list)
     solver_totals: dict[str, SolverTotals] = field(default_factory=dict)
     totals: SolverTotals = field(default_factory=SolverTotals)
     unmatched_transfers: list[Transfer] = field(default_factory=list)
@@ -359,6 +408,23 @@ class ComparisonReport:
     def is_valid(self) -> bool:
         """True when no errors have been recorded."""
         return not self.errors
+
+
+@dataclass
+class _Expected:  # pylint: disable=too-many-instance-attributes
+    """An expected transfer, as looked for by compare_safe_exports."""
+
+    message: str  # reported when there is no transfer to the receivers at all
+    description: str  # names the transfer when it was sent with a different amount
+    receivers: tuple[str, ...]  # tried in order for an exact match
+    amount: float
+    token_type: str  # "erc20" (COW) or "native" (incl. wrapped native)
+    pool: list[Transfer]  # the remaining transfers to look in; matches are removed
+    threshold: float  # a missing transfer or difference above this is an error
+    minimum: float  # the payout script does not send transfers below this
+    on_found: Callable[[Transfer], None]  # called with an exactly matching transfer
+    # called with a transfer with a different amount; None: the amount is not recorded
+    on_mismatch: Optional[Callable[[Transfer], None]] = None
 
 
 def compare(  # pylint: disable=too-many-arguments
@@ -437,8 +503,20 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
         ``solver_address``.
 
     Every expected transfer with a positive amount is looked for, however
-    small. A missing one is an error if its amount exceeds the relevant
-    threshold (``native_threshold`` or ``cow_threshold``), else a warning.
+    small. Native expectations also match transfers in the wrapped native token,
+    in which the payout script sends fees. Once all exact matching is done, each
+    expected transfer that was not found is resolved:
+
+    - below the payout script's minimum transfer (``MIN_COW_TRANSFER`` /
+      ``MIN_NATIVE_TRANSFER``), it was never sent: it is recorded in
+      ``report.skipped_below_minimum`` and not reported as an issue;
+    - if a remaining transfer goes to the same receiver with a different amount,
+      the two are reported together as one difference, an error if the
+      difference exceeds the relevant threshold, else a warning;
+    - otherwise it is missing: an error if its amount exceeds the relevant
+      threshold (``native_threshold`` or ``cow_threshold``), else a warning.
+
+    Overdrafts are resolved the same way, against entries for the same account.
 
     Unmatched transfers:
         After all of the above matching, remaining transfers land in
@@ -452,6 +530,8 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
 
     remaining_cow = list(cow_transfers)
     remaining_native = list(native_transfers)
+    # Expected transfers without an exact match, resolved once all exact matching is done.
+    missing: list[_Expected] = []
 
     def find_and_remove(
         pool: list[Transfer], receiver: str, amount: float
@@ -461,9 +541,54 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
                 return pool.pop(i)
         return None
 
+    def expect(expected: _Expected) -> None:
+        """Match an expected transfer exactly, or queue it for `resolve_missing`."""
+        for receiver in expected.receivers:
+            t = find_and_remove(expected.pool, receiver, expected.amount)
+            if t is not None:
+                expected.on_found(t)
+                return
+        missing.append(expected)
+
+    def resolve_missing() -> None:
+        """Report expected transfers that had no exact match.
+
+        Runs after all exact matching, so that a transfer with a different amount is only
+        paired with an expected transfer once no other expected transfer matches it
+        exactly (e.g. quote and solve rewards share a receiver).
+        """
+        for expected in missing:
+            if expected.amount < expected.minimum:
+                # The payout script never sends transfers this small.
+                report.skipped_below_minimum.append(expected.message)
+                continue
+            candidates = [
+                t
+                for t in expected.pool
+                if t.receiver in expected.receivers
+                and t.token_type == expected.token_type
+            ]
+            if not candidates:
+                report.issue(expected.message, expected.amount, expected.threshold)
+                continue
+            # A transfer to the same receiver with a different amount: report the
+            # difference instead of a missing and an unmatched transfer.
+            t = _closest(candidates, expected.amount)
+            expected.pool.remove(t)
+            difference = t.amount - expected.amount
+            report.issue(
+                f"{expected.description} to {t.receiver} is off by {difference:+.10g}: "
+                f"expected {expected.amount}, sent {t.amount}",
+                abs(difference),
+                expected.threshold,
+            )
+            if expected.on_mismatch is not None:
+                expected.on_mismatch(t)
+
     remaining_overdrafts = (
         list(overdraft_entries) if overdraft_entries is not None else None
     )
+    missing_overdrafts: list[tuple[DuneReward, float]] = []
 
     def find_and_remove_overdraft(account: str, amount: float) -> Any:
         # Overdraft entries are duck-typed (an object with .account/.amount) rather
@@ -479,95 +604,138 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
                 return remaining_overdrafts.pop(i)
         return None
 
+    def cow_reward_found(reward: DuneReward, kind: str) -> Callable[[Transfer], None]:
+        def record(t: Transfer) -> None:
+            if t.token_address != cow_token_address:
+                report.error(
+                    f"{reward.name}: {kind} reward uses token {t.token_address}, "
+                    f"expected {cow_token_address}"
+                )
+            totals = report.solver_totals[reward.solver_name]
+            if kind == "quote":
+                totals.quote += t.amount
+                report.totals.quote += t.amount
+            else:
+                totals.solve += t.amount
+                report.totals.solve += t.amount
+
+        return record
+
+    def native_reward_found(reward: DuneReward) -> Callable[[Transfer], None]:
+        def record(t: Transfer) -> None:
+            if t.receiver != reward.reward_target:
+                report.warning(
+                    f"{reward.name}: native transfer sent to solver address "
+                    f"{t.receiver}, not reward target {reward.reward_target}"
+                )
+            if t.is_wrapped_native:
+                # The payout script pays solver rewards in the native token only.
+                report.warning(
+                    f"{reward.name}: native reward paid in wrapped native token "
+                    f"{t.token_address}"
+                )
+            totals = report.solver_totals[reward.solver_name]
+            totals.native += t.amount
+            report.totals.native += t.amount
+
+        return record
+
     for reward in dune_rewards:
-        totals = report.solver_totals.setdefault(reward.solver_name, SolverTotals())
+        report.solver_totals.setdefault(reward.solver_name, SolverTotals())
 
         # 1. Quote reward (COW).
         if reward.quote_reward > 0:
-            t = find_and_remove(
-                remaining_cow, reward.reward_target, reward.quote_reward
-            )
-            if t is None:
-                report.issue(
-                    f"{reward.name}: missing quote reward transfer of "
+            record_quote = cow_reward_found(reward, "quote")
+            expect(
+                _Expected(
+                    message=f"{reward.name}: missing quote reward transfer of "
                     f"{reward.quote_reward} COW to {reward.reward_target}",
-                    reward.quote_reward,
-                    cow_threshold,
+                    description=f"{reward.name}: quote reward transfer (COW)",
+                    receivers=(reward.reward_target,),
+                    amount=reward.quote_reward,
+                    token_type="erc20",
+                    pool=remaining_cow,
+                    threshold=cow_threshold,
+                    minimum=MIN_COW_TRANSFER,
+                    on_found=record_quote,
+                    on_mismatch=record_quote,
                 )
-            else:
-                if t.token_address != cow_token_address:
-                    report.error(
-                        f"{reward.name}: quote reward uses token {t.token_address}, "
-                        f"expected {cow_token_address}"
-                    )
-                totals.quote += t.amount
-                report.totals.quote += t.amount
-
-        # 2. Native transfer.
-        if reward.native_token_transfer > 0:
-            t = find_and_remove(
-                remaining_native, reward.reward_target, reward.native_token_transfer
             )
-            sent_to_solver = False
-            if t is None:
-                t = find_and_remove(
-                    remaining_native,
-                    reward.solver_address,
-                    reward.native_token_transfer,
-                )
-                if t is not None:
-                    sent_to_solver = True
-            if t is None:
-                report.issue(
-                    f"{reward.name}: missing native transfer of "
+
+        # 2. Native transfer, to the reward target or else to the solver address.
+        if reward.native_token_transfer > 0:
+            record_native = native_reward_found(reward)
+            expect(
+                _Expected(
+                    message=f"{reward.name}: missing native transfer of "
                     f"{reward.native_token_transfer} to {reward.reward_target}",
-                    reward.native_token_transfer,
-                    native_threshold,
+                    description=f"{reward.name}: native transfer",
+                    receivers=(reward.reward_target, reward.solver_address),
+                    amount=reward.native_token_transfer,
+                    token_type="native",
+                    pool=remaining_native,
+                    threshold=native_threshold,
+                    minimum=MIN_NATIVE_TRANSFER,
+                    on_found=record_native,
+                    on_mismatch=record_native,
                 )
-            else:
-                if sent_to_solver:
-                    report.warning(
-                        f"{reward.name}: native transfer sent to solver address "
-                        f"{t.receiver}, not reward target {reward.reward_target}"
-                    )
-                totals.native += t.amount
-                report.totals.native += t.amount
+            )
 
         # 3. Solve reward (COW).
         if reward.cow_transfer > 0:
-            t = find_and_remove(
-                remaining_cow, reward.reward_target, reward.cow_transfer
-            )
-            if t is None:
-                report.issue(
-                    f"{reward.name}: missing solve reward transfer of "
+            record_solve = cow_reward_found(reward, "solve")
+            expect(
+                _Expected(
+                    message=f"{reward.name}: missing solve reward transfer of "
                     f"{reward.cow_transfer} COW to {reward.reward_target}",
-                    reward.cow_transfer,
-                    cow_threshold,
+                    description=f"{reward.name}: solve reward transfer (COW)",
+                    receivers=(reward.reward_target,),
+                    amount=reward.cow_transfer,
+                    token_type="erc20",
+                    pool=remaining_cow,
+                    threshold=cow_threshold,
+                    minimum=MIN_COW_TRANSFER,
+                    on_found=record_solve,
+                    on_mismatch=record_solve,
                 )
-            else:
-                if t.token_address != cow_token_address:
-                    report.error(
-                        f"{reward.name}: solve reward uses token {t.token_address}, "
-                        f"expected {cow_token_address}"
-                    )
-                totals.solve += t.amount
-                report.totals.solve += t.amount
+            )
 
         # 4. Overdraft (solver owes the protocol; reward.overdraft is negative).
         if remaining_overdrafts is not None and reward.overdraft < 0:
             expected_amount = -reward.overdraft
             entry = find_and_remove_overdraft(reward.solver_address, expected_amount)
             if entry is None:
-                report.issue(
-                    f"{reward.name}: missing overdraft transaction of "
-                    f"{expected_amount} for {reward.solver_address}",
-                    expected_amount,
-                    native_threshold,
-                )
+                missing_overdrafts.append((reward, expected_amount))
             else:
-                totals.overdraft += entry.amount
+                report.solver_totals[reward.solver_name].overdraft += entry.amount
                 report.totals.overdraft += entry.amount
+
+    # Overdrafts without an exact match: report a differing entry for the same account
+    # as a difference, everything else as missing or unmatched.
+    for reward, expected_amount in missing_overdrafts:
+        assert remaining_overdrafts is not None
+        same_account = [
+            e for e in remaining_overdrafts if e.account == reward.solver_address
+        ]
+        if not same_account:
+            report.issue(
+                f"{reward.name}: missing overdraft transaction of "
+                f"{expected_amount} for {reward.solver_address}",
+                expected_amount,
+                native_threshold,
+            )
+            continue
+        entry = _closest(same_account, expected_amount)
+        remaining_overdrafts.remove(entry)
+        difference = entry.amount - expected_amount
+        report.issue(
+            f"{reward.name}: overdraft transaction for {reward.solver_address} is off "
+            f"by {difference:+.10g}: expected {expected_amount}, sent {entry.amount}",
+            abs(difference),
+            native_threshold,
+        )
+        report.solver_totals[reward.solver_name].overdraft += entry.amount
+        report.totals.overdraft += entry.amount
 
     if remaining_overdrafts:
         for entry in remaining_overdrafts:
@@ -581,48 +749,73 @@ def compare_safe_exports(  # pylint: disable=too-many-arguments,too-many-locals,
     protocol_fee_safe_lower = protocol_fee_safe.lower() if protocol_fee_safe else None
     if protocol_fee is not None and protocol_fee_safe_lower:
         report.protocol_fee = 0.0
-        t = find_and_remove(remaining_native, protocol_fee_safe_lower, protocol_fee)
-        if t is None:
-            report.issue(
-                f"Missing protocol fee transfer of {protocol_fee} native to "
-                f"{protocol_fee_safe_lower}",
-                protocol_fee,
-                native_threshold,
-            )
-        else:
+
+        def record_protocol_fee(t: Transfer) -> None:
             report.protocol_fee = t.amount
+
+        expect(
+            _Expected(
+                message=f"Missing protocol fee transfer of {protocol_fee} native to "
+                f"{protocol_fee_safe_lower}",
+                description="Protocol fee transfer",
+                receivers=(protocol_fee_safe_lower,),
+                amount=protocol_fee,
+                token_type="native",
+                pool=remaining_native,
+                threshold=native_threshold,
+                minimum=MIN_NATIVE_TRANSFER,
+                # A differing fee is reported, but not confirmed.
+                on_found=record_protocol_fee,
+            )
+        )
 
     # Partner fee verification (optional).
     if partner_fees:
         report.partner_fees = 0.0
         report.partner_fee_tax = 0.0
+
+        def record_partner_fee(t: Transfer) -> None:
+            assert report.partner_fees is not None
+            report.partner_fees += t.amount
+
+        def record_partner_fee_tax(t: Transfer) -> None:
+            report.partner_fee_tax = t.amount
+
         for pf in partner_fees:
             if pf.partner_fee_part > 0:
-                t = find_and_remove(remaining_native, pf.recipient, pf.partner_fee_part)
-                if t is None:
-                    report.issue(
-                        f"Missing partner fee transfer of {pf.partner_fee_part} native "
-                        f"to {pf.recipient} ({pf.app_code})",
-                        pf.partner_fee_part,
-                        native_threshold,
+                expect(
+                    _Expected(
+                        message=f"Missing partner fee transfer of {pf.partner_fee_part} "
+                        f"native to {pf.recipient} ({pf.app_code})",
+                        description=f"Partner fee transfer ({pf.app_code})",
+                        receivers=(pf.recipient,),
+                        amount=pf.partner_fee_part,
+                        token_type="native",
+                        pool=remaining_native,
+                        threshold=native_threshold,
+                        minimum=MIN_NATIVE_TRANSFER,
+                        on_found=record_partner_fee,
                     )
-                else:
-                    report.partner_fees += t.amount
+                )
 
         total_partner_tax = sum(pf.cow_dao_partner_fee_part for pf in partner_fees)
         if protocol_fee_safe_lower and total_partner_tax > 0:
-            t = find_and_remove(
-                remaining_native, protocol_fee_safe_lower, total_partner_tax
-            )
-            if t is None:
-                report.issue(
-                    f"Missing aggregate partner fee tax transfer of {total_partner_tax} "
-                    f"native to {protocol_fee_safe_lower}",
-                    total_partner_tax,
-                    native_threshold,
+            expect(
+                _Expected(
+                    message=f"Missing aggregate partner fee tax transfer of "
+                    f"{total_partner_tax} native to {protocol_fee_safe_lower}",
+                    description="Aggregate partner fee tax transfer",
+                    receivers=(protocol_fee_safe_lower,),
+                    amount=total_partner_tax,
+                    token_type="native",
+                    pool=remaining_native,
+                    threshold=native_threshold,
+                    minimum=MIN_NATIVE_TRANSFER,
+                    on_found=record_partner_fee_tax,
                 )
-            else:
-                report.partner_fee_tax = t.amount
+            )
+
+    resolve_missing()
 
     # Any transfers not matched to a Dune entry, protocol fee, or partner fee.
     report.unmatched_transfers = remaining_cow + remaining_native
@@ -680,6 +873,15 @@ def print_report(report: ComparisonReport) -> None:
     """Print issues and per-solver totals to stdout."""
     for issue in report.issues:
         print(issue)
+
+    if report.skipped_below_minimum:
+        print()
+        print(
+            f"\u2139\ufe0f  Not checked, below the payout script's minimum transfer "
+            f"({MIN_COW_TRANSFER:g} COW / {MIN_NATIVE_TRANSFER:g} native), so never sent:"
+        )
+        for message in report.skipped_below_minimum:
+            print(f"   {message}")
 
     print()
     print("\U0001f4dd Summary:")
@@ -920,7 +1122,12 @@ def _resolve_native_transfers(
             write_transfers_csv,
         )
 
-        transfers = decode_transfers(calldata, "native", cow_token_address)
+        transfers = decode_transfers(
+            calldata,
+            "native",
+            cow_token_address,
+            WRAPPED_NATIVE_TOKEN_ADDRESSES[args.network],
+        )
         write_transfers_csv(
             transfers,
             os.path.join(args.out_dir, f"decoded-native-transfers-{args.network}.csv"),

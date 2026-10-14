@@ -74,8 +74,23 @@ def extract_calldata(raw: str, label: str = "pasted") -> str:
     return data
 
 
+def _decode_erc20_transfer(data: bytes) -> dict | None:
+    """The params of an ERC-20 `transfer(recipient, amount)` call, or None for any
+    other call."""
+    try:
+        function, params = _ERC20.decode_function_input(data)
+    except ValueError:
+        return None
+    if function.fn_name != "transfer":
+        return None
+    return dict(params)
+
+
 def decode_transfers(
-    raw: str, token_type: str, cow_token_address: str
+    raw: str,
+    token_type: str,
+    cow_token_address: str,
+    wrapped_native_token_address: str = "",
 ) -> list[Transfer]:
     """Decodes a pasted COW-transfer or native-transfer multisend into a list of Transfer.
 
@@ -83,11 +98,18 @@ def decode_transfers(
     (network native-transfer multisend). A prepended WETH-unwrap call (present when
     the Safe's native balance needed topping up) is silently skipped, as it is not
     itself a payout.
+
+    The native-transfer multisend also carries the payouts made in the wrapped native
+    token (protocol fee, partner fee tax, and some partner fees) as ERC-20 transfers of
+    `wrapped_native_token_address`. They are returned as native transfers with that token
+    address (see Transfer.is_wrapped_native). ERC-20 transfers of any other token are
+    returned as erc20 transfers of that token, so that they surface as unmatched.
     """
     if token_type not in ("erc20", "native"):
         raise ValueError(f"Unsupported token_type {token_type!r}")
 
     label = "COW-transfers" if token_type == "erc20" else "native-transfers"
+    wrapped = wrapped_native_token_address.lower()
     transfers = []
     for tx in MultiSend.from_transaction_data(extract_calldata(raw, label)):
         if token_type == "native":
@@ -100,11 +122,23 @@ def decode_transfers(
                         amount=tx.value / 10**18,
                     )
                 )
-            # else: an internal call (e.g. WETH withdraw) - not a payout, skip it.
+                continue
+            params = _decode_erc20_transfer(tx.data)
+            if params is None:
+                # an internal call (e.g. WETH withdraw) - not a payout, skip it.
+                continue
+            token = tx.to.lower()
+            transfers.append(
+                Transfer(
+                    token_type="native" if token == wrapped else "erc20",
+                    token_address=token,
+                    receiver=params["recipient"].lower(),
+                    amount=params["amount"] / 10**18,
+                )
+            )
         else:
-            try:
-                _, params = _ERC20.decode_function_input(tx.data)
-            except ValueError:
+            params = _decode_erc20_transfer(tx.data)
+            if params is None:
                 continue
             transfers.append(
                 Transfer(

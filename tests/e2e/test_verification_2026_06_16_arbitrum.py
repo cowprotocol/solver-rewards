@@ -177,7 +177,14 @@ class TestArbitrum20260616E2E(unittest.TestCase):
         self.assertEqual(len(generic), 1)
 
     def test_total_warning_count(self):
-        self.assertEqual(len(self.report.warnings), 1)
+        """3 missing dust native transfers + 1 dust unmatched transfer. The
+        sub-1-COW solve rewards of barn-Baseline and prod-Mamori are not sent by the
+        payout script, so they are skipped instead of reported."""
+        self.assertEqual(len(self.report.warnings), 4)
+
+    def test_cow_rewards_below_payout_minimum_are_skipped(self):
+        names = {m.split(":")[0] for m in self.report.skipped_below_minimum}
+        self.assertEqual(names, {"barn-Baseline", "prod-Mamori"})
 
     def test_total_error_count(self):
         """3 missing-native errors + 5 unmatched transfers above threshold

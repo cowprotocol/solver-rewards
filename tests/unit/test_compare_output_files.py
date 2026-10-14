@@ -7,8 +7,8 @@ import unittest
 from src.verification.compare_output_files import (
     DEFAULT_COW_THRESHOLD,
     DEFAULT_NATIVE_THRESHOLD,
+    MIN_COW_TRANSFER,
     DuneReward,
-    FeeSummary,
     PartnerFee,
     Transfer,
     load_fee_summary,
@@ -232,8 +232,10 @@ class TestCompareSafeExports(unittest.TestCase):
         self.assertIn("missing native transfer", report.warnings[0].message)
 
     def test_missing_cow_below_threshold_is_warning(self):
-        rewards = [_reward("prod-A", "0xAA", "0xTA", cow=DEFAULT_COW_THRESHOLD * 0.5)]
-        report = compare_safe_exports(rewards, [], [], _COW)
+        # with the default threshold of 1 COW, a smaller reward is below the payout
+        # minimum and skipped instead (see TestPayoutMinimum)
+        rewards = [_reward("prod-A", "0xAA", "0xTA", cow=5.0)]
+        report = compare_safe_exports(rewards, [], [], _COW, cow_threshold=10.0)
         self.assertEqual(report.errors, [])
         self.assertEqual(len(report.warnings), 1)
         self.assertIn("missing solve reward", report.warnings[0].message)
@@ -860,3 +862,171 @@ class TestCompareSafeExportsWithOverdrafts(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+# ---------------------------------------------------------------------------
+# compare_safe_exports — payout minimum, differing amounts, wrapped native
+# ---------------------------------------------------------------------------
+
+_WRAPPED = "0xb31f66aa3c1e785363f0875a1b74e27b85fd66c7"
+
+
+def _wrapped_t(receiver: str, amount: float) -> Transfer:
+    return Transfer(
+        token_type="native",
+        token_address=_WRAPPED,
+        receiver=receiver.lower(),
+        amount=amount,
+    )
+
+
+class TestPayoutMinimum(unittest.TestCase):
+    """The payout script does not send COW transfers below 1 COW."""
+
+    def test_missing_cow_below_minimum_is_skipped(self):
+        rewards = [
+            _reward("prod-A", "0xAA", "0xTA", quote=0.4, cow=MIN_COW_TRANSFER * 0.5)
+        ]
+        report = compare_safe_exports(rewards, [], [], _COW)
+        self.assertEqual(report.issues, [])
+        self.assertEqual(len(report.skipped_below_minimum), 2)
+        self.assertIn("missing quote reward", report.skipped_below_minimum[0])
+
+    def test_cow_below_minimum_that_was_sent_is_still_matched(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA", cow=0.5)]
+        report = compare_safe_exports(rewards, [_cow_t("0xTA", 0.5)], [], _COW)
+        self.assertEqual(report.issues, [])
+        self.assertEqual(report.skipped_below_minimum, [])
+        self.assertAlmostEqual(report.totals.solve, 0.5)
+
+    def test_cow_at_minimum_is_checked(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA", cow=MIN_COW_TRANSFER)]
+        report = compare_safe_exports(rewards, [], [], _COW)
+        self.assertEqual(len(report.warnings), 1)
+        self.assertEqual(report.skipped_below_minimum, [])
+
+    def test_below_minimum_is_not_paired_with_other_transfer(self):
+        """A never-sent sub-minimum reward must not claim another transfer."""
+        rewards = [_reward("prod-A", "0xAA", "0xTA", quote=0.5)]
+        report = compare_safe_exports(rewards, [_cow_t("0xTA", 50.0)], [], _COW)
+        self.assertEqual(len(report.unmatched_transfers), 1)
+        self.assertEqual(len(report.errors), 1)
+        self.assertIn("Unmatched transfer", report.errors[0].message)
+
+
+class TestDifferingAmounts(unittest.TestCase):
+    """A transfer sent with a different amount is reported as one difference."""
+
+    def test_differing_native_transfer_reports_difference(self):
+        # prod-Helixbox on avalanche: sent ~0.93 AVAX less than Dune reports
+        expected, sent = 2.5, 2.5 - 0.9324031771947929
+        rewards = [_reward("prod-Helixbox", "0xAA", "0xTA", native=expected)]
+        report = compare_safe_exports(rewards, [], [_native_t("0xTA", sent)], _COW)
+
+        self.assertEqual(len(report.issues), 1)
+        [error] = report.errors
+        self.assertIn(
+            "prod-Helixbox: native transfer to 0xta is off by -0.932403", error.message
+        )
+        self.assertIn(f"expected {expected}, sent {sent}", error.message)
+        self.assertEqual(report.unmatched_transfers, [])
+        self.assertAlmostEqual(report.totals.native, sent)
+
+    def test_difference_below_threshold_is_warning(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA", native=1.0)]
+        # beyond the 0.01% tolerance, but the difference is below the native threshold
+        transfers = [_native_t("0xTA", 1.0 + DEFAULT_NATIVE_THRESHOLD * 0.5)]
+        report = compare_safe_exports(rewards, [], transfers, _COW)
+        self.assertEqual(report.errors, [])
+        self.assertEqual(len(report.warnings), 1)
+        self.assertIn("is off by +0.0005", report.warnings[0].message)
+
+    def test_differing_cow_transfer_reports_difference(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA", cow=100.0)]
+        report = compare_safe_exports(rewards, [_cow_t("0xTA", 90.0)], [], _COW)
+        [error] = report.errors
+        self.assertIn(
+            "solve reward transfer (COW) to 0xta is off by -10", error.message
+        )
+
+    def test_difference_does_not_take_another_rewards_exact_match(self):
+        """Quote and solve go to the same target: the exact solve match is kept and
+        only the leftover transfer is paired with the quote reward."""
+        rewards = [_reward("prod-A", "0xAA", "0xTA", quote=10.0, cow=20.0)]
+        cow_transfers = [_cow_t("0xTA", 20.0), _cow_t("0xTA", 12.0)]
+        report = compare_safe_exports(rewards, cow_transfers, [], _COW)
+        [error] = report.errors
+        self.assertIn("quote reward transfer (COW) to 0xta is off by +2", error.message)
+        self.assertAlmostEqual(report.totals.solve, 20.0)
+        self.assertAlmostEqual(report.totals.quote, 12.0)
+
+    def test_transfer_to_other_receiver_is_still_missing_and_unmatched(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA", native=1.0)]
+        report = compare_safe_exports(rewards, [], [_native_t("0xOTHER", 0.5)], _COW)
+        messages = [issue.message for issue in report.errors]
+        self.assertEqual(len(messages), 2)
+        self.assertIn("missing native transfer", messages[0])
+        self.assertIn("Unmatched transfer", messages[1])
+
+    def test_differing_protocol_fee_is_reported_but_not_confirmed(self):
+        report = compare_safe_exports(
+            [],
+            [],
+            [_native_t("0xdaosafe", 1.5)],
+            _COW,
+            protocol_fee=2.0,
+            protocol_fee_safe="0xdaosafe",
+        )
+        [error] = report.errors
+        self.assertIn(
+            "Protocol fee transfer to 0xdaosafe is off by -0.5", error.message
+        )
+        self.assertEqual(report.protocol_fee, 0.0)
+
+    def test_differing_overdraft_reports_difference(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA", overdraft=-2.0)]
+        report = compare_safe_exports(
+            rewards, [], [], _COW, overdraft_entries=[_OverdraftEntry("0xAA", 1.0)]
+        )
+        [error] = report.errors
+        self.assertIn("overdraft transaction for 0xaa is off by -1", error.message)
+        self.assertAlmostEqual(report.totals.overdraft, 1.0)
+
+
+class TestWrappedNativeTransfers(unittest.TestCase):
+    """The payout script sends fees in the wrapped native token (e.g. WETH)."""
+
+    def test_fees_paid_in_wrapped_native_are_matched(self):
+        partner_fees = [PartnerFee("0xpartner1", "App1", 0.4, 0.1)]
+        native_transfers = [
+            _wrapped_t("0xdaosafe", 2.0),  # protocol fee
+            _wrapped_t("0xdaosafe", 0.1),  # partner fee tax
+            _wrapped_t("0xpartner1", 0.4),  # partner fee
+        ]
+        report = compare_safe_exports(
+            [],
+            [],
+            native_transfers,
+            _COW,
+            protocol_fee=2.0,
+            protocol_fee_safe="0xdaosafe",
+            partner_fees=partner_fees,
+        )
+        self.assertEqual(report.issues, [])
+        self.assertEqual(report.unmatched_transfers, [])
+        self.assertAlmostEqual(report.protocol_fee, 2.0)
+        self.assertAlmostEqual(report.partner_fees, 0.4)
+        self.assertAlmostEqual(report.partner_fee_tax, 0.1)
+
+    def test_solver_reward_paid_in_wrapped_native_is_warning(self):
+        rewards = [_reward("prod-A", "0xAA", "0xTA", native=1.0)]
+        report = compare_safe_exports(rewards, [], [_wrapped_t("0xTA", 1.0)], _COW)
+        self.assertEqual(report.errors, [])
+        [warning] = report.warnings
+        self.assertIn("paid in wrapped native token", warning.message)
+
+    def test_wrapped_native_transfer_str(self):
+        self.assertEqual(
+            str(_wrapped_t("0xTA", 1.5)),
+            f"wrapped native transfer of 1.5 ({_WRAPPED}) to 0xta",
+        )
