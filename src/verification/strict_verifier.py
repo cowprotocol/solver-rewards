@@ -45,9 +45,8 @@ from src.verification.safe_transaction import SafeTransaction
 
 # MultiSendCallOnly v1.3.0, the only target post_multisend() uses. The same
 # runtime code is deployed at this address on every supported network.
-APPROVED_MULTISEND_CONTRACTS = frozenset(
-    {to_checksum_address("0x40A2aCCbd92BCA938b02010E17A5b8929b49130D")}
-)
+MULTISEND_CALL_ONLY = to_checksum_address("0x40A2aCCbd92BCA938b02010E17A5b8929b49130D")
+APPROVED_MULTISEND_CONTRACTS = frozenset({MULTISEND_CALL_ONLY})
 ZERO_ADDRESS = to_checksum_address(bytes(20))
 
 _OPERATION_NAMES = {0: "0 (CALL)", 1: "1 (DELEGATECALL)"}
