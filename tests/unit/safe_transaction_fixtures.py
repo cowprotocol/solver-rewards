@@ -30,6 +30,7 @@ from src.verification.safe_transaction import SafeTransaction
 FIXTURE_DIR = Path(__file__).parent.parent / "fixtures" / "safe_transactions"
 
 MAINNET_COW = "mainnet-cow-payout-nonce-1186.json"
+MAINNET_NATIVE = "mainnet-native-payout-nonce-1466.json"
 ARBITRUM_NATIVE = "arbitrum-native-payout-nonce-213.json"
 ARBITRUM_NATIVE_SUPERSEDED = "arbitrum-native-payout-nonce-213-superseded.json"
 ARBITRUM_OVERDRAFTS = "arbitrum-overdrafts-nonce-214.json"
@@ -38,6 +39,7 @@ LINEA_EMPTY = "linea-empty-nonce-75.json"
 
 ALL_FIXTURES = [
     MAINNET_COW,
+    MAINNET_NATIVE,
     ARBITRUM_NATIVE,
     ARBITRUM_NATIVE_SUPERSEDED,
     ARBITRUM_OVERDRAFTS,
@@ -47,6 +49,7 @@ ALL_FIXTURES = [
 # Fixtures whose every call has a plan representation.
 PLANNABLE_FIXTURES = [
     MAINNET_COW,
+    MAINNET_NATIVE,
     ARBITRUM_NATIVE,
     ARBITRUM_NATIVE_SUPERSEDED,
     LINEA_NATIVE,

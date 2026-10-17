@@ -79,6 +79,14 @@ FIXTURES = {
         "COW reward payout on mainnet for the 2026-06-16 Arbitrum payout run: "
         "31 ERC-20 transfers of COW.",
     ),
+    "mainnet-native-payout-nonce-1466.json": FixtureSpec(
+        "eth",
+        1,
+        "0x42bcf0f9781555451706b08b8c6c634c1af88a9e6d44575b0c7c57d1cffada94",
+        "Native payout on mainnet for the 2026-10-13 payout run, as executed: "
+        "a WETH withdraw, 65 native transfers and 3 WETH transfers, two to the "
+        "protocol fee Safe and one to a partner.",
+    ),
     "arbitrum-native-payout-nonce-213.json": FixtureSpec(
         "arb1",
         42161,
