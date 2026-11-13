@@ -29,6 +29,7 @@ def test_config_serializes(network, monkeypatch):
             | Network.LINEA
             | Network.PLASMA
             | Network.INK
+            | Network.ROBINHOOD
         ):
             assert overdraft_config.contract_address == Address(
                 OVERDRAFTS_CONTRACT_ADDRESS
