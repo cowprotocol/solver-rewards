@@ -9,6 +9,7 @@ ALL_NETWORKS = [
     "linea",
     "plasma",
     "ink",
+    "robinhood",
 ]
 
 # Contract Addresses
