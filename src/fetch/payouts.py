@@ -75,7 +75,7 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
     ):
 
         assert quote_reward_cow >= 0, "invalid quote_reward_cow"
-        if solver_name[5:] == TSOLVER_NAME: # removing the "prod-"/"barn-" prefix
+        if solver_name[5:] == TSOLVER_NAME:  # removing the "prod-"/"barn-" prefix
             assert reward_target == TSOLVER_REWARD_TARGET, (
                 f"{TSOLVER_NAME} reward target must be {TSOLVER_REWARD_TARGET}, "
                 f"got {reward_target}"
