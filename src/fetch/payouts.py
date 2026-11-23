@@ -22,6 +22,9 @@ from src.utils.print_store import Category
 
 log = set_log(__name__)
 
+TSOLVER_NAME = "Tsolver"
+TSOLVER_REWARD_TARGET = Address("0x1aaaa287890837c8326dd1fedd2308e8a4e89290")
+
 SOLVER_PAYOUTS_COLUMNS = [
     "solver",
     "solver_name",
@@ -72,6 +75,11 @@ class RewardAndPenaltyDatum:  # pylint: disable=too-many-instance-attributes
     ):
 
         assert quote_reward_cow >= 0, "invalid quote_reward_cow"
+        if solver_name[5:] == TSOLVER_NAME: # removing the "prod-"/"barn-" prefix
+            assert reward_target == TSOLVER_REWARD_TARGET, (
+                f"{TSOLVER_NAME} reward target must be {TSOLVER_REWARD_TARGET}, "
+                f"got {reward_target}"
+            )
 
         self.solver = solver
         self.solver_name = solver_name
