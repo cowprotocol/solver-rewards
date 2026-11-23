@@ -69,6 +69,7 @@ NETWORKS = (
     "linea",
     "plasma",
     "ink",
+    "robinhood",
 )
 
 # Wrapped native token per network (kept in sync with
@@ -87,6 +88,7 @@ WRAPPED_NATIVE_TOKEN_ADDRESSES = {
     "linea": "0xe5d7c2a44ffddf6b295a15c148167daaaf5cf34f",
     "plasma": "0x6100e367285b01f48d07953803a2d8dca5d19873",
     "ink": "0x4200000000000000000000000000000000000006",
+    "robinhood": "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
 }
 
 # The payout script drops transfers below these amounts instead of sending them (kept in
