@@ -87,7 +87,7 @@ CHAINS: dict[str, ChainConfig] = {
         ChainConfig(
             "robinhood",
             Network.ROBINHOOD,
-            "0x1237"  # 4663
+            "0x1237",  # 4663
             "0x0bd7d308f8e1639fab988df18a8011f41eacad73",
         ),
     ]
